@@ -45,13 +45,10 @@ class NowoPerformanceBundle extends Bundle
         return $this->extension ??= new PerformanceExtension();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
-        
+
         // Register compiler pass for QueryTrackingMiddleware
         $container->addCompilerPass(new QueryTrackingMiddlewarePass());
     }

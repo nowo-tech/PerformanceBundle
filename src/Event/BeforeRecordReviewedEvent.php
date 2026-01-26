@@ -22,16 +22,16 @@ final class BeforeRecordReviewedEvent extends Event
     /**
      * Constructor.
      *
-     * @param RouteData $routeData The route data entity to be reviewed
-     * @param bool|null $queriesImproved Whether queries improved
-     * @param bool|null $timeImproved Whether time improved
-     * @param string|null $reviewedBy The reviewer username
+     * @param RouteData   $routeData       The route data entity to be reviewed
+     * @param bool|null   $queriesImproved Whether queries improved
+     * @param bool|null   $timeImproved    Whether time improved
+     * @param string|null $reviewedBy      The reviewer username
      */
     public function __construct(
         private readonly RouteData $routeData,
         private ?bool $queriesImproved,
         private ?bool $timeImproved,
-        private ?string $reviewedBy
+        private ?string $reviewedBy,
     ) {
     }
 
@@ -72,8 +72,6 @@ final class BeforeRecordReviewedEvent extends Event
 
     /**
      * Prevent the review from happening.
-     *
-     * @return void
      */
     public function preventReview(): void
     {

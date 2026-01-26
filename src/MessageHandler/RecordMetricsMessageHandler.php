@@ -8,7 +8,7 @@ use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 
 // Load polyfill if Messenger is not available
-require_once __DIR__ . '/AsMessageHandlerPolyfill.php';
+require_once __DIR__.'/AsMessageHandlerPolyfill.php';
 
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -30,7 +30,7 @@ final class RecordMetricsMessageHandler
      * @param PerformanceMetricsService $metricsService The metrics service
      */
     public function __construct(
-        private readonly PerformanceMetricsService $metricsService
+        private readonly PerformanceMetricsService $metricsService,
     ) {
     }
 
@@ -38,7 +38,6 @@ final class RecordMetricsMessageHandler
      * Handle the message.
      *
      * @param RecordMetricsMessage $message The message to process
-     * @return void
      */
     public function __invoke(RecordMetricsMessage $message): void
     {

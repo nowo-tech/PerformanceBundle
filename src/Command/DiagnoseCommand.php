@@ -56,14 +56,11 @@ final class DiagnoseCommand extends Command
      * @param ParameterBagInterface $parameterBag Parameter bag to check configuration
      */
     public function __construct(
-        private readonly ParameterBagInterface $parameterBag
+        private readonly ParameterBagInterface $parameterBag,
     ) {
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
@@ -90,10 +87,11 @@ final class DiagnoseCommand extends Command
 
         // Check QueryTrackingMiddleware
         $io->section('Query Tracking Middleware');
-        
+
         if (!$enabled || !$trackQueries) {
             $io->warning('Query tracking is disabled in configuration.');
             $io->note('To enable: Set nowo_performance.enabled: true and nowo_performance.track_queries: true');
+
             return Command::SUCCESS;
         }
 
@@ -102,40 +100,41 @@ final class DiagnoseCommand extends Command
         $initialCount = QueryTrackingMiddleware::getQueryCount();
         $initialTime = QueryTrackingMiddleware::getTotalQueryTime();
 
-        $io->text(sprintf('Initial query count: %d', $initialCount));
-        $io->text(sprintf('Initial query time: %.4f seconds', $initialTime));
+        $io->text(\sprintf('Initial query count: %d', $initialCount));
+        $io->text(\sprintf('Initial query time: %.4f seconds', $initialTime));
 
         // Check if middleware class exists
         if (class_exists(QueryTrackingMiddleware::class)) {
             $io->success('QueryTrackingMiddleware class is available');
         } else {
             $io->error('QueryTrackingMiddleware class not found!');
+
             return Command::FAILURE;
         }
 
         // Instructions
         $io->section('Query Tracking Status');
-        
-        if ($initialCount === 0 && $initialTime === 0.0) {
+
+        if (0 === $initialCount && 0.0 === $initialTime) {
             $io->info('QueryTrackingMiddleware is initialized correctly.');
         } else {
             $io->warning('QueryTrackingMiddleware has existing data. This may indicate it\'s working but not being reset between requests.');
         }
 
         $io->section('How Query Tracking Works');
-        
+
         // Detect DoctrineBundle version and method used
         $doctrineVersion = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
         $supportsYaml = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig();
-        
+
         $method = 'Event Subscriber (Reflection)';
         if ($supportsYaml) {
             $method = 'YAML Configuration (middlewares)';
         }
-        
+
         $io->text([
-            'DoctrineBundle Version: ' . ($doctrineVersion ?? 'Unknown'),
-            'Registration Method: ' . $method,
+            'DoctrineBundle Version: '.($doctrineVersion ?? 'Unknown'),
+            'Registration Method: '.$method,
             '',
             'The bundle automatically detects the DoctrineBundle version and uses the appropriate method:',
             '',
@@ -143,9 +142,9 @@ final class DiagnoseCommand extends Command
             '• DoctrineBundle 3.x: Applies middleware via Event Subscriber using reflection',
             '',
             'If queries are not being tracked, check:',
-            '1. That track_queries is enabled (currently: ' . ($trackQueries ? '✓' : '✗') . ')',
-            '2. That the bundle is enabled (currently: ' . ($enabled ? '✓' : '✗') . ')',
-            '3. That you\'re in a configured environment: ' . implode(', ', $environments),
+            '1. That track_queries is enabled (currently: '.($trackQueries ? '✓' : '✗').')',
+            '2. That the bundle is enabled (currently: '.($enabled ? '✓' : '✗').')',
+            '3. That you\'re in a configured environment: '.implode(', ', $environments),
             '',
             'Fallback methods (if middleware fails):',
             '• DoctrineDataCollector (from Symfony profiler)',

@@ -55,10 +55,10 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
     /**
      * Constructor.
      *
-     * @param ManagerRegistry $registry The Doctrine registry
-     * @param bool $enabled Whether the bundle is enabled
-     * @param bool $trackQueries Whether query tracking is enabled
-     * @param string $connectionName The connection name to track
+     * @param ManagerRegistry $registry       The Doctrine registry
+     * @param bool            $enabled        Whether the bundle is enabled
+     * @param bool            $trackQueries   Whether query tracking is enabled
+     * @param string          $connectionName The connection name to track
      */
     public function __construct(
         ManagerRegistry $registry,
@@ -67,7 +67,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
         #[Autowire('%nowo_performance.track_queries%')]
         bool $trackQueries,
         #[Autowire('%nowo_performance.connection%')]
-        string $connectionName
+        string $connectionName,
     ) {
         $this->registry = $registry;
         $this->enabled = $enabled;
@@ -79,7 +79,6 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
      * Apply middleware to connections on kernel request.
      *
      * @param KernelEvent $event The kernel event
-     * @return void
      */
     public function onKernelRequest(KernelEvent $event): void
     {
@@ -93,14 +92,14 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
         $attempt = 0;
         while ($attempt < $maxAttempts && !isset($this->trackedConnections[$this->connectionName])) {
             $this->applyMiddlewareToConnection();
-            $attempt++;
-            
+            ++$attempt;
+
             // Small delay to allow connection to be ready
             if ($attempt < $maxAttempts && !isset($this->trackedConnections[$this->connectionName])) {
                 usleep(10000); // 10ms delay
             }
         }
-        
+
         // Reset query tracking AFTER middleware is applied
         // This ensures queries executed after this point are tracked
         QueryTrackingMiddleware::reset();
@@ -111,13 +110,11 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
      *
      * Uses QueryTrackingMiddlewareRegistry to apply the middleware
      * using the appropriate method for the Doctrine version.
-     *
-     * @return void
      */
     private function applyMiddlewareToConnection(): void
     {
         $connectionKey = $this->connectionName;
-        
+
         // Avoid re-wrapping if already tracked
         if (isset($this->trackedConnections[$connectionKey])) {
             return;
@@ -125,14 +122,14 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
 
         try {
             $middleware = new QueryTrackingMiddleware();
-            
+
             // Use the registry to apply middleware with version detection
             $success = QueryTrackingMiddlewareRegistry::applyMiddleware(
                 $this->registry,
                 $this->connectionName,
                 $middleware
             );
-            
+
             if ($success) {
                 $this->trackedConnections[$connectionKey] = true;
             } else {

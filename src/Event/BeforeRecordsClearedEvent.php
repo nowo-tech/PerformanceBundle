@@ -24,7 +24,7 @@ final class BeforeRecordsClearedEvent extends Event
      * @param string|null $env Optional environment filter (null = all environments)
      */
     public function __construct(
-        private readonly ?string $env = null
+        private readonly ?string $env = null,
     ) {
     }
 
@@ -35,8 +35,6 @@ final class BeforeRecordsClearedEvent extends Event
 
     /**
      * Prevent the clearing from happening.
-     *
-     * @return void
      */
     public function preventClearing(): void
     {

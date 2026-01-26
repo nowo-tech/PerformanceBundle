@@ -25,15 +25,11 @@ class QueryTrackingMiddleware implements Middleware
 {
     /**
      * Query count tracker.
-     *
-     * @var int
      */
     private static int $queryCount = 0;
 
     /**
      * Total query execution time in seconds.
-     *
-     * @var float
      */
     private static float $totalQueryTime = 0.0;
 
@@ -44,9 +40,6 @@ class QueryTrackingMiddleware implements Middleware
      */
     private static array $queryStartTimes = [];
 
-    /**
-     * {@inheritdoc}
-     */
     public function wrap(Driver $driver): Driver
     {
         return new class($driver) extends AbstractDriverMiddleware {
@@ -81,8 +74,6 @@ class QueryTrackingMiddleware implements Middleware
 
     /**
      * Reset all query tracking metrics.
-     *
-     * @return void
      */
     public static function reset(): void
     {
@@ -95,7 +86,6 @@ class QueryTrackingMiddleware implements Middleware
      * Record the start of a query execution.
      *
      * @param string $queryId Unique identifier for the query
-     * @return void
      */
     public static function startQuery(string $queryId): void
     {
@@ -106,7 +96,6 @@ class QueryTrackingMiddleware implements Middleware
      * Record the end of a query execution.
      *
      * @param string $queryId Unique identifier for the query
-     * @return void
      */
     public static function stopQuery(string $queryId): void
     {
@@ -114,7 +103,7 @@ class QueryTrackingMiddleware implements Middleware
             return;
         }
 
-        self::$queryCount++;
+        ++self::$queryCount;
         self::$totalQueryTime += microtime(true) - self::$queryStartTimes[$queryId];
         unset(self::$queryStartTimes[$queryId]);
     }
@@ -126,13 +115,13 @@ class QueryTrackingMiddleware implements Middleware
 class QueryTrackingConnection implements Connection
 {
     public function __construct(
-        private readonly Connection $connection
+        private readonly Connection $connection,
     ) {
     }
 
     public function prepare(string $sql): Statement
     {
-        $queryId = spl_object_hash($this) . '_' . md5($sql);
+        $queryId = spl_object_hash($this).'_'.md5($sql);
         QueryTrackingMiddleware::startQuery($queryId);
 
         $statement = $this->connection->prepare($sql);
@@ -152,6 +141,7 @@ class QueryTrackingConnection implements Connection
                 try {
                     $result = parent::execute($params);
                     QueryTrackingMiddleware::stopQuery($this->queryId);
+
                     return $result;
                 } catch (\Exception $e) {
                     QueryTrackingMiddleware::stopQuery($this->queryId);
@@ -163,12 +153,13 @@ class QueryTrackingConnection implements Connection
 
     public function query(string $sql): Result
     {
-        $queryId = spl_object_hash($this) . '_' . md5($sql);
+        $queryId = spl_object_hash($this).'_'.md5($sql);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
             $result = $this->connection->query($sql);
             QueryTrackingMiddleware::stopQuery($queryId);
+
             return $result;
         } catch (\Exception $e) {
             QueryTrackingMiddleware::stopQuery($queryId);
@@ -178,12 +169,13 @@ class QueryTrackingConnection implements Connection
 
     public function exec(string $sql): int
     {
-        $queryId = spl_object_hash($this) . '_' . md5($sql);
+        $queryId = spl_object_hash($this).'_'.md5($sql);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
             $result = $this->connection->exec($sql);
             QueryTrackingMiddleware::stopQuery($queryId);
+
             return $result;
         } catch (\Exception $e) {
             QueryTrackingMiddleware::stopQuery($queryId);

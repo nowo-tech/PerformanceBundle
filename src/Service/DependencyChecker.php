@@ -47,9 +47,9 @@ class DependencyChecker
      */
     public function isIconsAvailable(): bool
     {
-        return function_exists('ux_icon')
+        return \function_exists('ux_icon')
             || class_exists(\Symfony\UX\Icons\Twig\IconExtension::class)
-            || function_exists('twig_get_function') && twig_get_function('ux_icon') !== null;
+            || \function_exists('twig_get_function') && null !== twig_get_function('ux_icon');
     }
 
     /**
@@ -88,6 +88,7 @@ class DependencyChecker
      * Check if a specific feature is available.
      *
      * @param string $feature Feature name (e.g., 'twig_component')
+     *
      * @return bool True if feature is available
      */
     public function isFeatureAvailable(string $feature): bool

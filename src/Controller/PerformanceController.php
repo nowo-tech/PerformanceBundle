@@ -18,10 +18,10 @@ use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -40,8 +40,8 @@ class PerformanceController extends AbstractController
      * Constructor.
      *
      * @param PerformanceMetricsService $metricsService Service for retrieving metrics
-     * @param bool $enabled Whether the performance dashboard is enabled
-     * @param array $requiredRoles Required roles to access the dashboard
+     * @param bool                      $enabled        Whether the performance dashboard is enabled
+     * @param array                     $requiredRoles  Required roles to access the dashboard
      */
     public function __construct(
         private readonly PerformanceMetricsService $metricsService,
@@ -73,7 +73,7 @@ class PerformanceController extends AbstractController
         #[Autowire('%nowo_performance.dashboard.date_formats.datetime%')]
         private readonly string $dateTimeFormat = 'Y-m-d H:i:s',
         #[Autowire('%nowo_performance.dashboard.date_formats.date%')]
-        private readonly string $dateFormat = 'Y-m-d H:i'
+        private readonly string $dateFormat = 'Y-m-d H:i',
     ) {
     }
 
@@ -81,7 +81,7 @@ class PerformanceController extends AbstractController
      * Display performance metrics dashboard.
      *
      * Shows a list of all tracked routes with filtering capabilities.
-     * 
+     *
      * The view can be customized in two ways:
      * 1. Override the complete template: `templates/bundles/NowoPerformanceBundle/Performance/index.html.twig`
      * 2. Override individual components:
@@ -90,6 +90,7 @@ class PerformanceController extends AbstractController
      *    - `templates/bundles/NowoPerformanceBundle/Performance/components/_routes_table.html.twig`
      *
      * @param Request $request The HTTP request
+     *
      * @return Response The HTTP response
      */
     #[Route(
@@ -153,19 +154,19 @@ class PerformanceController extends AbstractController
 
         // Build filters array for advanced filtering
         $filters = [];
-        if ($routeName !== null && $routeName !== '') {
+        if (null !== $routeName && '' !== $routeName) {
             $filters['route_name_pattern'] = $routeName;
         }
-        if (isset($formData['min_request_time']) && $formData['min_request_time'] !== null) {
+        if (isset($formData['min_request_time']) && null !== $formData['min_request_time']) {
             $filters['min_request_time'] = (float) $formData['min_request_time'];
         }
-        if (isset($formData['max_request_time']) && $formData['max_request_time'] !== null) {
+        if (isset($formData['max_request_time']) && null !== $formData['max_request_time']) {
             $filters['max_request_time'] = (float) $formData['max_request_time'];
         }
-        if (isset($formData['min_query_count']) && $formData['min_query_count'] !== null) {
+        if (isset($formData['min_query_count']) && null !== $formData['min_query_count']) {
             $filters['min_query_count'] = (int) $formData['min_query_count'];
         }
-        if (isset($formData['max_query_count']) && $formData['max_query_count'] !== null) {
+        if (isset($formData['max_query_count']) && null !== $formData['max_query_count']) {
             $filters['max_query_count'] = (int) $formData['max_query_count'];
         }
         if (isset($formData['date_from']) && $formData['date_from'] instanceof \DateTimeImmutable) {
@@ -187,19 +188,19 @@ class PerformanceController extends AbstractController
         // Reuse the already fetched routes if they match the statistics requirements
         try {
             $stats = null;
-            if ($this->cacheService !== null) {
+            if (null !== $this->cacheService) {
                 $stats = $this->cacheService->getCachedStatistics($env);
             }
-            if ($stats === null) {
+            if (null === $stats) {
                 // If we already have all routes (no filters or limit), reuse them for statistics
                 // Otherwise, fetch all routes for statistics
-                if (empty($filters) && ($limit === null || $limit >= 1000)) {
+                if (empty($filters) && (null === $limit || $limit >= 1000)) {
                     $allRoutes = $routes;
                 } else {
                     $allRoutes = $this->metricsService->getRoutesByEnvironment($env);
                 }
                 $stats = $this->calculateStats($allRoutes);
-                if ($this->cacheService !== null) {
+                if (null !== $this->cacheService) {
                     $this->cacheService->cacheStatistics($env, $stats);
                 }
             }
@@ -210,7 +211,7 @@ class PerformanceController extends AbstractController
         // Check dependencies
         $useComponents = false;
         $missingDependencies = [];
-        if ($this->dependencyChecker !== null) {
+        if (null !== $this->dependencyChecker) {
             $useComponents = $this->dependencyChecker->isTwigComponentAvailable();
             $missingDependencies = $this->dependencyChecker->getMissingDependencies();
         }
@@ -221,7 +222,7 @@ class PerformanceController extends AbstractController
             foreach ($routes as $route) {
                 if ($route instanceof RouteData && !$route->isReviewed()) {
                     $reviewForm = $this->createForm(ReviewRouteDataType::class, null, [
-                        'csrf_token_id' => 'review_performance_record_' . $route->getId(),
+                        'csrf_token_id' => 'review_performance_record_'.$route->getId(),
                     ]);
                     $reviewForms[$route->getId()] = $reviewForm->createView();
                 }
@@ -266,8 +267,9 @@ class PerformanceController extends AbstractController
     /**
      * Get sort value for a route.
      *
-     * @param \Nowo\PerformanceBundle\Entity\RouteData $route The route data
-     * @param string $sortBy The field to sort by
+     * @param RouteData $route  The route data
+     * @param string    $sortBy The field to sort by
+     *
      * @return float|int|string|null The sort value
      */
     private function getSortValue($route, string $sortBy): float|int|string|null
@@ -287,6 +289,7 @@ class PerformanceController extends AbstractController
      * Calculate statistics for routes.
      *
      * @param array $routes Array of RouteData entities
+     *
      * @return array<string, mixed> Statistics array
      */
     private function calculateStats(array $routes): array
@@ -303,9 +306,9 @@ class PerformanceController extends AbstractController
             ];
         }
 
-        $requestTimes = array_filter(array_map(fn($r) => $r->getRequestTime(), $routes));
-        $queryTimes = array_filter(array_map(fn($r) => $r->getQueryTime(), $routes));
-        $queryCounts = array_filter(array_map(fn($r) => $r->getTotalQueries(), $routes));
+        $requestTimes = array_filter(array_map(static fn ($r) => $r->getRequestTime(), $routes));
+        $queryTimes = array_filter(array_map(static fn ($r) => $r->getQueryTime(), $routes));
+        $queryCounts = array_filter(array_map(static fn ($r) => $r->getTotalQueries(), $routes));
 
         return [
             'total_routes' => \count($routes),
@@ -322,6 +325,7 @@ class PerformanceController extends AbstractController
      * Calculate advanced statistics for routes.
      *
      * @param array $routes Array of RouteData entities
+     *
      * @return array<string, mixed> Advanced statistics array
      */
     private function calculateAdvancedStats(array $routes): array
@@ -336,11 +340,11 @@ class PerformanceController extends AbstractController
             ];
         }
 
-        $requestTimes = array_values(array_filter(array_map(fn($r) => $r->getRequestTime(), $routes), fn($v) => $v !== null));
-        $queryTimes = array_values(array_filter(array_map(fn($r) => $r->getQueryTime(), $routes), fn($v) => $v !== null));
-        $queryCounts = array_values(array_filter(array_map(fn($r) => $r->getTotalQueries(), $routes), fn($v) => $v !== null));
-        $memoryUsages = array_values(array_filter(array_map(fn($r) => $r->getMemoryUsage() ? $r->getMemoryUsage() / 1024 / 1024 : null, $routes), fn($v) => $v !== null)); // Convert to MB
-        $accessCounts = array_values(array_filter(array_map(fn($r) => $r->getAccessCount(), $routes), fn($v) => $v !== null));
+        $requestTimes = array_values(array_filter(array_map(static fn ($r) => $r->getRequestTime(), $routes), static fn ($v) => null !== $v));
+        $queryTimes = array_values(array_filter(array_map(static fn ($r) => $r->getQueryTime(), $routes), static fn ($v) => null !== $v));
+        $queryCounts = array_values(array_filter(array_map(static fn ($r) => $r->getTotalQueries(), $routes), static fn ($v) => null !== $v));
+        $memoryUsages = array_values(array_filter(array_map(static fn ($r) => $r->getMemoryUsage() ? $r->getMemoryUsage() / 1024 / 1024 : null, $routes), static fn ($v) => null !== $v)); // Convert to MB
+        $accessCounts = array_values(array_filter(array_map(static fn ($r) => $r->getAccessCount(), $routes), static fn ($v) => null !== $v));
 
         return [
             'request_time' => $this->calculateDetailedStats($requestTimes, 'Request Time', 's'),
@@ -354,9 +358,10 @@ class PerformanceController extends AbstractController
     /**
      * Calculate detailed statistics for a metric.
      *
-     * @param array $values Array of numeric values
-     * @param string $label Metric label
-     * @param string $unit Unit of measurement
+     * @param array  $values Array of numeric values
+     * @param string $label  Metric label
+     * @param string $unit   Unit of measurement
+     *
      * @return array<string, mixed> Detailed statistics
      */
     private function calculateDetailedStats(array $values, string $label, string $unit): array
@@ -366,24 +371,24 @@ class PerformanceController extends AbstractController
         }
 
         sort($values);
-        $count = count($values);
+        $count = \count($values);
         $sum = array_sum($values);
         $mean = $sum / $count;
-        
+
         // Median
-        $median = $count % 2 === 0
+        $median = 0 === $count % 2
             ? ($values[($count / 2) - 1] + $values[$count / 2]) / 2
             : $values[floor($count / 2)];
 
         // Mode (most frequent value, rounded to 2 decimals)
         // Convert to strings to work with array_count_values (only accepts strings and integers)
-        $rounded = array_map(fn($v) => (string) round($v, 2), $values);
+        $rounded = array_map(static fn ($v) => (string) round($v, 2), $values);
         $frequencies = array_count_values($rounded);
         arsort($frequencies);
         $mode = (float) key($frequencies);
 
         // Standard deviation
-        $variance = array_sum(array_map(fn($v) => pow($v - $mean, 2), $values)) / $count;
+        $variance = array_sum(array_map(static fn ($v) => ($v - $mean) ** 2, $values)) / $count;
         $stdDev = sqrt($variance);
 
         // Percentiles
@@ -411,14 +416,14 @@ class PerformanceController extends AbstractController
         $iqr = $q3 - $q1;
         $lowerBound = $q1 - 1.5 * $iqr;
         $upperBound = $q3 + 1.5 * $iqr;
-        $outliers = array_filter($values, fn($v) => $v < $lowerBound || $v > $upperBound);
+        $outliers = array_filter($values, static fn ($v) => $v < $lowerBound || $v > $upperBound);
 
         // Distribution buckets for histogram
         $buckets = 10;
         $distribution = array_fill(0, $buckets, 0);
-        
+
         // Handle case where all values are the same (avoid division by zero)
-        if ($max - $min === 0.0 || $max === $min) {
+        if (0.0 === $max - $min || $max === $min) {
             // All values are the same, put them all in the first bucket
             $distribution[0] = $count;
             $bucketLabels = array_fill(0, $buckets, round($min, 2));
@@ -426,9 +431,9 @@ class PerformanceController extends AbstractController
             $bucketSize = ($max - $min) / $buckets;
             foreach ($values as $value) {
                 $bucketIndex = min(floor(($value - $min) / $bucketSize), $buckets - 1);
-                $distribution[(int)$bucketIndex]++;
+                ++$distribution[(int) $bucketIndex];
             }
-            $bucketLabels = array_map(fn($i) => round($min + ($i * $bucketSize), 2), range(0, $buckets - 1));
+            $bucketLabels = array_map(static fn ($i) => round($min + ($i * $bucketSize), 2), range(0, $buckets - 1));
         }
 
         return [
@@ -437,14 +442,14 @@ class PerformanceController extends AbstractController
             'count' => $count,
             'mean' => round($mean, 4),
             'median' => round($median, 4),
-            'mode' => round((float)$mode, 4),
+            'mode' => round((float) $mode, 4),
             'std_dev' => round($stdDev, 4),
             'min' => round($min, 4),
             'max' => round($max, 4),
             'range' => round($range, 4),
-            'percentiles' => array_map(fn($v) => round($v, 4), $percentiles),
-            'outliers_count' => count($outliers),
-            'outliers' => array_map(fn($v) => round($v, 4), array_values($outliers)),
+            'percentiles' => array_map(static fn ($v) => round($v, 4), $percentiles),
+            'outliers_count' => \count($outliers),
+            'outliers' => array_map(static fn ($v) => round($v, 4), array_values($outliers)),
             'distribution' => $distribution,
             'bucket_labels' => $bucketLabels,
         ];
@@ -482,6 +487,7 @@ class PerformanceController extends AbstractController
      * Shows detailed statistical analysis with charts to identify optimization targets.
      *
      * @param Request $request The HTTP request
+     *
      * @return Response The HTTP response
      */
     #[Route(
@@ -539,15 +545,16 @@ class PerformanceController extends AbstractController
             'environment' => $env,
             'environments' => $environments,
             'template' => $this->template,
-            'total_routes' => count($routes),
+            'total_routes' => \count($routes),
         ]);
     }
 
     /**
      * Get routes that need attention (outliers and worst performers).
      *
-     * @param array $routes Array of RouteData entities
+     * @param array $routes        Array of RouteData entities
      * @param array $advancedStats Advanced statistics
+     *
      * @return array<string, mixed> Routes needing attention grouped by reason
      */
     private function getRoutesNeedingAttention(array $routes, array $advancedStats): array
@@ -569,7 +576,7 @@ class PerformanceController extends AbstractController
 
         foreach ($routes as $route) {
             // Slow request time (above 95th percentile)
-            if ($route->getRequestTime() !== null && isset($requestTimeStats['percentiles'][95])) {
+            if (null !== $route->getRequestTime() && isset($requestTimeStats['percentiles'][95])) {
                 if ($route->getRequestTime() > $requestTimeStats['percentiles'][95]) {
                     $result['slow_request_time'][] = [
                         'route' => $route,
@@ -580,7 +587,7 @@ class PerformanceController extends AbstractController
             }
 
             // High query count (above 95th percentile)
-            if ($route->getTotalQueries() !== null && isset($queryCountStats['percentiles'][95])) {
+            if (null !== $route->getTotalQueries() && isset($queryCountStats['percentiles'][95])) {
                 if ($route->getTotalQueries() > $queryCountStats['percentiles'][95]) {
                     $result['high_query_count'][] = [
                         'route' => $route,
@@ -591,7 +598,7 @@ class PerformanceController extends AbstractController
             }
 
             // High memory usage (above 95th percentile)
-            if ($route->getMemoryUsage() !== null && isset($memoryStats['percentiles'][95])) {
+            if (null !== $route->getMemoryUsage() && isset($memoryStats['percentiles'][95])) {
                 $memoryMB = $route->getMemoryUsage() / 1024 / 1024;
                 if ($memoryMB > $memoryStats['percentiles'][95]) {
                     $result['high_memory'][] = [
@@ -604,10 +611,10 @@ class PerformanceController extends AbstractController
 
             // Outliers
             $isOutlier = false;
-            if ($route->getRequestTime() !== null && in_array(round($route->getRequestTime(), 4), $requestTimeStats['outliers'] ?? [])) {
+            if (null !== $route->getRequestTime() && \in_array(round($route->getRequestTime(), 4), $requestTimeStats['outliers'] ?? [], true)) {
                 $isOutlier = true;
             }
-            if ($route->getTotalQueries() !== null && in_array($route->getTotalQueries(), $queryCountStats['outliers'] ?? [])) {
+            if (null !== $route->getTotalQueries() && \in_array($route->getTotalQueries(), $queryCountStats['outliers'] ?? [], true)) {
                 $isOutlier = true;
             }
 
@@ -620,9 +627,9 @@ class PerformanceController extends AbstractController
         }
 
         // Sort by value descending
-        usort($result['slow_request_time'], fn($a, $b) => $b['value'] <=> $a['value']);
-        usort($result['high_query_count'], fn($a, $b) => $b['value'] <=> $a['value']);
-        usort($result['high_memory'], fn($a, $b) => $b['value'] <=> $a['value']);
+        usort($result['slow_request_time'], static fn ($a, $b) => $b['value'] <=> $a['value']);
+        usort($result['high_query_count'], static fn ($a, $b) => $b['value'] <=> $a['value']);
+        usort($result['high_memory'], static fn ($a, $b) => $b['value'] <=> $a['value']);
 
         return $result;
     }
@@ -635,31 +642,31 @@ class PerformanceController extends AbstractController
     protected function getAvailableEnvironments(): array
     {
         // Try to get from cache first
-        if ($this->cacheService !== null) {
+        if (null !== $this->cacheService) {
             $cached = $this->cacheService->getCachedEnvironments();
-            if ($cached !== null) {
+            if (null !== $cached) {
                 return $cached;
             }
         }
 
         try {
             $environments = $this->metricsService->getRepository()->getDistinctEnvironments();
-            
+
             // Cache the result
-            if ($this->cacheService !== null) {
+            if (null !== $this->cacheService) {
                 $this->cacheService->cacheEnvironments($environments);
             }
-            
+
             return $environments;
         } catch (\Exception $e) {
             // Fallback to default environments if repository query fails
             $default = ['dev', 'test', 'prod'];
-            
+
             // Cache the fallback
-            if ($this->cacheService !== null) {
+            if (null !== $this->cacheService) {
                 $this->cacheService->cacheEnvironments($default);
             }
-            
+
             return $default;
         }
     }
@@ -668,6 +675,7 @@ class PerformanceController extends AbstractController
      * Export performance metrics to CSV.
      *
      * @param Request $request The HTTP request
+     *
      * @return StreamedResponse The CSV file response
      */
     #[Route(
@@ -748,7 +756,7 @@ class PerformanceController extends AbstractController
         });
 
         $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
-        $response->headers->set('Content-Disposition', sprintf(
+        $response->headers->set('Content-Disposition', \sprintf(
             'attachment; filename="performance_metrics_%s_%s.csv"',
             $env,
             date('Y-m-d_His')
@@ -761,6 +769,7 @@ class PerformanceController extends AbstractController
      * Export performance metrics to JSON.
      *
      * @param Request $request The HTTP request
+     *
      * @return Response The JSON file response
      */
     #[Route(
@@ -800,7 +809,7 @@ class PerformanceController extends AbstractController
         }
 
         // Convert routes to array
-        $data = array_map(function (RouteData $route) {
+        $data = array_map(static function (RouteData $route) {
             return [
                 'route_name' => $route->getName(),
                 'http_method' => $route->getHttpMethod(),
@@ -821,12 +830,12 @@ class PerformanceController extends AbstractController
         $response = new Response(json_encode([
             'environment' => $env,
             'exported_at' => date('c'),
-            'total_records' => count($data),
+            'total_records' => \count($data),
             'data' => $data,
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES));
 
         $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
-        $response->headers->set('Content-Disposition', sprintf(
+        $response->headers->set('Content-Disposition', \sprintf(
             'attachment; filename="performance_metrics_%s_%s.json"',
             $env,
             date('Y-m-d_His')
@@ -839,6 +848,7 @@ class PerformanceController extends AbstractController
      * Build filters array from request parameters.
      *
      * @param Request $request The HTTP request
+     *
      * @return array<string, mixed> Filters array
      */
     private function buildFiltersFromRequest(Request $request): array
@@ -890,6 +900,7 @@ class PerformanceController extends AbstractController
      * Returns performance metrics data formatted for Chart.js visualization.
      *
      * @param Request $request The HTTP request
+     *
      * @return Response JSON response with chart data
      */
     #[Route(
@@ -920,7 +931,7 @@ class PerformanceController extends AbstractController
 
         $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
         $routeName = $request->query->get('route');
-        $days = (int) ($request->query->get('days', 7));
+        $days = (int) $request->query->get('days', 7);
         $metric = $request->query->get('metric', 'requestTime'); // requestTime, queryTime, totalQueries, memoryUsage
 
         try {
@@ -933,7 +944,7 @@ class PerformanceController extends AbstractController
         }
 
         return new Response(
-            json_encode($data, JSON_PRETTY_PRINT),
+            json_encode($data, \JSON_PRETTY_PRINT),
             Response::HTTP_OK,
             ['Content-Type' => 'application/json']
         );
@@ -945,6 +956,7 @@ class PerformanceController extends AbstractController
      * Optionally filters by environment. Requires CSRF token validation.
      *
      * @param Request $request The HTTP request
+     *
      * @return RedirectResponse Redirects back to the dashboard
      */
     #[Route(
@@ -979,9 +991,10 @@ class PerformanceController extends AbstractController
             $this->addFlash('error', 'Invalid security token. Please try again.');
             // Redirect to referer if available
             $referer = $request->headers->get('referer');
-            if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+            if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                 return $this->redirect($referer);
             }
+
             return $this->redirectToRoute('nowo_performance.index');
         }
 
@@ -990,16 +1003,17 @@ class PerformanceController extends AbstractController
             $env = $request->request->get('env');
 
             // Dispatch before event
-            if ($this->eventDispatcher !== null) {
+            if (null !== $this->eventDispatcher) {
                 $beforeEvent = new BeforeRecordsClearedEvent($env);
                 $this->eventDispatcher->dispatch($beforeEvent);
 
                 if ($beforeEvent->isClearingPrevented()) {
                     $this->addFlash('warning', 'Clearing was prevented by an event listener.');
                     $referer = $request->headers->get('referer');
-                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                    if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                         return $this->redirect($referer);
                     }
+
                     return $this->redirectToRoute('nowo_performance.index');
                 }
             }
@@ -1008,13 +1022,13 @@ class PerformanceController extends AbstractController
             $deletedCount = $repository->deleteAll($env);
 
             // Dispatch after event
-            if ($this->eventDispatcher !== null) {
+            if (null !== $this->eventDispatcher) {
                 $afterEvent = new AfterRecordsClearedEvent($deletedCount, $env);
                 $this->eventDispatcher->dispatch($afterEvent);
             }
 
             // Invalidate cache
-            if ($this->cacheService !== null) {
+            if (null !== $this->cacheService) {
                 $env = $request->request->get('env');
                 if ($env) {
                     $this->cacheService->clearStatistics($env);
@@ -1024,18 +1038,18 @@ class PerformanceController extends AbstractController
                 }
             }
 
-            $message = $env 
-                ? sprintf('Successfully deleted %d performance record(s) for environment "%s".', $deletedCount, $env)
-                : sprintf('Successfully deleted %d performance record(s) from all environments.', $deletedCount);
-            
+            $message = $env
+                ? \sprintf('Successfully deleted %d performance record(s) for environment "%s".', $deletedCount, $env)
+                : \sprintf('Successfully deleted %d performance record(s) from all environments.', $deletedCount);
+
             $this->addFlash('success', $message);
         } catch (\Exception $e) {
-            $this->addFlash('error', 'An error occurred while clearing performance data: ' . $e->getMessage());
+            $this->addFlash('error', 'An error occurred while clearing performance data: '.$e->getMessage());
         }
 
         // Redirect to referer if available, otherwise to the dashboard
         $referer = $request->headers->get('referer');
-        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+        if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
             return $this->redirect($referer);
         }
 
@@ -1047,8 +1061,9 @@ class PerformanceController extends AbstractController
      *
      * Requires CSRF token validation and record management to be enabled.
      *
-     * @param int $id The record ID
+     * @param int     $id      The record ID
      * @param Request $request The HTTP request
+     *
      * @return RedirectResponse Redirects back to the dashboard
      */
     #[Route(
@@ -1084,12 +1099,13 @@ class PerformanceController extends AbstractController
 
         // Validate CSRF token
         $token = $request->request->get('_token');
-        if (!$this->isCsrfTokenValid('delete_performance_record_' . $id, $token)) {
+        if (!$this->isCsrfTokenValid('delete_performance_record_'.$id, $token)) {
             $this->addFlash('error', 'Invalid security token. Please try again.');
             $referer = $request->headers->get('referer');
-            if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+            if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                 return $this->redirect($referer);
             }
+
             return $this->redirectToRoute('nowo_performance.index');
         }
 
@@ -1097,13 +1113,14 @@ class PerformanceController extends AbstractController
             $repository = $this->metricsService->getRepository();
             // Get the record before deleting to know the environment
             $routeData = $repository->find($id);
-            
-            if ($routeData === null) {
-                $this->addFlash('error', sprintf('Record with ID %d not found.', $id));
+
+            if (null === $routeData) {
+                $this->addFlash('error', \sprintf('Record with ID %d not found.', $id));
                 $referer = $request->headers->get('referer');
-                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                     return $this->redirect($referer);
                 }
+
                 return $this->redirectToRoute('nowo_performance.index');
             }
 
@@ -1111,31 +1128,32 @@ class PerformanceController extends AbstractController
             $routeName = $routeData->getName();
 
             // Dispatch before event
-            if ($this->eventDispatcher !== null) {
+            if (null !== $this->eventDispatcher) {
                 $beforeEvent = new BeforeRecordDeletedEvent($routeData);
                 $this->eventDispatcher->dispatch($beforeEvent);
 
                 if ($beforeEvent->isDeletionPrevented()) {
                     $this->addFlash('warning', 'Deletion was prevented by an event listener.');
                     $referer = $request->headers->get('referer');
-                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                    if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                         return $this->redirect($referer);
                     }
+
                     return $this->redirectToRoute('nowo_performance.index');
                 }
             }
-            
+
             $deleted = $repository->deleteById($id);
 
             if ($deleted) {
                 // Dispatch after event
-                if ($this->eventDispatcher !== null) {
+                if (null !== $this->eventDispatcher) {
                     $afterEvent = new AfterRecordDeletedEvent($id, $routeName, $env);
                     $this->eventDispatcher->dispatch($afterEvent);
                 }
 
                 // Invalidate cache
-                if ($this->cacheService !== null) {
+                if (null !== $this->cacheService) {
                     if ($env) {
                         $this->cacheService->clearStatistics($env);
                     }
@@ -1147,11 +1165,11 @@ class PerformanceController extends AbstractController
                 $this->addFlash('error', 'Record not found.');
             }
         } catch (\Exception $e) {
-            $this->addFlash('error', 'An error occurred while deleting the record: ' . $e->getMessage());
+            $this->addFlash('error', 'An error occurred while deleting the record: '.$e->getMessage());
         }
 
         $referer = $request->headers->get('referer');
-        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+        if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
             return $this->redirect($referer);
         }
 
@@ -1163,8 +1181,9 @@ class PerformanceController extends AbstractController
      *
      * Requires CSRF token validation and review system to be enabled.
      *
-     * @param int $id The record ID
+     * @param int     $id      The record ID
      * @param Request $request The HTTP request
+     *
      * @return RedirectResponse Redirects back to the dashboard
      */
     #[Route(
@@ -1200,31 +1219,33 @@ class PerformanceController extends AbstractController
 
         try {
             $repository = $this->metricsService->getRepository();
-            
+
             // Get the record before updating to know the environment
             $routeData = $repository->find($id);
-            
-            if ($routeData === null) {
-                $this->addFlash('error', sprintf('Record with ID %d not found.', $id));
+
+            if (null === $routeData) {
+                $this->addFlash('error', \sprintf('Record with ID %d not found.', $id));
                 $referer = $request->headers->get('referer');
-                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                     return $this->redirect($referer);
                 }
+
                 return $this->redirectToRoute('nowo_performance.index');
             }
 
             // Create and handle the form
             $form = $this->createForm(ReviewRouteDataType::class, null, [
-                'csrf_token_id' => 'review_performance_record_' . $id,
+                'csrf_token_id' => 'review_performance_record_'.$id,
             ]);
             $form->handleRequest($request);
 
             if (!$form->isSubmitted() || !$form->isValid()) {
                 $this->addFlash('error', 'Invalid form data. Please try again.');
                 $referer = $request->headers->get('referer');
-                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                     return $this->redirect($referer);
                 }
+
                 return $this->redirectToRoute('nowo_performance.index');
             }
 
@@ -1249,16 +1270,17 @@ class PerformanceController extends AbstractController
             $env = $routeData->getEnv();
 
             // Dispatch before event
-            if ($this->eventDispatcher !== null) {
+            if (null !== $this->eventDispatcher) {
                 $beforeEvent = new BeforeRecordReviewedEvent($routeData, $queriesImprovedBool, $timeImprovedBool, $reviewedBy);
                 $this->eventDispatcher->dispatch($beforeEvent);
 
                 if ($beforeEvent->isReviewPrevented()) {
                     $this->addFlash('warning', 'Review was prevented by an event listener.');
                     $referer = $request->headers->get('referer');
-                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                    if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                         return $this->redirect($referer);
                     }
+
                     return $this->redirectToRoute('nowo_performance.index');
                 }
 
@@ -1267,7 +1289,7 @@ class PerformanceController extends AbstractController
                 $timeImprovedBool = $beforeEvent->getTimeImproved();
                 $reviewedBy = $beforeEvent->getReviewedBy();
             }
-            
+
             $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy);
 
             if ($updated) {
@@ -1275,13 +1297,13 @@ class PerformanceController extends AbstractController
                 $updatedRouteData = $repository->find($id);
 
                 // Dispatch after event
-                if ($this->eventDispatcher !== null && $updatedRouteData !== null) {
+                if (null !== $this->eventDispatcher && null !== $updatedRouteData) {
                     $afterEvent = new AfterRecordReviewedEvent($updatedRouteData);
                     $this->eventDispatcher->dispatch($afterEvent);
                 }
 
                 // Invalidate cache
-                if ($this->cacheService !== null) {
+                if (null !== $this->cacheService) {
                     if ($env) {
                         $this->cacheService->clearStatistics($env);
                     }
@@ -1293,11 +1315,11 @@ class PerformanceController extends AbstractController
                 $this->addFlash('error', 'Record not found.');
             }
         } catch (\Exception $e) {
-            $this->addFlash('error', 'An error occurred while reviewing the record: ' . $e->getMessage());
+            $this->addFlash('error', 'An error occurred while reviewing the record: '.$e->getMessage());
         }
 
         $referer = $request->headers->get('referer');
-        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+        if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
             return $this->redirect($referer);
         }
 
@@ -1307,10 +1329,11 @@ class PerformanceController extends AbstractController
     /**
      * Get chart data for visualization.
      *
-     * @param string $env Environment name
+     * @param string      $env       Environment name
      * @param string|null $routeName Route name (optional)
-     * @param int $days Number of days to include
-     * @param string $metric Metric to chart (requestTime, queryTime, totalQueries, memoryUsage)
+     * @param int         $days      Number of days to include
+     * @param string      $metric    Metric to chart (requestTime, queryTime, totalQueries, memoryUsage)
+     *
      * @return array<string, mixed> Chart data structure
      */
     private function getChartData(string $env, ?string $routeName, int $days, string $metric): array
@@ -1323,7 +1346,7 @@ class PerformanceController extends AbstractController
             'date_to' => $endDate,
         ];
 
-        if ($routeName !== null && $routeName !== '') {
+        if (null !== $routeName && '' !== $routeName) {
             $filters['route_name_pattern'] = $routeName;
         }
 
@@ -1333,7 +1356,7 @@ class PerformanceController extends AbstractController
         $groupedData = [];
         foreach ($routes as $route) {
             $date = $route->getCreatedAt()?->format('Y-m-d') ?? $route->getUpdatedAt()?->format('Y-m-d') ?? date('Y-m-d');
-            
+
             if (!isset($groupedData[$date])) {
                 $groupedData[$date] = [
                     'count' => 0,
@@ -1350,7 +1373,7 @@ class PerformanceController extends AbstractController
                 default => $route->getRequestTime() ?? 0.0,
             };
 
-            $groupedData[$date]['count']++;
+            ++$groupedData[$date]['count'];
             $groupedData[$date]['sum'] += $value;
             $groupedData[$date]['max'] = max($groupedData[$date]['max'], $value);
         }
@@ -1364,7 +1387,7 @@ class PerformanceController extends AbstractController
         while ($currentDate <= $endDate) {
             $dateKey = $currentDate->format('Y-m-d');
             $labels[] = $currentDate->format('M d');
-            
+
             if (isset($groupedData[$dateKey])) {
                 $avgData[] = round($groupedData[$dateKey]['sum'] / $groupedData[$dateKey]['count'], 2);
                 $maxData[] = round($groupedData[$dateKey]['max'], 2);
@@ -1388,14 +1411,14 @@ class PerformanceController extends AbstractController
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => 'Average ' . $metricLabel,
+                    'label' => 'Average '.$metricLabel,
                     'data' => $avgData,
                     'borderColor' => 'rgb(75, 192, 192)',
                     'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
                     'tension' => 0.1,
                 ],
                 [
-                    'label' => 'Maximum ' . $metricLabel,
+                    'label' => 'Maximum '.$metricLabel,
                     'data' => $maxData,
                     'borderColor' => 'rgb(255, 99, 132)',
                     'backgroundColor' => 'rgba(255, 99, 132, 0.2)',

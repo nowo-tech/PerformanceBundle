@@ -23,7 +23,6 @@ class ReviewRouteDataType extends AbstractType
      *
      * @param FormBuilderInterface $builder The form builder
      * @param array<string, mixed> $options The form options
-     * @return void
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -73,7 +72,6 @@ class ReviewRouteDataType extends AbstractType
      * Configure form options.
      *
      * @param OptionsResolver $resolver The options resolver
-     * @return void
      */
     public function configureOptions(OptionsResolver $resolver): void
     {
@@ -87,8 +85,6 @@ class ReviewRouteDataType extends AbstractType
 
     /**
      * Get the form block prefix.
-     *
-     * @return string
      */
     public function getBlockPrefix(): string
     {

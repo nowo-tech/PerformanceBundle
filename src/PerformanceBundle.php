@@ -29,7 +29,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2025 Nowo.tech
  */
-class NowoPerformanceBundle extends Bundle
+class PerformanceBundle extends Bundle
 {
     /**
      * Overridden to allow for the custom extension alias.
@@ -45,13 +45,10 @@ class NowoPerformanceBundle extends Bundle
         return $this->extension ??= new PerformanceExtension();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
-        
+
         // Register compiler pass for QueryTrackingMiddleware
         $container->addCompilerPass(new QueryTrackingMiddlewarePass());
     }

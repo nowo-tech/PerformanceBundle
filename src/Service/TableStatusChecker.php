@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -19,16 +18,16 @@ class TableStatusChecker
     /**
      * Constructor.
      *
-     * @param ManagerRegistry $registry Doctrine registry
-     * @param string $connectionName The name of the Doctrine connection to use
-     * @param string $tableName The configured table name
+     * @param ManagerRegistry $registry       Doctrine registry
+     * @param string          $connectionName The name of the Doctrine connection to use
+     * @param string          $tableName      The configured table name
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
         #[Autowire('%nowo_performance.connection%')]
         private readonly string $connectionName,
         #[Autowire('%nowo_performance.table_name%')]
-        private readonly string $tableName
+        private readonly string $tableName,
     ) {
     }
 
@@ -42,14 +41,14 @@ class TableStatusChecker
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $connection->createSchemaManager();
-            
+
             // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
             $actualTableName = method_exists($metadata, 'getTableName')
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName);
-            
+
             return $schemaManager->tablesExist([$actualTableName]);
         } catch (\Exception $e) {
             // If there's any error (e.g., connection issue, metadata not loaded), assume table doesn't exist
