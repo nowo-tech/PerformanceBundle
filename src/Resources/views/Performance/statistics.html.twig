@@ -122,6 +122,47 @@
                             <h5 class="mb-0">{{ stats.label }} Statistics</h5>
                         </div>
                         <div class="card-body">
+                            <div class="alert alert-light border mb-3">
+                                <h6 class="alert-heading">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lightbulb me-2" viewBox="0 0 16 16">
+                                        <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13h-5a.5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm3.8 1.6a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0zm2.4 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0zm2.4 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0z"/>
+                                    </svg>
+                                    Key Insights from {{ stats.label }} Statistics:
+                                </h6>
+                                <ul class="mb-0 small">
+                                    {% if metricKey == 'request_time' %}
+                                        <li><strong>Mean vs Median:</strong> If mean > median, you have slow outliers pulling the average up</li>
+                                        <li><strong>Standard Deviation:</strong> High std dev indicates inconsistent performance across routes</li>
+                                        <li><strong>P95/P99:</strong> Shows worst-case scenarios - focus optimization on routes above P95</li>
+                                        <li><strong>Outliers:</strong> Routes with unusually high request times need immediate attention</li>
+                                    {% elseif metricKey == 'query_time' %}
+                                        <li><strong>Mean vs Median:</strong> Large difference indicates some routes have very slow queries</li>
+                                        <li><strong>Standard Deviation:</strong> High variability suggests inconsistent query performance</li>
+                                        <li><strong>P95/P99:</strong> Identifies routes with the slowest database operations</li>
+                                        <li><strong>Outliers:</strong> Routes with slow queries may need index optimization or query refactoring</li>
+                                    {% elseif metricKey == 'query_count' %}
+                                        <li><strong>Mean vs Median:</strong> If mean >> median, some routes execute excessive queries (N+1 problem)</li>
+                                        <li><strong>Standard Deviation:</strong> High std dev shows inconsistent query efficiency</li>
+                                        <li><strong>P95/P99:</strong> Routes above P95 likely have N+1 queries or missing eager loading</li>
+                                        <li><strong>Outliers:</strong> Routes with 50+ queries should be optimized with eager loading or caching</li>
+                                    {% elseif metricKey == 'memory_usage' %}
+                                        <li><strong>Mean vs Median:</strong> Large difference indicates memory-intensive outliers</li>
+                                        <li><strong>Standard Deviation:</strong> High variability suggests some routes load too much data</li>
+                                        <li><strong>P95/P99:</strong> Routes above P95 may cause memory issues under load</li>
+                                        <li><strong>Outliers:</strong> High memory routes may need pagination or data limiting</li>
+                                    {% elseif metricKey == 'access_count' %}
+                                        <li><strong>Mean vs Median:</strong> If mean >> median, few routes handle most traffic (80/20 rule)</li>
+                                        <li><strong>Standard Deviation:</strong> High std dev indicates uneven traffic distribution</li>
+                                        <li><strong>P95/P99:</strong> These are your hot paths - optimize these routes first for maximum impact</li>
+                                        <li><strong>Outliers:</strong> Frequently accessed routes should be prioritized for optimization</li>
+                                    {% else %}
+                                        <li><strong>Mean:</strong> Average value across all routes</li>
+                                        <li><strong>Median:</strong> Middle value - less affected by outliers than mean</li>
+                                        <li><strong>Mode:</strong> Most common value</li>
+                                        <li><strong>Standard Deviation:</strong> Measure of variability - higher means more inconsistency</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
                             <div class="row mb-3">
                                 <div class="col-md-3">
                                     <div class="text-center p-3 bg-light rounded">
@@ -260,6 +301,16 @@
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Advanced Performance Statistics</h1>
                 <p class="mt-2 text-sm text-gray-600">Detailed statistical analysis to identify optimization targets</p>
+                <div class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                    <h5 class="text-blue-900 font-semibold mb-2">📊 Understanding the Statistics</h5>
+                    <p class="text-blue-800 text-sm mb-2">This page provides comprehensive statistical analysis of your route performance metrics. Each section includes:</p>
+                    <ul class="text-blue-800 text-sm space-y-1">
+                        <li><strong>Statistical Measures:</strong> Mean, Median, Mode, and Standard Deviation to understand data distribution</li>
+                        <li><strong>Percentiles:</strong> P25, P50, P75, P90, P95, P99 to identify performance thresholds</li>
+                        <li><strong>Distribution Histogram:</strong> Visual representation showing how values are distributed across routes</li>
+                        <li><strong>Outliers:</strong> Routes with unusual values that may need special attention</li>
+                    </ul>
+                </div>
             </div>
             <div>
                 <a href="{{ path('nowo_performance.index', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
@@ -333,6 +384,48 @@
             {% if stats.count > 0 %}
                 <div class="mb-6 bg-white shadow rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ stats.label }} Statistics</h3>
+                    <div class="mb-4 p-4 bg-gray-50 border-l-4 border-gray-400 rounded">
+                        <h5 class="text-gray-900 font-semibold mb-2 flex items-center">
+                            <svg class="h-5 w-5 text-gray-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
+                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
+                            </svg>
+                            Key Insights from {{ stats.label }} Statistics:
+                        </h5>
+                        <ul class="text-gray-700 text-sm space-y-1">
+                            {% if metricKey == 'request_time' %}
+                                <li><strong>Mean vs Median:</strong> If mean > median, you have slow outliers pulling the average up</li>
+                                <li><strong>Standard Deviation:</strong> High std dev indicates inconsistent performance across routes</li>
+                                <li><strong>P95/P99:</strong> Shows worst-case scenarios - focus optimization on routes above P95</li>
+                                <li><strong>Outliers:</strong> Routes with unusually high request times need immediate attention</li>
+                            {% elseif metricKey == 'query_time' %}
+                                <li><strong>Mean vs Median:</strong> Large difference indicates some routes have very slow queries</li>
+                                <li><strong>Standard Deviation:</strong> High variability suggests inconsistent query performance</li>
+                                <li><strong>P95/P99:</strong> Identifies routes with the slowest database operations</li>
+                                <li><strong>Outliers:</strong> Routes with slow queries may need index optimization or query refactoring</li>
+                            {% elseif metricKey == 'query_count' %}
+                                <li><strong>Mean vs Median:</strong> If mean >> median, some routes execute excessive queries (N+1 problem)</li>
+                                <li><strong>Standard Deviation:</strong> High std dev shows inconsistent query efficiency</li>
+                                <li><strong>P95/P99:</strong> Routes above P95 likely have N+1 queries or missing eager loading</li>
+                                <li><strong>Outliers:</strong> Routes with 50+ queries should be optimized with eager loading or caching</li>
+                            {% elseif metricKey == 'memory_usage' %}
+                                <li><strong>Mean vs Median:</strong> Large difference indicates memory-intensive outliers</li>
+                                <li><strong>Standard Deviation:</strong> High variability suggests some routes load too much data</li>
+                                <li><strong>P95/P99:</strong> Routes above P95 may cause memory issues under load</li>
+                                <li><strong>Outliers:</strong> High memory routes may need pagination or data limiting</li>
+                            {% elseif metricKey == 'access_count' %}
+                                <li><strong>Mean vs Median:</strong> If mean >> median, few routes handle most traffic (80/20 rule)</li>
+                                <li><strong>Standard Deviation:</strong> High std dev indicates uneven traffic distribution</li>
+                                <li><strong>P95/P99:</strong> These are your hot paths - optimize these routes first for maximum impact</li>
+                                <li><strong>Outliers:</strong> Frequently accessed routes should be prioritized for optimization</li>
+                            {% else %}
+                                <li><strong>Mean:</strong> Average value across all routes</li>
+                                <li><strong>Median:</strong> Middle value - less affected by outliers than mean</li>
+                                <li><strong>Mode:</strong> Most common value</li>
+                                <li><strong>Standard Deviation:</strong> Measure of variability - higher means more inconsistency</li>
+                            {% endif %}
+                        </ul>
+                    </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div class="text-center p-4 bg-gray-50 rounded">
                             <div class="text-sm text-gray-600">Mean</div>
