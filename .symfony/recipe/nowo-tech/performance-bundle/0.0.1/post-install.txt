@@ -1,0 +1,30 @@
+Performance Bundle has been installed!
+
+The following files have been created:
+  - config/packages/dev/nowo_performance.yaml (configuration)
+
+The bundle will automatically track route performance metrics in configured environments.
+
+To use the bundle:
+1. Create the database table: php bin/console doctrine:schema:update --force
+   (or use migrations: php bin/console doctrine:migrations:diff && php bin/console doctrine:migrations:migrate)
+2. Make requests to your routes - metrics will be automatically tracked
+3. Use the command to manually set/update metrics: php bin/console nowo:performance:set-route <route>
+
+Available commands:
+- nowo:performance:set-route - Set or update route performance metrics
+
+The bundle automatically tracks:
+- Request execution time
+- Database query count
+- Query execution time
+
+Metrics are stored in the 'routes_data' table and are only updated if they're worse
+(higher request time or more queries) than existing metrics.
+
+You can customize the configuration in config/packages/dev/nowo_performance.yaml.
+The bundle works with default values if you delete the config file.
+
+For more information, see:
+- README.md: https://github.com/nowo-tech/performance-bundle
+- Documentation: docs/INSTALLATION.md and docs/CONFIGURATION.md

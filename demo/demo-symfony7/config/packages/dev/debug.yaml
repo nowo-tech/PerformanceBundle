@@ -1,0 +1,4 @@
+when@dev:
+    debug:
+        # Forwards VarDumper DataCollector to the profiler
+        dump_destination: true

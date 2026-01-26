@@ -1,0 +1,39 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    # Repository
+    Nowo\PerformanceBundle\Repository\RouteDataRepository:
+        public: true
+
+    # Services (uses Autowire attributes for parameters)
+    Nowo\PerformanceBundle\Service\PerformanceMetricsService:
+        public: true
+
+    # Data Collector
+    Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector:
+        tags:
+            - { name: data_collector, template: '@NowoPerformanceBundle/Collector/performance.html.twig', id: 'performance', priority: 300 }
+
+    # Doctrine Event Subscriber for table name (uses Autowire attribute)
+    Nowo\PerformanceBundle\EventSubscriber\TableNameSubscriber:
+        tags:
+            - { name: doctrine.event_subscriber }
+
+    # Event Subscriber (uses AsEventListener attributes and Autowire for parameters)
+    Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber: ~
+
+    # DBAL Query Tracking Middleware
+    Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware:
+        public: false
+
+    # Commands (uses AsCommand attribute, autoconfigure handles the tag)
+    Nowo\PerformanceBundle\Command\:
+        resource: '../../Command/*'
+        tags: ['console.command']
+
+    # Controllers (uses Route attributes, autoconfigure handles the tag)
+    Nowo\PerformanceBundle\Controller\:
+        resource: '../../Controller/*'

@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Products{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Products</h1>
+        <a href="{{ path('product_new') }}" class="btn btn-primary">Create New</a>
+    </div>
+
+    {% if products|length > 0 %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product.id }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>${{ product.price }}</td>
+                        <td><span class="badge bg-{{ product.status == 'active' ? 'success' : (product.status == 'inactive' ? 'danger' : 'warning') }}">{{ product.status }}</span></td>
+                        <td>{{ product.createdAt ? product.createdAt|date('Y-m-d H:i') : 'N/A' }}</td>
+                        <td>
+                            <a href="{{ path('product_show', {'id': product.id}) }}" class="btn btn-sm btn-info">Show</a>
+                            <a href="{{ path('product_edit', {'id': product.id}) }}" class="btn btn-sm btn-warning">Edit</a>
+                            <form method="post" action="{{ path('product_delete', {'id': product.id}) }}" style="display: inline;" onsubmit="return confirm('Are you sure?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No products found. <a href="{{ path('product_new') }}">Create one</a>!</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+nowo_performance:
+    enabled: true
+    environments: ['dev', 'test']
+    connection: 'default'
+    track_queries: true
+    track_request_time: true
+    ignore_routes:
+        - '_wdt'
+        - '_profiler'
+        - '_error'

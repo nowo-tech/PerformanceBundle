@@ -1,0 +1,45 @@
+# Performance Bundle Configuration
+# This file was automatically created by Symfony Flex.
+# You can modify it according to your needs.
+
+nowo_performance:
+    # Enable or disable performance tracking
+    enabled: true
+
+    # Environments where performance tracking is enabled
+    environments: ['dev', 'test']
+
+    # Doctrine connection name to use for storing metrics
+    connection: 'default'
+
+    # Table name for storing route performance data
+    table_name: 'routes_data'
+
+    # Track database query count and execution time
+    track_queries: true
+
+    # Track request execution time
+    track_request_time: true
+
+    # Routes to ignore (not tracked)
+    ignore_routes:
+        - '_wdt'      # Web Debug Toolbar
+        - '_profiler' # Symfony Profiler
+        - '_error'    # Error pages
+
+    # Performance dashboard configuration
+    dashboard:
+        # Enable or disable the performance dashboard
+        enabled: true
+        
+        # Route path for the dashboard (e.g., /performance, /metrics)
+        path: '/performance'
+        
+        # Route prefix (optional, e.g., /admin, /monitoring)
+        # Leave empty to use no prefix
+        prefix: ''
+        
+        # Required roles to access the dashboard
+        # Users must have at least one of these roles
+        # Leave empty array to allow access without role requirements
+        roles: []

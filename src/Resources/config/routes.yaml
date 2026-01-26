@@ -1,0 +1,16 @@
+# Performance Bundle Routes
+# These routes can be imported with a custom prefix in your application
+# 
+# To use these routes, import them in your config/routes.yaml:
+#   nowo_performance:
+#       resource: '@NowoPerformanceBundle/Resources/config/routes.yaml'
+#       prefix: /admin  # Optional custom prefix (this will override the configured prefix)
+#
+# The route path is configured via nowo_performance.dashboard.path parameter
+# Default path is '/performance', but you can change it in your configuration
+# The prefix and path are combined: prefix + path = final route
+
+nowo_performance:
+    resource: '../../Controller/PerformanceController.php'
+    type: attribute
+    prefix: '%nowo_performance.dashboard.prefix%%nowo_performance.dashboard.path%'

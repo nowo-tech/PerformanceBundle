@@ -1,0 +1,126 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {% if collector.enabled %}
+        {% set request_time = collector.requestTime ?? 0 %}
+        {% set query_count = collector.queryCount ?? 0 %}
+        {% set icon %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span class="sf-toolbar-value">{{ collector.formattedRequestTime }}</span>
+        {% endset %}
+
+        {% set text %}
+            <div class="sf-toolbar-info-piece">
+                <b>Request Time</b>
+                <span>{{ collector.formattedRequestTime }}</span>
+            </div>
+            {% if query_count > 0 %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Queries</b>
+                    <span>{{ query_count }} ({{ collector.formattedQueryTime }})</span>
+                </div>
+            {% endif %}
+            <div class="sf-toolbar-info-piece">
+                <b>Route</b>
+                <span>{{ collector.routeName ?? 'N/A' }}</span>
+            </div>
+        {% endset %}
+
+        {% set status = request_time < 200 ? 'status-success' : (request_time < 500 ? 'status-warning' : 'status-error') %}
+        {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url, status: status }) }}
+    {% endif %}
+{% endblock %}
+
+{% block menu %}
+    <span class="label">
+        <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        </span>
+        <strong>Performance</strong>
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>Performance Metrics</h2>
+
+    {% if not collector.enabled %}
+        <div class="empty">
+            <p>Performance tracking is disabled.</p>
+        </div>
+    {% else %}
+        <div class="metrics">
+            <div class="metric">
+                <div class="value">{{ collector.formattedRequestTime }}</div>
+                <div class="label">Request Time</div>
+            </div>
+            {% if collector.queryCount > 0 %}
+                <div class="metric">
+                    <div class="value">{{ collector.queryCount }}</div>
+                    <div class="label">Database Queries</div>
+                </div>
+                <div class="metric">
+                    <div class="value">{{ collector.formattedQueryTime }}</div>
+                    <div class="label">Query Time</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Route Name</td>
+                    <td><code>{{ collector.routeName ?? 'N/A' }}</code></td>
+                </tr>
+                <tr>
+                    <td>Request Time</td>
+                    <td>{{ collector.formattedRequestTime }}</td>
+                </tr>
+                <tr>
+                    <td>Query Count</td>
+                    <td>{{ collector.queryCount }}</td>
+                </tr>
+                <tr>
+                    <td>Query Time</td>
+                    <td>{{ collector.formattedQueryTime }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {% endif %}
+
+    <style>
+        .metrics {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            min-width: 120px;
+        }
+        .metric .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        .metric .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+{% endblock %}

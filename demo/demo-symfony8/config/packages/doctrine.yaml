@@ -1,0 +1,19 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        server_version: '8.0'
+    orm:
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        mappings:
+            App:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'App\Entity'
+                alias: App
+            NowoPerformanceBundle:
+                is_bundle: false
+                type: attribute
+                dir: '/bundles/src/Entity'
+                prefix: 'Nowo\PerformanceBundle\Entity'
+                alias: NowoPerformanceBundle

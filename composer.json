@@ -1,0 +1,98 @@
+{
+    "name": "nowo-tech/performance-bundle",
+    "description": "Symfony bundle for tracking and analyzing route performance metrics. Records request time, database queries count, and query execution time for performance analysis.",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "keywords": [
+        "symfony",
+        "symfony-bundle",
+        "bundle",
+        "performance",
+        "metrics",
+        "monitoring",
+        "profiling",
+        "route-performance",
+        "query-tracking",
+        "performance-analysis",
+        "doctrine",
+        "doctrine-orm",
+        "orm",
+        "database",
+        "mysql",
+        "postgresql",
+        "sqlite"
+    ],
+    "homepage": "https://github.com/nowo-tech/performance-bundle",
+    "support": {
+        "issues": "https://github.com/nowo-tech/performance-bundle/issues",
+        "source": "https://github.com/nowo-tech/performance-bundle"
+    },
+    "authors": [
+        {
+            "name": "Héctor Franco Aceituno",
+            "email": "hectorfranco@nowo.tech",
+            "homepage": "https://github.com/HecFranco",
+            "role": "Developer"
+        },
+        {
+            "name": "Nowo.tech",
+            "homepage": "https://nowo.tech"
+        }
+    ],
+    "require": {
+        "php": ">=8.1 <8.6",
+        "symfony/config": "^6.1 || ^7.0 || ^8.0",
+        "symfony/console": "^6.1 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.1 || ^7.0 || ^8.0",
+        "symfony/framework-bundle": "^6.1 || ^7.0 || ^8.0",
+        "symfony/http-kernel": "^6.1 || ^7.0 || ^8.0",
+        "symfony/stopwatch": "^6.1 || ^7.0 || ^8.0",
+        "symfony/yaml": "^6.1 || ^7.0 || ^8.0",
+        "doctrine/orm": "^2.13 || ^3.0",
+        "doctrine/doctrine-bundle": "^2.8 || ^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "rector/rector": "^0.14.8|^0.15"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nowo\\PerformanceBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nowo\\PerformanceBundle\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage --coverage-clover coverage.xml",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "rector": "rector process src tests --dry-run",
+        "rector-fix": "rector process src tests",
+        "qa": [
+            "@cs-check",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run PHPUnit tests",
+        "test-coverage": "Run PHPUnit tests with code coverage",
+        "cs-check": "Check code style with PHP-CS-Fixer",
+        "cs-fix": "Fix code style with PHP-CS-Fixer",
+        "rector": "Check code with Rector (dry-run)",
+        "rector-fix": "Fix code with Rector",
+        "qa": "Run all quality assurance checks"
+    }
+}
