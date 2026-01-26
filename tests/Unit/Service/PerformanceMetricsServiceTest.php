@@ -61,7 +61,9 @@ final class PerformanceMetricsServiceTest extends TestCase
             0.5,
             10,
             0.2,
-            ['id' => 123]
+            ['id' => 123],
+            null,
+            'GET'
         );
     }
 
@@ -123,7 +125,10 @@ final class PerformanceMetricsServiceTest extends TestCase
             'dev',
             0.3, // Better (lower)
             5,   // Better (fewer)
-            0.1
+            0.1,
+            null,
+            null,
+            'GET'
         );
 
         // Should remain unchanged
@@ -151,6 +156,8 @@ final class PerformanceMetricsServiceTest extends TestCase
         $this->service->recordMetrics(
             'app_home',
             'dev',
+            null,
+            null,
             null,
             null,
             null,
@@ -224,5 +231,157 @@ final class PerformanceMetricsServiceTest extends TestCase
         $result = $this->service->getWorstPerformingRoutes('prod', 5);
 
         $this->assertSame($routes, $result);
+    }
+
+    public function testSetCacheService(): void
+    {
+        $cacheService = $this->createMock(\Nowo\PerformanceBundle\Service\PerformanceCacheService::class);
+        
+        $this->service->setCacheService($cacheService);
+        
+        // Test that cache service is set (we can't directly verify it, but we can test it's used in recordMetrics)
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $cacheService
+            ->expects($this->once())
+            ->method('invalidateStatistics')
+            ->with('dev');
+
+        $this->service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2, null, null, 'GET');
+    }
+
+    public function testRecordMetricsWithException(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush')
+            ->willThrowException(new \Exception('Database error'));
+
+        // Should not throw exception
+        $this->service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2, null, null, 'POST');
+    }
+
+    public function testRecordMetricsWithHttpMethod(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->callback(function ($routeData) {
+                return $routeData instanceof RouteData && $routeData->getHttpMethod() === 'PUT';
+            }));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'PUT'
+        );
+    }
+
+    public function testRecordMetricsWithMemoryUsage(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->callback(function ($routeData) {
+                return $routeData instanceof RouteData && $routeData->getMemoryUsage() === 1048576;
+            }));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            1048576, // 1MB
+            'DELETE'
+        );
+    }
+
+    public function testRecordMetricsUpdatesMemoryUsageWhenWorse(): void
+    {
+        $existingRoute = new RouteData();
+        $existingRoute->setName('app_home');
+        $existingRoute->setEnv('dev');
+        $existingRoute->setMemoryUsage(512000); // 512KB
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn($existingRoute);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        // Update with worse memory usage (higher)
+        $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.8, // Worse (higher)
+            15,  // Worse (more)
+            0.4,
+            null,
+            1048576, // 1MB - worse (higher)
+            'PATCH'
+        );
+
+        $this->assertSame(1048576, $existingRoute->getMemoryUsage());
+    }
+
+    public function testGetRepository(): void
+    {
+        $repository = $this->service->getRepository();
+        $this->assertSame($this->repository, $repository);
     }
 }

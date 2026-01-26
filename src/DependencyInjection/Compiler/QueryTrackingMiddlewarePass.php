@@ -7,7 +7,6 @@ namespace Nowo\PerformanceBundle\DependencyInjection\Compiler;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Compiler pass to register QueryTrackingMiddleware with Doctrine DBAL.
@@ -52,21 +51,15 @@ class QueryTrackingMiddlewarePass implements CompilerPassInterface
             return;
         }
 
-        // Register QueryTrackingMiddleware service if not already registered
+        // Register QueryTrackingMiddleware service
         $middlewareId = 'nowo_performance.dbal.query_tracking_middleware';
         if (!$container->hasDefinition($middlewareId)) {
             $container->register($middlewareId, QueryTrackingMiddleware::class)
                 ->setPublic(false);
         }
 
-        // Note: We cannot modify Doctrine configuration from a CompilerPass
-        // The middleware uses static methods, so it can work without being registered
-        // Users can manually add it to doctrine.yaml if needed:
-        // doctrine:
-        //   dbal:
-        //     connections:
-        //       default:
-        //         middlewares:
-        //           - Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware
+        // Note: The middleware is applied via QueryTrackingConnectionSubscriber
+        // which uses reflection to wrap the driver after connection creation.
+        // This approach works with all versions of DoctrineBundle 3.x.
     }
 }

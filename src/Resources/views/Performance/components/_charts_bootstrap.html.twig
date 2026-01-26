@@ -1,0 +1,95 @@
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Performance Trends</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="chart-metric" class="form-label">Metric:</label>
+                    <select id="chart-metric" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                        <option value="requestTime">Request Time</option>
+                        <option value="queryTime">Query Time</option>
+                        <option value="totalQueries">Total Queries</option>
+                        <option value="memoryUsage">Memory Usage</option>
+                    </select>
+                    <label for="chart-days" class="form-label ms-3">Days:</label>
+                    <select id="chart-days" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                        <option value="7">Last 7 days</option>
+                        <option value="14">Last 14 days</option>
+                        <option value="30">Last 30 days</option>
+                    </select>
+                </div>
+                <canvas id="performanceChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const env = '{{ environment }}';
+    const routeName = '{{ currentRoute ?? '' }}';
+    let chart = null;
+
+    function loadChartData(metric, days) {
+        const url = new URL('{{ path('nowo_performance.api.chart_data') }}', window.location.origin);
+        url.searchParams.set('env', env);
+        url.searchParams.set('metric', metric);
+        url.searchParams.set('days', days);
+        if (routeName) {
+            url.searchParams.set('route', routeName);
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (chart) {
+                    chart.destroy();
+                }
+
+                const ctx = document.getElementById('performanceChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading chart data:', error);
+            });
+    }
+
+    // Initial load
+    loadChartData('requestTime', 7);
+
+    // Update on change
+    document.getElementById('chart-metric').addEventListener('change', function() {
+        const days = document.getElementById('chart-days').value;
+        loadChartData(this.value, days);
+    });
+
+    document.getElementById('chart-days').addEventListener('change', function() {
+        const metric = document.getElementById('chart-metric').value;
+        loadChartData(metric, this.value);
+    });
+})();
+</script>

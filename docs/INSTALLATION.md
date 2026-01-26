@@ -22,7 +22,7 @@ The bundle should be automatically registered via Symfony Flex. If not, manually
 
 return [
     // ...
-    Nowo\PerformanceBundle\PerformanceBundle::class => ['all' => true],
+    Nowo\PerformanceBundle\NowoPerformanceBundle::class => ['all' => true],
 ];
 ```
 
@@ -45,13 +45,29 @@ nowo_performance:
 
 ## Step 4: Create the Database Table
 
-### Option A: Using Doctrine Schema Update
+### Option A: Using the Bundle Command (Recommended)
+
+```bash
+php bin/console nowo:performance:create-table
+```
+
+This command will:
+- Check if the table already exists
+- Create the table with all necessary columns and indexes
+- Show you exactly what SQL is being executed
+
+If the table already exists, you can force recreation (WARNING: This will delete all data):
+```bash
+php bin/console nowo:performance:create-table --force
+```
+
+### Option B: Using Doctrine Schema Update
 
 ```bash
 php bin/console doctrine:schema:update --force
 ```
 
-### Option B: Using Migrations (Recommended)
+### Option C: Using Migrations (Recommended for Production)
 
 ```bash
 php bin/console doctrine:migrations:diff

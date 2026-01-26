@@ -192,6 +192,83 @@ nowo_performance:
         roles: []  # No restrictions (default)
 ```
 
+#### `dashboard.template`
+
+**Type:** `string`  
+**Default:** `'bootstrap'`  
+**Options:** `'bootstrap'` or `'tailwind'`
+
+CSS framework to use for the dashboard interface.
+
+```yaml
+nowo_performance:
+    dashboard:
+        template: 'bootstrap'  # Use Bootstrap 5 (default)
+        # or
+        template: 'tailwind'   # Use Tailwind CSS
+```
+
+**Bootstrap (default):**
+- Uses Bootstrap 5.3.0 from CDN
+- Traditional grid system and components
+- Includes Bootstrap JavaScript bundle
+
+**Tailwind:**
+- Uses Tailwind CSS from CDN
+- Utility-first CSS framework
+- Modern, responsive design
+- No JavaScript dependencies
+
+**Customization:**
+You can override individual components regardless of the selected template:
+- Bootstrap components: `_statistics_bootstrap.html.twig`, `_filters_bootstrap.html.twig`, `_routes_table_bootstrap.html.twig`
+- Tailwind components: `_statistics_tailwind.html.twig`, `_filters_tailwind.html.twig`, `_routes_table_tailwind.html.twig`
+
+Override them in: `templates/bundles/NowoPerformanceBundle/Performance/components/`
+
+#### `dashboard.enable_record_management`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Enable individual record deletion from the dashboard. When enabled, a delete button appears for each record in the routes table.
+
+```yaml
+nowo_performance:
+    dashboard:
+        enable_record_management: true
+```
+
+**Security:**
+- Requires CSRF token validation
+- Respects dashboard role restrictions
+- Delete operations redirect to referer
+
+#### `dashboard.enable_review_system`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Enable the record review system. When enabled, users can mark records as reviewed and indicate if queries or time improved.
+
+```yaml
+nowo_performance:
+    dashboard:
+        enable_review_system: true
+```
+
+**Features:**
+- Review modal for each record
+- Track if queries improved (yes/no/not specified)
+- Track if time improved (yes/no/not specified)
+- Record reviewer username and review date
+- Visual indicators for review status
+
+**Security:**
+- Requires CSRF token validation
+- Respects dashboard role restrictions
+- Reviewer is automatically set from current user
+
 ## Environment-Specific Configuration
 
 You can override configuration per environment:

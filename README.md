@@ -28,14 +28,22 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ Automatic route performance tracking via event subscribers
 - ✅ Database query counting and execution time tracking
 - ✅ Request execution time measurement
+- ✅ **Memory usage tracking** - Track peak memory consumption per route
+- ✅ **Access frequency tracking** - Track how often routes are accessed
 - ✅ Route data persistence in database
 - ✅ Environment-specific metrics (dev, test, prod)
 - ✅ Configurable route ignore list
 - ✅ Command to manually set/update route metrics
 - ✅ Support for multiple Doctrine connections
 - ✅ Performance dashboard with filtering and sorting
+- ✅ **Data export** - CSV and JSON export functionality
+- ✅ **Record management** - Delete individual records (optional)
+- ✅ **Review system** - Mark records as reviewed with improvement tracking (optional)
+- ✅ **Bootstrap and Tailwind CSS support** - Choose your preferred CSS framework
 - ✅ Role-based access control for dashboard
-- ✅ WebProfiler integration
+- ✅ WebProfiler integration with ranking information
+- ✅ **Chart.js integration** - Interactive performance charts
+- ✅ **Symfony UX Twig Components** - Optional modern component system
 - ✅ Symfony 6.1+, 7.x, and 8.x compatible
 
 ## Installation
@@ -51,7 +59,7 @@ Then, register the bundle in your `config/bundles.php`:
 
 return [
     // ...
-    Nowo\PerformanceBundle\PerformanceBundle::class => ['all' => true],
+    Nowo\PerformanceBundle\NowoPerformanceBundle::class => ['all' => true],
 ];
 ```
 
@@ -71,13 +79,21 @@ nowo_performance:
         - '_wdt'
         - '_profiler'
         - '_error'
-    dashboard:
-        enabled: true
-        path: '/performance'
-        roles: ['ROLE_ADMIN']  # Optional: restrict access
+        dashboard:
+            enabled: true
+            path: '/performance'
+            template: 'bootstrap'  # or 'tailwind'
+            roles: ['ROLE_ADMIN']  # Optional: restrict access
 ```
 
 2. **Create the database table**:
+
+   **Option A: Using the bundle command (Recommended)**:
+   ```bash
+   php bin/console nowo:performance:create-table
+   ```
+
+   **Option B: Using Doctrine Schema Update**:
 
 ```bash
 php bin/console doctrine:schema:update --force
@@ -156,12 +172,16 @@ nowo_performance:
     dashboard:                       # Performance dashboard
         enabled: true                # Enable/disable dashboard
         path: '/performance'         # Dashboard route path
+        template: 'bootstrap'        # CSS framework: 'bootstrap' or 'tailwind'
         roles: []                    # Required roles (empty = unrestricted)
 ```
 
 ## Commands
 
 - **`nowo:performance:set-route`** - Set or update route performance metrics
+- **`nowo:performance:create-table`** - Create the performance metrics database table
+- **`nowo:performance:diagnose`** - Diagnostic report of bundle configuration and status
+- **`nowo:performance:check-dependencies`** - Check status of optional dependencies
 
 ## Entity Structure
 
@@ -173,6 +193,14 @@ The `RouteData` entity stores:
 - `totalQueries` - Total number of database queries
 - `queryTime` - Total query execution time in seconds
 - `requestTime` - Request execution time in seconds
+- `memoryUsage` - Peak memory usage in bytes (nullable)
+- `accessCount` - Number of times route was accessed (default: 1)
+- `lastAccessedAt` - Last access timestamp (nullable)
+- `reviewed` - Whether record has been reviewed (default: false)
+- `reviewedAt` - Review timestamp (nullable)
+- `queriesImproved` - Whether queries improved after review (nullable)
+- `timeImproved` - Whether time improved after review (nullable)
+- `reviewedBy` - Username of reviewer (nullable)
 - `params` - Route parameters (JSON)
 - `createdAt` - Creation timestamp
 - `updatedAt` - Last update timestamp
@@ -212,6 +240,7 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 - [Commands](docs/COMMANDS.md) - Command documentation
 - [CHANGELOG](docs/CHANGELOG.md) - Version history
 - [UPGRADING](docs/UPGRADING.md) - Upgrade instructions
+- [ROADMAP](docs/ROADMAP.md) - Future improvements and features
 
 ## Testing
 

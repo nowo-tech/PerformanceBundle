@@ -1,0 +1,418 @@
+{% set enableRecordManagement = enableRecordManagement|default(false) %}
+{% set enableReviewSystem = enableReviewSystem|default(false) %}
+{% set reviewForms = reviewForms|default({}) %}
+
+{% if template == 'bootstrap' %}
+    {# Bootstrap version #}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'routes_table.title'|trans({}, 'nowo_performance') }} ({{ routes|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if routes is empty %}
+                        <div class="alert alert-info">
+                            <p class="mb-0">{{ 'dashboard.no_routes_found'|trans({}, 'nowo_performance') }}</p>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'routes_table.route_name'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.http_method'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.environment'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.request_time'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.query_time'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.total_queries'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.memory_usage'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.access_count'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.last_accessed_at'|trans({}, 'nowo_performance') }}</th>
+                                        <th>{{ 'routes_table.updated_at'|trans({}, 'nowo_performance') }}</th>
+                                        {% if enableReviewSystem %}
+                                            <th>{{ 'routes_table.review_status'|trans({}, 'nowo_performance') }}</th>
+                                        {% endif %}
+                                        {% if enableRecordManagement or enableReviewSystem %}
+                                            <th>{{ 'routes_table.actions'|trans({}, 'nowo_performance') }}</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for route in routes %}
+                                        <tr>
+                                            <td><code>{{ route.name ?? 'N/A' }}</code></td>
+                                            <td>
+                                                {% if route.httpMethod %}
+                                                    {% set methodColors = {
+                                                        'GET': 'bg-primary',
+                                                        'POST': 'bg-success',
+                                                        'PUT': 'bg-warning',
+                                                        'PATCH': 'bg-info',
+                                                        'DELETE': 'bg-danger',
+                                                        'OPTIONS': 'bg-secondary',
+                                                        'HEAD': 'bg-dark'
+                                                    } %}
+                                                    <span class="badge {{ methodColors[route.httpMethod]|default('bg-secondary') }}">{{ route.httpMethod }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td><span class="badge bg-secondary">{{ route.env ?? 'N/A' }}</span></td>
+                                            <td>
+                                                {% if route.requestTime %}
+                                                    {% set thresholds = thresholds|default({}) %}
+                                                    {% set requestTimeWarning = thresholds.request_time.warning|default(0.5) %}
+                                                    {% set requestTimeCritical = thresholds.request_time.critical|default(1.0) %}
+                                                    <span class="badge {{ route.requestTime > requestTimeCritical ? 'bg-danger' : (route.requestTime > requestTimeWarning ? 'bg-warning' : 'bg-success') }}">
+                                                        {{ (route.requestTime * 1000)|number_format(2) }} ms
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if route.queryTime %}
+                                                    <span class="badge bg-info">{{ (route.queryTime * 1000)|number_format(2) }} ms</span>
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if route.totalQueries %}
+                                                    {% set thresholds = thresholds|default({}) %}
+                                                    {% set queryCountWarning = thresholds.query_count.warning|default(20) %}
+                                                    {% set queryCountCritical = thresholds.query_count.critical|default(50) %}
+                                                    <span class="badge {{ route.totalQueries > queryCountCritical ? 'bg-danger' : (route.totalQueries > queryCountWarning ? 'bg-warning' : 'bg-success') }}">
+                                                        {{ route.totalQueries }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if route.memoryUsage %}
+                                                    {% set thresholds = thresholds|default({}) %}
+                                                    {% set memoryUsageWarning = thresholds.memory_usage.warning|default(20.0) %}
+                                                    {% set memoryUsageCritical = thresholds.memory_usage.critical|default(50.0) %}
+                                                    {% set memoryMB = route.memoryUsage / 1024 / 1024 %}
+                                                    <span class="badge {{ memoryMB > memoryUsageCritical ? 'bg-danger' : (memoryMB > memoryUsageWarning ? 'bg-warning' : 'bg-info') }}">
+                                                        {{ memoryMB|number_format(2) }} MB
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary" title="Number of times this route has been accessed">
+                                                    {{ route.getAccessCount()|default(1)|number_format(0) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if route.getLastAccessedAt() %}
+                                                    {{ route.getLastAccessedAt()|date(dateTimeFormat|default('Y-m-d H:i:s')) }}
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if route.updatedAt %}
+                                                    {{ route.updatedAt|date(dateTimeFormat|default('Y-m-d H:i:s')) }}
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            {% if enableReviewSystem %}
+                                                <td>
+                                                    {% if route.isReviewed() %}
+                                                        <span class="badge bg-success">{{ 'routes_table.reviewed'|trans({}, 'nowo_performance') }}</span>
+                                                        {% if route.getReviewedAt() %}
+                                                            <br><small class="text-muted">{{ route.getReviewedAt()|date(dateFormat|default('Y-m-d H:i')) }}</small>
+                                                        {% endif %}
+                                                        {% if route.getQueriesImproved() is not null %}
+                                                            <br><small class="{{ route.getQueriesImproved() ? 'text-success' : 'text-danger' }}">
+                                                                {{ route.getQueriesImproved() ? 'routes_table.queries_improved'|trans({}, 'nowo_performance') : 'routes_table.queries_not_improved'|trans({}, 'nowo_performance') }}
+                                                            </small>
+                                                        {% endif %}
+                                                        {% if route.getTimeImproved() is not null %}
+                                                            <br><small class="{{ route.getTimeImproved() ? 'text-success' : 'text-danger' }}">
+                                                                {{ route.getTimeImproved() ? 'routes_table.time_improved'|trans({}, 'nowo_performance') : 'routes_table.time_not_improved'|trans({}, 'nowo_performance') }}
+                                                            </small>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ 'routes_table.not_reviewed'|trans({}, 'nowo_performance') }}</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endif %}
+                                            {% if enableRecordManagement or enableReviewSystem %}
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        {% if enableRecordManagement %}
+                                                            <form method="post" action="{{ path('nowo_performance.delete', {id: route.getId()}) }}" style="display: inline;" onsubmit="return confirm('{{ 'routes_table.confirm_delete'|trans({}, 'nowo_performance') }}');">
+                                                                <input type="hidden" name="_token" value="{{ csrf_token('delete_performance_record_' ~ route.getId()) }}">
+                                                                <button type="submit" class="btn btn-sm btn-danger" title="{{ 'routes_table.delete_record'|trans({}, 'nowo_performance') }}">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                                                    </svg>
+                                                                </button>
+                                                            </form>
+                                                        {% endif %}
+                                                        {% if enableReviewSystem %}
+                                                            {% if not route.isReviewed() %}
+                                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal{{ route.getId() }}" title="{{ 'routes_table.mark_as_reviewed'|trans({}, 'nowo_performance') }}">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                                                        <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                                                                    </svg>
+                                                                </button>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if enableReviewSystem and not route.isReviewed() and reviewForms[route.getId()] is defined %}
+                                                        <div class="modal fade" id="reviewModal{{ route.getId() }}" tabindex="-1">
+                                                            <div class="modal-dialog">
+                                                                <div class="modal-content">
+                                                                    {% set reviewForm = reviewForms[route.getId()] %}
+                                                                    {{ form_start(reviewForm, {'action': path('nowo_performance.review', {id: route.getId()})}) }}
+                                                                        <div class="modal-header">
+                                                                            <h5 class="modal-title">{{ 'review.modal_title'|trans({}, 'nowo_performance') }}</h5>
+                                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                        </div>
+                                                                        <div class="modal-body">
+                                                                            <div class="mb-3">
+                                                                                {{ form_label(reviewForm.queries_improved) }}
+                                                                                {{ form_widget(reviewForm.queries_improved) }}
+                                                                                {{ form_errors(reviewForm.queries_improved) }}
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                                {{ form_label(reviewForm.time_improved) }}
+                                                                                {{ form_widget(reviewForm.time_improved) }}
+                                                                                {{ form_errors(reviewForm.time_improved) }}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="modal-footer">
+                                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'routes_table.cancel'|trans({}, 'nowo_performance') }}</button>
+                                                                            {{ form_widget(reviewForm.submit) }}
+                                                                        </div>
+                                                                    {{ form_end(reviewForm) }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    {# Tailwind version #}
+    {% set enableRecordManagement = enableRecordManagement|default(false) %}
+    {% set enableReviewSystem = enableReviewSystem|default(false) %}
+    {% set reviewForms = reviewForms|default({}) %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ 'routes_table.title'|trans({}, 'nowo_performance') }} ({{ routes|length }})</h3>
+            {% if routes is empty %}
+                <div class="rounded-md bg-blue-50 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">{{ 'dashboard.no_routes_found'|trans({}, 'nowo_performance') }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.route_name'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.http_method'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.environment'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.request_time'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.query_time'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.total_queries'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.memory_usage'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.access_count'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.last_accessed_at'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.updated_at'|trans({}, 'nowo_performance') }}</th>
+                                {% if enableReviewSystem %}
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.review_status'|trans({}, 'nowo_performance') }}</th>
+                                {% endif %}
+                                {% if enableRecordManagement or enableReviewSystem %}
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.actions'|trans({}, 'nowo_performance') }}</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for route in routes %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap"><code class="text-sm text-gray-900">{{ route.name ?? 'N/A' }}</code></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ route.env ?? 'N/A' }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if route.requestTime %}
+                                            {% set thresholds = thresholds|default({}) %}
+                                            {% set requestTimeWarning = (thresholds.request_time.warning|default(0.5)) * 1000 %}
+                                            {% set requestTimeCritical = (thresholds.request_time.critical|default(1.0)) * 1000 %}
+                                            {% set timeMs = route.requestTime * 1000 %}
+                                            {% if timeMs > requestTimeCritical %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ timeMs|number_format(2) }} ms</span>
+                                            {% elseif timeMs > requestTimeWarning %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ timeMs|number_format(2) }} ms</span>
+                                            {% else %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ timeMs|number_format(2) }} ms</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-sm text-gray-500">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if route.queryTime %}
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 text-cyan-800">{{ (route.queryTime * 1000)|number_format(2) }} ms</span>
+                                        {% else %}
+                                            <span class="text-sm text-gray-500">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if route.totalQueries %}
+                                            {% set thresholds = thresholds|default({}) %}
+                                            {% set queryCountWarning = thresholds.query_count.warning|default(20) %}
+                                            {% set queryCountCritical = thresholds.query_count.critical|default(50) %}
+                                            {% if route.totalQueries > queryCountCritical %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ route.totalQueries }}</span>
+                                            {% elseif route.totalQueries > queryCountWarning %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ route.totalQueries }}</span>
+                                            {% else %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ route.totalQueries }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-sm text-gray-500">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if route.memoryUsage %}
+                                            {% set thresholds = thresholds|default({}) %}
+                                            {% set memoryUsageWarning = thresholds.memory_usage.warning|default(20.0) %}
+                                            {% set memoryUsageCritical = thresholds.memory_usage.critical|default(50.0) %}
+                                            {% set memoryMB = route.memoryUsage / 1024 / 1024 %}
+                                            {% if memoryMB > memoryUsageCritical %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ memoryMB|number_format(2) }} MB</span>
+                                            {% elseif memoryMB > memoryUsageWarning %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ memoryMB|number_format(2) }} MB</span>
+                                            {% else %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 text-cyan-800">{{ memoryMB|number_format(2) }} MB</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-sm text-gray-500">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" title="Number of times this route has been accessed">
+                                            {{ route.getAccessCount()|default(1)|number_format(0) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {% if route.getLastAccessedAt() %}{{ route.getLastAccessedAt()|date(dateTimeFormat|default('Y-m-d H:i:s')) }}{% else %}<span class="text-gray-400">N/A</span>{% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {% if route.updatedAt %}{{ route.updatedAt|date(dateTimeFormat|default('Y-m-d H:i:s')) }}{% else %}<span class="text-gray-400">N/A</span>{% endif %}
+                                    </td>
+                                    {% if enableReviewSystem %}
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            {% if route.isReviewed() %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ 'routes_table.reviewed'|trans({}, 'nowo_performance') }}</span>
+                                                {% if route.getReviewedAt() %}
+                                                    <div class="mt-1 text-xs text-gray-500">{{ route.getReviewedAt()|date(dateFormat|default('Y-m-d H:i')) }}</div>
+                                                {% endif %}
+                                                {% if route.getQueriesImproved() is not null %}
+                                                    <div class="mt-1 text-xs {{ route.getQueriesImproved() ? 'text-green-600' : 'text-red-600' }}">
+                                                        {{ route.getQueriesImproved() ? 'routes_table.queries_improved'|trans({}, 'nowo_performance') : 'routes_table.queries_not_improved'|trans({}, 'nowo_performance') }}
+                                                    </div>
+                                                {% endif %}
+                                                {% if route.getTimeImproved() is not null %}
+                                                    <div class="mt-1 text-xs {{ route.getTimeImproved() ? 'text-green-600' : 'text-red-600' }}">
+                                                        {{ route.getTimeImproved() ? 'routes_table.time_improved'|trans({}, 'nowo_performance') : 'routes_table.time_not_improved'|trans({}, 'nowo_performance') }}
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'routes_table.not_reviewed'|trans({}, 'nowo_performance') }}</span>
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
+                                    {% if enableRecordManagement or enableReviewSystem %}
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div class="flex space-x-2">
+                                                {% if enableRecordManagement %}
+                                                    <form method="post" action="{{ path('nowo_performance.delete', {id: route.getId()}) }}" style="display: inline;" onsubmit="return confirm('{{ 'routes_table.confirm_delete'|trans({}, 'nowo_performance') }}');">
+                                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_performance_record_' ~ route.getId()) }}">
+                                                        <button type="submit" class="text-red-600 hover:text-red-900" title="{{ 'routes_table.delete_record'|trans({}, 'nowo_performance') }}">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                                {% if enableReviewSystem %}
+                                                    {% if not route.isReviewed() %}
+                                                        <button type="button" class="text-blue-600 hover:text-blue-900" onclick="document.getElementById('reviewModal{{ route.getId() }}').classList.remove('hidden')" title="{{ 'routes_table.mark_as_reviewed'|trans({}, 'nowo_performance') }}">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            </svg>
+                                                        </button>
+                                                        {% if reviewForms[route.getId()] is defined %}
+                                                            {% set reviewForm = reviewForms[route.getId()] %}
+                                                            <div id="reviewModal{{ route.getId() }}" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                                                                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                                                                    {{ form_start(reviewForm, {'action': path('nowo_performance.review', {id: route.getId()})}) }}
+                                                                        <div class="flex justify-between items-center mb-4">
+                                                                            <h3 class="text-lg font-medium">{{ 'review.modal_title'|trans({}, 'nowo_performance') }}</h3>
+                                                                            <button type="button" onclick="document.getElementById('reviewModal{{ route.getId() }}').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                                </svg>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div class="mb-4">
+                                                                            {{ form_label(reviewForm.queries_improved, null, {'attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                                                                            {{ form_widget(reviewForm.queries_improved, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                                                                            {{ form_errors(reviewForm.queries_improved) }}
+                                                                        </div>
+                                                                        <div class="mb-4">
+                                                                            {{ form_label(reviewForm.time_improved, null, {'attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                                                                            {{ form_widget(reviewForm.time_improved, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                                                                            {{ form_errors(reviewForm.time_improved) }}
+                                                                        </div>
+                                                                    <div class="flex justify-end space-x-2">
+                                                                        <button type="button" onclick="document.getElementById('reviewModal{{ route.getId() }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">{{ 'routes_table.cancel'|trans({}, 'nowo_performance') }}</button>
+                                                                        {{ form_widget(reviewForm.submit, {'attr': {'class': 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'}}) }}
+                                                                    </div>
+                                                                {{ form_end(reviewForm) }}
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}

@@ -1,0 +1,36 @@
+{# Statistics Cards Component #}
+{# This component can be overridden by creating: templates/bundles/NowoPerformanceBundle/Performance/components/_statistics.html.twig #}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Routes</h5>
+                <h2 class="text-primary">{{ stats.total_routes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Queries</h5>
+                <h2 class="text-info">{{ stats.total_queries }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Avg Request Time</h5>
+                <h2 class="text-warning">{{ (stats.avg_request_time * 1000)|number_format(2) }} ms</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Max Request Time</h5>
+                <h2 class="text-danger">{{ (stats.max_request_time * 1000)|number_format(2) }} ms</h2>
+            </div>
+        </div>
+    </div>
+</div>

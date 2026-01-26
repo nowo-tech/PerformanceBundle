@@ -37,6 +37,15 @@ final class RouteDataTest extends TestCase
         $routeData->setName(null);
         $this->assertNull($routeData->getName());
         
+        // Test httpMethod
+        $this->assertNull($routeData->getHttpMethod());
+        $routeData->setHttpMethod('GET');
+        $this->assertSame('GET', $routeData->getHttpMethod());
+        $routeData->setHttpMethod('POST');
+        $this->assertSame('POST', $routeData->getHttpMethod());
+        $routeData->setHttpMethod(null);
+        $this->assertNull($routeData->getHttpMethod());
+        
         // Test totalQueries
         $this->assertNull($routeData->getTotalQueries());
         $routeData->setTotalQueries(10);

@@ -1,0 +1,120 @@
+# Übersetzungen für Nowo Performance Bundle
+# Domäne: nowo_performance
+
+dashboard:
+  title: Leistungsmetriken-Dashboard
+  subtitle: Routen-Leistungsmetriken überwachen und analysieren
+  advanced_statistics: Erweiterte Statistiken
+  export_csv: CSV exportieren
+  export_json: JSON exportieren
+  clear_all_records: Alle Datensätze löschen
+  back_to_dashboard: Zurück zum Dashboard
+  no_routes_found: Keine Routen für die ausgewählten Filter gefunden.
+statistics:
+  total_routes: Gesamte Routen
+  total_queries: Gesamte Abfragen
+  avg_request_time: Durchschn. Anforderungszeit
+  max_request_time: Max. Anforderungszeit
+  avg_query_time: Durchschn. Abfragezeit
+  max_query_time: Max. Abfragezeit
+  max_queries: Max. Abfragen
+  not_available: N/V
+routes_table:
+  title: Routen
+  route_name: Routenname
+  environment: Umgebung
+  request_time: Anforderungszeit
+  query_time: Abfragezeit
+  total_queries: Gesamte Abfragen
+  memory_usage: Speichernutzung
+  access_count: Anzahl der Zugriffe
+  last_accessed_at: Letzter Zugriff
+  updated_at: Aktualisiert
+  review_status: Überprüfungsstatus
+  actions: Aktionen
+  reviewed: Überprüft
+  not_reviewed: Nicht überprüft
+  queries_improved: 'Abfragen: ✓ Verbessert'
+  queries_not_improved: 'Abfragen: ✗ Nicht verbessert'
+  time_improved: 'Zeit: ✓ Verbessert'
+  time_not_improved: 'Zeit: ✗ Nicht verbessert'
+  delete_record: Datensatz löschen
+  mark_as_reviewed: Als überprüft markieren
+  delete: Löschen
+  review: Überprüfen
+  cancel: Abbrechen
+  confirm_delete: Sind Sie sicher, dass Sie diesen Datensatz löschen möchten?
+filters:
+  title: Filter
+  show_advanced: Erweiterte Filter anzeigen
+  hide_advanced: Erweiterte Filter ausblenden
+  advanced_filters: Erweiterte Filter
+  environment: Umgebung
+  route_name: Routenname
+  sort_by: Sortieren nach
+  order: Reihenfolge
+  limit: Begrenzung
+  min_request_time: Min. Anforderungszeit (s)
+  max_request_time: Max. Anforderungszeit (s)
+  min_query_count: Min. Anzahl der Abfragen
+  max_query_count: Max. Anzahl der Abfragen
+  date_from: Datum Von
+  date_to: Datum Bis
+  apply_filters: Filter anwenden
+  reset: Zurücksetzen
+  placeholder_route: Nach Routenname filtern...
+  placeholder_time: '0.0000'
+  placeholder_count: '0'
+review:
+  modal_title: Als überprüft markieren
+  queries_improved: Abfragen verbessert?
+  time_improved: Zeit verbessert?
+  not_specified: Nicht angegeben
+  'yes': Ja
+  'no': Nein
+  mark_as_reviewed: Als überprüft markieren
+confirmations:
+  clear_all_records: Sind Sie sicher, dass Sie alle Leistungsdatensätze löschen möchten?
+    Diese Aktion kann nicht rückgängig gemacht werden.
+  delete_record: Sind Sie sicher, dass Sie diesen Datensatz löschen möchten?
+flash:
+  records_cleared: Alle Datensätze wurden erfolgreich gelöscht.
+  record_deleted: Der Datensatz wurde erfolgreich gelöscht.
+  record_reviewed: Der Datensatz wurde erfolgreich als überprüft markiert.
+  error: Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten.
+statistics_page:
+  title: Erweiterte Leistungsstatistiken
+  subtitle: Detaillierte statistische Analyse zur Identifizierung von Optimierungszielen
+  routes_needing_attention: Routen, die Aufmerksamkeit benötigen
+  routes_above_p95: Routen über dem 95. Perzentil
+  routes_with_outliers: Routen mit Ausreißern
+  metric: Metrik
+  mean: Mittelwert
+  median: Median
+  mode: Modus
+  std_deviation: Standardabweichung
+  min: Min
+  max: Max
+  range: Bereich
+  p25: P25
+  p50: P50
+  p75: P75
+  p90: P90
+  p95: P95
+  p99: P99
+  outliers: Ausreißer
+  histogram: Verteilungshistogramm
+  request_time: Anforderungszeit
+  query_time: Abfragezeit
+  query_count: Anzahl der Abfragen
+  memory_usage: Speichernutzung
+  access_count: Anzahl der Zugriffe
+sort_options:
+  request_time: Anforderungszeit
+  query_time: Abfragezeit
+  queries: Abfragen
+  access_count: Anzahl der Zugriffe
+  route_name: Routenname
+order_options:
+  descending: Absteigend
+  ascending: Aufsteigend

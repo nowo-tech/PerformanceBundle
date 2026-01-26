@@ -42,21 +42,15 @@ final class SetRouteMetricsCommandTest extends TestCase
         $routeData->setQueryTime(0.2);
 
         $this->metricsService
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getRouteData')
             ->with('app_home', 'dev')
-            ->willReturn(null);
+            ->willReturnOnConsecutiveCalls(null, $routeData);
 
         $this->metricsService
             ->expects($this->once())
             ->method('recordMetrics')
             ->with('app_home', 'dev', 0.5, 10, 0.2, null);
-
-        $this->metricsService
-            ->expects($this->once())
-            ->method('getRouteData')
-            ->with('app_home', 'dev')
-            ->willReturn($routeData);
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([

@@ -1,0 +1,265 @@
+{% if template == 'bootstrap' %}
+    {# Bootstrap version #}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ 'filters.title'|trans({}, 'nowo_performance') }}</h5>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                        <span class="when-expanded">{{ 'filters.hide_advanced'|trans({}, 'nowo_performance') }}</span>
+                        <span class="when-collapsed">{{ 'filters.show_advanced'|trans({}, 'nowo_performance') }}</span>
+                    </button>
+                </div>
+                <div class="card-body">
+                    {{ form_start(form, {'action': path('nowo_performance.index'), 'attr': {'class': 'row g-3'}}) }}
+                        {# Basic Filters #}
+                        <div class="col-md-3">
+                            {{ form_label(form.env) }}
+                            {{ form_widget(form.env) }}
+                            {{ form_errors(form.env) }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form_label(form.route) }}
+                            {{ form_widget(form.route, {'attr': {'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
+                            {{ form_errors(form.route) }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form_label(form.sort) }}
+                            {{ form_widget(form.sort) }}
+                            {{ form_errors(form.sort) }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form_label(form.order) }}
+                            {{ form_widget(form.order) }}
+                            {{ form_errors(form.order) }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form_label(form.limit) }}
+                            {{ form_widget(form.limit) }}
+                            {{ form_errors(form.limit) }}
+                        </div>
+
+                        {# Advanced Filters (Collapsible) #}
+                        <div class="collapse" id="advancedFilters">
+                            <div class="col-12">
+                                <hr>
+                                <h6 class="mb-3">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h6>
+                            </div>
+                            <div class="col-md-3">
+                                {{ form_label(form.min_request_time) }}
+                                {{ form_widget(form.min_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                {{ form_errors(form.min_request_time) }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form_label(form.max_request_time) }}
+                                {{ form_widget(form.max_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                {{ form_errors(form.max_request_time) }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form_label(form.min_query_count) }}
+                                {{ form_widget(form.min_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                {{ form_errors(form.min_query_count) }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form_label(form.max_query_count) }}
+                                {{ form_widget(form.max_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                {{ form_errors(form.max_query_count) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_label(form.date_from) }}
+                                {{ form_widget(form.date_from) }}
+                                {{ form_errors(form.date_from) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_label(form.date_to) }}
+                                {{ form_widget(form.date_to) }}
+                                {{ form_errors(form.date_to) }}
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            {{ form_widget(form.submit) }}
+                            <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">{{ 'filters.reset'|trans({}, 'nowo_performance') }}</a>
+                        </div>
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const collapseElement = document.getElementById('advancedFilters');
+        const toggleButton = document.querySelector('[data-bs-target="#advancedFilters"]');
+        
+        if (collapseElement && toggleButton) {
+            // Check if any advanced filter has a value
+            const hasAdvancedFilters = 
+                document.querySelector('input[name="min_request_time"]')?.value ||
+                document.querySelector('input[name="max_request_time"]')?.value ||
+                document.querySelector('input[name="min_query_count"]')?.value ||
+                document.querySelector('input[name="max_query_count"]')?.value ||
+                document.querySelector('input[name="date_from"]')?.value ||
+                document.querySelector('input[name="date_to"]')?.value;
+
+            if (hasAdvancedFilters) {
+                // Auto-expand if filters are active
+                const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
+                bsCollapse.show();
+                toggleButton.setAttribute('aria-expanded', 'true');
+                toggleButton.querySelector('.when-expanded').style.display = 'inline';
+                toggleButton.querySelector('.when-collapsed').style.display = 'none';
+            }
+
+            // Toggle button text
+            collapseElement.addEventListener('show.bs.collapse', function() {
+                toggleButton.querySelector('.when-expanded').style.display = 'inline';
+                toggleButton.querySelector('.when-collapsed').style.display = 'none';
+            });
+
+            collapseElement.addEventListener('hide.bs.collapse', function() {
+                toggleButton.querySelector('.when-expanded').style.display = 'none';
+                toggleButton.querySelector('.when-collapsed').style.display = 'inline';
+            });
+        }
+    });
+    </script>
+{% else %}
+    {# Tailwind version #}
+    <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">{{ 'filters.title'|trans({}, 'nowo_performance') }}</h3>
+                <button type="button" class="text-sm text-indigo-600 hover:text-indigo-800 focus:outline-none" onclick="toggleAdvancedFilters()">
+                    <span id="advancedFiltersToggleText">{{ 'filters.show_advanced'|trans({}, 'nowo_performance') }}</span>
+                </button>
+            </div>
+            {{ form_start(form, {'action': path('nowo_performance.index'), 'attr': {'class': 'space-y-4'}}) }}
+                {# Basic Filters #}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div>
+                        {{ form_label(form.env, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                        <div class="mt-1">
+                            {{ form_widget(form.env, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                        </div>
+                        {{ form_errors(form.env) }}
+                    </div>
+                    <div>
+                        {{ form_label(form.route, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                        <div class="mt-1">
+                            {{ form_widget(form.route, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
+                        </div>
+                        {{ form_errors(form.route) }}
+                    </div>
+                    <div>
+                        {{ form_label(form.sort, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                        <div class="mt-1">
+                            {{ form_widget(form.sort, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                        </div>
+                        {{ form_errors(form.sort) }}
+                    </div>
+                    <div>
+                        {{ form_label(form.order, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                        <div class="mt-1">
+                            {{ form_widget(form.order, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                        </div>
+                        {{ form_errors(form.order) }}
+                    </div>
+                    <div>
+                        {{ form_label(form.limit, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                        <div class="mt-1">
+                            {{ form_widget(form.limit, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                        </div>
+                        {{ form_errors(form.limit) }}
+                    </div>
+                </div>
+
+                {# Advanced Filters (Collapsible) #}
+                <div id="advancedFilters" class="hidden mt-6 pt-6 border-t border-gray-200">
+                    <h4 class="text-md font-semibold text-gray-900 mb-4">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h4>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                            {{ form_label(form.min_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.min_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                            </div>
+                            {{ form_errors(form.min_request_time) }}
+                        </div>
+                        <div>
+                            {{ form_label(form.max_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.max_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                            </div>
+                            {{ form_errors(form.max_request_time) }}
+                        </div>
+                        <div>
+                            {{ form_label(form.min_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.min_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                            </div>
+                            {{ form_errors(form.min_query_count) }}
+                        </div>
+                        <div>
+                            {{ form_label(form.max_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.max_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                            </div>
+                            {{ form_errors(form.max_query_count) }}
+                        </div>
+                        <div>
+                            {{ form_label(form.date_from, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.date_from, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                            </div>
+                            {{ form_errors(form.date_from) }}
+                        </div>
+                        <div>
+                            {{ form_label(form.date_to, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.date_to, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                            </div>
+                            {{ form_errors(form.date_to) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    {{ form_widget(form.submit, {'attr': {'class': 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'}}) }}
+                    <a href="{{ path('nowo_performance.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        {{ 'filters.reset'|trans({}, 'nowo_performance') }}
+                    </a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+
+    <script>
+    function toggleAdvancedFilters() {
+        const advancedFilters = document.getElementById('advancedFilters');
+        const toggleText = document.getElementById('advancedFiltersToggleText');
+        
+        if (advancedFilters.classList.contains('hidden')) {
+            advancedFilters.classList.remove('hidden');
+            toggleText.textContent = '{{ 'filters.hide_advanced'|trans({}, 'nowo_performance') }}';
+        } else {
+            advancedFilters.classList.add('hidden');
+            toggleText.textContent = '{{ 'filters.show_advanced'|trans({}, 'nowo_performance') }}';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-expand if any advanced filter has a value
+        const hasAdvancedFilters = 
+            document.querySelector('input[name="min_request_time"]')?.value ||
+            document.querySelector('input[name="max_request_time"]')?.value ||
+            document.querySelector('input[name="min_query_count"]')?.value ||
+            document.querySelector('input[name="max_query_count"]')?.value ||
+            document.querySelector('input[name="date_from"]')?.value ||
+            document.querySelector('input[name="date_to"]')?.value;
+
+        if (hasAdvancedFilters) {
+            toggleAdvancedFilters();
+        }
+    });
+    </script>
+{% endif %}

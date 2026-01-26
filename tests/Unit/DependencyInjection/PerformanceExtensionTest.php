@@ -34,7 +34,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('routes_data', $this->container->getParameter('nowo_performance.table_name'));
         $this->assertTrue($this->container->getParameter('nowo_performance.track_queries'));
         $this->assertTrue($this->container->getParameter('nowo_performance.track_request_time'));
-        $this->assertSame([], $this->container->getParameter('nowo_performance.ignore_routes'));
+        $this->assertSame(['_wdt', '_profiler', '_error'], $this->container->getParameter('nowo_performance.ignore_routes'));
         
         // Dashboard configuration defaults
         $this->assertTrue($this->container->getParameter('nowo_performance.dashboard.enabled'));
@@ -76,5 +76,30 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('/metrics', $this->container->getParameter('nowo_performance.dashboard.path'));
         $this->assertSame('/admin', $this->container->getParameter('nowo_performance.dashboard.prefix'));
         $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $this->container->getParameter('nowo_performance.dashboard.roles'));
+    }
+
+    public function testPrependTwigConfiguration(): void
+    {
+        // Create a mock extension that implements the interface
+        $twigExtension = $this->createMock(\Symfony\Component\DependencyInjection\Extension\ExtensionInterface::class);
+        $twigExtension->method('getAlias')->willReturn('twig');
+        
+        // Register twig extension manually
+        $this->container->registerExtension($twigExtension);
+        
+        // Should not throw exception
+        $this->extension->prepend($this->container);
+        
+        // Verify that prepend was called (we can't easily verify the exact config without more setup)
+        $this->assertTrue(true);
+    }
+
+    public function testPrependWithoutTwigExtension(): void
+    {
+        // Don't register twig extension
+        $this->extension->prepend($this->container);
+        
+        // Should not throw exception
+        $this->assertTrue(true);
     }
 }

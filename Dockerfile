@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libpq-dev \
     && docker-php-ext-install zip pdo pdo_mysql pdo_pgsql \
+    && pecl install pcov \
+    && docker-php-ext-enable pcov \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer

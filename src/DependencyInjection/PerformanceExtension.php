@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\DependencyInjection;
 
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -48,6 +49,20 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter('nowo_performance.track_queries', $config['track_queries'] ?? true);
         $container->setParameter('nowo_performance.track_request_time', $config['track_request_time'] ?? true);
         $container->setParameter('nowo_performance.ignore_routes', $config['ignore_routes'] ?? []);
+        $container->setParameter('nowo_performance.async', $config['async'] ?? false);
+
+        // Thresholds configuration
+        $thresholdsConfig = $config['thresholds'] ?? [];
+        $requestTimeThresholds = $thresholdsConfig['request_time'] ?? [];
+        $queryCountThresholds = $thresholdsConfig['query_count'] ?? [];
+        $memoryUsageThresholds = $thresholdsConfig['memory_usage'] ?? [];
+        
+        $container->setParameter('nowo_performance.thresholds.request_time.warning', $requestTimeThresholds['warning'] ?? 0.5);
+        $container->setParameter('nowo_performance.thresholds.request_time.critical', $requestTimeThresholds['critical'] ?? 1.0);
+        $container->setParameter('nowo_performance.thresholds.query_count.warning', $queryCountThresholds['warning'] ?? 20);
+        $container->setParameter('nowo_performance.thresholds.query_count.critical', $queryCountThresholds['critical'] ?? 50);
+        $container->setParameter('nowo_performance.thresholds.memory_usage.warning', $memoryUsageThresholds['warning'] ?? 20.0);
+        $container->setParameter('nowo_performance.thresholds.memory_usage.critical', $memoryUsageThresholds['critical'] ?? 50.0);
 
             // Dashboard configuration
             $dashboardConfig = $config['dashboard'] ?? [];
@@ -55,6 +70,9 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
             $container->setParameter('nowo_performance.dashboard.path', $dashboardConfig['path'] ?? '/performance');
             $container->setParameter('nowo_performance.dashboard.prefix', $dashboardConfig['prefix'] ?? '');
             $container->setParameter('nowo_performance.dashboard.roles', $dashboardConfig['roles'] ?? []);
+            $container->setParameter('nowo_performance.dashboard.template', $dashboardConfig['template'] ?? 'bootstrap');
+            $container->setParameter('nowo_performance.dashboard.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
+            $container->setParameter('nowo_performance.dashboard.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
     }
 
     /**
@@ -95,8 +113,66 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
             ]);
         }
 
-        // Note: QueryTrackingMiddleware is registered via services.yaml
-        // and will be automatically used by Doctrine if configured
-        // The middleware uses static methods so it doesn't need to be injected
+        // Register QueryTrackingMiddleware via YAML if DoctrineBundle version supports it
+        // DoctrineBundle 2.x supports 'middlewares' in YAML, 3.x does not
+        if ($container->hasExtension('doctrine')) {
+            // Check if YAML middleware configuration is supported
+            if (QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()) {
+                // Get configuration to check if tracking is enabled
+                $configs = $container->getExtensionConfig($this->getAlias());
+                $enabled = true;
+                $trackQueries = true;
+                $connectionName = 'default';
+
+                foreach ($configs as $config) {
+                    if (isset($config['enabled'])) {
+                        $enabled = $config['enabled'];
+                    }
+                    if (isset($config['track_queries'])) {
+                        $trackQueries = $config['track_queries'];
+                    }
+                    if (isset($config['connection'])) {
+                        $connectionName = $config['connection'];
+                    }
+                }
+
+                // Only register middleware if tracking is enabled
+                if ($enabled && $trackQueries) {
+                    // Check existing Doctrine config to avoid overwriting
+                    $existingConfigs = $container->getExtensionConfig('doctrine');
+                    $hasMiddleware = false;
+
+                    // Check if middleware is already registered
+                    foreach ($existingConfigs as $config) {
+                        if (isset($config['dbal']['connections'][$connectionName]['middlewares'])) {
+                            $middlewares = $config['dbal']['connections'][$connectionName]['middlewares'];
+                            if (is_array($middlewares) && in_array(QueryTrackingMiddleware::class, $middlewares, true)) {
+                                $hasMiddleware = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Only prepend if not already registered
+                    if (!$hasMiddleware) {
+                        $doctrineConfig = [
+                            'dbal' => [
+                                'connections' => [
+                                    $connectionName => [
+                                        'middlewares' => [
+                                            QueryTrackingMiddleware::class,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ];
+
+                        $container->prependExtensionConfig('doctrine', $doctrineConfig);
+                    }
+                }
+            }
+            // For DoctrineBundle 3.x, middleware is applied via QueryTrackingConnectionSubscriber
+            // which uses reflection to wrap the driver after connection creation
+        }
     }
 }

@@ -1,0 +1,138 @@
+# Traductions pour Nowo Performance Bundle
+# Domaine: nowo_performance
+
+# Tableau de bord principal
+dashboard:
+    title: "Tableau de Bord des Métriques de Performance"
+    subtitle: "Surveiller et analyser les métriques de performance des routes"
+    advanced_statistics: "Statistiques Avancées"
+    export_csv: "Exporter CSV"
+    export_json: "Exporter JSON"
+    clear_all_records: "Effacer Tous les Enregistrements"
+    back_to_dashboard: "Retour au Tableau de Bord"
+    no_routes_found: "Aucune route trouvée pour les filtres sélectionnés."
+
+# Composant Statistics
+statistics:
+    total_routes: "Total des Routes"
+    total_queries: "Total des Requêtes"
+    avg_request_time: "Temps Moyen de Requête"
+    max_request_time: "Temps Maximum de Requête"
+    avg_query_time: "Temps Moyen de Requête"
+    max_query_time: "Temps Maximum de Requête"
+    max_queries: "Maximum de Requêtes"
+    not_available: "N/D"
+
+# Composant RoutesTable
+routes_table:
+    title: "Routes"
+    route_name: "Nom de Route"
+    environment: "Environnement"
+    request_time: "Temps de Requête"
+    query_time: "Temps de Requête"
+    total_queries: "Total des Requêtes"
+    memory_usage: "Utilisation de la Mémoire"
+    access_count: "Nombre d'Accès"
+    last_accessed_at: "Dernier Accès"
+    updated_at: "Mis à Jour"
+    review_status: "Statut de Révision"
+    actions: "Actions"
+    reviewed: "Révisé"
+    not_reviewed: "Non Révisé"
+    queries_improved: "Requêtes: ✓ Amélioré"
+    queries_not_improved: "Requêtes: ✗ Non Amélioré"
+    time_improved: "Temps: ✓ Amélioré"
+    time_not_improved: "Temps: ✗ Non Amélioré"
+    delete_record: "Supprimer l'enregistrement"
+    mark_as_reviewed: "Marquer comme révisé"
+    delete: "Supprimer"
+    review: "Réviser"
+    cancel: "Annuler"
+    confirm_delete: "Êtes-vous sûr de vouloir supprimer cet enregistrement?"
+
+# Composant Filters
+filters:
+    title: "Filtres"
+    show_advanced: "Afficher les Filtres Avancés"
+    hide_advanced: "Masquer les Filtres Avancés"
+    advanced_filters: "Filtres Avancés"
+    environment: "Environnement"
+    route_name: "Nom de Route"
+    sort_by: "Trier Par"
+    order: "Ordre"
+    limit: "Limite"
+    min_request_time: "Temps Minimum de Requête (s)"
+    max_request_time: "Temps Maximum de Requête (s)"
+    min_query_count: "Nombre Minimum de Requêtes"
+    max_query_count: "Nombre Maximum de Requêtes"
+    date_from: "Date De"
+    date_to: "Date À"
+    apply_filters: "Appliquer les Filtres"
+    reset: "Réinitialiser"
+    placeholder_route: "Filtrer par nom de route..."
+    placeholder_time: "0.0000"
+    placeholder_count: "0"
+
+# Modal de Révision
+review:
+    modal_title: "Marquer comme Révisé"
+    queries_improved: "Requêtes Améliorées?"
+    time_improved: "Temps Amélioré?"
+    not_specified: "Non spécifié"
+    yes: "Oui"
+    no: "Non"
+    mark_as_reviewed: "Marquer comme Révisé"
+
+# Messages de confirmation
+confirmations:
+    clear_all_records: "Êtes-vous sûr de vouloir supprimer tous les enregistrements de performance? Cette action ne peut pas être annulée."
+    delete_record: "Êtes-vous sûr de vouloir supprimer cet enregistrement?"
+
+# Messages flash
+flash:
+    records_cleared: "Tous les enregistrements ont été supprimés avec succès."
+    record_deleted: "L'enregistrement a été supprimé avec succès."
+    record_reviewed: "L'enregistrement a été marqué comme révisé avec succès."
+    error: "Une erreur s'est produite lors du traitement de la demande."
+
+# Statistiques avancées
+statistics_page:
+    title: "Statistiques Avancées de Performance"
+    subtitle: "Analyse statistique détaillée pour identifier les cibles d'optimisation"
+    routes_needing_attention: "Routes Nécessitant une Attention"
+    routes_above_p95: "Routes au-dessus du 95e percentile"
+    routes_with_outliers: "Routes avec valeurs aberrantes"
+    metric: "Métrique"
+    mean: "Moyenne"
+    median: "Médiane"
+    mode: "Mode"
+    std_deviation: "Écart Type"
+    min: "Min"
+    max: "Max"
+    range: "Plage"
+    p25: "P25"
+    p50: "P50"
+    p75: "P75"
+    p90: "P90"
+    p95: "P95"
+    p99: "P99"
+    outliers: "Valeurs Aberrantes"
+    histogram: "Histogramme de Distribution"
+    request_time: "Temps de Requête"
+    query_time: "Temps de Requête"
+    query_count: "Nombre de Requêtes"
+    memory_usage: "Utilisation de la Mémoire"
+    access_count: "Nombre d'Accès"
+
+# Options de tri
+sort_options:
+    request_time: "Temps de Requête"
+    query_time: "Temps de Requête"
+    queries: "Requêtes"
+    access_count: "Nombre d'Accès"
+    route_name: "Nom de Route"
+
+# Options d'ordre
+order_options:
+    descending: "Décroissant"
+    ascending: "Croissant"

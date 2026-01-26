@@ -55,9 +55,218 @@ php bin/console nowo:performance:set-route app_user_show \
 - `route` (required) - Route name
 - `--env, -e` - Environment (default: `dev`)
 - `--request-time, -r` - Request time in seconds (float)
-- `--queries, -q` - Total number of queries (integer)
+- `--queries` - Total number of queries (integer)
 - `--query-time, -t` - Total query execution time in seconds (float)
+- `--memory, -m` - Peak memory usage in bytes (integer)
 - `--params, -p` - Route parameters as JSON string
+
+## Customizing the Dashboard View
+
+The performance dashboard is built using reusable Twig components, allowing you to customize specific parts without replacing the entire template.
+
+### CSS Framework Selection
+
+The dashboard supports two CSS frameworks: **Bootstrap** (default) and **Tailwind CSS**. You can choose which one to use via configuration:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    dashboard:
+        template: 'bootstrap'  # or 'tailwind'
+```
+
+### Component Structure
+
+The dashboard consists of three main components, available in both Bootstrap and Tailwind versions:
+
+**Bootstrap components:**
+1. **Statistics Component** (`_statistics_bootstrap.html.twig`) - Displays performance statistics cards
+2. **Filters Component** (`_filters_bootstrap.html.twig`) - Contains the filtering form
+3. **Routes Table Component** (`_routes_table_bootstrap.html.twig`) - Shows the routes data table
+
+**Tailwind components:**
+1. **Statistics Component** (`_statistics_tailwind.html.twig`) - Displays performance statistics cards
+2. **Filters Component** (`_filters_tailwind.html.twig`) - Contains the filtering form
+3. **Routes Table Component** (`_routes_table_tailwind.html.twig`) - Shows the routes data table
+
+### Overriding Components
+
+You can override individual components by creating them in your project's template directory:
+
+**Path structure:**
+```
+templates/
+  bundles/
+    NowoPerformanceBundle/
+      Performance/
+        components/
+          _statistics_bootstrap.html.twig    # Override Bootstrap statistics
+          _filters_bootstrap.html.twig       # Override Bootstrap filters
+          _routes_table_bootstrap.html.twig # Override Bootstrap table
+          _statistics_tailwind.html.twig     # Override Tailwind statistics
+          _filters_tailwind.html.twig        # Override Tailwind filters
+          _routes_table_tailwind.html.twig   # Override Tailwind table
+```
+
+**Example: Custom Bootstrap Statistics Component**
+
+```twig
+{# templates/bundles/NowoPerformanceBundle/Performance/components/_statistics_bootstrap.html.twig #}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Custom Statistics</h5>
+                <p>Total Routes: {{ stats.total_routes }}</p>
+                <p>Total Queries: {{ stats.total_queries }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+**Example: Custom Tailwind Statistics Component**
+
+```twig
+{# templates/bundles/NowoPerformanceBundle/Performance/components/_statistics_tailwind.html.twig #}
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <div class="bg-white overflow-hidden shadow rounded-lg p-5">
+        <h5 class="text-lg font-semibold">Custom Statistics</h5>
+        <p>Total Routes: {{ stats.total_routes }}</p>
+        <p>Total Queries: {{ stats.total_queries }}</p>
+    </div>
+</div>
+```
+
+**Example: Custom Routes Table**
+
+```twig
+{# templates/bundles/NowoPerformanceBundle/Performance/components/_routes_table.html.twig #}
+<div class="row">
+    <div class="col-12">
+        <div class="custom-table">
+            {% for route in routes %}
+                <div class="route-item">
+                    <strong>{{ route.name }}</strong>
+                    <span>{{ (route.requestTime * 1000)|number_format(2) }} ms</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+```
+
+### Overriding the Complete Template
+
+If you prefer to replace the entire dashboard template, create:
+
+```
+templates/bundles/NowoPerformanceBundle/Performance/index.html.twig
+```
+
+This will completely override the default template. You can still use the components if needed:
+
+```twig
+{# Your custom template #}
+{% extends 'base.html.twig' %}
+
+{% block content %}
+    <h1>My Custom Dashboard</h1>
+    
+    {# Use the default statistics component #}
+    {% include '@NowoPerformanceBundle/Performance/components/_statistics.html.twig' %}
+    
+    {# Or use your custom component #}
+    {% include 'bundles/NowoPerformanceBundle/Performance/components/_statistics.html.twig' %}
+{% endblock %}
+```
+
+### Available Variables
+
+All components receive the same variables from the controller:
+
+- `routes` - Array of RouteData entities
+- `stats` - Statistics array with:
+  - `total_routes` - Total number of routes
+  - `total_queries` - Total number of queries
+  - `avg_request_time` - Average request time (in seconds)
+  - `avg_query_time` - Average query time (in seconds)
+  - `max_request_time` - Maximum request time (in seconds)
+  - `max_query_time` - Maximum query time (in seconds)
+  - `max_queries` - Maximum query count
+- `environment` - Current environment filter
+- `currentRoute` - Current route name filter
+- `sortBy` - Current sort field
+- `order` - Current sort order (ASC/DESC)
+- `limit` - Current result limit
+- `environments` - Array of available environments
+
+## Dashboard Features
+
+### Data Export
+
+The dashboard includes export functionality to download performance data:
+
+**CSV Export:**
+- Click "Export CSV" button in dashboard header
+- Downloads a CSV file with all current filtered data
+- Includes: route name, environment, metrics, memory usage, access count, timestamps
+- UTF-8 encoding with BOM for Excel compatibility
+
+**JSON Export:**
+- Click "Export JSON" button in dashboard header
+- Downloads a JSON file with all current filtered data
+- Includes metadata: environment, export date
+- Structured format for programmatic use
+
+**Export respects filters:**
+- Current environment filter
+- Route name filters
+- Time/query range filters
+- Date range filters
+- Current sorting
+
+### Record Management
+
+When `enable_record_management` is enabled:
+
+**Delete Individual Records:**
+- Delete button appears in Actions column for each record
+- Confirmation dialog before deletion
+- CSRF protection
+- Redirects to referer after deletion
+- Cache is automatically invalidated
+
+**Clear All Records:**
+- "Clear All Records" button in dashboard header
+- Optionally filters by environment
+- Confirmation dialog before clearing
+- CSRF protection
+- Redirects to referer after clearing
+
+### Review System
+
+When `enable_review_system` is enabled:
+
+**Mark Records as Reviewed:**
+- Review button appears for unreviewed records
+- Modal form to mark as reviewed
+- Options:
+  - Queries Improved: Yes / No / Not specified
+  - Time Improved: Yes / No / Not specified
+- Reviewer username is automatically recorded
+- Review date is automatically set
+
+**Review Status Display:**
+- "Reviewed" badge for reviewed records
+- "Pending" badge for unreviewed records
+- Improvement indicators:
+  - Green badge if improved
+  - Red badge if not improved
+  - Not shown if not specified
+
+**Filtering by Review Status:**
+- Can be added to filters (future enhancement)
 
 ## Programmatic Usage
 

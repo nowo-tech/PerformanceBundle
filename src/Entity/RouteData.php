@@ -18,8 +18,13 @@ use Nowo\PerformanceBundle\Repository\RouteDataRepository;
  * @copyright 2025 Nowo.tech
  */
 #[ORM\Entity(repositoryClass: RouteDataRepository::class)]
+#[ORM\Table(name: 'routes_data')]
 #[ORM\Index(columns: ['name'], name: 'idx_route_name')]
 #[ORM\Index(columns: ['env'], name: 'idx_route_env')]
+#[ORM\Index(columns: ['env', 'name'], name: 'idx_route_env_name')]
+#[ORM\Index(columns: ['env', 'request_time'], name: 'idx_route_env_request_time')]
+#[ORM\Index(columns: ['created_at'], name: 'idx_route_created_at')]
+#[ORM\Index(columns: ['env', 'access_count'], name: 'idx_route_env_access_count')]
 class RouteData
 {
     /**
@@ -47,6 +52,14 @@ class RouteData
      */
     #[ORM\Column(type: Types::STRING, nullable: true)]
     private ?string $name = null;
+
+    /**
+     * HTTP method (GET, POST, PUT, DELETE, etc.).
+     *
+     * @var string|null
+     */
+    #[ORM\Column(type: Types::STRING, length: 10, nullable: true)]
+    private ?string $httpMethod = null;
 
     /**
      * Total number of database queries executed.
@@ -81,6 +94,22 @@ class RouteData
     private ?float $queryTime = null;
 
     /**
+     * Peak memory usage in bytes.
+     *
+     * @var int|null
+     */
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $memoryUsage = null;
+
+    /**
+     * Number of times this route has been accessed.
+     *
+     * @var int
+     */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
+    private int $accessCount = 1;
+
+    /**
      * Creation timestamp.
      *
      * @var \DateTimeImmutable|null
@@ -97,6 +126,54 @@ class RouteData
     private ?\DateTimeImmutable $updatedAt = null;
 
     /**
+     * Last access timestamp.
+     *
+     * @var \DateTimeImmutable|null
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $lastAccessedAt = null;
+
+    /**
+     * Whether this route has been reviewed.
+     *
+     * @var bool
+     */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $reviewed = false;
+
+    /**
+     * Review timestamp.
+     *
+     * @var \DateTimeImmutable|null
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $reviewedAt = null;
+
+    /**
+     * Whether queries improved after review.
+     *
+     * @var bool|null
+     */
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
+    private ?bool $queriesImproved = null;
+
+    /**
+     * Whether request time improved after review.
+     *
+     * @var bool|null
+     */
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
+    private ?bool $timeImproved = null;
+
+    /**
+     * User who reviewed this route (optional).
+     *
+     * @var string|null
+     */
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $reviewedBy = null;
+
+    /**
      * Constructor.
      *
      * Initializes creation and update timestamps.
@@ -105,6 +182,7 @@ class RouteData
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
+        $this->lastAccessedAt = new \DateTimeImmutable();
     }
 
     /**
@@ -159,6 +237,29 @@ class RouteData
     public function setName(?string $name): self
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * Get the HTTP method.
+     *
+     * @return string|null The HTTP method (GET, POST, PUT, DELETE, etc.)
+     */
+    public function getHttpMethod(): ?string
+    {
+        return $this->httpMethod;
+    }
+
+    /**
+     * Set the HTTP method.
+     *
+     * @param string|null $httpMethod The HTTP method
+     * @return self
+     */
+    public function setHttpMethod(?string $httpMethod): self
+    {
+        $this->httpMethod = $httpMethod;
 
         return $this;
     }
@@ -304,6 +405,92 @@ class RouteData
     }
 
     /**
+     * Get the peak memory usage in bytes.
+     *
+     * @return int|null The memory usage in bytes
+     */
+    public function getMemoryUsage(): ?int
+    {
+        return $this->memoryUsage;
+    }
+
+    /**
+     * Set the peak memory usage in bytes.
+     *
+     * @param int|null $memoryUsage The memory usage in bytes
+     * @return self
+     */
+    public function setMemoryUsage(?int $memoryUsage): self
+    {
+        $this->memoryUsage = $memoryUsage;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /**
+     * Get the number of times this route has been accessed.
+     *
+     * @return int The access count
+     */
+    public function getAccessCount(): int
+    {
+        return $this->accessCount;
+    }
+
+    /**
+     * Set the number of times this route has been accessed.
+     *
+     * @param int $accessCount The access count
+     * @return self
+     */
+    public function setAccessCount(int $accessCount): self
+    {
+        $this->accessCount = $accessCount;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /**
+     * Increment the access count by one.
+     *
+     * @return self
+     */
+    public function incrementAccessCount(): self
+    {
+        $this->accessCount++;
+        $this->updatedAt = new \DateTimeImmutable();
+        $this->lastAccessedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /**
+     * Get the last access timestamp.
+     *
+     * @return \DateTimeImmutable|null The last access date or null if not available
+     */
+    public function getLastAccessedAt(): ?\DateTimeImmutable
+    {
+        return $this->lastAccessedAt;
+    }
+
+    /**
+     * Set the last access timestamp.
+     *
+     * @param \DateTimeImmutable|null $lastAccessedAt The last access date
+     * @return self
+     */
+    public function setLastAccessedAt(?\DateTimeImmutable $lastAccessedAt): self
+    {
+        $this->lastAccessedAt = $lastAccessedAt;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /**
      * Check if this record should be updated based on worse performance metrics.
      *
      * Returns true if the new metrics indicate worse performance (higher request time
@@ -328,5 +515,158 @@ class RouteData
         // Update if we have new data but no existing data
         return ($this->requestTime === null && $newRequestTime !== null)
             || ($this->totalQueries === null && $newTotalQueries !== null);
+    }
+
+    /**
+     * Check if this route has been reviewed.
+     *
+     * @return bool True if reviewed, false otherwise
+     */
+    public function isReviewed(): bool
+    {
+        return $this->reviewed;
+    }
+
+    /**
+     * Set whether this route has been reviewed.
+     *
+     * @param bool $reviewed Whether the route is reviewed
+     * @return self
+     */
+    public function setReviewed(bool $reviewed): self
+    {
+        $this->reviewed = $reviewed;
+
+        return $this;
+    }
+
+    /**
+     * Get the review timestamp.
+     *
+     * @return \DateTimeImmutable|null The review date
+     */
+    public function getReviewedAt(): ?\DateTimeImmutable
+    {
+        return $this->reviewedAt;
+    }
+
+    /**
+     * Set the review timestamp.
+     *
+     * @param \DateTimeImmutable|null $reviewedAt The review date
+     * @return self
+     */
+    public function setReviewedAt(?\DateTimeImmutable $reviewedAt): self
+    {
+        $this->reviewedAt = $reviewedAt;
+
+        return $this;
+    }
+
+    /**
+     * Get whether queries improved after review.
+     *
+     * @return bool|null True if improved, false if not, null if not specified
+     */
+    public function getQueriesImproved(): ?bool
+    {
+        return $this->queriesImproved;
+    }
+
+    /**
+     * Set whether queries improved after review.
+     *
+     * @param bool|null $queriesImproved True if improved, false if not, null if not specified
+     * @return self
+     */
+    public function setQueriesImproved(?bool $queriesImproved): self
+    {
+        $this->queriesImproved = $queriesImproved;
+
+        return $this;
+    }
+
+    /**
+     * Get whether request time improved after review.
+     *
+     * @return bool|null True if improved, false if not, null if not specified
+     */
+    public function getTimeImproved(): ?bool
+    {
+        return $this->timeImproved;
+    }
+
+    /**
+     * Set whether request time improved after review.
+     *
+     * @param bool|null $timeImproved True if improved, false if not, null if not specified
+     * @return self
+     */
+    public function setTimeImproved(?bool $timeImproved): self
+    {
+        $this->timeImproved = $timeImproved;
+
+        return $this;
+    }
+
+    /**
+     * Get the user who reviewed this route.
+     *
+     * @return string|null The reviewer identifier
+     */
+    public function getReviewedBy(): ?string
+    {
+        return $this->reviewedBy;
+    }
+
+    /**
+     * Set the user who reviewed this route.
+     *
+     * @param string|null $reviewedBy The reviewer identifier
+     * @return self
+     */
+    public function setReviewedBy(?string $reviewedBy): self
+    {
+        $this->reviewedBy = $reviewedBy;
+
+        return $this;
+    }
+
+    /**
+     * String representation of the entity.
+     *
+     * Returns a human-readable string representation of the route data.
+     *
+     * @return string String representation
+     */
+    public function __toString(): string
+    {
+        $parts = [];
+        
+        if ($this->httpMethod !== null) {
+            $parts[] = $this->httpMethod;
+        }
+        
+        if ($this->name !== null) {
+            $parts[] = $this->name;
+        }
+        
+        if ($this->env !== null) {
+            $parts[] = sprintf('(%s)', $this->env);
+        }
+        
+        if ($this->requestTime !== null) {
+            $parts[] = sprintf('%.2fms', $this->requestTime * 1000);
+        }
+        
+        if ($this->totalQueries !== null) {
+            $parts[] = sprintf('%dq', $this->totalQueries);
+        }
+        
+        if (empty($parts)) {
+            return sprintf('RouteData#%s', $this->id ?? 'new');
+        }
+        
+        return implode(' ', $parts);
     }
 }

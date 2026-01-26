@@ -1,0 +1,138 @@
+# Traducciones del bundle Nowo Performance Bundle
+# Dominio: nowo_performance
+
+# Dashboard principal
+dashboard:
+    title: "Panel de Métricas de Rendimiento"
+    subtitle: "Monitorear y analizar métricas de rendimiento de rutas"
+    advanced_statistics: "Estadísticas Avanzadas"
+    export_csv: "Exportar CSV"
+    export_json: "Exportar JSON"
+    clear_all_records: "Limpiar Todos los Registros"
+    back_to_dashboard: "Volver al Panel"
+    no_routes_found: "No se encontraron rutas para los filtros seleccionados."
+
+# Componente Statistics
+statistics:
+    total_routes: "Total de Rutas"
+    total_queries: "Total de Consultas"
+    avg_request_time: "Tiempo Promedio de Solicitud"
+    max_request_time: "Tiempo Máximo de Solicitud"
+    avg_query_time: "Tiempo Promedio de Consulta"
+    max_query_time: "Tiempo Máximo de Consulta"
+    max_queries: "Máximo de Consultas"
+    not_available: "N/A"
+
+# Componente RoutesTable
+routes_table:
+    title: "Rutas"
+    route_name: "Nombre de Ruta"
+    environment: "Entorno"
+    request_time: "Tiempo de Solicitud"
+    query_time: "Tiempo de Consulta"
+    total_queries: "Total de Consultas"
+    memory_usage: "Uso de Memoria"
+    access_count: "Número de Accesos"
+    last_accessed_at: "Último Acceso"
+    updated_at: "Actualizado"
+    review_status: "Estado de Revisión"
+    actions: "Acciones"
+    reviewed: "Revisado"
+    not_reviewed: "No Revisado"
+    queries_improved: "Consultas: ✓ Mejorado"
+    queries_not_improved: "Consultas: ✗ No Mejorado"
+    time_improved: "Tiempo: ✓ Mejorado"
+    time_not_improved: "Tiempo: ✗ No Mejorado"
+    delete_record: "Eliminar registro"
+    mark_as_reviewed: "Marcar como revisado"
+    delete: "Eliminar"
+    review: "Revisar"
+    cancel: "Cancelar"
+    confirm_delete: "¿Está seguro de que desea eliminar este registro?"
+
+# Componente Filters
+filters:
+    title: "Filtros"
+    show_advanced: "Mostrar Filtros Avanzados"
+    hide_advanced: "Ocultar Filtros Avanzados"
+    advanced_filters: "Filtros Avanzados"
+    environment: "Entorno"
+    route_name: "Nombre de Ruta"
+    sort_by: "Ordenar Por"
+    order: "Orden"
+    limit: "Límite"
+    min_request_time: "Tiempo Mínimo de Solicitud (s)"
+    max_request_time: "Tiempo Máximo de Solicitud (s)"
+    min_query_count: "Número Mínimo de Consultas"
+    max_query_count: "Número Máximo de Consultas"
+    date_from: "Fecha Desde"
+    date_to: "Fecha Hasta"
+    apply_filters: "Aplicar Filtros"
+    reset: "Restablecer"
+    placeholder_route: "Filtrar por nombre de ruta..."
+    placeholder_time: "0.0000"
+    placeholder_count: "0"
+
+# Review Modal
+review:
+    modal_title: "Marcar como Revisado"
+    queries_improved: "¿Consultas Mejoradas?"
+    time_improved: "¿Tiempo Mejorado?"
+    not_specified: "No especificado"
+    yes: "Sí"
+    no: "No"
+    mark_as_reviewed: "Marcar como Revisado"
+
+# Mensajes de confirmación
+confirmations:
+    clear_all_records: "¿Está seguro de que desea eliminar todos los registros de rendimiento? Esta acción no se puede deshacer."
+    delete_record: "¿Está seguro de que desea eliminar este registro?"
+
+# Mensajes flash
+flash:
+    records_cleared: "Todos los registros han sido eliminados correctamente."
+    record_deleted: "El registro ha sido eliminado correctamente."
+    record_reviewed: "El registro ha sido marcado como revisado correctamente."
+    error: "Ha ocurrido un error al procesar la solicitud."
+
+# Estadísticas avanzadas
+statistics_page:
+    title: "Estadísticas Avanzadas de Rendimiento"
+    subtitle: "Análisis estadístico detallado para identificar objetivos de optimización"
+    routes_needing_attention: "Rutas que Necesitan Atención"
+    routes_above_p95: "Rutas por encima del percentil 95"
+    routes_with_outliers: "Rutas con valores atípicos"
+    metric: "Métrica"
+    mean: "Media"
+    median: "Mediana"
+    mode: "Moda"
+    std_deviation: "Desviación Estándar"
+    min: "Mínimo"
+    max: "Máximo"
+    range: "Rango"
+    p25: "P25"
+    p50: "P50"
+    p75: "P75"
+    p90: "P90"
+    p95: "P95"
+    p99: "P99"
+    outliers: "Valores Atípicos"
+    histogram: "Histograma de Distribución"
+    request_time: "Tiempo de Solicitud"
+    query_time: "Tiempo de Consulta"
+    query_count: "Número de Consultas"
+    memory_usage: "Uso de Memoria"
+    access_count: "Número de Accesos"
+
+# Opciones de ordenamiento
+sort_options:
+    request_time: "Tiempo de Solicitud"
+    query_time: "Tiempo de Consulta"
+    queries: "Consultas"
+    access_count: "Número de Accesos"
+    route_name: "Nombre de Ruta"
+
+# Opciones de orden
+order_options:
+    descending: "Descendente"
+    ascending: "Ascendente"

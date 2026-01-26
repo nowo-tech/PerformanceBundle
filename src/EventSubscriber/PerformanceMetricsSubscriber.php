@@ -42,6 +42,13 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     private ?float $startTime = null;
 
     /**
+     * Initial memory usage at request start.
+     *
+     * @var int|null
+     */
+    private ?int $startMemory = null;
+
+    /**
      * Query logger instance for tracking database queries.
      *
      * @var QueryLogger|null
@@ -99,11 +106,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         private readonly bool $trackQueries,
         #[Autowire('%nowo_performance.track_request_time%')]
         private readonly bool $trackRequestTime,
+        #[Autowire('%nowo_performance.async%')]
+        private readonly bool $async = false,
         private readonly ?RequestStack $requestStack = null,
         #[Autowire(service: '?stopwatch')]
         ?Stopwatch $stopwatch = null
     ) {
         $this->dataCollector->setEnabled($enabled);
+        $this->dataCollector->setAsync($async);
         $this->stopwatch = $stopwatch;
     }
 
@@ -165,6 +175,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->dataCollector->setStartTime($this->startTime);
         }
 
+        // Track initial memory usage
+        $this->startMemory = memory_get_usage(true);
+
         // Track queries if enabled
         if ($this->trackQueries) {
             // Reset query tracking middleware
@@ -188,12 +201,20 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      */
     public function onKernelTerminate(TerminateEvent $event): void
     {
-        if (!$this->enabled || $this->routeName === null || !$this->dataCollector->isEnabled()) {
+        if (!$this->enabled || !$this->dataCollector->isEnabled()) {
             return;
         }
 
         $request = $event->getRequest();
         $env = $request->server->get('APP_ENV') ?? 'dev';
+
+        // Get route name here, as it should be resolved by now
+        $this->routeName = $this->routeName ?? $request->attributes->get('_route');
+        $this->dataCollector->setRouteName($this->routeName);
+
+        if ($this->routeName === null) {
+            return;
+        }
 
         if (!\in_array($env, $this->environments, true)) {
             return;
@@ -217,6 +238,20 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->dataCollector->setQueryTime($queryTime);
         }
 
+        // Calculate peak memory usage
+        $memoryUsage = null;
+        if ($this->startMemory !== null) {
+            $peakMemory = memory_get_peak_usage(true);
+            $memoryUsage = $peakMemory - $this->startMemory;
+            // Ensure non-negative (in case memory was freed)
+            if ($memoryUsage < 0) {
+                $memoryUsage = $peakMemory;
+            }
+        }
+
+        // Get HTTP method
+        $httpMethod = $request->getMethod();
+
         // Record metrics - ensure no output is generated
         try {
             // Suppress error reporting temporarily to prevent warnings from generating output
@@ -228,14 +263,31 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 ob_start();
             }
             
+            if (\function_exists('error_log')) {
+                error_log(sprintf(
+                    '[PerformanceBundle] Attempting to save metrics: route=%s, env=%s, method=%s, requestTime=%s, queryCount=%s',
+                    $this->routeName ?? 'null',
+                    $env,
+                    $httpMethod,
+                    $requestTime !== null ? (string)$requestTime : 'null',
+                    $queryCount !== null ? (string)$queryCount : 'null'
+                ));
+            }
+            
             $this->metricsService->recordMetrics(
                 $this->routeName,
                 $env,
                 $requestTime,
                 $queryCount,
                 $queryTime,
-                $this->routeParams
+                $this->routeParams,
+                $memoryUsage,
+                $httpMethod
             );
+            
+            if (\function_exists('error_log')) {
+                error_log(sprintf('[PerformanceBundle] Metrics saved successfully for route: %s', $this->routeName ?? 'null'));
+            }
             
             // Clean output buffer if we started it
             if ($obLevel === 0 && ob_get_level() > 0) {
@@ -254,6 +306,15 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $obLevel = ob_get_level();
             if ($obLevel > 0) {
                 ob_end_clean();
+            }
+            
+            // Log the error for debugging
+            if (\function_exists('error_log')) {
+                error_log(sprintf(
+                    '[PerformanceBundle] Error saving metrics for route %s: %s',
+                    $this->routeName ?? 'null',
+                    $e->getMessage()
+                ));
             }
             
             // Silently fail to not break the application
@@ -320,7 +381,18 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $queryCount = QueryTrackingMiddleware::getQueryCount();
             $queryTime = QueryTrackingMiddleware::getTotalQueryTime();
             
-            if ($queryCount > 0 || $queryTime > 0) {
+            // Even if count is 0, return it if we got valid data (time might be 0 for very fast queries)
+            // Only fallback if both are 0 AND we have a request to check profiler
+            if ($queryCount > 0 || ($queryTime > 0 && $request === null)) {
+                return ['count' => $queryCount, 'time' => $queryTime];
+            }
+            
+            // If middleware returned 0/0, it might not be working, try fallback
+            // But only if we have a request to check profiler
+            if ($queryCount === 0 && $queryTime === 0.0 && $request !== null) {
+                // Continue to fallback methods
+            } else {
+                // Return what we got from middleware
                 return ['count' => $queryCount, 'time' => $queryTime];
             }
         } catch (\Exception $e) {

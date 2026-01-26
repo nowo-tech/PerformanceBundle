@@ -56,13 +56,27 @@ class TableNameSubscriber implements EventSubscriber
             return;
         }
 
-        // Override the table name with the configured value
-        $classMetadata->setPrimaryTable([
-            'name' => $this->tableName,
-            'indexes' => [
-                ['name' => 'idx_route_name', 'columns' => ['name']],
-                ['name' => 'idx_route_env', 'columns' => ['env']],
-            ],
-        ]);
+        // Always override the table name with the configured value
+        // This ensures the table name matches the configuration, even if it's hardcoded in the entity
+        $currentTableName = method_exists($classMetadata, 'getTableName')
+            ? $classMetadata->getTableName()
+            : ($classMetadata->table['name'] ?? 'route_data');
+        
+        if ($currentTableName !== $this->tableName) {
+            // Get existing table configuration to preserve indexes
+            $reflection = new \ReflectionClass($classMetadata);
+            $tableProperty = $reflection->getProperty('table');
+            $tableProperty->setAccessible(true);
+            $existingTable = $tableProperty->getValue($classMetadata);
+            
+            // Preserve existing indexes if they exist
+            $existingIndexes = $existingTable['indexes'] ?? [];
+            
+            // Set the table name with all existing indexes
+            $classMetadata->setPrimaryTable([
+                'name' => $this->tableName,
+                'indexes' => $existingIndexes,
+            ]);
+        }
     }
 }

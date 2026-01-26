@@ -4,12 +4,26 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Controller;
 
+use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent;
+use Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent;
+use Nowo\PerformanceBundle\Event\AfterRecordsClearedEvent;
+use Nowo\PerformanceBundle\Event\BeforeRecordDeletedEvent;
+use Nowo\PerformanceBundle\Event\BeforeRecordReviewedEvent;
+use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
+use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
+use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
+use Nowo\PerformanceBundle\Service\DependencyChecker;
+use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Controller for displaying performance metrics.
@@ -34,7 +48,32 @@ class PerformanceController extends AbstractController
         #[Autowire('%nowo_performance.dashboard.enabled%')]
         private readonly bool $enabled,
         #[Autowire('%nowo_performance.dashboard.roles%')]
-        private readonly array $requiredRoles = []
+        private readonly array $requiredRoles = [],
+        #[Autowire('%nowo_performance.dashboard.template%')]
+        private readonly string $template = 'bootstrap',
+        private readonly ?PerformanceCacheService $cacheService = null,
+        private readonly ?DependencyChecker $dependencyChecker = null,
+        #[Autowire('%nowo_performance.dashboard.enable_record_management%')]
+        private readonly bool $enableRecordManagement = false,
+        #[Autowire('%nowo_performance.dashboard.enable_review_system%')]
+        private readonly bool $enableReviewSystem = false,
+        private readonly ?EventDispatcherInterface $eventDispatcher = null,
+        #[Autowire('%nowo_performance.thresholds.request_time.warning%')]
+        private readonly float $requestTimeWarning = 0.5,
+        #[Autowire('%nowo_performance.thresholds.request_time.critical%')]
+        private readonly float $requestTimeCritical = 1.0,
+        #[Autowire('%nowo_performance.thresholds.query_count.warning%')]
+        private readonly int $queryCountWarning = 20,
+        #[Autowire('%nowo_performance.thresholds.query_count.critical%')]
+        private readonly int $queryCountCritical = 50,
+        #[Autowire('%nowo_performance.thresholds.memory_usage.warning%')]
+        private readonly float $memoryUsageWarning = 20.0,
+        #[Autowire('%nowo_performance.thresholds.memory_usage.critical%')]
+        private readonly float $memoryUsageCritical = 50.0,
+        #[Autowire('%nowo_performance.dashboard.date_formats.datetime%')]
+        private readonly string $dateTimeFormat = 'Y-m-d H:i:s',
+        #[Autowire('%nowo_performance.dashboard.date_formats.date%')]
+        private readonly string $dateFormat = 'Y-m-d H:i'
     ) {
     }
 
@@ -42,15 +81,20 @@ class PerformanceController extends AbstractController
      * Display performance metrics dashboard.
      *
      * Shows a list of all tracked routes with filtering capabilities.
-     * The view can be overridden by creating a template at
-     * `templates/bundles/NowoPerformanceBundle/Performance/index.html.twig`
+     * 
+     * The view can be customized in two ways:
+     * 1. Override the complete template: `templates/bundles/NowoPerformanceBundle/Performance/index.html.twig`
+     * 2. Override individual components:
+     *    - `templates/bundles/NowoPerformanceBundle/Performance/components/_statistics.html.twig`
+     *    - `templates/bundles/NowoPerformanceBundle/Performance/components/_filters.html.twig`
+     *    - `templates/bundles/NowoPerformanceBundle/Performance/components/_routes_table.html.twig`
      *
      * @param Request $request The HTTP request
      * @return Response The HTTP response
      */
     #[Route(
         path: '',
-        name: 'nowo_performance_index',
+        name: 'nowo_performance.index',
         methods: ['GET']
     )]
     public function index(Request $request): Response
@@ -74,56 +118,114 @@ class PerformanceController extends AbstractController
             }
         }
 
-        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
-        $routeName = $request->query->get('route');
-        $sortBy = $request->query->get('sort', 'requestTime');
-        $order = $request->query->get('order', 'DESC');
-        $limit = (int) $request->query->get('limit', 100);
-
-        // Get all routes for the environment
+        // Get available environments (with caching)
         try {
-            $routes = $this->metricsService->getRoutesByEnvironment($env);
+            $environments = $this->getAvailableEnvironments();
+        } catch (\Exception $e) {
+            $environments = ['dev', 'test', 'prod'];
+        }
+
+        // Create and handle form
+        $form = $this->createForm(PerformanceFiltersType::class, null, [
+            'environments' => $environments,
+            'current_env' => $request->query->get('env') ?? $this->getParameter('kernel.environment'),
+            'current_route' => $request->query->get('route'),
+            'current_sort_by' => $request->query->get('sort', 'requestTime'),
+            'current_order' => $request->query->get('order', 'DESC'),
+            'current_limit' => (int) $request->query->get('limit', 100),
+            'current_min_request_time' => $request->query->get('min_request_time') ? (float) $request->query->get('min_request_time') : null,
+            'current_max_request_time' => $request->query->get('max_request_time') ? (float) $request->query->get('max_request_time') : null,
+            'current_min_query_count' => $request->query->get('min_query_count') ? (int) $request->query->get('min_query_count') : null,
+            'current_max_query_count' => $request->query->get('max_query_count') ? (int) $request->query->get('max_query_count') : null,
+            'current_date_from' => $request->query->get('date_from') ? new \DateTimeImmutable($request->query->get('date_from')) : null,
+            'current_date_to' => $request->query->get('date_to') ? new \DateTimeImmutable($request->query->get('date_to')) : null,
+        ]);
+
+        $form->handleRequest($request);
+
+        // Get form data (from submission or defaults)
+        $formData = $form->getData();
+        $env = $formData['env'] ?? $this->getParameter('kernel.environment');
+        $routeName = $formData['route'] ?? null;
+        $sortBy = $formData['sort'] ?? 'requestTime';
+        $order = $formData['order'] ?? 'DESC';
+        $limit = (int) ($formData['limit'] ?? 100);
+
+        // Build filters array for advanced filtering
+        $filters = [];
+        if ($routeName !== null && $routeName !== '') {
+            $filters['route_name_pattern'] = $routeName;
+        }
+        if (isset($formData['min_request_time']) && $formData['min_request_time'] !== null) {
+            $filters['min_request_time'] = (float) $formData['min_request_time'];
+        }
+        if (isset($formData['max_request_time']) && $formData['max_request_time'] !== null) {
+            $filters['max_request_time'] = (float) $formData['max_request_time'];
+        }
+        if (isset($formData['min_query_count']) && $formData['min_query_count'] !== null) {
+            $filters['min_query_count'] = (int) $formData['min_query_count'];
+        }
+        if (isset($formData['max_query_count']) && $formData['max_query_count'] !== null) {
+            $filters['max_query_count'] = (int) $formData['max_query_count'];
+        }
+        if (isset($formData['date_from']) && $formData['date_from'] instanceof \DateTimeImmutable) {
+            $filters['date_from'] = $formData['date_from'];
+        }
+        if (isset($formData['date_to']) && $formData['date_to'] instanceof \DateTimeImmutable) {
+            $filters['date_to'] = $formData['date_to'];
+        }
+
+        // Get routes with advanced filtering
+        try {
+            $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, $sortBy, $order, $limit);
         } catch (\Exception $e) {
             // If there's an error getting routes, return empty list
             $routes = [];
         }
 
-        // Filter by route name if provided
-        if ($routeName !== null && $routeName !== '') {
-            $routes = array_filter($routes, function ($route) use ($routeName) {
-                return $route->getName() !== null && stripos($route->getName(), $routeName) !== false;
-            });
-        }
-
-        // Sort routes
-        usort($routes, function ($a, $b) use ($sortBy, $order) {
-            $valueA = $this->getSortValue($a, $sortBy);
-            $valueB = $this->getSortValue($b, $sortBy);
-
-            if ($valueA === $valueB) {
-                return 0;
-            }
-
-            $result = $valueA <=> $valueB;
-
-            return $order === 'ASC' ? $result : -$result;
-        });
-
-        // Apply limit
-        $routes = \array_slice($routes, 0, $limit);
-
-        // Calculate statistics
+        // Calculate statistics (with caching)
+        // Reuse the already fetched routes if they match the statistics requirements
         try {
-            $allRoutes = $this->metricsService->getRoutesByEnvironment($env);
-            $stats = $this->calculateStats($allRoutes);
+            $stats = null;
+            if ($this->cacheService !== null) {
+                $stats = $this->cacheService->getCachedStatistics($env);
+            }
+            if ($stats === null) {
+                // If we already have all routes (no filters or limit), reuse them for statistics
+                // Otherwise, fetch all routes for statistics
+                if (empty($filters) && ($limit === null || $limit >= 1000)) {
+                    $allRoutes = $routes;
+                } else {
+                    $allRoutes = $this->metricsService->getRoutesByEnvironment($env);
+                }
+                $stats = $this->calculateStats($allRoutes);
+                if ($this->cacheService !== null) {
+                    $this->cacheService->cacheStatistics($env, $stats);
+                }
+            }
         } catch (\Exception $e) {
             $stats = $this->calculateStats([]);
         }
 
-        try {
-            $environments = $this->getAvailableEnvironments();
-        } catch (\Exception $e) {
-            $environments = ['dev', 'test', 'prod'];
+        // Check dependencies
+        $useComponents = false;
+        $missingDependencies = [];
+        if ($this->dependencyChecker !== null) {
+            $useComponents = $this->dependencyChecker->isTwigComponentAvailable();
+            $missingDependencies = $this->dependencyChecker->getMissingDependencies();
+        }
+
+        // Create review forms for each route if review system is enabled
+        $reviewForms = [];
+        if ($this->enableReviewSystem) {
+            foreach ($routes as $route) {
+                if ($route instanceof RouteData && !$route->isReviewed()) {
+                    $reviewForm = $this->createForm(ReviewRouteDataType::class, null, [
+                        'csrf_token_id' => 'review_performance_record_' . $route->getId(),
+                    ]);
+                    $reviewForms[$route->getId()] = $reviewForm->createView();
+                }
+            }
         }
 
         return $this->render('@NowoPerformanceBundle/Performance/index.html.twig', [
@@ -135,6 +237,29 @@ class PerformanceController extends AbstractController
             'order' => $order,
             'limit' => $limit,
             'environments' => $environments,
+            'template' => $this->template,
+            'form' => $form->createView(),
+            'reviewForms' => $reviewForms,
+            'useComponents' => $useComponents,
+            'missingDependencies' => $missingDependencies,
+            'enableRecordManagement' => $this->enableRecordManagement,
+            'dateTimeFormat' => $this->dateTimeFormat,
+            'dateFormat' => $this->dateFormat,
+            'enableReviewSystem' => $this->enableReviewSystem,
+            'thresholds' => [
+                'request_time' => [
+                    'warning' => $this->requestTimeWarning,
+                    'critical' => $this->requestTimeCritical,
+                ],
+                'query_count' => [
+                    'warning' => $this->queryCountWarning,
+                    'critical' => $this->queryCountCritical,
+                ],
+                'memory_usage' => [
+                    'warning' => $this->memoryUsageWarning,
+                    'critical' => $this->memoryUsageCritical,
+                ],
+            ],
         ]);
     }
 
@@ -152,6 +277,7 @@ class PerformanceController extends AbstractController
             'requestTime' => $route->getRequestTime() ?? 0.0,
             'queryTime' => $route->getQueryTime() ?? 0.0,
             'totalQueries' => $route->getTotalQueries() ?? 0,
+            'accessCount' => $route->getAccessCount() ?? 1,
             'env' => $route->getEnv() ?? '',
             default => $route->getRequestTime() ?? 0.0,
         };
@@ -193,17 +319,1089 @@ class PerformanceController extends AbstractController
     }
 
     /**
-     * Get available environments from routes.
+     * Calculate advanced statistics for routes.
+     *
+     * @param array $routes Array of RouteData entities
+     * @return array<string, mixed> Advanced statistics array
+     */
+    private function calculateAdvancedStats(array $routes): array
+    {
+        if (empty($routes)) {
+            return [
+                'request_time' => $this->getEmptyStats(),
+                'query_time' => $this->getEmptyStats(),
+                'query_count' => $this->getEmptyStats(),
+                'memory_usage' => $this->getEmptyStats(),
+                'access_count' => $this->getEmptyStats(),
+            ];
+        }
+
+        $requestTimes = array_values(array_filter(array_map(fn($r) => $r->getRequestTime(), $routes), fn($v) => $v !== null));
+        $queryTimes = array_values(array_filter(array_map(fn($r) => $r->getQueryTime(), $routes), fn($v) => $v !== null));
+        $queryCounts = array_values(array_filter(array_map(fn($r) => $r->getTotalQueries(), $routes), fn($v) => $v !== null));
+        $memoryUsages = array_values(array_filter(array_map(fn($r) => $r->getMemoryUsage() ? $r->getMemoryUsage() / 1024 / 1024 : null, $routes), fn($v) => $v !== null)); // Convert to MB
+        $accessCounts = array_values(array_filter(array_map(fn($r) => $r->getAccessCount(), $routes), fn($v) => $v !== null));
+
+        return [
+            'request_time' => $this->calculateDetailedStats($requestTimes, 'Request Time', 's'),
+            'query_time' => $this->calculateDetailedStats($queryTimes, 'Query Time', 's'),
+            'query_count' => $this->calculateDetailedStats($queryCounts, 'Query Count', ''),
+            'memory_usage' => $this->calculateDetailedStats($memoryUsages, 'Memory Usage', 'MB'),
+            'access_count' => $this->calculateDetailedStats($accessCounts, 'Access Count', ''),
+        ];
+    }
+
+    /**
+     * Calculate detailed statistics for a metric.
+     *
+     * @param array $values Array of numeric values
+     * @param string $label Metric label
+     * @param string $unit Unit of measurement
+     * @return array<string, mixed> Detailed statistics
+     */
+    private function calculateDetailedStats(array $values, string $label, string $unit): array
+    {
+        if (empty($values)) {
+            return $this->getEmptyStats();
+        }
+
+        sort($values);
+        $count = count($values);
+        $sum = array_sum($values);
+        $mean = $sum / $count;
+        
+        // Median
+        $median = $count % 2 === 0
+            ? ($values[($count / 2) - 1] + $values[$count / 2]) / 2
+            : $values[floor($count / 2)];
+
+        // Mode (most frequent value, rounded to 2 decimals)
+        // Convert to strings to work with array_count_values (only accepts strings and integers)
+        $rounded = array_map(fn($v) => (string) round($v, 2), $values);
+        $frequencies = array_count_values($rounded);
+        arsort($frequencies);
+        $mode = (float) key($frequencies);
+
+        // Standard deviation
+        $variance = array_sum(array_map(fn($v) => pow($v - $mean, 2), $values)) / $count;
+        $stdDev = sqrt($variance);
+
+        // Percentiles
+        $percentiles = [];
+        foreach ([25, 50, 75, 90, 95, 99] as $p) {
+            $index = ($p / 100) * ($count - 1);
+            $lower = floor($index);
+            $upper = ceil($index);
+            if ($lower === $upper) {
+                $percentiles[$p] = $values[$lower];
+            } else {
+                $weight = $index - $lower;
+                $percentiles[$p] = $values[$lower] * (1 - $weight) + $values[$upper] * $weight;
+            }
+        }
+
+        // Min/Max
+        $min = min($values);
+        $max = max($values);
+        $range = $max - $min;
+
+        // Outliers (values beyond Q3 + 1.5*IQR or Q1 - 1.5*IQR)
+        $q1 = $percentiles[25];
+        $q3 = $percentiles[75];
+        $iqr = $q3 - $q1;
+        $lowerBound = $q1 - 1.5 * $iqr;
+        $upperBound = $q3 + 1.5 * $iqr;
+        $outliers = array_filter($values, fn($v) => $v < $lowerBound || $v > $upperBound);
+
+        // Distribution buckets for histogram
+        $buckets = 10;
+        $distribution = array_fill(0, $buckets, 0);
+        
+        // Handle case where all values are the same (avoid division by zero)
+        if ($max - $min === 0.0 || $max === $min) {
+            // All values are the same, put them all in the first bucket
+            $distribution[0] = $count;
+            $bucketLabels = array_fill(0, $buckets, round($min, 2));
+        } else {
+            $bucketSize = ($max - $min) / $buckets;
+            foreach ($values as $value) {
+                $bucketIndex = min(floor(($value - $min) / $bucketSize), $buckets - 1);
+                $distribution[(int)$bucketIndex]++;
+            }
+            $bucketLabels = array_map(fn($i) => round($min + ($i * $bucketSize), 2), range(0, $buckets - 1));
+        }
+
+        return [
+            'label' => $label,
+            'unit' => $unit,
+            'count' => $count,
+            'mean' => round($mean, 4),
+            'median' => round($median, 4),
+            'mode' => round((float)$mode, 4),
+            'std_dev' => round($stdDev, 4),
+            'min' => round($min, 4),
+            'max' => round($max, 4),
+            'range' => round($range, 4),
+            'percentiles' => array_map(fn($v) => round($v, 4), $percentiles),
+            'outliers_count' => count($outliers),
+            'outliers' => array_map(fn($v) => round($v, 4), array_values($outliers)),
+            'distribution' => $distribution,
+            'bucket_labels' => $bucketLabels,
+        ];
+    }
+
+    /**
+     * Get empty statistics structure.
+     *
+     * @return array<string, mixed> Empty statistics
+     */
+    private function getEmptyStats(): array
+    {
+        return [
+            'label' => '',
+            'unit' => '',
+            'count' => 0,
+            'mean' => 0.0,
+            'median' => 0.0,
+            'mode' => 0.0,
+            'std_dev' => 0.0,
+            'min' => 0.0,
+            'max' => 0.0,
+            'range' => 0.0,
+            'percentiles' => [],
+            'outliers_count' => 0,
+            'outliers' => [],
+            'distribution' => [],
+            'bucket_labels' => [],
+        ];
+    }
+
+    /**
+     * Display advanced statistics and analytics.
+     *
+     * Shows detailed statistical analysis with charts to identify optimization targets.
+     *
+     * @param Request $request The HTTP request
+     * @return Response The HTTP response
+     */
+    #[Route(
+        path: '/statistics',
+        name: 'nowo_performance.statistics',
+        methods: ['GET']
+    )]
+    public function statistics(Request $request): Response
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to access the performance statistics.');
+            }
+        }
+
+        // Get environment
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+
+        // Get all routes for statistics
+        try {
+            $routes = $this->metricsService->getRepository()->findAllForStatistics($env);
+        } catch (\Exception $e) {
+            $routes = [];
+        }
+
+        // Calculate advanced statistics
+        $advancedStats = $this->calculateAdvancedStats($routes);
+
+        // Get routes needing attention (outliers and worst performers)
+        $routesNeedingAttention = $this->getRoutesNeedingAttention($routes, $advancedStats);
+
+        // Get available environments
+        try {
+            $environments = $this->getAvailableEnvironments();
+        } catch (\Exception $e) {
+            $environments = ['dev', 'test', 'prod'];
+        }
+
+        return $this->render('@NowoPerformanceBundle/Performance/statistics.html.twig', [
+            'advanced_stats' => $advancedStats,
+            'routes_needing_attention' => $routesNeedingAttention,
+            'environment' => $env,
+            'environments' => $environments,
+            'template' => $this->template,
+            'total_routes' => count($routes),
+        ]);
+    }
+
+    /**
+     * Get routes that need attention (outliers and worst performers).
+     *
+     * @param array $routes Array of RouteData entities
+     * @param array $advancedStats Advanced statistics
+     * @return array<string, mixed> Routes needing attention grouped by reason
+     */
+    private function getRoutesNeedingAttention(array $routes, array $advancedStats): array
+    {
+        $result = [
+            'slow_request_time' => [],
+            'high_query_count' => [],
+            'high_memory' => [],
+            'outliers' => [],
+        ];
+
+        if (empty($routes)) {
+            return $result;
+        }
+
+        $requestTimeStats = $advancedStats['request_time'];
+        $queryCountStats = $advancedStats['query_count'];
+        $memoryStats = $advancedStats['memory_usage'];
+
+        foreach ($routes as $route) {
+            // Slow request time (above 95th percentile)
+            if ($route->getRequestTime() !== null && isset($requestTimeStats['percentiles'][95])) {
+                if ($route->getRequestTime() > $requestTimeStats['percentiles'][95]) {
+                    $result['slow_request_time'][] = [
+                        'route' => $route,
+                        'value' => $route->getRequestTime(),
+                        'percentile' => 95,
+                    ];
+                }
+            }
+
+            // High query count (above 95th percentile)
+            if ($route->getTotalQueries() !== null && isset($queryCountStats['percentiles'][95])) {
+                if ($route->getTotalQueries() > $queryCountStats['percentiles'][95]) {
+                    $result['high_query_count'][] = [
+                        'route' => $route,
+                        'value' => $route->getTotalQueries(),
+                        'percentile' => 95,
+                    ];
+                }
+            }
+
+            // High memory usage (above 95th percentile)
+            if ($route->getMemoryUsage() !== null && isset($memoryStats['percentiles'][95])) {
+                $memoryMB = $route->getMemoryUsage() / 1024 / 1024;
+                if ($memoryMB > $memoryStats['percentiles'][95]) {
+                    $result['high_memory'][] = [
+                        'route' => $route,
+                        'value' => $memoryMB,
+                        'percentile' => 95,
+                    ];
+                }
+            }
+
+            // Outliers
+            $isOutlier = false;
+            if ($route->getRequestTime() !== null && in_array(round($route->getRequestTime(), 4), $requestTimeStats['outliers'] ?? [])) {
+                $isOutlier = true;
+            }
+            if ($route->getTotalQueries() !== null && in_array($route->getTotalQueries(), $queryCountStats['outliers'] ?? [])) {
+                $isOutlier = true;
+            }
+
+            if ($isOutlier) {
+                $result['outliers'][] = [
+                    'route' => $route,
+                    'reasons' => [],
+                ];
+            }
+        }
+
+        // Sort by value descending
+        usort($result['slow_request_time'], fn($a, $b) => $b['value'] <=> $a['value']);
+        usort($result['high_query_count'], fn($a, $b) => $b['value'] <=> $a['value']);
+        usort($result['high_memory'], fn($a, $b) => $b['value'] <=> $a['value']);
+
+        return $result;
+    }
+
+    /**
+     * Get available environments from routes (with caching).
      *
      * @return string[] Array of environment names
      */
-    private function getAvailableEnvironments(): array
+    protected function getAvailableEnvironments(): array
     {
+        // Try to get from cache first
+        if ($this->cacheService !== null) {
+            $cached = $this->cacheService->getCachedEnvironments();
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
+
         try {
-            return $this->metricsService->getRepository()->getDistinctEnvironments();
+            $environments = $this->metricsService->getRepository()->getDistinctEnvironments();
+            
+            // Cache the result
+            if ($this->cacheService !== null) {
+                $this->cacheService->cacheEnvironments($environments);
+            }
+            
+            return $environments;
         } catch (\Exception $e) {
             // Fallback to default environments if repository query fails
-            return ['dev', 'test', 'prod'];
+            $default = ['dev', 'test', 'prod'];
+            
+            // Cache the fallback
+            if ($this->cacheService !== null) {
+                $this->cacheService->cacheEnvironments($default);
+            }
+            
+            return $default;
         }
+    }
+
+    /**
+     * Export performance metrics to CSV.
+     *
+     * @param Request $request The HTTP request
+     * @return StreamedResponse The CSV file response
+     */
+    #[Route(
+        path: '/export/csv',
+        name: 'nowo_performance.export_csv',
+        methods: ['GET']
+    )]
+    public function exportCsv(Request $request): StreamedResponse
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to export performance data.');
+            }
+        }
+
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $filters = $this->buildFiltersFromRequest($request);
+
+        $response = new StreamedResponse(function () use ($env, $filters) {
+            $handle = fopen('php://output', 'w');
+
+            // Add BOM for Excel compatibility
+            fprintf($handle, "\xEF\xBB\xBF");
+
+            // CSV headers
+            fputcsv($handle, [
+                'Route Name',
+                'HTTP Method',
+                'Environment',
+                'Request Time (s)',
+                'Query Time (s)',
+                'Total Queries',
+                'Memory Usage (bytes)',
+                'Access Count',
+                'Last Accessed At',
+                'Created At',
+                'Updated At',
+            ]);
+
+            // Get routes
+            try {
+                $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, 'requestTime', 'DESC', null);
+            } catch (\Exception $e) {
+                $routes = [];
+            }
+
+            // Write data rows
+            foreach ($routes as $route) {
+                fputcsv($handle, [
+                    $route->getName() ?? '',
+                    $route->getHttpMethod() ?? '',
+                    $route->getEnv() ?? '',
+                    $route->getRequestTime() ?? 0.0,
+                    $route->getQueryTime() ?? 0.0,
+                    $route->getTotalQueries() ?? 0,
+                    $route->getMemoryUsage() ?? 0,
+                    $route->getAccessCount() ?? 1,
+                    $route->getLastAccessedAt()?->format('Y-m-d H:i:s') ?? '',
+                    $route->getCreatedAt()?->format('Y-m-d H:i:s') ?? '',
+                    $route->getUpdatedAt()?->format('Y-m-d H:i:s') ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', sprintf(
+            'attachment; filename="performance_metrics_%s_%s.csv"',
+            $env,
+            date('Y-m-d_His')
+        ));
+
+        return $response;
+    }
+
+    /**
+     * Export performance metrics to JSON.
+     *
+     * @param Request $request The HTTP request
+     * @return Response The JSON file response
+     */
+    #[Route(
+        path: '/export/json',
+        name: 'nowo_performance.export_json',
+        methods: ['GET']
+    )]
+    public function exportJson(Request $request): Response
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to export performance data.');
+            }
+        }
+
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $filters = $this->buildFiltersFromRequest($request);
+
+        // Get routes
+        try {
+            $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, 'requestTime', 'DESC', null);
+        } catch (\Exception $e) {
+            $routes = [];
+        }
+
+        // Convert routes to array
+        $data = array_map(function (RouteData $route) {
+            return [
+                'route_name' => $route->getName(),
+                'http_method' => $route->getHttpMethod(),
+                'environment' => $route->getEnv(),
+                'request_time' => $route->getRequestTime(),
+                'query_time' => $route->getQueryTime(),
+                'total_queries' => $route->getTotalQueries(),
+                'memory_usage' => $route->getMemoryUsage(),
+                'memory_usage_mb' => $route->getMemoryUsage() ? round($route->getMemoryUsage() / 1024 / 1024, 2) : null,
+                'access_count' => $route->getAccessCount(),
+                'last_accessed_at' => $route->getLastAccessedAt()?->format('c'),
+                'params' => $route->getParams(),
+                'created_at' => $route->getCreatedAt()?->format('c'),
+                'updated_at' => $route->getUpdatedAt()?->format('c'),
+            ];
+        }, $routes);
+
+        $response = new Response(json_encode([
+            'environment' => $env,
+            'exported_at' => date('c'),
+            'total_records' => count($data),
+            'data' => $data,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
+        $response->headers->set('Content-Disposition', sprintf(
+            'attachment; filename="performance_metrics_%s_%s.json"',
+            $env,
+            date('Y-m-d_His')
+        ));
+
+        return $response;
+    }
+
+    /**
+     * Build filters array from request parameters.
+     *
+     * @param Request $request The HTTP request
+     * @return array<string, mixed> Filters array
+     */
+    private function buildFiltersFromRequest(Request $request): array
+    {
+        $filters = [];
+
+        if ($request->query->get('route')) {
+            $filters['route_name_pattern'] = $request->query->get('route');
+        }
+
+        if ($request->query->get('min_request_time')) {
+            $filters['min_request_time'] = (float) $request->query->get('min_request_time');
+        }
+
+        if ($request->query->get('max_request_time')) {
+            $filters['max_request_time'] = (float) $request->query->get('max_request_time');
+        }
+
+        if ($request->query->get('min_query_count')) {
+            $filters['min_query_count'] = (int) $request->query->get('min_query_count');
+        }
+
+        if ($request->query->get('max_query_count')) {
+            $filters['max_query_count'] = (int) $request->query->get('max_query_count');
+        }
+
+        if ($request->query->get('date_from')) {
+            try {
+                $filters['date_from'] = new \DateTimeImmutable($request->query->get('date_from'));
+            } catch (\Exception $e) {
+                // Ignore invalid date
+            }
+        }
+
+        if ($request->query->get('date_to')) {
+            try {
+                $filters['date_to'] = new \DateTimeImmutable($request->query->get('date_to'));
+            } catch (\Exception $e) {
+                // Ignore invalid date
+            }
+        }
+
+        return $filters;
+    }
+
+    /**
+     * API endpoint for chart data.
+     *
+     * Returns performance metrics data formatted for Chart.js visualization.
+     *
+     * @param Request $request The HTTP request
+     * @return Response JSON response with chart data
+     */
+    #[Route(
+        path: '/api/chart-data',
+        name: 'nowo_performance.api.chart_data',
+        methods: ['GET']
+    )]
+    public function chartData(Request $request): Response
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to access the performance API.');
+            }
+        }
+
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $routeName = $request->query->get('route');
+        $days = (int) ($request->query->get('days', 7));
+        $metric = $request->query->get('metric', 'requestTime'); // requestTime, queryTime, totalQueries, memoryUsage
+
+        try {
+            $data = $this->getChartData($env, $routeName, $days, $metric);
+        } catch (\Exception $e) {
+            $data = [
+                'labels' => [],
+                'datasets' => [],
+            ];
+        }
+
+        return new Response(
+            json_encode($data, JSON_PRETTY_PRINT),
+            Response::HTTP_OK,
+            ['Content-Type' => 'application/json']
+        );
+    }
+
+    /**
+     * Clear all performance records from the database.
+     *
+     * Optionally filters by environment. Requires CSRF token validation.
+     *
+     * @param Request $request The HTTP request
+     * @return RedirectResponse Redirects back to the dashboard
+     */
+    #[Route(
+        path: '/clear',
+        name: 'nowo_performance.clear',
+        methods: ['POST']
+    )]
+    public function clear(Request $request): RedirectResponse
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to clear performance data.');
+            }
+        }
+
+        // Validate CSRF token
+        $token = $request->request->get('_token');
+        if (!$this->isCsrfTokenValid('clear_performance_data', $token)) {
+            $this->addFlash('error', 'Invalid security token. Please try again.');
+            // Redirect to referer if available
+            $referer = $request->headers->get('referer');
+            if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                return $this->redirect($referer);
+            }
+            return $this->redirectToRoute('nowo_performance.index');
+        }
+
+        try {
+            $repository = $this->metricsService->getRepository();
+            $env = $request->request->get('env');
+
+            // Dispatch before event
+            if ($this->eventDispatcher !== null) {
+                $beforeEvent = new BeforeRecordsClearedEvent($env);
+                $this->eventDispatcher->dispatch($beforeEvent);
+
+                if ($beforeEvent->isClearingPrevented()) {
+                    $this->addFlash('warning', 'Clearing was prevented by an event listener.');
+                    $referer = $request->headers->get('referer');
+                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                        return $this->redirect($referer);
+                    }
+                    return $this->redirectToRoute('nowo_performance.index');
+                }
+            }
+
+            // Delete records (all or filtered by environment)
+            $deletedCount = $repository->deleteAll($env);
+
+            // Dispatch after event
+            if ($this->eventDispatcher !== null) {
+                $afterEvent = new AfterRecordsClearedEvent($deletedCount, $env);
+                $this->eventDispatcher->dispatch($afterEvent);
+            }
+
+            // Invalidate cache
+            if ($this->cacheService !== null) {
+                $env = $request->request->get('env');
+                if ($env) {
+                    $this->cacheService->clearStatistics($env);
+                } else {
+                    // Clear all environments if no specific env provided
+                    $this->cacheService->clearEnvironments();
+                }
+            }
+
+            $message = $env 
+                ? sprintf('Successfully deleted %d performance record(s) for environment "%s".', $deletedCount, $env)
+                : sprintf('Successfully deleted %d performance record(s) from all environments.', $deletedCount);
+            
+            $this->addFlash('success', $message);
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'An error occurred while clearing performance data: ' . $e->getMessage());
+        }
+
+        // Redirect to referer if available, otherwise to the dashboard
+        $referer = $request->headers->get('referer');
+        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+            return $this->redirect($referer);
+        }
+
+        return $this->redirectToRoute('nowo_performance.index');
+    }
+
+    /**
+     * Delete a single performance record.
+     *
+     * Requires CSRF token validation and record management to be enabled.
+     *
+     * @param int $id The record ID
+     * @param Request $request The HTTP request
+     * @return RedirectResponse Redirects back to the dashboard
+     */
+    #[Route(
+        path: '/{id}/delete',
+        name: 'nowo_performance.delete',
+        methods: ['POST'],
+        requirements: ['id' => '\d+']
+    )]
+    public function delete(int $id, Request $request): RedirectResponse
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        if (!$this->enableRecordManagement) {
+            throw $this->createAccessDeniedException('Record management is not enabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to delete performance records.');
+            }
+        }
+
+        // Validate CSRF token
+        $token = $request->request->get('_token');
+        if (!$this->isCsrfTokenValid('delete_performance_record_' . $id, $token)) {
+            $this->addFlash('error', 'Invalid security token. Please try again.');
+            $referer = $request->headers->get('referer');
+            if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                return $this->redirect($referer);
+            }
+            return $this->redirectToRoute('nowo_performance.index');
+        }
+
+        try {
+            $repository = $this->metricsService->getRepository();
+            // Get the record before deleting to know the environment
+            $routeData = $repository->find($id);
+            
+            if ($routeData === null) {
+                $this->addFlash('error', sprintf('Record with ID %d not found.', $id));
+                $referer = $request->headers->get('referer');
+                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                    return $this->redirect($referer);
+                }
+                return $this->redirectToRoute('nowo_performance.index');
+            }
+
+            $env = $routeData->getEnv();
+            $routeName = $routeData->getName();
+
+            // Dispatch before event
+            if ($this->eventDispatcher !== null) {
+                $beforeEvent = new BeforeRecordDeletedEvent($routeData);
+                $this->eventDispatcher->dispatch($beforeEvent);
+
+                if ($beforeEvent->isDeletionPrevented()) {
+                    $this->addFlash('warning', 'Deletion was prevented by an event listener.');
+                    $referer = $request->headers->get('referer');
+                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                        return $this->redirect($referer);
+                    }
+                    return $this->redirectToRoute('nowo_performance.index');
+                }
+            }
+            
+            $deleted = $repository->deleteById($id);
+
+            if ($deleted) {
+                // Dispatch after event
+                if ($this->eventDispatcher !== null) {
+                    $afterEvent = new AfterRecordDeletedEvent($id, $routeName, $env);
+                    $this->eventDispatcher->dispatch($afterEvent);
+                }
+
+                // Invalidate cache
+                if ($this->cacheService !== null) {
+                    if ($env) {
+                        $this->cacheService->clearStatistics($env);
+                    }
+                    $this->cacheService->clearEnvironments();
+                }
+
+                $this->addFlash('success', 'Performance record deleted successfully.');
+            } else {
+                $this->addFlash('error', 'Record not found.');
+            }
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'An error occurred while deleting the record: ' . $e->getMessage());
+        }
+
+        $referer = $request->headers->get('referer');
+        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+            return $this->redirect($referer);
+        }
+
+        return $this->redirectToRoute('nowo_performance.index');
+    }
+
+    /**
+     * Mark a performance record as reviewed.
+     *
+     * Requires CSRF token validation and review system to be enabled.
+     *
+     * @param int $id The record ID
+     * @param Request $request The HTTP request
+     * @return RedirectResponse Redirects back to the dashboard
+     */
+    #[Route(
+        path: '/{id}/review',
+        name: 'nowo_performance.review',
+        methods: ['POST'],
+        requirements: ['id' => '\d+']
+    )]
+    public function review(int $id, Request $request): RedirectResponse
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        if (!$this->enableReviewSystem) {
+            throw $this->createAccessDeniedException('Review system is not enabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to review performance records.');
+            }
+        }
+
+        try {
+            $repository = $this->metricsService->getRepository();
+            
+            // Get the record before updating to know the environment
+            $routeData = $repository->find($id);
+            
+            if ($routeData === null) {
+                $this->addFlash('error', sprintf('Record with ID %d not found.', $id));
+                $referer = $request->headers->get('referer');
+                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                    return $this->redirect($referer);
+                }
+                return $this->redirectToRoute('nowo_performance.index');
+            }
+
+            // Create and handle the form
+            $form = $this->createForm(ReviewRouteDataType::class, null, [
+                'csrf_token_id' => 'review_performance_record_' . $id,
+            ]);
+            $form->handleRequest($request);
+
+            if (!$form->isSubmitted() || !$form->isValid()) {
+                $this->addFlash('error', 'Invalid form data. Please try again.');
+                $referer = $request->headers->get('referer');
+                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                    return $this->redirect($referer);
+                }
+                return $this->redirectToRoute('nowo_performance.index');
+            }
+
+            $formData = $form->getData();
+            $queriesImproved = $formData['queries_improved'] ?? '';
+            $timeImproved = $formData['time_improved'] ?? '';
+            $reviewedBy = $this->getUser()?->getUserIdentifier();
+
+            // Convert string values to boolean/null
+            $queriesImprovedBool = match ($queriesImproved) {
+                '1', 'true', 'yes' => true,
+                '0', 'false', 'no' => false,
+                default => null,
+            };
+
+            $timeImprovedBool = match ($timeImproved) {
+                '1', 'true', 'yes' => true,
+                '0', 'false', 'no' => false,
+                default => null,
+            };
+
+            $env = $routeData->getEnv();
+
+            // Dispatch before event
+            if ($this->eventDispatcher !== null) {
+                $beforeEvent = new BeforeRecordReviewedEvent($routeData, $queriesImprovedBool, $timeImprovedBool, $reviewedBy);
+                $this->eventDispatcher->dispatch($beforeEvent);
+
+                if ($beforeEvent->isReviewPrevented()) {
+                    $this->addFlash('warning', 'Review was prevented by an event listener.');
+                    $referer = $request->headers->get('referer');
+                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+                        return $this->redirect($referer);
+                    }
+                    return $this->redirectToRoute('nowo_performance.index');
+                }
+
+                // Use modified values from event
+                $queriesImprovedBool = $beforeEvent->getQueriesImproved();
+                $timeImprovedBool = $beforeEvent->getTimeImproved();
+                $reviewedBy = $beforeEvent->getReviewedBy();
+            }
+            
+            $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy);
+
+            if ($updated) {
+                // Reload the updated record for the after event
+                $updatedRouteData = $repository->find($id);
+
+                // Dispatch after event
+                if ($this->eventDispatcher !== null && $updatedRouteData !== null) {
+                    $afterEvent = new AfterRecordReviewedEvent($updatedRouteData);
+                    $this->eventDispatcher->dispatch($afterEvent);
+                }
+
+                // Invalidate cache
+                if ($this->cacheService !== null) {
+                    if ($env) {
+                        $this->cacheService->clearStatistics($env);
+                    }
+                    $this->cacheService->clearEnvironments();
+                }
+
+                $this->addFlash('success', 'Performance record marked as reviewed.');
+            } else {
+                $this->addFlash('error', 'Record not found.');
+            }
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'An error occurred while reviewing the record: ' . $e->getMessage());
+        }
+
+        $referer = $request->headers->get('referer');
+        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
+            return $this->redirect($referer);
+        }
+
+        return $this->redirectToRoute('nowo_performance.index');
+    }
+
+    /**
+     * Get chart data for visualization.
+     *
+     * @param string $env Environment name
+     * @param string|null $routeName Route name (optional)
+     * @param int $days Number of days to include
+     * @param string $metric Metric to chart (requestTime, queryTime, totalQueries, memoryUsage)
+     * @return array<string, mixed> Chart data structure
+     */
+    private function getChartData(string $env, ?string $routeName, int $days, string $metric): array
+    {
+        $endDate = new \DateTimeImmutable();
+        $startDate = $endDate->modify("-{$days} days");
+
+        $filters = [
+            'date_from' => $startDate,
+            'date_to' => $endDate,
+        ];
+
+        if ($routeName !== null && $routeName !== '') {
+            $filters['route_name_pattern'] = $routeName;
+        }
+
+        $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, 'createdAt', 'ASC', null);
+
+        // Group by date and calculate averages
+        $groupedData = [];
+        foreach ($routes as $route) {
+            $date = $route->getCreatedAt()?->format('Y-m-d') ?? $route->getUpdatedAt()?->format('Y-m-d') ?? date('Y-m-d');
+            
+            if (!isset($groupedData[$date])) {
+                $groupedData[$date] = [
+                    'count' => 0,
+                    'sum' => 0.0,
+                    'max' => 0.0,
+                ];
+            }
+
+            $value = match ($metric) {
+                'requestTime' => $route->getRequestTime() ?? 0.0,
+                'queryTime' => $route->getQueryTime() ?? 0.0,
+                'totalQueries' => (float) ($route->getTotalQueries() ?? 0),
+                'memoryUsage' => (float) ($route->getMemoryUsage() ?? 0) / 1024 / 1024, // Convert to MB
+                default => $route->getRequestTime() ?? 0.0,
+            };
+
+            $groupedData[$date]['count']++;
+            $groupedData[$date]['sum'] += $value;
+            $groupedData[$date]['max'] = max($groupedData[$date]['max'], $value);
+        }
+
+        // Generate labels for all days in range
+        $labels = [];
+        $avgData = [];
+        $maxData = [];
+        $currentDate = $startDate;
+
+        while ($currentDate <= $endDate) {
+            $dateKey = $currentDate->format('Y-m-d');
+            $labels[] = $currentDate->format('M d');
+            
+            if (isset($groupedData[$dateKey])) {
+                $avgData[] = round($groupedData[$dateKey]['sum'] / $groupedData[$dateKey]['count'], 2);
+                $maxData[] = round($groupedData[$dateKey]['max'], 2);
+            } else {
+                $avgData[] = 0;
+                $maxData[] = 0;
+            }
+
+            $currentDate = $currentDate->modify('+1 day');
+        }
+
+        $metricLabel = match ($metric) {
+            'requestTime' => 'Request Time (s)',
+            'queryTime' => 'Query Time (s)',
+            'totalQueries' => 'Total Queries',
+            'memoryUsage' => 'Memory Usage (MB)',
+            default => 'Request Time (s)',
+        };
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'label' => 'Average ' . $metricLabel,
+                    'data' => $avgData,
+                    'borderColor' => 'rgb(75, 192, 192)',
+                    'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
+                    'tension' => 0.1,
+                ],
+                [
+                    'label' => 'Maximum ' . $metricLabel,
+                    'data' => $maxData,
+                    'borderColor' => 'rgb(255, 99, 132)',
+                    'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
+                    'tension' => 0.1,
+                ],
+            ],
+        ];
     }
 }

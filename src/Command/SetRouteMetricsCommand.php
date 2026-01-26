@@ -21,7 +21,27 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 #[AsCommand(
     name: 'nowo:performance:set-route',
-    description: 'Set or update route performance metrics'
+    description: 'Set or update route performance metrics',
+    help: <<<'HELP'
+The <info>%command.name%</info> command allows you to manually set or update performance metrics for a specific route.
+
+This is useful for:
+  - Testing the dashboard with sample data
+  - Manually recording metrics from external monitoring tools
+  - Setting baseline metrics for comparison
+
+<info>php %command.full_name% app_home --request-time=0.5 --queries=10</info>
+
+The command will create a new record if the route doesn't exist, or update the existing record
+if the new metrics indicate worse performance (higher request time or more queries).
+
+Options:
+  - <info>--env</info>: Environment name (default: dev)
+  - <info>--request-time</info>: Request execution time in seconds (float)
+  - <info>--queries</info>: Total number of database queries (integer)
+  - <info>--query-time</info>: Total query execution time in seconds (float)
+  - <info>--memory</info>: Peak memory usage in bytes (integer)
+HELP
 )]
 final class SetRouteMetricsCommand extends Command
 {
@@ -50,19 +70,7 @@ final class SetRouteMetricsCommand extends Command
             ->addOption('queries', null, InputOption::VALUE_REQUIRED, 'Total number of queries (integer)')
             ->addOption('query-time', 't', InputOption::VALUE_REQUIRED, 'Total query execution time in seconds (float)')
             ->addOption('params', 'p', InputOption::VALUE_REQUIRED, 'Route parameters as JSON string')
-            ->setHelp(
-                <<<'HELP'
-The <info>%command.name%</info> command sets or updates route performance metrics.
-
-If a route doesn't exist, it will be created. If it exists, it will be updated
-only if the new metrics are worse (higher request time or more queries).
-
-Examples:
-  <info>php %command.full_name% app_home --request-time=0.5 --queries=10</info>
-  <info>php %command.full_name% app_user_show --env=prod --request-time=1.2 --queries=25 --query-time=0.3</info>
-  <info>php %command.full_name% app_api_list --params='{"id":123}'</info>
-HELP
-            );
+            ->addOption('memory', 'm', InputOption::VALUE_REQUIRED, 'Peak memory usage in bytes (integer)');
     }
 
     /**
@@ -81,6 +89,7 @@ HELP
         $requestTime = $input->getOption('request-time') !== null ? (float) $input->getOption('request-time') : null;
         $totalQueries = $input->getOption('queries') !== null ? (int) $input->getOption('queries') : null;
         $queryTime = $input->getOption('query-time') !== null ? (float) $input->getOption('query-time') : null;
+        $memoryUsage = $input->getOption('memory') !== null ? (int) $input->getOption('memory') : null;
         $paramsJson = $input->getOption('params');
         $params = null;
 
@@ -94,8 +103,8 @@ HELP
         }
 
         // Validate that at least one metric is provided
-        if ($requestTime === null && $totalQueries === null && $queryTime === null) {
-            $io->error('At least one metric must be provided (--request-time, --queries, or --query-time)');
+        if ($requestTime === null && $totalQueries === null && $queryTime === null && $memoryUsage === null) {
+            $io->error('At least one metric must be provided (--request-time, --queries, --query-time, or --memory)');
 
             return Command::FAILURE;
         }
@@ -117,7 +126,8 @@ HELP
                 $requestTime,
                 $totalQueries,
                 $queryTime,
-                $params
+                $params,
+                $memoryUsage
             );
 
             // Get updated route data
@@ -133,6 +143,7 @@ HELP
                         ['Request Time', $routeData->getRequestTime() !== null ? sprintf('%.4f s', $routeData->getRequestTime()) : 'N/A'],
                         ['Total Queries', $routeData->getTotalQueries() ?? 'N/A'],
                         ['Query Time', $routeData->getQueryTime() !== null ? sprintf('%.4f s', $routeData->getQueryTime()) : 'N/A'],
+                        ['Memory Usage', $routeData->getMemoryUsage() !== null ? sprintf('%s MB', number_format($routeData->getMemoryUsage() / 1024 / 1024, 2)) : 'N/A'],
                         ['Updated At', $routeData->getUpdatedAt()?->format('Y-m-d H:i:s') ?? 'N/A'],
                     ]
                 );

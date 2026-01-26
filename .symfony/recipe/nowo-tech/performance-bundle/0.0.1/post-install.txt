@@ -6,13 +6,18 @@ The following files have been created:
 The bundle will automatically track route performance metrics in configured environments.
 
 To use the bundle:
-1. Create the database table: php bin/console doctrine:schema:update --force
-   (or use migrations: php bin/console doctrine:migrations:diff && php bin/console doctrine:migrations:migrate)
+1. Create the database table:
+   - Recommended: php bin/console nowo:performance:create-table
+   - Alternative: php bin/console doctrine:schema:update --force
+   - Or use migrations: php bin/console doctrine:migrations:diff && php bin/console doctrine:migrations:migrate
 2. Make requests to your routes - metrics will be automatically tracked
 3. Use the command to manually set/update metrics: php bin/console nowo:performance:set-route <route>
 
 Available commands:
+- nowo:performance:create-table - Create the performance metrics database table
 - nowo:performance:set-route - Set or update route performance metrics
+- nowo:performance:diagnose - Diagnose bundle configuration and query tracking
+- nowo:performance:check-dependencies - Check optional dependencies status
 
 The bundle automatically tracks:
 - Request execution time

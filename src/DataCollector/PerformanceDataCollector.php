@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DataCollector;
 
+use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Service\TableStatusChecker;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Throwable;
 
 /**
@@ -54,10 +58,48 @@ class PerformanceDataCollector extends DataCollector
     private bool $enabled = false;
 
     /**
-     * Constructor.
+     * Whether async mode is enabled.
+     *
+     * @var bool
      */
-    public function __construct()
-    {
+    private bool $async = false;
+
+    /**
+     * Route data repository (optional, for ranking information).
+     *
+     * @var RouteDataRepository|null
+     */
+    private ?RouteDataRepository $repository = null;
+
+    /**
+     * Kernel interface (optional, for environment detection).
+     *
+     * @var KernelInterface|null
+     */
+    private ?KernelInterface $kernel = null;
+
+    /**
+     * Table status checker (optional, for table existence verification).
+     *
+     * @var TableStatusChecker|null
+     */
+    private ?TableStatusChecker $tableStatusChecker = null;
+
+    /**
+     * Constructor.
+     *
+     * @param RouteDataRepository|null $repository The route data repository (optional)
+     * @param KernelInterface|null $kernel The kernel interface (optional)
+     * @param TableStatusChecker|null $tableStatusChecker The table status checker (optional)
+     */
+    public function __construct(
+        ?RouteDataRepository $repository = null,
+        ?KernelInterface $kernel = null,
+        ?TableStatusChecker $tableStatusChecker = null
+    ) {
+        $this->repository = $repository;
+        $this->kernel = $kernel;
+        $this->tableStatusChecker = $tableStatusChecker;
     }
 
     /**
@@ -107,6 +149,17 @@ class PerformanceDataCollector extends DataCollector
     }
 
     /**
+     * Set async mode status.
+     *
+     * @param bool $async Whether async mode is enabled
+     * @return void
+     */
+    public function setAsync(bool $async): void
+    {
+        $this->async = $async;
+    }
+
+    /**
      * Set the request time.
      *
      * @param float $requestTime The request time in seconds
@@ -149,12 +202,71 @@ class PerformanceDataCollector extends DataCollector
             $requestTime = microtime(true) - $this->startTime;
         }
 
+        // Try to get query metrics directly from QueryTrackingMiddleware if not already set
+        // This ensures we have the latest values even if collect() is called before onKernelTerminate
+        $queryCount = $this->queryCount;
+        $queryTime = $this->queryTime;
+        
+        if ($queryCount === null || $queryTime === null) {
+            try {
+                $queryCount = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getQueryCount();
+                $queryTime = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getTotalQueryTime();
+            } catch (\Exception $e) {
+                // Fallback to stored values or 0
+                $queryCount = $queryCount ?? 0;
+                $queryTime = $queryTime ?? 0.0;
+            }
+        }
+
+        $routeName = $this->routeName ?? $request->attributes->get('_route');
+        $env = $this->kernel?->getEnvironment() ?? 'dev';
+
+        // Check if table exists
+        $tableExists = false;
+        $tableName = null;
+        if ($this->tableStatusChecker !== null) {
+            try {
+                $tableExists = $this->tableStatusChecker->tableExists();
+                $tableName = $this->tableStatusChecker->getTableName();
+            } catch (\Exception $e) {
+                // Silently fail if table check fails
+            }
+        }
+
+        // Get ranking and access count information if repository is available
+        $accessCount = null;
+        $rankingByRequestTime = null;
+        $rankingByQueryCount = null;
+        $totalRoutes = null;
+
+        if ($this->repository !== null && $routeName !== null) {
+            try {
+                $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
+                if ($routeData !== null) {
+                    $accessCount = $routeData->getAccessCount();
+                    // Pass the RouteData entity directly to avoid duplicate queries
+                    $rankingByRequestTime = $this->repository->getRankingByRequestTime($routeData);
+                    $rankingByQueryCount = $this->repository->getRankingByQueryCount($routeData);
+                    $totalRoutes = $this->repository->getTotalRoutesCount($env);
+                }
+            } catch (\Exception $e) {
+                // Silently fail if repository query fails (e.g., table doesn't exist yet)
+            }
+        }
+
         $this->data = [
             'enabled' => $this->enabled,
-            'route_name' => $this->routeName ?? $request->attributes->get('_route'),
+            'route_name' => $routeName,
             'request_time' => $requestTime,
-            'query_count' => $this->queryCount ?? 0,
-            'query_time' => $this->queryTime ?? 0.0,
+            'query_count' => $queryCount,
+            'query_time' => $queryTime,
+            'access_count' => $accessCount,
+            'ranking_by_request_time' => $rankingByRequestTime,
+            'ranking_by_query_count' => $rankingByQueryCount,
+            'total_routes' => $totalRoutes,
+            'async' => $this->async,
+            'table_exists' => $tableExists,
+            'table_name' => $tableName,
         ];
     }
 
@@ -168,6 +280,7 @@ class PerformanceDataCollector extends DataCollector
         $this->queryCount = null;
         $this->queryTime = null;
         $this->routeName = null;
+        $this->async = false;
     }
 
     /**
@@ -264,5 +377,85 @@ class PerformanceDataCollector extends DataCollector
             $time < 1000 => sprintf('%.0f ms', $time),
             default => sprintf('%.2f s', $time / 1000),
         };
+    }
+
+    /**
+     * Get the access count for the current route.
+     *
+     * @return int|null The access count or null if not available
+     */
+    public function getAccessCount(): ?int
+    {
+        return $this->data['access_count'] ?? null;
+    }
+
+    /**
+     * Get the ranking position by request time.
+     *
+     * @return int|null The ranking position (1-based) or null if not available
+     */
+    public function getRankingByRequestTime(): ?int
+    {
+        return $this->data['ranking_by_request_time'] ?? null;
+    }
+
+    /**
+     * Get the ranking position by query count.
+     *
+     * @return int|null The ranking position (1-based) or null if not available
+     */
+    public function getRankingByQueryCount(): ?int
+    {
+        return $this->data['ranking_by_query_count'] ?? null;
+    }
+
+    /**
+     * Get the total number of routes in the environment.
+     *
+     * @return int|null The total number of routes or null if not available
+     */
+    public function getTotalRoutes(): ?int
+    {
+        return $this->data['total_routes'] ?? null;
+    }
+
+    /**
+     * Check if async mode is enabled.
+     *
+     * @return bool True if async mode is enabled, false otherwise
+     */
+    public function isAsync(): bool
+    {
+        return $this->data['async'] ?? false;
+    }
+
+    /**
+     * Get the processing mode (sync or async).
+     *
+     * @return string 'async' if async mode is enabled, 'sync' otherwise
+     */
+    public function getProcessingMode(): string
+    {
+        return $this->isAsync() ? 'async' : 'sync';
+    }
+
+    /**
+     * Check if the performance metrics table exists.
+     *
+     * @return bool True if the table exists, false otherwise
+     */
+    public function tableExists(): bool
+    {
+        return $this->data['table_exists'] ?? false;
+    }
+
+    /**
+     * Get the configured table name.
+     *
+     * @return string|null The configured table name or null if not available
+     */
+    public function getTableName(): ?string
+    {
+        return $this->data['table_name'] ?? null;
     }
 }

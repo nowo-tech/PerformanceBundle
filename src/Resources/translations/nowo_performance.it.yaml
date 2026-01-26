@@ -1,0 +1,120 @@
+# Translations for Nowo Performance Bundle (Italiano)
+# Domain: nowo_performance
+
+dashboard:
+  title: Dashboard Metriche di Prestazione
+  subtitle: Monitora e analizza le metriche di prestazione delle route
+  advanced_statistics: Statistiche Avanzate
+  export_csv: Esporta CSV
+  export_json: Esporta JSON
+  clear_all_records: Cancella Tutti i Record
+  back_to_dashboard: Torna al Dashboard
+  no_routes_found: Nessuna route trovata per i filtri selezionati.
+statistics:
+  total_routes: Route Totali
+  total_queries: Query Totali
+  avg_request_time: Tempo Medio Richiesta
+  max_request_time: Tempo Massimo Richiesta
+  avg_query_time: Tempo Medio Query
+  max_query_time: Tempo Massimo Query
+  max_queries: Query Massime
+  not_available: N/D
+routes_table:
+  title: Route
+  route_name: Nome Route
+  environment: Ambiente
+  request_time: Tempo Richiesta
+  query_time: Tempo Query
+  total_queries: Query Totali
+  memory_usage: Uso Memoria
+  access_count: Numero Accessi
+  last_accessed_at: Ultimo Accesso
+  updated_at: Aggiornato
+  review_status: Stato Revisione
+  actions: Azioni
+  reviewed: Revisionato
+  not_reviewed: Non Revisionato
+  queries_improved: 'Query: ✓ Migliorato'
+  queries_not_improved: 'Query: ✗ Non Migliorato'
+  time_improved: 'Tempo: ✓ Migliorato'
+  time_not_improved: 'Tempo: ✗ Non Migliorato'
+  delete_record: Elimina record
+  mark_as_reviewed: Segna come revisionato
+  delete: Elimina
+  review: Revisiona
+  cancel: Annulla
+  confirm_delete: Sei sicuro di voler eliminare questo record?
+filters:
+  title: Filtri
+  show_advanced: Mostra Filtri Avanzati
+  hide_advanced: Nascondi Filtri Avanzati
+  advanced_filters: Filtri Avanzati
+  environment: Ambiente
+  route_name: Nome Route
+  sort_by: Ordina Per
+  order: Ordine
+  limit: Limite
+  min_request_time: Tempo Min Richiesta (s)
+  max_request_time: Tempo Max Richiesta (s)
+  min_query_count: Numero Min Query
+  max_query_count: Numero Max Query
+  date_from: Data Da
+  date_to: Data A
+  apply_filters: Applica Filtri
+  reset: Reimposta
+  placeholder_route: Filtra per nome route...
+  placeholder_time: '0.0000'
+  placeholder_count: '0'
+review:
+  modal_title: Segna come Revisionato
+  queries_improved: Query Migliorate?
+  time_improved: Tempo Migliorato?
+  not_specified: Non specificato
+  'yes': Sì
+  'no': 'No'
+  mark_as_reviewed: Segna come Revisionato
+confirmations:
+  clear_all_records: Sei sicuro di voler eliminare tutti i record di prestazione?
+    Questa azione non può essere annullata.
+  delete_record: Sei sicuro di voler eliminare questo record?
+flash:
+  records_cleared: Tutti i record sono stati eliminati con successo.
+  record_deleted: Il record è stato eliminato con successo.
+  record_reviewed: Il record è stato segnato come revisionato con successo.
+  error: Si è verificato un errore durante l'elaborazione della richiesta.
+statistics_page:
+  title: Statistiche Avanzate di Prestazione
+  subtitle: Analisi statistica dettagliata per identificare obiettivi di ottimizzazione
+  routes_needing_attention: Route che Richiedono Attenzione
+  routes_above_p95: Route sopra il 95° percentile
+  routes_with_outliers: Route con valori anomali
+  metric: Metrica
+  mean: Media
+  median: Mediana
+  mode: Moda
+  std_deviation: Deviazione Standard
+  min: Min
+  max: Max
+  range: Intervallo
+  p25: P25
+  p50: P50
+  p75: P75
+  p90: P90
+  p95: P95
+  p99: P99
+  outliers: Valori Anomali
+  histogram: Istogramma di Distribuzione
+  request_time: Tempo Richiesta
+  query_time: Tempo Query
+  query_count: Numero Query
+  memory_usage: Uso Memoria
+  access_count: Numero Accessi
+sort_options:
+  request_time: Tempo Richiesta
+  query_time: Tempo Query
+  queries: Query
+  access_count: Numero Accessi
+  route_name: Nome Route
+order_options:
+  descending: Decrescente
+  ascending: Crescente

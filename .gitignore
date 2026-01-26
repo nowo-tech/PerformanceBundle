@@ -1,14 +1,38 @@
+# Dependencies
 /vendor/
+composer.lock
+
+# PHPUnit
 /.phpunit.cache/
-/coverage/
-/phpunit.xml
 .phpunit.result.cache
+/phpunit.xml
+/coverage/
+/coverage.xml
+
+# Code style
 .php_cs.cache
 .php-cs-fixer.cache
-composer.lock
+
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
 .DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Demo data and cache
+demo/**/.data/
+demo/**/var/cache/
+demo/**/var/log/
+demo/**/var/sessions/
+
+# Temporary files
+*.tmp
+*.bak
+*.cache

@@ -11,9 +11,46 @@ services:
     # Services (uses Autowire attributes for parameters)
     Nowo\PerformanceBundle\Service\PerformanceMetricsService:
         public: true
+        calls:
+            # Optional: message bus for async processing (only if Messenger is available)
+            - method: setMessageBus
+              arguments: ['@?messenger.bus.default']
+
+    # Cache Service
+    Nowo\PerformanceBundle\Service\PerformanceCacheService:
+        public: true
+        # cachePool is optional and will be null if cache.app is not available
+        # The Autowire attribute handles the optional injection
+
+    # Dependency Checker
+    Nowo\PerformanceBundle\Service\DependencyChecker:
+        public: true
+
+    # Twig Extensions
+    Nowo\PerformanceBundle\Twig\IconExtension:
+        tags:
+            - { name: twig.extension }
+
+    # Twig Components (for Symfony UX TwigComponent)
+    # These components are auto-discovered by Symfony UX TwigComponent via #[AsTwigComponent] attribute
+    # With autoconfigure: true, they should be automatically registered
+    # Explicit registration ensures they are available even if autoconfigure doesn't work
+    Nowo\PerformanceBundle\Twig\Component\:
+        resource: '../../Twig/Component/*'
+        public: true
+        # No explicit tag needed - #[AsTwigComponent] attribute handles registration
+        # Components need to be public for Twig to access them
+
+    # Table Status Checker
+    Nowo\PerformanceBundle\Service\TableStatusChecker:
+        public: true
 
     # Data Collector
     Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector:
+        arguments:
+            $repository: '@?Nowo\PerformanceBundle\Repository\RouteDataRepository'
+            $kernel: '@?kernel'
+            $tableStatusChecker: '@?Nowo\PerformanceBundle\Service\TableStatusChecker'
         tags:
             - { name: data_collector, template: '@NowoPerformanceBundle/Collector/performance.html.twig', id: 'performance', priority: 300 }
 
@@ -37,3 +74,9 @@ services:
     # Controllers (uses Route attributes, autoconfigure handles the tag)
     Nowo\PerformanceBundle\Controller\:
         resource: '../../Controller/*'
+
+    # Message Handler (uses AsMessageHandler attribute if Messenger is installed)
+    # The polyfill ensures this works even without Messenger
+    Nowo\PerformanceBundle\MessageHandler\:
+        resource: '../../MessageHandler/*'
+        exclude: '../../MessageHandler/AsMessageHandlerPolyfill.php'

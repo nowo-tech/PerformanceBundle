@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Home - Performance Bundle Demo{% endblock %}
+
+{% block body %}
+    <h1>Performance Bundle Demo</h1>
+    <p class="lead">This demo shows how the Performance Bundle tracks route performance metrics.</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h2>Quick Links</h2>
+            <ul>
+                <li><a href="{{ path('product_index') }}">Products CRUD</a></li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h2>Performance Metrics ({{ env }})</h2>
+            {% if routes|length > 0 %}
+                <p>Total routes tracked: {{ routes|length }}</p>
+                <a href="{{ path('product_index') }}" class="btn btn-primary">View Products (will be tracked)</a>
+                <a href="{{ path('nowo_performance.index') }}" class="btn btn-info">View Performance Metrics</a>
+            {% else %}
+                <p>No routes tracked yet. Visit some routes to see metrics!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if worstRoutes|length > 0 %}
+        <div class="mt-4">
+            <h2>Worst Performing Routes</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Route</th>
+                        <th>Request Time</th>
+                        <th>Queries</th>
+                        <th>Query Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for route in worstRoutes %}
+                        <tr>
+                            <td>{{ route.name }}</td>
+                            <td>{{ route.requestTime ? route.requestTime|number_format(4) ~ 's' : 'N/A' }}</td>
+                            <td>{{ route.totalQueries ?? 'N/A' }}</td>
+                            <td>{{ route.queryTime ? route.queryTime|number_format(4) ~ 's' : 'N/A' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}

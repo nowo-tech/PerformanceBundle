@@ -1,0 +1,85 @@
+# Performance Bundle Configuration
+# Complete configuration example with all available options
+
+when@dev:
+    nowo_performance:
+        # Enable or disable performance tracking globally
+        enabled: true
+        
+        # Environments where performance tracking is enabled
+        environments: ['dev', 'test']
+        
+        # Doctrine connection name to use for storing metrics
+        connection: 'default'
+        
+        # Table name for storing route performance data
+        table_name: 'routes_data'
+        
+        # Track database query count and execution time
+        track_queries: true
+        
+        # Track request execution time
+        track_request_time: true
+
+        # Record metrics asynchronously using Symfony Messenger (requires symfony/messenger)
+        # When enabled, metrics are dispatched via message bus instead of direct database writes
+        async: false
+        
+        # List of route names to ignore (not tracked)
+        ignore_routes:
+            - '_wdt'          # Web Debug Toolbar
+            - '_profiler'     # Symfony Profiler
+            - '_error'        # Error pages
+        
+        # Performance dashboard configuration
+        dashboard:
+            # Enable or disable the performance dashboard
+            enabled: true
+            
+            # Route path for the dashboard (e.g., /performance, /metrics)
+            path: '/performance'
+            
+            # Optional route prefix for the dashboard (e.g., /admin, /monitoring)
+            prefix: '/demo'
+            
+            # Required roles to access the dashboard (users must have at least one)
+            # Empty array = no restrictions (default)
+            roles: []
+            # Example with restrictions:
+            # roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
+            
+            # CSS framework to use for the dashboard interface
+            # Options: 'bootstrap' or 'tailwind'
+            template: 'bootstrap'
+            
+            # Enable individual record deletion from dashboard
+            # When enabled, a delete button appears for each record
+            enable_record_management: true
+            
+            # Enable the record review system
+            # When enabled, users can mark records as reviewed and indicate improvements
+            enable_review_system: true
+
+            # Date format configuration for displaying dates in the dashboard
+            date_formats:
+                # Format for date and time with seconds (e.g., Y-m-d H:i:s)
+                datetime: 'Y-m-d H:i:s'
+                # Format for date and time without seconds (e.g., Y-m-d H:i)
+                date: 'Y-m-d H:i'
+
+        # Performance thresholds for warning and critical levels
+        thresholds:
+            # Request time thresholds in seconds
+            request_time:
+                warning: 0.5    # Request time threshold for warning (seconds)
+                critical: 1.0   # Request time threshold for critical (seconds)
+            
+            # Query count thresholds
+            query_count:
+                warning: 20    # Query count threshold for warning
+                critical: 50    # Query count threshold for critical
+            
+            # Memory usage thresholds in MB
+            memory_usage:
+                warning: 20.0  # Memory usage threshold for warning (MB)
+                critical: 50.0 # Memory usage threshold for critical (MB)

@@ -3,7 +3,7 @@
 {% block toolbar %}
     {% if collector.enabled %}
         {% set request_time = collector.requestTime ?? 0 %}
-        {% set query_count = collector.queryCount ?? 0 %}
+        {% set query_count = collector.queryCount %}
         {% set icon %}
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
@@ -26,6 +26,16 @@
             <div class="sf-toolbar-info-piece">
                 <b>Route</b>
                 <span>{{ collector.routeName ?? 'N/A' }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Processing</b>
+                <span>
+                    {% if collector.async %}
+                        <span style="color: #4caf50;">● Async</span>
+                    {% else %}
+                        <span style="color: #2196f3;">● Sync</span>
+                    {% endif %}
+                </span>
             </div>
         {% endset %}
 
@@ -59,9 +69,10 @@
                 <div class="value">{{ collector.formattedRequestTime }}</div>
                 <div class="label">Request Time</div>
             </div>
-            {% if collector.queryCount > 0 %}
+            {% set query_count = collector.queryCount %}
+            {% if query_count > 0 %}
                 <div class="metric">
-                    <div class="value">{{ collector.queryCount }}</div>
+                    <div class="value">{{ query_count }}</div>
                     <div class="label">Database Queries</div>
                 </div>
                 <div class="metric">
@@ -94,6 +105,82 @@
                 <tr>
                     <td>Query Time</td>
                     <td>{{ collector.formattedQueryTime }}</td>
+                </tr>
+                <tr>
+                    <td>Processing Mode</td>
+                    <td>
+                        {% if collector.async %}
+                            <span style="color: #4caf50; font-weight: bold;">● Async</span>
+                            <span class="text-muted">(via Messenger)</span>
+                        {% else %}
+                            <span style="color: #2196f3; font-weight: bold;">● Sync</span>
+                            <span class="text-muted">(direct database write)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if collector.accessCount is not null %}
+                    <tr>
+                        <td>Access Frequency</td>
+                        <td>
+                            <strong>{{ collector.accessCount }}</strong> time{{ collector.accessCount != 1 ? 's' : '' }}
+                            {% if collector.totalRoutes is not null %}
+                                <span class="text-muted">(out of {{ collector.totalRoutes }} total routes)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if collector.rankingByRequestTime is not null %}
+                    <tr>
+                        <td>Ranking by Request Time</td>
+                        <td>
+                            <strong>Position #{{ collector.rankingByRequestTime }}</strong>
+                            {% if collector.totalRoutes is not null %}
+                                <span class="text-muted">(out of {{ collector.totalRoutes }} routes)</span>
+                            {% endif %}
+                            {% if collector.rankingByRequestTime <= 3 %}
+                                <span style="color: #d32f2f; font-weight: bold;">⚠️ Slow route</span>
+                            {% elseif collector.rankingByRequestTime <= 10 %}
+                                <span style="color: #f57c00; font-weight: bold;">⚠️ Needs attention</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if collector.rankingByQueryCount is not null %}
+                    <tr>
+                        <td>Ranking by Query Count</td>
+                        <td>
+                            <strong>Position #{{ collector.rankingByQueryCount }}</strong>
+                            {% if collector.totalRoutes is not null %}
+                                <span class="text-muted">(out of {{ collector.totalRoutes }} routes)</span>
+                            {% endif %}
+                            {% if collector.rankingByQueryCount <= 3 %}
+                                <span style="color: #d32f2f; font-weight: bold;">⚠️ High query count</span>
+                            {% elseif collector.rankingByQueryCount <= 10 %}
+                                <span style="color: #f57c00; font-weight: bold;">⚠️ Needs optimization</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <td>Database Table</td>
+                    <td>
+                        {% if collector.tableName %}
+                            <code>{{ collector.tableName }}</code>
+                            {% if collector.tableExists %}
+                                <span style="color: #4caf50; font-weight: bold;">✓ Exists</span>
+                                <span class="text-muted">(ready to store metrics)</span>
+                            {% else %}
+                                <span style="color: #d32f2f; font-weight: bold;">✗ Does not exist</span>
+                                <span class="text-muted">(metrics cannot be saved)</span>
+                                <br>
+                                <small class="text-muted">
+                                    Run: <code>php bin/console nowo:performance:create-table</code>
+                                </small>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Not configured</span>
+                        {% endif %}
+                    </td>
                 </tr>
             </tbody>
         </table>
