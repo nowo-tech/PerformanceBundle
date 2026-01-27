@@ -70,8 +70,9 @@ class TableStatusChecker
             $entityManager = $this->registry->getManager($this->connectionName);
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
             // Use method_exists check to avoid linter errors and ensure compatibility
-            $actualTableName = method_exists($metadata, 'getTableName')
-                ? /** @phpstan-ignore-next-line */ $metadata->getTableName()
+            $hasGetTableName = method_exists($metadata, 'getTableName');
+            $actualTableName = $hasGetTableName
+                ? $metadata->getTableName() // @phpstan-ignore-line
                 : ($metadata->table['name'] ?? $this->tableName);
 
             return $schemaManager->tablesExist([$actualTableName]);
