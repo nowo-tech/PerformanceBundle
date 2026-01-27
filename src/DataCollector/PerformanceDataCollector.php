@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Throwable;
 
 /**
  * Data collector for Performance Bundle.
@@ -187,7 +186,7 @@ class PerformanceDataCollector extends DataCollector
         $this->recordWasUpdated = $wasUpdated;
     }
 
-    public function collect(Request $request, Response $response, ?Throwable $exception = null): void
+    public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
     {
         $requestTime = null;
         if (null !== $this->startTime) {
