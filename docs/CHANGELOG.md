@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - This approach works consistently across all DoctrineBundle versions (2.x and 3.x)
   - No YAML configuration required, avoiding compatibility issues
   - Updated documentation to reflect this change
+- **QueryTrackingConnectionSubscriber getSubscribedEvents method** - Added required method for EventSubscriberInterface
+  - Added `getSubscribedEvents()` method to comply with `EventSubscriberInterface`
+  - Events are registered via `#[AsEventListener]` attributes, but method is required by interface
+  - Fixes "Class contains 1 abstract method" error
 
 ## [0.0.4] - 2025-01-27
 

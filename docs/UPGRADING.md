@@ -15,6 +15,8 @@ This version removes YAML middleware configuration completely to fix compatibili
 - Some versions (like 2.17.1) do not support these options, causing "Unrecognized option" errors
 - Changed to use only reflection-based middleware application via `QueryTrackingConnectionSubscriber`
 - This approach works consistently across all DoctrineBundle versions (2.x and 3.x)
+- **QueryTrackingConnectionSubscriber**: Added required `getSubscribedEvents()` method for `EventSubscriberInterface` compliance
+- Fixes "Class contains 1 abstract method" error
 
 #### What This Means
 
@@ -58,6 +60,14 @@ This version removes YAML middleware configuration completely to fix compatibili
   php bin/console nowo:performance:diagnose
   ```
   The command will show that middleware is applied via Event Subscriber (Reflection).
+
+**Issue: "Class contains 1 abstract method" error**
+
+- **Solution**: This was fixed in version 0.0.5. Update to the latest version:
+  ```bash
+  composer update nowo-tech/performance-bundle
+  php bin/console cache:clear
+  ```
 
 ## Upgrading to 0.0.4 (2025-01-27)
 
