@@ -98,13 +98,30 @@ class PerformanceAnalysisService
         $sumY2 = array_sum(array_map(static fn ($p) => $p['y'] * $p['y'], $pairs));
 
         $numerator = ($n * $sumXY) - ($sumX * $sumY);
-        $denominator = sqrt((($n * $sumX2) - ($sumX * $sumX)) * (($n * $sumY2) - ($sumY * $sumY)));
-
-        if (0 === $denominator) {
+        
+        // Calculate variance components
+        $varianceX = ($n * $sumX2) - ($sumX * $sumX);
+        $varianceY = ($n * $sumY2) - ($sumY * $sumY);
+        
+        // Check if either variance is zero or negative (which would cause sqrt issues)
+        if ($varianceX <= 0 || $varianceY <= 0) {
+            return null;
+        }
+        
+        // Calculate denominator (product of standard deviations)
+        $denominator = sqrt($varianceX * $varianceY);
+        
+        // Check if denominator is zero, NaN, or INF (additional safety check)
+        if (0.0 === $denominator || !is_finite($denominator)) {
             return null;
         }
 
         $correlation = $numerator / $denominator;
+        
+        // Ensure correlation is a valid number
+        if (!is_finite($correlation)) {
+            return null;
+        }
 
         // Interpret correlation strength
         $strength = 'none';

@@ -67,6 +67,7 @@ services:
             $repository: '@?Nowo\PerformanceBundle\Repository\RouteDataRepository'
             $kernel: '@?kernel'
             $tableStatusChecker: '@?Nowo\PerformanceBundle\Service\TableStatusChecker'
+            $dependencyChecker: '@?Nowo\PerformanceBundle\Service\DependencyChecker'
         tags:
             - { name: data_collector, template: '@NowoPerformanceBundle/Collector/performance.html.twig', id: 'performance', priority: 300 }
 

@@ -266,16 +266,18 @@ class PerformanceMetricsService
         } else {
             // Always increment access count when route is accessed
             $routeData->incrementAccessCount();
+            // Incrementing access count always updates the record (last_accessed_at changes)
+            $wasUpdated = true;
 
             // Track status code if configured
             if (null !== $statusCode && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
                 $routeData->incrementStatusCode($statusCode);
-                $wasUpdated = true;
+                // Status code increment also updates the record
             }
 
             // Update metrics if they are worse (higher time or more queries)
             if ($routeData->shouldUpdate($requestTime, $totalQueries)) {
-                $wasUpdated = true;
+                // Metrics update also updates the record
 
                 if (null !== $requestTime && (null === $routeData->getRequestTime() || $requestTime > $routeData->getRequestTime())) {
                     $routeData->setRequestTime($requestTime);

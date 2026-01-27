@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-01-27
+
+### Fixed
+- **Modal dependency display** - Fixed modal rendering issues in Bootstrap/Tailwind templates
+  - Modal de Tailwind ahora solo se incluye cuando `template == 'tailwind'`
+  - Modal de Bootstrap siempre disponible cuando se usa Bootstrap
+  - Mejorada la detección de Bootstrap vs Tailwind en JavaScript
+  - Previene que el modal de Tailwind aparezca desmaquetado en proyectos Bootstrap
+  - El modal correcto se muestra según el template activo
+- **Division by zero error** - Fixed `DivisionByZeroError` in `PerformanceAnalysisService::calculateCorrelation()`
+  - Verificación mejorada de varianzas antes de calcular `sqrt()`
+  - Verificación de `NaN` e `INF` en el denominador
+  - Verificación del resultado final de la correlación
+  - Retorna `null` cuando no se puede calcular la correlación de forma segura
+  - Previene errores cuando los datos tienen varianza cero o valores constantes
+- **Data Collector "Unknown" status** - Fixed issue where "Data Saved to Database" showed "⚠ Unknown"
+  - `wasRecordNew()` y `wasRecordUpdated()` ahora leen primero de las propiedades (establecidas en `onKernelTerminate`)
+  - `setRecordOperation()` ahora actualiza tanto las propiedades como el array `$this->data`
+  - `wasUpdated` ahora siempre es `true` cuando se incrementa `accessCount` (porque actualiza `last_accessed_at`)
+  - El collector ahora muestra correctamente "✓ Saved (new record created)" o "✓ Saved (existing record updated)"
+
+### Changed
+- **PerformanceMetricsService** - Improved `wasUpdated` logic
+  - `wasUpdated` ahora siempre es `true` cuando se actualiza un registro existente
+  - Esto es correcto porque `incrementAccessCount()` siempre actualiza `last_accessed_at`
+  - Mejora la precisión del estado mostrado en el Web Profiler
+
 ## [1.0.1] - 2026-01-27
 
 ### Added

@@ -312,6 +312,168 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertSame(2, $collector->getRankingByQueryCount());
     }
 
+    public function testCollectSkipsRankingQueriesWhenDisabled(): void
+    {
+        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
+        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
+        $container = $this->createMock(\Psr\Container\ContainerInterface::class);
+        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
+
+        // Container returns enable_ranking_queries = false
+        $container->expects($this->once())
+            ->method('getParameter')
+            ->with('nowo_performance.dashboard.enable_ranking_queries')
+            ->willReturn(false);
+
+        $kernel->expects($this->once())
+            ->method('getContainer')
+            ->willReturn($container);
+
+        $kernel->expects($this->once())
+            ->method('getEnvironment')
+            ->willReturn('dev');
+
+        $repository->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn($routeData);
+
+        // Ranking queries should NOT be called
+        $repository->expects($this->never())
+            ->method('getRankingByRequestTime');
+        $repository->expects($this->never())
+            ->method('getRankingByQueryCount');
+        $repository->expects($this->never())
+            ->method('getTotalRoutesCount');
+
+        $collector = new PerformanceDataCollector($repository, $kernel);
+        $collector->setRouteName('app_home');
+        $collector->setEnabled(true);
+
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+        $response = new Response();
+
+        $collector->collect($request, $response);
+
+        // Ranking should be null when disabled
+        $this->assertNull($collector->getRankingByRequestTime());
+        $this->assertNull($collector->getRankingByQueryCount());
+        $this->assertNull($collector->getTotalRoutes());
+    }
+
+    public function testCollectExecutesRankingQueriesWhenEnabled(): void
+    {
+        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
+        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
+        $container = $this->createMock(\Psr\Container\ContainerInterface::class);
+        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
+
+        // Container returns enable_ranking_queries = true (default)
+        $container->expects($this->once())
+            ->method('getParameter')
+            ->with('nowo_performance.dashboard.enable_ranking_queries')
+            ->willReturn(true);
+
+        $kernel->expects($this->once())
+            ->method('getContainer')
+            ->willReturn($container);
+
+        $kernel->expects($this->once())
+            ->method('getEnvironment')
+            ->willReturn('dev');
+
+        $repository->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn($routeData);
+
+        // Ranking queries SHOULD be called
+        $repository->expects($this->once())
+            ->method('getRankingByRequestTime')
+            ->with($routeData)
+            ->willReturn(1);
+        $repository->expects($this->once())
+            ->method('getRankingByQueryCount')
+            ->with($routeData)
+            ->willReturn(2);
+        $repository->expects($this->once())
+            ->method('getTotalRoutesCount')
+            ->with('dev')
+            ->willReturn(10);
+
+        $collector = new PerformanceDataCollector($repository, $kernel);
+        $collector->setRouteName('app_home');
+        $collector->setEnabled(true);
+
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+        $response = new Response();
+
+        $collector->collect($request, $response);
+
+        // Ranking should be set when enabled
+        $this->assertSame(1, $collector->getRankingByRequestTime());
+        $this->assertSame(2, $collector->getRankingByQueryCount());
+        $this->assertSame(10, $collector->getTotalRoutes());
+    }
+
+    public function testCollectUsesDefaultWhenParameterNotAvailable(): void
+    {
+        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
+        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
+        $container = $this->createMock(\Psr\Container\ContainerInterface::class);
+        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
+
+        // Container throws exception (parameter not available)
+        $container->expects($this->once())
+            ->method('getParameter')
+            ->with('nowo_performance.dashboard.enable_ranking_queries')
+            ->willThrowException(new \Exception('Parameter not found'));
+
+        $kernel->expects($this->once())
+            ->method('getContainer')
+            ->willReturn($container);
+
+        $kernel->expects($this->once())
+            ->method('getEnvironment')
+            ->willReturn('dev');
+
+        $repository->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn($routeData);
+
+        // Should use default (true) and execute ranking queries
+        $repository->expects($this->once())
+            ->method('getRankingByRequestTime')
+            ->with($routeData)
+            ->willReturn(1);
+        $repository->expects($this->once())
+            ->method('getRankingByQueryCount')
+            ->with($routeData)
+            ->willReturn(2);
+        $repository->expects($this->once())
+            ->method('getTotalRoutesCount')
+            ->with('dev')
+            ->willReturn(10);
+
+        $collector = new PerformanceDataCollector($repository, $kernel);
+        $collector->setRouteName('app_home');
+        $collector->setEnabled(true);
+
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+        $response = new Response();
+
+        $collector->collect($request, $response);
+
+        // Should have ranking data (default is enabled)
+        $this->assertSame(1, $collector->getRankingByRequestTime());
+        $this->assertSame(2, $collector->getRankingByQueryCount());
+        $this->assertSame(10, $collector->getTotalRoutes());
+    }
+
     public function testCollectHandlesRepositoryException(): void
     {
         $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);

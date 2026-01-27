@@ -1,28 +1,32 @@
 {# Modal para mostrar información sobre dependencias faltantes #}
-{# Bootstrap version #}
+{# template variable: 'bootstrap' or 'tailwind' (defaults to 'bootstrap' if not provided) #}
+{% set template = template|default('bootstrap') %}
+
+{# Bootstrap version - siempre incluido #}
 <div class="modal fade" id="dependencyModal" tabindex="-1" aria-labelledby="dependencyModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="dependencyModalLabel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
                     </svg>
-                    Dependencia Requerida
+                    Dependencia Opcional
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-warning" role="alert">
-                    <h6 class="alert-heading">Funcionalidad no disponible</h6>
-                    <p class="mb-2">Para usar esta funcionalidad, necesitas instalar la siguiente dependencia:</p>
+                <div class="alert alert-info" role="alert">
+                    <h6 class="alert-heading">Funcionalidad mejorada disponible</h6>
+                    <p class="mb-2">Esta funcionalidad está disponible con un modo de respaldo, pero puedes mejorar el rendimiento instalando la siguiente dependencia opcional:</p>
                     <div id="dependencyInfo">
                         {# Se llenará dinámicamente con JavaScript #}
                     </div>
                 </div>
                 <div class="mt-3">
-                    <h6>Instalación:</h6>
-                    <pre class="bg-light p-3 rounded"><code id="installCommand"></code></pre>
+                    <h6 class="mb-2">Instalación:</h6>
+                    <pre class="bg-light p-3 rounded border"><code id="installCommand" class="text-dark"></code></pre>
                 </div>
             </div>
             <div class="modal-footer">
@@ -32,88 +36,153 @@
     </div>
 </div>
 
-{# Tailwind version (hidden by default, shown when template is tailwind) #}
-<div id="dependencyModalTailwind" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="dependencyModalTailwindLabel" aria-hidden="true">
+{# Tailwind version - solo incluido si template es tailwind #}
+{% if template == 'tailwind' %}
+<div id="dependencyModalTailwind" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="dependencyModalTailwindLabel" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="document.getElementById('dependencyModalTailwind').classList.add('hidden')"></div>
+        {# Backdrop #}
+        <div id="dependencyModalTailwindBackdrop" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="window.hideDependencyModalTailwind()"></div>
+        
+        {# Modal panel #}
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
                         <h3 class="text-lg leading-6 font-medium text-gray-900" id="dependencyModalTailwindLabel">
-                            Dependencia Requerida
+                            Dependencia Opcional
                         </h3>
                         <div class="mt-2">
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                                <h4 class="text-sm font-medium text-yellow-800 mb-2">Funcionalidad no disponible</h4>
-                                <p class="text-sm text-yellow-700 mb-2">Para usar esta funcionalidad, necesitas instalar la siguiente dependencia:</p>
-                                <div id="dependencyInfoTailwind">
+                            <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                                <h4 class="text-sm font-medium text-blue-800 mb-2">Funcionalidad mejorada disponible</h4>
+                                <p class="text-sm text-blue-700 mb-3">Esta funcionalidad está disponible con un modo de respaldo, pero puedes mejorar el rendimiento instalando la siguiente dependencia opcional:</p>
+                                <div id="dependencyInfoTailwind" class="space-y-2">
                                     {# Se llenará dinámicamente con JavaScript #}
                                 </div>
                             </div>
                             <div class="mt-4">
                                 <h4 class="text-sm font-medium text-gray-900 mb-2">Instalación:</h4>
-                                <pre class="bg-gray-100 p-3 rounded text-sm overflow-x-auto"><code id="installCommandTailwind"></code></pre>
+                                <div class="bg-gray-100 border border-gray-200 rounded-md p-3 overflow-x-auto">
+                                    <code id="installCommandTailwind" class="text-sm text-gray-800 font-mono whitespace-pre"></code>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm" onclick="document.getElementById('dependencyModalTailwind').classList.add('hidden')">
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm" onclick="window.hideDependencyModalTailwind()">
                     Cerrar
                 </button>
             </div>
         </div>
     </div>
 </div>
+{% endif %}
 
 <script>
 (function() {
+    // Función para ocultar el modal de Tailwind
+    window.hideDependencyModalTailwind = function() {
+        const modal = document.getElementById('dependencyModalTailwind');
+        if (modal) {
+            modal.classList.add('hidden');
+            // Prevenir scroll del body cuando se cierra
+            document.body.style.overflow = '';
+        }
+    };
+
     // Función para mostrar el modal con información de dependencia
     window.showDependencyModal = function(dependencyKey, missingDeps) {
+        if (!missingDeps || typeof missingDeps !== 'object') {
+            console.warn('showDependencyModal: missingDeps is not valid', missingDeps);
+            return;
+        }
+        
         const dep = missingDeps[dependencyKey];
-        if (!dep) return;
+        if (!dep) {
+            console.warn('showDependencyModal: dependency not found', dependencyKey, missingDeps);
+            return;
+        }
         
         // Detectar si estamos usando Bootstrap o Tailwind
-        const isBootstrap = typeof bootstrap !== 'undefined' && bootstrap.Modal;
+        // Verificar si Bootstrap está disponible Y si el modal de Bootstrap existe
+        const bootstrapModal = document.getElementById('dependencyModal');
+        const tailwindModal = document.getElementById('dependencyModalTailwind');
+        
+        // Priorizar Bootstrap si está disponible y el modal existe
+        const isBootstrap = typeof bootstrap !== 'undefined' && bootstrap.Modal && bootstrapModal;
+        const isTailwind = tailwindModal && !isBootstrap;
         
         if (isBootstrap) {
             // Bootstrap version
-            const modal = new bootstrap.Modal(document.getElementById('dependencyModal'));
+            const modal = new bootstrap.Modal(bootstrapModal);
             const dependencyInfo = document.getElementById('dependencyInfo');
             const installCommand = document.getElementById('installCommand');
             
-            dependencyInfo.innerHTML = `
-                <p class="mb-1"><strong>Paquete:</strong> <code>${dep.package}</code></p>
-                <p class="mb-1"><strong>Funcionalidad:</strong> ${dep.feature}</p>
-                <p class="mb-0"><strong>Descripción:</strong> ${dep.message}</p>
-            `;
+            if (dependencyInfo) {
+                dependencyInfo.innerHTML = `
+                    <p class="mb-2"><strong>Paquete:</strong> <code class="bg-white px-2 py-1 rounded border">${escapeHtml(dep.package || '')}</code></p>
+                    <p class="mb-2"><strong>Funcionalidad:</strong> ${escapeHtml(dep.feature || '')}</p>
+                    <p class="mb-0"><strong>Descripción:</strong> ${escapeHtml(dep.message || '')}</p>
+                `;
+            }
             
-            installCommand.textContent = dep.install_command;
+            if (installCommand) {
+                installCommand.textContent = dep.install_command || '';
+            }
             
             modal.show();
-        } else {
-            // Tailwind version
+        } else if (isTailwind) {
+            // Tailwind version (solo si Bootstrap no está disponible)
             const modal = document.getElementById('dependencyModalTailwind');
             const dependencyInfo = document.getElementById('dependencyInfoTailwind');
             const installCommand = document.getElementById('installCommandTailwind');
             
-            dependencyInfo.innerHTML = `
-                <p class="mb-1 text-sm"><strong class="text-yellow-800">Paquete:</strong> <code class="text-yellow-900">${dep.package}</code></p>
-                <p class="mb-1 text-sm"><strong class="text-yellow-800">Funcionalidad:</strong> <span class="text-yellow-700">${dep.feature}</span></p>
-                <p class="mb-0 text-sm"><strong class="text-yellow-800">Descripción:</strong> <span class="text-yellow-700">${dep.message}</span></p>
-            `;
+            if (!modal) {
+                console.error('showDependencyModal: Tailwind modal not found');
+                return;
+            }
             
-            installCommand.textContent = dep.install_command;
+            if (dependencyInfo) {
+                dependencyInfo.innerHTML = `
+                    <p class="text-sm mb-2"><strong class="text-blue-800">Paquete:</strong> <code class="text-blue-900 bg-blue-100 px-2 py-1 rounded font-mono">${escapeHtml(dep.package || '')}</code></p>
+                    <p class="text-sm mb-2"><strong class="text-blue-800">Funcionalidad:</strong> <span class="text-blue-700">${escapeHtml(dep.feature || '')}</span></p>
+                    <p class="text-sm mb-0"><strong class="text-blue-800">Descripción:</strong> <span class="text-blue-700">${escapeHtml(dep.message || '')}</span></p>
+                `;
+            }
             
+            if (installCommand) {
+                installCommand.textContent = dep.install_command || '';
+            }
+            
+            // Mostrar el modal
             modal.classList.remove('hidden');
+            // Prevenir scroll del body cuando el modal está abierto
+            document.body.style.overflow = 'hidden';
+            
+            // Cerrar con ESC
+            const handleEscape = function(event) {
+                if (event.key === 'Escape') {
+                    window.hideDependencyModalTailwind();
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+        } else {
+            console.warn('showDependencyModal: Neither Bootstrap nor Tailwind modal found. Bootstrap modal:', !!bootstrapModal, 'Tailwind modal:', !!tailwindModal);
         }
     };
+    
+    // Función helper para escapar HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 })();
 </script>

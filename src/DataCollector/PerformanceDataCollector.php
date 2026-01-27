@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\DataCollector;
 
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -66,6 +67,11 @@ class PerformanceDataCollector extends DataCollector
     private ?TableStatusChecker $tableStatusChecker = null;
 
     /**
+     * Dependency checker (optional, for checking optional dependencies).
+     */
+    private ?DependencyChecker $dependencyChecker = null;
+
+    /**
      * Whether a new record was created.
      */
     private ?bool $recordWasNew = null;
@@ -96,15 +102,18 @@ class PerformanceDataCollector extends DataCollector
      * @param RouteDataRepository|null $repository         The route data repository (optional)
      * @param KernelInterface|null     $kernel             The kernel interface (optional)
      * @param TableStatusChecker|null  $tableStatusChecker The table status checker (optional)
+     * @param DependencyChecker|null   $dependencyChecker  The dependency checker (optional)
      */
     public function __construct(
         ?RouteDataRepository $repository = null,
         ?KernelInterface $kernel = null,
         ?TableStatusChecker $tableStatusChecker = null,
+        ?DependencyChecker $dependencyChecker = null,
     ) {
         $this->repository = $repository;
         $this->kernel = $kernel;
         $this->tableStatusChecker = $tableStatusChecker;
+        $this->dependencyChecker = $dependencyChecker;
     }
 
     /**
@@ -229,6 +238,13 @@ class PerformanceDataCollector extends DataCollector
     {
         $this->recordWasNew = $isNew;
         $this->recordWasUpdated = $wasUpdated;
+        
+        // Also update the data array if it has been initialized (collect() has been called)
+        // This ensures the information is available even if setRecordOperation() is called after collect()
+        if (isset($this->data) && \is_array($this->data)) {
+            $this->data['record_was_new'] = $isNew;
+            $this->data['record_was_updated'] = $wasUpdated;
+        }
     }
 
     public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
@@ -312,6 +328,14 @@ class PerformanceDataCollector extends DataCollector
             }
         }
 
+        // Get dependency information
+        $missingDependencies = [];
+        $dependencyStatus = [];
+        if (null !== $this->dependencyChecker) {
+            $missingDependencies = $this->dependencyChecker->getMissingDependencies();
+            $dependencyStatus = $this->dependencyChecker->getDependencyStatus();
+        }
+
         $this->data = [
             'enabled' => $this->enabled,
             'route_name' => $routeName,
@@ -327,11 +351,16 @@ class PerformanceDataCollector extends DataCollector
             'table_is_complete' => $tableIsComplete,
             'table_name' => $tableName,
             'missing_columns' => $missingColumns,
-            'record_was_new' => $this->recordWasNew,
-            'record_was_updated' => $this->recordWasUpdated,
+            // Note: record_was_new and record_was_updated are set by setRecordOperation()
+            // which is called in onKernelTerminate (after collect()). These values will be
+            // updated in setRecordOperation() if the array already exists.
+            'record_was_new' => $this->recordWasNew ?? null,
+            'record_was_updated' => $this->recordWasUpdated ?? null,
             'configured_environments' => $this->configuredEnvironments,
             'current_environment' => $this->currentEnvironment ?? $env,
             'disabled_reason' => $this->disabledReason,
+            'missing_dependencies' => $missingDependencies,
+            'dependency_status' => $dependencyStatus,
         ];
     }
 
@@ -564,8 +593,14 @@ class PerformanceDataCollector extends DataCollector
      */
     public function wasRecordNew(): ?bool
     {
-        // Check data first (set during collect()), then fallback to property (set by setRecordOperation())
-        return $this->data['record_was_new'] ?? $this->recordWasNew;
+        // Check property first (set by setRecordOperation() in onKernelTerminate)
+        // This is important because setRecordOperation() is called AFTER collect() is executed
+        // The property will be available even after serialization
+        if (null !== $this->recordWasNew) {
+            return $this->recordWasNew;
+        }
+        // Fallback to data array (set during collect())
+        return $this->data['record_was_new'] ?? null;
     }
 
     /**
@@ -575,8 +610,14 @@ class PerformanceDataCollector extends DataCollector
      */
     public function wasRecordUpdated(): ?bool
     {
-        // Check data first (set during collect()), then fallback to property (set by setRecordOperation())
-        return $this->data['record_was_updated'] ?? $this->recordWasUpdated;
+        // Check property first (set by setRecordOperation() in onKernelTerminate)
+        // This is important because setRecordOperation() is called AFTER collect() is executed
+        // The property will be available even after serialization
+        if (null !== $this->recordWasUpdated) {
+            return $this->recordWasUpdated;
+        }
+        // Fallback to data array (set during collect())
+        return $this->data['record_was_updated'] ?? null;
     }
 
     /**

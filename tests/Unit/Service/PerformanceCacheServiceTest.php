@@ -214,4 +214,179 @@ final class PerformanceCacheServiceTest extends TestCase
         $this->assertNull($service->getCachedStatistics('dev'));
         $this->assertFalse($service->cacheStatistics('dev', ['test' => 'data']));
     }
+
+    public function testGetCachedValueReturnsNullWhenCachePoolIsNull(): void
+    {
+        $service = new PerformanceCacheService(null);
+        
+        $this->assertNull($service->getCachedValue('test_key'));
+    }
+
+    public function testGetCachedValueReturnsNullWhenNotCached(): void
+    {
+        $this->cacheItem->method('isHit')->willReturn(false);
+        $this->cachePool->method('getItem')->willReturn($this->cacheItem);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertNull($service->getCachedValue('test_key'));
+    }
+
+    public function testGetCachedValueReturnsDataWhenCached(): void
+    {
+        $cachedData = ['test' => 'value', 'number' => 42];
+        
+        $this->cacheItem->method('isHit')->willReturn(true);
+        $this->cacheItem->method('get')->willReturn($cachedData);
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_test_key')
+            ->willReturn($this->cacheItem);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertSame($cachedData, $service->getCachedValue('test_key'));
+    }
+
+    public function testGetCachedValueWithCompositeKey(): void
+    {
+        $cachedData = true;
+        
+        $this->cacheItem->method('isHit')->willReturn(true);
+        $this->cacheItem->method('get')->willReturn($cachedData);
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_table_exists_default_routes_data')
+            ->willReturn($this->cacheItem);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertTrue($service->getCachedValue('table_exists_default_routes_data'));
+    }
+
+    public function testCacheValueReturnsFalseWhenCachePoolIsNull(): void
+    {
+        $service = new PerformanceCacheService(null);
+        
+        $this->assertFalse($service->cacheValue('test_key', 'test_value'));
+    }
+
+    public function testCacheValueSavesData(): void
+    {
+        $value = ['data' => 'test'];
+        
+        $this->cacheItem->expects($this->once())
+            ->method('set')
+            ->with($value);
+        $this->cacheItem->expects($this->once())
+            ->method('expiresAfter')
+            ->with(3600);
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_test_key')
+            ->willReturn($this->cacheItem);
+        $this->cachePool->expects($this->once())
+            ->method('save')
+            ->with($this->cacheItem)
+            ->willReturn(true);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertTrue($service->cacheValue('test_key', $value));
+    }
+
+    public function testCacheValueUsesCustomTtl(): void
+    {
+        $value = true;
+        $customTtl = 300; // 5 minutes
+        
+        $this->cacheItem->expects($this->once())
+            ->method('expiresAfter')
+            ->with($customTtl);
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_table_exists')
+            ->willReturn($this->cacheItem);
+        $this->cachePool->method('save')->willReturn(true);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertTrue($service->cacheValue('table_exists', $value, $customTtl));
+    }
+
+    public function testCacheValueWithCompositeKey(): void
+    {
+        $value = false;
+        
+        $this->cacheItem->expects($this->once())
+            ->method('set')
+            ->with($value);
+        $this->cacheItem->expects($this->once())
+            ->method('expiresAfter')
+            ->with(300);
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_table_exists_default_routes_data')
+            ->willReturn($this->cacheItem);
+        $this->cachePool->method('save')->willReturn(true);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertTrue($service->cacheValue('table_exists_default_routes_data', $value, 300));
+    }
+
+    public function testInvalidateValueReturnsFalseWhenCachePoolIsNull(): void
+    {
+        $service = new PerformanceCacheService(null);
+        
+        $this->assertFalse($service->invalidateValue('test_key'));
+    }
+
+    public function testInvalidateValueDeletesItem(): void
+    {
+        $this->cachePool->expects($this->once())
+            ->method('deleteItem')
+            ->with('nowo_performance_test_key')
+            ->willReturn(true);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertTrue($service->invalidateValue('test_key'));
+    }
+
+    public function testInvalidateValueWithCompositeKey(): void
+    {
+        $this->cachePool->expects($this->once())
+            ->method('deleteItem')
+            ->with('nowo_performance_table_exists_default_routes_data')
+            ->willReturn(true);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        
+        $this->assertTrue($service->invalidateValue('table_exists_default_routes_data'));
+    }
+
+    public function testGetCachedValueCachesDifferentTypes(): void
+    {
+        // Test with boolean
+        $this->cacheItem->method('isHit')->willReturn(true);
+        $this->cacheItem->method('get')->willReturn(true);
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_bool_key')
+            ->willReturn($this->cacheItem);
+        
+        $service = new PerformanceCacheService($this->cachePool);
+        $this->assertTrue($service->getCachedValue('bool_key'));
+        
+        // Test with integer
+        $this->cacheItem->method('get')->willReturn(42);
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_int_key')
+            ->willReturn($this->cacheItem);
+        
+        $this->assertSame(42, $service->getCachedValue('int_key'));
+        
+        // Test with string
+        $this->cacheItem->method('get')->willReturn('test string');
+        $this->cachePool->method('getItem')
+            ->with('nowo_performance_string_key')
+            ->willReturn($this->cacheItem);
+        
+        $this->assertSame('test string', $service->getCachedValue('string_key'));
+    }
 }

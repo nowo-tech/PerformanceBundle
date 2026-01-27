@@ -125,6 +125,30 @@
                     </span>
                 </div>
             {% endif %}
+            {% if collector.missingDependencies is defined and collector.missingDependencies is not empty %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Missing Dependencies</b>
+                    <span style="color: #f57c00;">⚠ {{ collector.missingDependencies|length }} optional</span>
+                </div>
+            {% endif %}
+            {% if collector.dependencyStatus is defined %}
+                {% set missingCount = 0 %}
+                {% for status in collector.dependencyStatus %}
+                    {% if not status.available %}
+                        {% set missingCount = missingCount + 1 %}
+                    {% endif %}
+                {% endfor %}
+                {% if missingCount > 0 %}
+                    <div class="sf-toolbar-info-piece">
+                        <b>Dependencies</b>
+                        <span>
+                            {% set availableCount = collector.dependencyStatus|length - missingCount %}
+                            <span style="color: #4caf50;">{{ availableCount }}✓</span>
+                            <span style="color: #f57c00;">{{ missingCount }}⚠</span>
+                        </span>
+                    </div>
+                {% endif %}
+            {% endif %}
         {% endif %}
     {% endset %}
 
@@ -210,6 +234,12 @@
                         {% else %}
                             <span style="color: #2196f3; font-weight: bold;">● Sync</span>
                             <span class="text-muted">(direct database write)</span>
+                        {% endif %}
+                        {% if collector.dependencyStatus.messenger is defined and not collector.dependencyStatus.messenger.available %}
+                            <br>
+                            <small style="color: #f57c00; font-weight: bold;">
+                                ⚠ Messenger not installed (async mode unavailable)
+                            </small>
                         {% endif %}
                     </td>
                 </tr>
@@ -321,6 +351,70 @@
                         {% endif %}
                     </td>
                 </tr>
+                {% if collector.missingDependencies is defined and collector.missingDependencies is not empty %}
+                    <tr>
+                        <td colspan="2" style="background-color: #fff3cd; padding: 15px;">
+                            <h3 style="margin: 0 0 10px 0; color: #856404; font-size: 14px; font-weight: bold;">
+                                ⚠ Dependencias Opcionales Faltantes
+                            </h3>
+                            <p style="margin: 0 0 10px 0; color: #856404; font-size: 12px;">
+                                Las siguientes dependencias opcionales no están instaladas. El bundle funciona con modo de respaldo, pero puedes mejorar el rendimiento instalándolas:
+                            </p>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                <thead>
+                                    <tr style="background-color: #ffeaa7;">
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; font-weight: bold; color: #856404;">Dependencia</th>
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; font-weight: bold; color: #856404;">Funcionalidad</th>
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; font-weight: bold; color: #856404;">Instalación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key, dep in collector.missingDependencies %}
+                                        <tr style="border-bottom: 1px solid #ffeaa7;">
+                                            <td style="padding: 8px; font-size: 12px;">
+                                                <code style="background-color: #fff; padding: 2px 6px; border-radius: 3px; color: #856404;">{{ dep.package }}</code>
+                                            </td>
+                                            <td style="padding: 8px; font-size: 12px; color: #856404;">
+                                                <strong>{{ dep.feature }}</strong><br>
+                                                <small style="color: #856404;">{{ dep.message }}</small>
+                                            </td>
+                                            <td style="padding: 8px; font-size: 11px;">
+                                                <code style="background-color: #fff; padding: 4px 8px; border-radius: 3px; display: block; color: #856404;">{{ dep.install_command }}</code>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if collector.dependencyStatus is defined %}
+                    <tr>
+                        <td>Estado de Dependencias</td>
+                        <td>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                                {% for feature, status in collector.dependencyStatus %}
+                                    <tr>
+                                        <td style="padding: 4px 8px; font-size: 12px; width: 40%;">
+                                            <strong>{{ feature|replace({'_': ' '})|title }}</strong>
+                                        </td>
+                                        <td style="padding: 4px 8px; font-size: 12px;">
+                                            {% if status.available %}
+                                                <span style="color: #4caf50; font-weight: bold;">✓ Instalado</span>
+                                            {% else %}
+                                                <span style="color: #f57c00; font-weight: bold;">⚠ No instalado</span>
+                                                <span class="text-muted">(opcional)</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 4px 8px; font-size: 11px; color: #757575;">
+                                            <code>{{ status.package }}</code>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </td>
+                    </tr>
+                {% endif %}
                 <tr>
                     <td>Data Saved to Database</td>
                     <td>

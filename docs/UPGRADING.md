@@ -2,6 +2,58 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 1.0.2 (2026-01-27)
+
+### Bug Fixes and Improvements
+
+This version fixes several bugs and improves the reliability of the bundle.
+
+#### Changes
+
+- **Modal dependency display fix**: Fixed issue where Tailwind modal appeared in Bootstrap projects
+  - Modal de Tailwind ahora solo se incluye cuando se usa template Tailwind
+  - Modal de Bootstrap funciona correctamente en proyectos Bootstrap
+  - Mejorada la detección automática de Bootstrap vs Tailwind
+- **Division by zero fix**: Fixed `DivisionByZeroError` in correlation analysis
+  - Mejora la verificación de varianzas antes de calcular correlaciones
+  - Previene errores cuando los datos tienen varianza cero
+  - Retorna `null` de forma segura cuando no se puede calcular la correlación
+- **Data Collector status fix**: Fixed "Unknown" status in Web Profiler
+  - El collector ahora muestra correctamente si se creó un nuevo registro o se actualizó uno existente
+  - Mejora la precisión del estado mostrado en el toolbar y panel del Web Profiler
+
+#### What This Means
+
+- **Better UX**: Modals now display correctly according to the active template
+- **More reliable**: Correlation analysis no longer crashes with division by zero errors
+- **Better diagnostics**: Web Profiler now shows accurate record operation status
+- **No breaking changes**: All changes are backward compatible
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **No configuration changes required**: All fixes are automatic and backward compatible
+
+#### Troubleshooting
+
+**Q: I still see the Tailwind modal in my Bootstrap project**  
+A: Clear your cache and ensure you're using v1.0.2 or higher. The modal should only appear if you're using Tailwind template.
+
+**Q: I see "Division by zero" errors in statistics page**  
+A: This should be fixed in v1.0.2. Update the bundle and clear cache. If the error persists, check that you have enough data points (at least 2 different values) for correlation analysis.
+
+**Q: Web Profiler still shows "Unknown" status**  
+A: This should be fixed in v1.0.2. Update the bundle and clear cache. The status should now show correctly whether a new record was created or an existing one was updated.
+
 ## Upgrading to 1.0.1 (2026-01-27)
 
 ### Performance Optimizations and Dependency Management

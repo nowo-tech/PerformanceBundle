@@ -220,9 +220,10 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (\function_exists('error_log')) {
+        // Only log if route name is available (to reduce noise from asset/profiler routes)
+        if (null !== $this->routeName && \function_exists('error_log')) {
             $requestType = $event->isMainRequest() ? 'main' : 'sub';
-            error_log(\sprintf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=%s', $this->routeName ?? 'null', $env, $requestType));
+            error_log(\sprintf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=%s', $this->routeName, $env, $requestType));
         }
 
         // Start timing
@@ -268,9 +269,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         if (!$this->dataCollector->isEnabled()) {
-            if (\function_exists('error_log')) {
-                error_log('[PerformanceBundle] onKernelTerminate: dataCollector not enabled, skipping');
-            }
+            // Don't log this - it's normal for many routes (assets, profiler, etc.)
             // Inform collector that collector is disabled
             $this->dataCollector->setRecordOperation(false, false);
 
