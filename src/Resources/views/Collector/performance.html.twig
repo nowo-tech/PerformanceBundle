@@ -42,6 +42,14 @@
                     {% endif %}
                 </span>
             </div>
+            {% if collector.async is not defined or not collector.async %}
+                {% if dependencyStatus.messenger is defined and not dependencyStatus.messenger.available %}
+                    <div class="sf-toolbar-info-piece">
+                        <b>Messenger</b>
+                        <span style="color: #f57c00;">⚠ Not installed</span>
+                    </div>
+                {% endif %}
+            {% endif %}
             {% if collector.tableName %}
                 <div class="sf-toolbar-info-piece">
                     <b>Table</b>
