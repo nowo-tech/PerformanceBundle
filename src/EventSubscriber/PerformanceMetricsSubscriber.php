@@ -221,7 +221,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         if (\function_exists('error_log')) {
-            error_log(\sprintf('[PerformanceBundle] Tracking enabled: route="%s", env=%s', $this->routeName ?? 'null', $env));
+            $requestType = $event->isMainRequest() ? 'main' : 'sub';
+            error_log(\sprintf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=%s', $this->routeName ?? 'null', $env, $requestType));
         }
 
         // Start timing
