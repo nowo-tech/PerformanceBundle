@@ -805,7 +805,8 @@ final class CreateTableCommand extends Command
         $table = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
-            $existingColumnsMap[strtolower($column->getName())] = $column;
+            $columnName = $this->getColumnName($column, $connection);
+            $existingColumnsMap[strtolower($columnName)] = $column;
         }
 
         // Get expected columns from entity metadata
