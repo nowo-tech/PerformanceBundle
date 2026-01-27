@@ -45,6 +45,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter('nowo_performance.table_name', $config['table_name'] ?? 'routes_data');
         $container->setParameter('nowo_performance.track_queries', $config['track_queries'] ?? true);
         $container->setParameter('nowo_performance.track_request_time', $config['track_request_time'] ?? true);
+        $container->setParameter('nowo_performance.track_sub_requests', $config['track_sub_requests'] ?? false);
         $container->setParameter('nowo_performance.ignore_routes', $config['ignore_routes'] ?? []);
         $container->setParameter('nowo_performance.async', $config['async'] ?? false);
         $container->setParameter('nowo_performance.sampling_rate', $config['sampling_rate'] ?? 1.0);

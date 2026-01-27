@@ -95,6 +95,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         private readonly bool $trackQueries,
         #[Autowire('%nowo_performance.track_request_time%')]
         private readonly bool $trackRequestTime,
+        #[Autowire('%nowo_performance.track_sub_requests%')]
+        private readonly bool $trackSubRequests = false,
         #[Autowire('%nowo_performance.async%')]
         private readonly bool $async = false,
         #[Autowire('%nowo_performance.sampling_rate%')]
@@ -150,12 +152,12 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (!$event->isMainRequest()) {
+        if (!$event->isMainRequest() && !$this->trackSubRequests) {
             if (\function_exists('error_log')) {
-                error_log('[PerformanceBundle] Tracking disabled: not main request');
+                error_log('[PerformanceBundle] Tracking disabled: not main request (sub-request) and track_sub_requests is disabled');
             }
             $this->dataCollector->setEnabled(false);
-            $this->dataCollector->setDisabledReason('Not a main request (sub-request)');
+            $this->dataCollector->setDisabledReason('Not a main request (sub-request). Enable track_sub_requests to track sub-requests.');
 
             return;
         }
