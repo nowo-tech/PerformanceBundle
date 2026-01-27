@@ -450,8 +450,8 @@ final class CreateTableCommand extends Command
                 $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
                 $sql = \sprintf(
                     'ALTER TABLE %s ADD COLUMN %s %s',
-                    $platform->quoteIdentifier($actualTableName),
-                    $platform->quoteIdentifier($columnName),
+                    $this->quoteIdentifier($platform, $actualTableName),
+                    $this->quoteIdentifier($platform, $columnName),
                     $columnDefinition
                 );
 
@@ -500,8 +500,8 @@ final class CreateTableCommand extends Command
                     $columnDefinition = $this->getColumnDefinition($expected, $platform);
                     $sql = \sprintf(
                         'ALTER TABLE %s MODIFY COLUMN %s %s',
-                        $platform->quoteIdentifier($actualTableName),
-                        $platform->quoteIdentifier($columnName),
+                        $this->quoteIdentifier($platform, $actualTableName),
+                        $this->quoteIdentifier($platform, $columnName),
                         $columnDefinition
                     );
 
@@ -876,10 +876,10 @@ final class CreateTableCommand extends Command
             $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
             $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-            $sql = \sprintf(
-                'ALTER TABLE %s ADD COLUMN %s %s',
-                $platform->quoteIdentifier($actualTableName),
-                $platform->quoteIdentifier($columnName),
+                $sql = \sprintf(
+                    'ALTER TABLE %s ADD COLUMN %s %s',
+                    $this->quoteIdentifier($platform, $actualTableName),
+                    $this->quoteIdentifier($platform, $columnName),
                 $columnDefinition
             );
 
@@ -947,6 +947,49 @@ final class CreateTableCommand extends Command
         }
 
         return $sqlType.$nullConstraint.$default.$autoincrement;
+    }
+
+    /**
+     * Quote a single identifier (compatible with DBAL 2.x and 3.x).
+     *
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform The database platform
+     * @param string                                    $identifier The identifier to quote
+     *
+     * @return string The quoted identifier
+     */
+    private function quoteIdentifier(\Doctrine\DBAL\Platforms\AbstractPlatform $platform, string $identifier): string
+    {
+        // Use quoteSingleIdentifier() for DBAL 3.x compatibility
+        if (method_exists($platform, 'quoteSingleIdentifier')) {
+            return $platform->quoteSingleIdentifier($identifier);
+        }
+
+        // Fallback to quoteIdentifier() for DBAL 2.x
+        return $platform->quoteIdentifier($identifier);
+    }
+
+    /**
+     * Get column name from Column object (compatible with DBAL 2.x and 3.x).
+     *
+     * @param \Doctrine\DBAL\Schema\Column $column The column object
+     * @param \Doctrine\DBAL\Connection    $connection The database connection
+     *
+     * @return string The column name
+     */
+    private function getColumnName(\Doctrine\DBAL\Schema\Column $column, \Doctrine\DBAL\Connection $connection): string
+    {
+        // Try getQuotedName() for DBAL 3.x compatibility
+        if (method_exists($column, 'getQuotedName')) {
+            return $column->getQuotedName($connection->getDatabasePlatform());
+        }
+
+        // Fallback to getName() for DBAL 2.x
+        if (method_exists($column, 'getName')) {
+            return $column->getName();
+        }
+
+        // Last resort: try to access name property directly
+        return $column->name ?? '';
     }
 
     /**
@@ -1087,7 +1130,7 @@ final class CreateTableCommand extends Command
 
         foreach ($indexesToAdd as $indexName => $columns) {
             $quotedColumns = array_map(static function ($col) use ($platform) {
-                return $platform->quoteIdentifier($col);
+                return $this->quoteIdentifier($platform, $col);
             }, $columns);
 
             // Get the actual table name from entity metadata
@@ -1097,8 +1140,8 @@ final class CreateTableCommand extends Command
 
             $sql = \sprintf(
                 'CREATE INDEX %s ON %s (%s)',
-                $platform->quoteIdentifier($indexName),
-                $platform->quoteIdentifier($actualTableName),
+                $this->quoteIdentifier($platform, $indexName),
+                $this->quoteIdentifier($platform, $actualTableName),
                 implode(', ', $quotedColumns)
             );
 
@@ -1136,8 +1179,8 @@ final class CreateTableCommand extends Command
             // Only MySQL/MariaDB need this special handling
             $alterSql = \sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s INT NOT NULL AUTO_INCREMENT',
-                $platform->quoteIdentifier($tableName),
-                $platform->quoteIdentifier('id')
+                $this->quoteIdentifier($platform, $tableName),
+                $this->quoteIdentifier($platform, 'id')
             );
             $connection->executeStatement($alterSql);
 
@@ -1191,8 +1234,8 @@ final class CreateTableCommand extends Command
                 // Drop the foreign key
                 $dropFkSql = \sprintf(
                     'ALTER TABLE %s DROP FOREIGN KEY %s',
-                    $platform->quoteIdentifier($fkTable),
-                    $platform->quoteIdentifier($fkName)
+                    $this->quoteIdentifier($platform, $fkTable),
+                    $this->quoteIdentifier($platform, $fkName)
                 );
 
                 try {
@@ -1206,8 +1249,8 @@ final class CreateTableCommand extends Command
             // Now modify the id column to add AUTO_INCREMENT
             $alterSql = \sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s INT NOT NULL AUTO_INCREMENT',
-                $platform->quoteIdentifier($tableName),
-                $platform->quoteIdentifier('id')
+                $this->quoteIdentifier($platform, $tableName),
+                $this->quoteIdentifier($platform, 'id')
             );
             $connection->executeStatement($alterSql);
 
@@ -1215,11 +1258,11 @@ final class CreateTableCommand extends Command
             foreach ($foreignKeysToRestore as $fkInfo) {
                 $restoreFkSql = \sprintf(
                     'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s',
-                    $platform->quoteIdentifier($fkInfo['table']),
-                    $platform->quoteIdentifier($fkInfo['name']),
-                    $platform->quoteIdentifier($fkInfo['column']),
-                    $platform->quoteIdentifier($fkInfo['referenced_table']),
-                    $platform->quoteIdentifier($fkInfo['referenced_column']),
+                    $this->quoteIdentifier($platform, $fkInfo['table']),
+                    $this->quoteIdentifier($platform, $fkInfo['name']),
+                    $this->quoteIdentifier($platform, $fkInfo['column']),
+                    $this->quoteIdentifier($platform, $fkInfo['referenced_table']),
+                    $this->quoteIdentifier($platform, $fkInfo['referenced_column']),
                     $fkInfo['update_rule'],
                     $fkInfo['delete_rule']
                 );
