@@ -1140,7 +1140,7 @@ final class CreateTableCommand extends Command
         $io->text(\sprintf('Adding <info>%d</info> missing index(es):', \count($indexesToAdd)));
 
         foreach ($indexesToAdd as $indexName => $columns) {
-            $quotedColumns = array_map(static function ($col) use ($platform) {
+            $quotedColumns = array_map(function ($col) use ($platform) {
                 return $this->quoteIdentifier($platform, $col);
             }, $columns);
 
