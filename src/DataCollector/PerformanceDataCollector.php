@@ -309,7 +309,7 @@ class PerformanceDataCollector extends DataCollector
             'ranking_by_request_time' => $rankingByRequestTime,
             'ranking_by_query_count' => $rankingByQueryCount,
             'total_routes' => $totalRoutes,
-            'async' => $this->async,
+            'async' => $this->async && $this->isMessengerAvailable(),
             'table_exists' => $tableExists,
             'table_is_complete' => $tableIsComplete,
             'table_name' => $tableName,
