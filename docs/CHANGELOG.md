@@ -7,15 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-01-27
+
 ### Added
-- **Sub-request tracking support** - Added `track_sub_requests` configuration option
-  - Allows tracking performance metrics for sub-requests (ESI, fragments, includes) in addition to main requests
-  - Default: `false` (maintains backward compatibility, only main requests tracked)
-  - When enabled, tracks both main requests and sub-requests separately
-  - Useful for monitoring ESI performance, fragment rendering, and debugging sub-request bottlenecks
-  - Includes request type (main/sub) in logging for better diagnostics
+- **Dependency detection and management** - Extended DependencyChecker to detect optional dependencies
+  - Detects Symfony Messenger availability for async metrics recording
+  - Detects Symfony Mailer availability for email notifications
+  - Detects Symfony HttpClient availability for Slack, Teams, and webhook notifications
+  - Provides information about missing dependencies with installation commands
+  - Modal informativo en el dashboard para mostrar dependencias faltantes
+  - Compatible con Bootstrap y Tailwind CSS templates
+- **Automatic routes file creation** - Symfony Flex recipe now creates `config/routes/nowo_performance.yaml`
+  - Routes are automatically imported when installing the bundle
+  - Uses configured prefix and path from bundle configuration
+  - Can be customized or overridden by users
+- **Performance optimizations** - Significant reduction in database queries
+  - Table status caching: `TableStatusChecker` now caches table existence and completeness (5 minutes TTL)
+  - Reduces ~10 `information_schema` queries per request to 0 (cached)
+  - Optional ranking queries: New `enable_ranking_queries` configuration option
+  - When disabled, eliminates 3 ranking queries per request
+  - Overall reduction: ~90-95% fewer queries from the bundle per request
+- **Generic cache methods** - Added generic cache methods to PerformanceCacheService
+  - `getCachedValue()` - Get any cached value by key
+  - `cacheValue()` - Cache any value with custom TTL
+  - `invalidateValue()` - Invalidate cached value by key
+  - Enables caching of any bundle data, not just statistics
+
+### Changed
+- **DataCollector ranking queries** - Made ranking queries optional and configurable
+  - New configuration: `nowo_performance.dashboard.enable_ranking_queries` (default: `true`)
+  - When disabled, ranking information is not calculated in WebProfiler
+  - Reduces database load for applications that don't need ranking information
+  - Backward compatible: enabled by default
+- **TableStatusChecker** - Now uses cache to avoid expensive `information_schema` queries
+  - Caches `tableExists()` results for 5 minutes
+  - Caches `tableIsComplete()` results for 5 minutes
+  - Automatically uses PerformanceCacheService if available
+  - Falls back to direct queries if cache is not available
 
 ### Fixed
+- **CreateTableCommand DBAL 3.x compatibility** - Fixed error when adding columns with `--update`
+  - Added required `'name'` key to column array for `getSQLDeclaration()` in DBAL 3.x
+  - Fixes "Undefined array key 'name'" error when running `nowo:performance:create-table --update`
+  - Added proper column properties (precision, scale, unsigned, fixed) to column definition
+  - Maintains full backward compatibility with DBAL 2.x
 - **Doctrine DBAL deprecation warnings** - Fixed deprecation warnings in CreateTableCommand and TableStatusChecker
   - Replaced deprecated `AbstractPlatform::quoteIdentifier()` with helper method compatible with DBAL 2.x and 3.x
   - Replaced deprecated `Column::getName()` with `getColumnName()` helper method
@@ -24,7 +59,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminates deprecation warnings when running `nowo:performance:create-table --update`
   - Maintains full backward compatibility with DBAL 2.x
 
-## [0.0.7] - 2025-01-27
+## [1.0.0] - 2026-01-27
+
+### Added
+- **Sub-request tracking support** - Added `track_sub_requests` configuration option
+  - Allows tracking performance metrics for sub-requests (ESI, fragments, includes) in addition to main requests
+  - Default: `false` (maintains backward compatibility, only main requests tracked)
+  - When enabled, tracks both main requests and sub-requests separately
+  - Useful for monitoring ESI performance, fragment rendering, and debugging sub-request bottlenecks
+  - Includes request type (main/sub) in logging for better diagnostics
+
+## [0.0.7] - 2026-01-27
 
 ### Added
 - **Environment information in PerformanceDataCollector** - Added environment configuration and current environment display
@@ -56,7 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Documented reflection-based middleware application approach
   - Added error messages and solutions for YAML configuration issues
 
-## [0.0.6] - 2025-01-27
+## [0.0.6] - 2026-01-27
 
 ### Added
 - **Tests for QueryTrackingConnectionSubscriber** - Added comprehensive test coverage
@@ -66,7 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests for query tracking reset functionality
   - Total: 6 new tests covering all scenarios
 
-## [0.0.5] - 2025-01-27
+## [0.0.5] - 2026-01-27
 
 ### Fixed
 - **DoctrineBundle middleware configuration** - Removed YAML middleware configuration completely
@@ -81,7 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Events are registered via `#[AsEventListener]` attributes, but method is required by interface
   - Fixes "Class contains 1 abstract method" error
 
-## [0.0.4] - 2025-01-27
+## [0.0.4] - 2026-01-27
 
 ### Fixed
 - **PerformanceDataCollector Throwable import** - Fixed fatal error when autoloading PerformanceDataCollector
@@ -89,7 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixes "Class 'Nowo\PerformanceBundle\DataCollector\Throwable' not found" error
   - Resolves ReflectionException during container compilation
 
-## [0.0.3] - 2025-01-27
+## [0.0.3] - 2026-01-27
 
 ### Fixed
 - **DoctrineBundle middleware configuration** - Fixed compatibility issue with `yamlMiddleware` option
