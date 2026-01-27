@@ -2,6 +2,42 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 0.0.6 (2025-01-27)
+
+### Test Coverage Improvement
+
+This version adds comprehensive test coverage for `QueryTrackingConnectionSubscriber`.
+
+#### Changes
+
+- **Test coverage**: Added 6 new tests for `QueryTrackingConnectionSubscriber`
+- Tests cover all scenarios including enabled/disabled states, error handling, and query tracking reset
+- Improves code quality and reliability
+
+#### What This Means
+
+- **No code changes**: This is a test-only release
+- **No configuration changes required**: No changes to bundle configuration
+- **No database changes required**: No schema changes
+- **Improved reliability**: Better test coverage ensures the middleware application works correctly
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (optional, but recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Verify installation**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   ```
+
 ## Upgrading to 0.0.5 (2025-01-27)
 
 ### Compatibility Fix

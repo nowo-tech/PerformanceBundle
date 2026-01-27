@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.0.6] - 2025-01-27
+
+### Added
+- **Tests for QueryTrackingConnectionSubscriber** - Added comprehensive test coverage
+  - Tests for `getSubscribedEvents()` method
+  - Tests for `onKernelRequest()` with different configurations (enabled/disabled, trackQueries on/off)
+  - Tests for error handling when connection is not found
+  - Tests for query tracking reset functionality
+  - Total: 6 new tests covering all scenarios
+
 ## [0.0.5] - 2025-01-27
 
 ### Fixed
