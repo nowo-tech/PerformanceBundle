@@ -22,26 +22,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(
     name: 'nowo:performance:set-route',
     description: 'Set or update route performance metrics',
-    help: <<<'HELP'
-The <info>%command.name%</info> command allows you to manually set or update performance metrics for a specific route.
-
-This is useful for:
-  - Testing the dashboard with sample data
-  - Manually recording metrics from external monitoring tools
-  - Setting baseline metrics for comparison
-
-<info>php %command.full_name% app_home --request-time=0.5 --queries=10</info>
-
-The command will create a new record if the route doesn't exist, or update the existing record
-if the new metrics indicate worse performance (higher request time or more queries).
-
-Options:
-  - <info>--env</info>: Environment name (default: dev)
-  - <info>--request-time</info>: Request execution time in seconds (float)
-  - <info>--queries</info>: Total number of database queries (integer)
-  - <info>--query-time</info>: Total query execution time in seconds (float)
-  - <info>--memory</info>: Peak memory usage in bytes (integer)
-HELP
 )]
 final class SetRouteMetricsCommand extends Command
 {
@@ -61,6 +41,28 @@ final class SetRouteMetricsCommand extends Command
      */
     protected function configure(): void
     {
+        $this->setHelp(<<<'HELP'
+The <info>%command.name%</info> command allows you to manually set or update performance metrics for a specific route.
+
+This is useful for:
+  - Testing the dashboard with sample data
+  - Manually recording metrics from external monitoring tools
+  - Setting baseline metrics for comparison
+
+<info>php %command.full_name% app_home --request-time=0.5 --queries=10</info>
+
+The command will create a new record if the route doesn't exist, or update the existing record
+if the new metrics indicate worse performance (higher request time or more queries).
+
+Options:
+  - <info>--env</info>: Environment name (default: dev)
+  - <info>--request-time</info>: Request execution time in seconds (float)
+  - <info>--queries</info>: Total number of database queries (integer)
+  - <info>--query-time</info>: Total query execution time in seconds (float)
+  - <info>--memory</info>: Peak memory usage in bytes (integer)
+HELP
+        );
+
         $this
             ->addArgument('route', InputArgument::REQUIRED, 'Route name')
             ->addOption('env', 'e', InputOption::VALUE_REQUIRED, 'Environment (dev, test, prod)', 'dev')

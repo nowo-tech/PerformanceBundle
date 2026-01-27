@@ -23,7 +23,32 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 #[AsCommand(
     name: 'nowo:performance:create-records-table',
     description: 'Create the access records database table for temporal analysis',
-    help: <<<'HELP'
+)]
+final class CreateRecordsTableCommand extends Command
+{
+    /**
+     * Constructor.
+     *
+     * @param ManagerRegistry $registry       Doctrine registry
+     * @param string          $connectionName The name of the Doctrine connection to use
+     * @param string          $mainTableName  The configured main table name (to derive records table name)
+     */
+    public function __construct(
+        private readonly ManagerRegistry $registry,
+        #[Autowire('%nowo_performance.connection%')]
+        private readonly string $connectionName,
+        #[Autowire('%nowo_performance.table_name%')]
+        private readonly string $mainTableName,
+    ) {
+        parent::__construct();
+    }
+
+    /**
+     * Configure the command options.
+     */
+    protected function configure(): void
+    {
+        $this->setHelp(<<<'HELP'
 The <info>%command.name%</info> command creates the access records table (routes_data_records) 
 with all necessary columns and indexes for temporal analysis of route access patterns.
 
@@ -52,31 +77,8 @@ or
 The table name is automatically derived from the main table name configured in 
 <comment>config/packages/nowo_performance.yaml</comment> (main table + '_records').
 HELP
-)]
-final class CreateRecordsTableCommand extends Command
-{
-    /**
-     * Constructor.
-     *
-     * @param ManagerRegistry $registry       Doctrine registry
-     * @param string          $connectionName The name of the Doctrine connection to use
-     * @param string          $mainTableName  The configured main table name (to derive records table name)
-     */
-    public function __construct(
-        private readonly ManagerRegistry $registry,
-        #[Autowire('%nowo_performance.connection%')]
-        private readonly string $connectionName,
-        #[Autowire('%nowo_performance.table_name%')]
-        private readonly string $mainTableName,
-    ) {
-        parent::__construct();
-    }
+        );
 
-    /**
-     * Configure the command options.
-     */
-    protected function configure(): void
-    {
         $this
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force table creation even if it already exists')
             ->addOption('update', 'u', InputOption::VALUE_NONE, 'Add missing columns to existing table without losing data');
@@ -128,9 +130,13 @@ final class CreateRecordsTableCommand extends Command
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
 
             // Get table name from metadata (compatible with different Doctrine versions)
-            $actualTableName = method_exists($metadata, 'getTableName')
-                ? $metadata->getTableName()
-                : ($metadata->table['name'] ?? $this->mainTableName.'_records');
+            if (method_exists($metadata, 'getTableName')) {
+                /** @var callable $getTableName */
+                $getTableName = [$metadata, 'getTableName'];
+                $actualTableName = $getTableName();
+            } else {
+                $actualTableName = $metadata->table['name'] ?? $this->mainTableName.'_records';
+            }
 
             $tableExists = $schemaManager->tablesExist([$actualTableName]);
 
@@ -254,9 +260,14 @@ final class CreateRecordsTableCommand extends Command
 
         // Get the actual table name from entity metadata
         $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
-        $actualTableName = method_exists($metadata, 'getTableName')
-            ? $metadata->getTableName()
-            : ($metadata->table['name'] ?? $this->mainTableName.'_records');
+        // Get table name from metadata (compatible with different Doctrine versions)
+        if (method_exists($metadata, 'getTableName')) {
+            /** @var callable $getTableName */
+            $getTableName = [$metadata, 'getTableName'];
+            $actualTableName = $getTableName();
+        } else {
+            $actualTableName = $metadata->table['name'] ?? $this->mainTableName.'_records';
+        }
 
         // Verify table exists
         if (!$schemaManager->tablesExist([$actualTableName])) {

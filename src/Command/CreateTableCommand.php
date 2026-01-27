@@ -23,30 +23,6 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 #[AsCommand(
     name: 'nowo:performance:create-table',
     description: 'Create the performance metrics database table',
-    help: <<<'HELP'
-The <info>%command.name%</info> command creates the performance metrics database table with all necessary columns and indexes.
-
-This command will:
-  1. Check if the table already exists
-  2. Create the table if it doesn't exist (or if --force is used)
-  3. Create all necessary indexes for optimal query performance
-
-<info>php %command.full_name%</info>
-
-To add missing columns to existing table (safe, preserves data):
-<info>php %command.full_name% --update</info>
-
-To force recreation of the table (WARNING: This will drop existing data):
-<info>php %command.full_name% --force</info>
-
-Alternatively, you can use Doctrine's standard commands:
-<info>php bin/console doctrine:schema:update --force</info>
-or
-<info>php bin/console doctrine:migrations:diff</info>
-<info>php bin/console doctrine:migrations:migrate</info>
-
-The table name and connection can be configured in <comment>config/packages/nowo_performance.yaml</comment>.
-HELP
 )]
 final class CreateTableCommand extends Command
 {
@@ -74,6 +50,32 @@ final class CreateTableCommand extends Command
      */
     protected function configure(): void
     {
+        $this->setHelp(<<<'HELP'
+The <info>%command.name%</info> command creates the performance metrics database table with all necessary columns and indexes.
+
+This command will:
+  1. Check if the table already exists
+  2. Create the table if it doesn't exist (or if --force is used)
+  3. Create all necessary indexes for optimal query performance
+
+<info>php %command.full_name%</info>
+
+To add missing columns to existing table (safe, preserves data):
+<info>php %command.full_name% --update</info>
+
+To force recreation of the table (WARNING: This will drop existing data):
+<info>php %command.full_name% --force</info>
+
+Alternatively, you can use Doctrine's standard commands:
+<info>php bin/console doctrine:schema:update --force</info>
+or
+<info>php bin/console doctrine:migrations:diff</info>
+<info>php bin/console doctrine:migrations:migrate</info>
+
+The table name and connection can be configured in <comment>config/packages/nowo_performance.yaml</comment>.
+HELP
+        );
+
         $this
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force table creation even if it already exists')
             ->addOption('update', 'u', InputOption::VALUE_NONE, 'Add missing columns to existing table without losing data');

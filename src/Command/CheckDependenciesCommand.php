@@ -20,7 +20,23 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(
     name: 'nowo:performance:check-dependencies',
     description: 'Check if optional dependencies are installed for the Performance Bundle',
-    help: <<<'HELP'
+)]
+final class CheckDependenciesCommand extends Command
+{
+    /**
+     * Constructor.
+     *
+     * @param DependencyChecker $dependencyChecker Dependency checker service
+     */
+    public function __construct(
+        private readonly DependencyChecker $dependencyChecker,
+    ) {
+        parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        $this->setHelp(<<<'HELP'
 The <info>%command.name%</info> command checks the status of optional dependencies for the Performance Bundle.
 
 This command verifies:
@@ -38,18 +54,7 @@ The bundle will work without optional dependencies, but some features may use fa
 For example, if Symfony UX TwigComponent is not installed, the dashboard will use traditional Twig includes
 instead of Twig Components, which may have slightly different performance characteristics.
 HELP
-)]
-final class CheckDependenciesCommand extends Command
-{
-    /**
-     * Constructor.
-     *
-     * @param DependencyChecker $dependencyChecker Dependency checker service
-     */
-    public function __construct(
-        private readonly DependencyChecker $dependencyChecker,
-    ) {
-        parent::__construct();
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

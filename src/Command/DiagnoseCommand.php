@@ -21,7 +21,23 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 #[AsCommand(
     name: 'nowo:performance:diagnose',
     description: 'Diagnose Performance Bundle configuration and query tracking status',
-    help: <<<'HELP'
+)]
+final class DiagnoseCommand extends Command
+{
+    /**
+     * Constructor.
+     *
+     * @param ParameterBagInterface $parameterBag Parameter bag to check configuration
+     */
+    public function __construct(
+        private readonly ParameterBagInterface $parameterBag,
+    ) {
+        parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        $this->setHelp(<<<'HELP'
 The <info>%command.name%</info> command provides a comprehensive diagnostic report of the Performance Bundle configuration and status.
 
 This command displays:
@@ -47,18 +63,7 @@ The command will show detailed information about:
   - How middleware is registered (YAML config vs reflection)
   - Database connection and table status
 HELP
-)]
-final class DiagnoseCommand extends Command
-{
-    /**
-     * Constructor.
-     *
-     * @param ParameterBagInterface $parameterBag Parameter bag to check configuration
-     */
-    public function __construct(
-        private readonly ParameterBagInterface $parameterBag,
-    ) {
-        parent::__construct();
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
