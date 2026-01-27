@@ -24,8 +24,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -1369,7 +1369,7 @@ class PerformanceController extends AbstractController
             'condition' => 'Ruta no ignorada',
             'status' => !$routeTracking['current_route_ignored'],
             'required' => true,
-            'details' => $routeTracking['current_route_ignored'] 
+            'details' => $routeTracking['current_route_ignored']
                 ? \sprintf('La ruta "%s" está en la lista de ignoradas', $routeTracking['current_route'])
                 : \sprintf('La ruta "%s" no está en la lista de ignoradas', $routeTracking['current_route'] ?? 'null'),
         ];
@@ -1387,7 +1387,7 @@ class PerformanceController extends AbstractController
             'condition' => 'Sampling rate',
             'status' => $this->samplingRate > 0,
             'required' => true,
-            'details' => $this->samplingRate < 1.0 
+            'details' => $this->samplingRate < 1.0
                 ? \sprintf('Sampling rate: %.1f%% (solo se registrará el %.1f%% de las peticiones)', $this->samplingRate * 100, $this->samplingRate * 100)
                 : 'Sampling rate: 100% (todas las peticiones se registrarán)',
         ];
@@ -1434,7 +1434,7 @@ class PerformanceController extends AbstractController
 
         if (!$dataStatus['has_data']) {
             $warnings[] = 'No hay datos registrados todavía. Asegúrate de que el bundle esté habilitado y que las rutas no estén en la lista de ignoradas.';
-            
+
             // Add specific suggestions based on tracking conditions
             $failedConditions = [];
             foreach ($subscriberStatus['tracking_conditions'] as $condition) {
@@ -1442,23 +1442,23 @@ class PerformanceController extends AbstractController
                     $failedConditions[] = $condition['condition'];
                 }
             }
-            
+
             if (!empty($failedConditions)) {
                 $suggestions[] = 'Condiciones de tracking no cumplidas: '.implode(', ', $failedConditions);
             }
-            
+
             if (!$subscriberStatus['subscriber_registered']) {
                 $suggestions[] = 'El subscriber PerformanceMetricsSubscriber no está registrado. Verifica que el bundle esté correctamente instalado y que el cache de Symfony esté limpio (php bin/console cache:clear).';
             }
-            
+
             if ($this->samplingRate < 1.0) {
                 $suggestions[] = \sprintf('El sampling rate está en %.1f%%. Si no hay tráfico suficiente, es posible que ninguna petición haya sido muestreada. Considera aumentar el sampling rate o generar más tráfico.', $this->samplingRate * 100);
             }
-            
+
             if (!$this->trackQueries && !$this->trackRequestTime) {
                 $suggestions[] = 'Habilita al menos uno de los siguientes: track_queries o track_request_time en la configuración.';
             }
-            
+
             // Check if there are routes that should be tracked
             $suggestions[] = 'Verifica que estés accediendo a rutas que no estén en la lista de ignoradas. Las rutas de assets, profiler y error están ignoradas por defecto.';
             $suggestions[] = 'Revisa los logs de la aplicación para ver si hay mensajes de "[PerformanceBundle]" que indiquen por qué no se está registrando.';
