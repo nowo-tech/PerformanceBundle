@@ -174,6 +174,10 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $env = 'dev'; // Default fallback
         }
 
+        // Set environment information in collector
+        $this->dataCollector->setConfiguredEnvironments($this->environments);
+        $this->dataCollector->setCurrentEnvironment($env);
+
         if (\function_exists('error_log')) {
             error_log(\sprintf('[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s', 
                 null !== $this->kernel ? $this->kernel->getEnvironment() : 'null', 

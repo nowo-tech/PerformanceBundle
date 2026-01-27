@@ -58,6 +58,24 @@
                     </span>
                 </div>
             {% endif %}
+            {% if collector.configuredEnvironments %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Environments</b>
+                    <span>{{ collector.configuredEnvironments|join(', ') }}</span>
+                </div>
+            {% endif %}
+            {% if collector.currentEnvironment %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Current Env</b>
+                    <span>
+                        {% if collector.currentEnvironment in (collector.configuredEnvironments ?? []) %}
+                            <span style="color: #4caf50;">{{ collector.currentEnvironment }}</span>
+                        {% else %}
+                            <span style="color: #d32f2f;">{{ collector.currentEnvironment }}</span>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
         {% else %}
             <div class="sf-toolbar-info-piece">
                 <b>Status</b>
@@ -83,6 +101,24 @@
                             {% endif %}
                         {% else %}
                             <span style="color: #d32f2f;">✗ Missing</span>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+            {% if collector.configuredEnvironments %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Environments</b>
+                    <span>{{ collector.configuredEnvironments|join(', ') }}</span>
+                </div>
+            {% endif %}
+            {% if collector.currentEnvironment %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Current Env</b>
+                    <span>
+                        {% if collector.currentEnvironment in (collector.configuredEnvironments ?? []) %}
+                            <span style="color: #4caf50;">{{ collector.currentEnvironment }}</span>
+                        {% else %}
+                            <span style="color: #d32f2f;">{{ collector.currentEnvironment }}</span>
                         {% endif %}
                     </span>
                 </div>
@@ -218,6 +254,34 @@
                         </td>
                     </tr>
                 {% endif %}
+                <tr>
+                    <td>Configured Environments</td>
+                    <td>
+                        {% if collector.configuredEnvironments %}
+                            <code>{{ collector.configuredEnvironments|join(', ') }}</code>
+                            <span class="text-muted">(environments where tracking is enabled)</span>
+                        {% else %}
+                            <span class="text-muted">Not configured</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Current Environment</td>
+                    <td>
+                        {% if collector.currentEnvironment %}
+                            <code>{{ collector.currentEnvironment }}</code>
+                            {% if collector.currentEnvironment in (collector.configuredEnvironments ?? []) %}
+                                <span style="color: #4caf50; font-weight: bold;">✓ Enabled</span>
+                                <span class="text-muted">(tracking is active for this environment)</span>
+                            {% else %}
+                                <span style="color: #d32f2f; font-weight: bold;">✗ Disabled</span>
+                                <span class="text-muted">(tracking is not enabled for this environment)</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </td>
+                </tr>
                 <tr>
                     <td>Database Table</td>
                     <td>

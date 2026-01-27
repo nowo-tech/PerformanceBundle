@@ -76,6 +76,16 @@ class PerformanceDataCollector extends DataCollector
     private ?bool $recordWasUpdated = null;
 
     /**
+     * Configured environments where tracking is enabled.
+     */
+    private ?array $configuredEnvironments = null;
+
+    /**
+     * Current system environment.
+     */
+    private ?string $currentEnvironment = null;
+
+    /**
      * Constructor.
      *
      * @param RouteDataRepository|null $repository         The route data repository (optional)
@@ -142,6 +152,26 @@ class PerformanceDataCollector extends DataCollector
     public function setAsync(bool $async): void
     {
         $this->async = $async;
+    }
+
+    /**
+     * Set configured environments.
+     *
+     * @param array $environments The configured environments
+     */
+    public function setConfiguredEnvironments(array $environments): void
+    {
+        $this->configuredEnvironments = $environments;
+    }
+
+    /**
+     * Set current system environment.
+     *
+     * @param string $environment The current environment
+     */
+    public function setCurrentEnvironment(string $environment): void
+    {
+        $this->currentEnvironment = $environment;
     }
 
     /**
@@ -284,6 +314,8 @@ class PerformanceDataCollector extends DataCollector
         $this->async = false;
         $this->recordWasNew = null;
         $this->recordWasUpdated = null;
+        $this->configuredEnvironments = null;
+        $this->currentEnvironment = null;
     }
 
     public function getName(): string
@@ -500,6 +532,26 @@ class PerformanceDataCollector extends DataCollector
     {
         // Check data first (set during collect()), then fallback to property (set by setRecordOperation())
         return $this->data['record_was_updated'] ?? $this->recordWasUpdated;
+    }
+
+    /**
+     * Get configured environments.
+     *
+     * @return array|null The configured environments or null if not available
+     */
+    public function getConfiguredEnvironments(): ?array
+    {
+        return $this->data['configured_environments'] ?? null;
+    }
+
+    /**
+     * Get current system environment.
+     *
+     * @return string|null The current environment or null if not available
+     */
+    public function getCurrentEnvironment(): ?string
+    {
+        return $this->data['current_environment'] ?? null;
     }
 
     /**
