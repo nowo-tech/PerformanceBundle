@@ -15,6 +15,7 @@ nowo_performance:
     table_name: 'routes_data'        # Table name for storing metrics
     track_queries: true              # Track database query count and time
     track_request_time: true         # Track request execution time
+    track_sub_requests: false         # Track sub-requests (ESI, fragments, etc.)
     enable_access_records: false     # Enable temporal access records tracking
     ignore_routes:                   # Routes to ignore (not tracked)
         - '_wdt'                     # Web Debug Toolbar
