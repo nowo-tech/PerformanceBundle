@@ -52,6 +52,10 @@ services:
     # Table Status Checker
     Nowo\PerformanceBundle\Service\TableStatusChecker:
         public: true
+        calls:
+            # Optional: cache service for caching table status
+            - method: setCacheService
+              arguments: ['@?Nowo\PerformanceBundle\Service\PerformanceCacheService']
 
     # Performance Analysis Service
     Nowo\PerformanceBundle\Service\PerformanceAnalysisService:

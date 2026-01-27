@@ -80,6 +80,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter('nowo_performance.dashboard.date_formats.datetime', $dateFormatsConfig['datetime'] ?? 'Y-m-d H:i:s');
         $container->setParameter('nowo_performance.dashboard.date_formats.date', $dateFormatsConfig['date'] ?? 'Y-m-d H:i');
         $container->setParameter('nowo_performance.dashboard.auto_refresh_interval', $dashboardConfig['auto_refresh_interval'] ?? 0);
+        $container->setParameter('nowo_performance.dashboard.enable_ranking_queries', $dashboardConfig['enable_ranking_queries'] ?? true);
 
         // Notifications configuration
         $notificationsConfig = $config['notifications'] ?? [];

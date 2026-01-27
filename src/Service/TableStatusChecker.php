@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use Doctrine\Persistence\ManagerRegistry;
+use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -15,6 +16,11 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  */
 class TableStatusChecker
 {
+    /**
+     * Cache service (optional, for caching table status).
+     */
+    private ?PerformanceCacheService $cacheService = null;
+
     /**
      * Constructor.
      *
@@ -29,6 +35,16 @@ class TableStatusChecker
         #[Autowire('%nowo_performance.table_name%')]
         private readonly string $tableName,
     ) {
+    }
+
+    /**
+     * Set the cache service (optional, for caching table status).
+     *
+     * @param PerformanceCacheService|null $cacheService The cache service
+     */
+    public function setCacheService(?PerformanceCacheService $cacheService): void
+    {
+        $this->cacheService = $cacheService;
     }
 
     /**
@@ -62,6 +78,15 @@ class TableStatusChecker
      */
     public function tableExists(): bool
     {
+        // Try to get from cache first
+        if (null !== $this->cacheService) {
+            $cacheKey = 'table_exists_'.$this->connectionName.'_'.$this->tableName;
+            $cached = $this->cacheService->getCachedValue($cacheKey);
+            if (null !== $cached) {
+                return (bool) $cached;
+            }
+        }
+
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
@@ -78,7 +103,15 @@ class TableStatusChecker
                 $actualTableName = $metadata->table['name'] ?? $this->tableName;
             }
 
-            return $schemaManager->tablesExist([$actualTableName]);
+            $exists = $schemaManager->tablesExist([$actualTableName]);
+
+            // Cache the result for 5 minutes (table structure doesn't change frequently)
+            if (null !== $this->cacheService) {
+                $cacheKey = 'table_exists_'.$this->connectionName.'_'.$this->tableName;
+                $this->cacheService->cacheValue($cacheKey, $exists, 300);
+            }
+
+            return $exists;
         } catch (\Exception $e) {
             // If there's any error (e.g., connection issue, metadata not loaded), assume table doesn't exist
             return false;
@@ -106,9 +139,25 @@ class TableStatusChecker
             return false;
         }
 
-        $missingColumns = $this->getMissingColumns();
+        // Try to get from cache first
+        if (null !== $this->cacheService) {
+            $cacheKey = 'table_complete_'.$this->connectionName.'_'.$this->tableName;
+            $cached = $this->cacheService->getCachedValue($cacheKey);
+            if (null !== $cached) {
+                return (bool) $cached;
+            }
+        }
 
-        return empty($missingColumns);
+        $missingColumns = $this->getMissingColumns();
+        $isComplete = empty($missingColumns);
+
+        // Cache the result for 5 minutes (table structure doesn't change frequently)
+        if (null !== $this->cacheService) {
+            $cacheKey = 'table_complete_'.$this->connectionName.'_'.$this->tableName;
+            $this->cacheService->cacheValue($cacheKey, $isComplete, 300);
+        }
+
+        return $isComplete;
     }
 
     /**

@@ -236,4 +236,64 @@ class PerformanceCacheService
     {
         return self::CACHE_PREFIX.'environments';
     }
+
+    /**
+     * Get a cached value by key.
+     *
+     * @param string $key The cache key
+     *
+     * @return mixed|null The cached value or null if not found
+     */
+    public function getCachedValue(string $key): mixed
+    {
+        if (null === $this->cachePool) {
+            return null;
+        }
+
+        $item = $this->cachePool->getItem(self::CACHE_PREFIX.$key);
+
+        if ($item->isHit()) {
+            return $item->get();
+        }
+
+        return null;
+    }
+
+    /**
+     * Cache a value by key.
+     *
+     * @param string   $key The cache key
+     * @param mixed    $value The value to cache
+     * @param int|null $ttl  Time to live in seconds (default: 1 hour)
+     *
+     * @return bool True if cached successfully
+     */
+    public function cacheValue(string $key, mixed $value, ?int $ttl = null): bool
+    {
+        if (null === $this->cachePool) {
+            return false;
+        }
+
+        $item = $this->cachePool->getItem(self::CACHE_PREFIX.$key);
+        $item->set($value);
+        $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
+
+        return $this->cachePool->save($item);
+    }
+
+    /**
+     * Invalidate a cached value by key.
+     *
+     * @param string $key The cache key
+     *
+     * @return bool True if invalidated successfully
+     */
+    public function invalidateValue(string $key): bool
+    {
+        if (null === $this->cachePool) {
+            return false;
+        }
+
+        return $this->cachePool->deleteItem(self::CACHE_PREFIX.$key);
+    }
 }

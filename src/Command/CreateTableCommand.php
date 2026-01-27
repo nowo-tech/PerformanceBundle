@@ -1050,8 +1050,9 @@ final class CreateTableCommand extends Command
     private function getColumnSQLType(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
     {
         $type = $columnInfo['type'];
-        $options = $columnInfo['options'];
+        $options = $columnInfo['options'] ?? [];
         $length = $columnInfo['length'] ?? null;
+        $columnName = $columnInfo['column'] ?? 'column'; // Default fallback name
 
         // Use Doctrine's type system to get proper SQL type
         // getTypeRegistry() is available in DBAL 3.x, use Type::getType() for DBAL 2.x compatibility
@@ -1068,10 +1069,31 @@ final class CreateTableCommand extends Command
 
             if (null !== $doctrineType) {
                 $column = [];
+                // DBAL 3.x requires 'name' key in the column array (mandatory)
+                $column['name'] = $columnName;
+                
                 if (null !== $length) {
                     $column['length'] = $length;
                 } elseif (isset($options['length'])) {
                     $column['length'] = $options['length'];
+                }
+                // Add other column properties that might be needed
+                if (isset($columnInfo['nullable'])) {
+                    $column['notnull'] = !$columnInfo['nullable'];
+                }
+                if (isset($columnInfo['precision'])) {
+                    $column['precision'] = $columnInfo['precision'];
+                }
+                if (isset($columnInfo['scale'])) {
+                    $column['scale'] = $columnInfo['scale'];
+                }
+                // Add unsigned if specified
+                if (isset($options['unsigned'])) {
+                    $column['unsigned'] = $options['unsigned'];
+                }
+                // Add fixed if specified (for CHAR vs VARCHAR)
+                if (isset($options['fixed'])) {
+                    $column['fixed'] = $options['fixed'];
                 }
 
                 return $doctrineType->getSQLDeclaration($column, $platform);

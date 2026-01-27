@@ -279,20 +279,33 @@ class PerformanceDataCollector extends DataCollector
         }
 
         // Get ranking and access count information if repository is available
+        // Only execute ranking queries if enabled (they can be expensive)
         $accessCount = null;
         $rankingByRequestTime = null;
         $rankingByQueryCount = null;
         $totalRoutes = null;
+
+        // Check if ranking queries are enabled (default: true for backward compatibility)
+        $enableRankingQueries = true;
+        try {
+            $enableRankingQueries = $this->kernel?->getContainer()?->getParameter('nowo_performance.dashboard.enable_ranking_queries') ?? true;
+        } catch (\Exception $e) {
+            // If parameter doesn't exist or container is not available, use default (true)
+        }
 
         if (null !== $this->repository && null !== $routeName) {
             try {
                 $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
                 if (null !== $routeData) {
                     $accessCount = $routeData->getAccessCount();
-                    // Pass the RouteData entity directly to avoid duplicate queries
-                    $rankingByRequestTime = $this->repository->getRankingByRequestTime($routeData);
-                    $rankingByQueryCount = $this->repository->getRankingByQueryCount($routeData);
-                    $totalRoutes = $this->repository->getTotalRoutesCount($env);
+                    
+                    // Only execute ranking queries if enabled
+                    if ($enableRankingQueries) {
+                        // Pass the RouteData entity directly to avoid duplicate queries
+                        $rankingByRequestTime = $this->repository->getRankingByRequestTime($routeData);
+                        $rankingByQueryCount = $this->repository->getRankingByQueryCount($routeData);
+                        $totalRoutes = $this->repository->getTotalRoutesCount($env);
+                    }
                 }
             } catch (\Exception $e) {
                 // Silently fail if repository query fails (e.g., table doesn't exist yet)

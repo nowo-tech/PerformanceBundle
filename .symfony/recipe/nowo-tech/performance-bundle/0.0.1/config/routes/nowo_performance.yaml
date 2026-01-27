@@ -1,0 +1,15 @@
+# Performance Bundle Routes
+# This file is automatically created when installing the bundle via Symfony Flex
+# 
+# The routes are imported from the bundle's controller using attributes.
+# The prefix and path are configured via nowo_performance.dashboard.prefix and nowo_performance.dashboard.path
+# Default prefix is empty and default path is '/performance'
+#
+# You can customize the routes by:
+# 1. Changing the prefix/path in config/packages/nowo_performance.yaml
+# 2. Overriding this file to use a different prefix
+# 3. Removing this import and importing the routes manually with your own configuration
+
+nowo_performance:
+    resource: '@NowoPerformanceBundle/Resources/config/routes.yaml'
+    prefix: '%nowo_performance.dashboard.prefix%%nowo_performance.dashboard.path%'
