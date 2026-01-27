@@ -76,6 +76,20 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
     }
 
     /**
+     * Get subscribed events.
+     *
+     * Note: Events are registered via #[AsEventListener] attributes on methods,
+     * but this method is kept for compatibility with EventSubscriberInterface.
+     *
+     * @return array<string, string|array{0: string, 1: int}|list<array{0: string, 1?: int}>>
+     */
+    public static function getSubscribedEvents(): array
+    {
+        // Events are registered via #[AsEventListener] attributes
+        return [];
+    }
+
+    /**
      * Apply middleware to connections on kernel request.
      *
      * @param KernelEvent $event The kernel event
