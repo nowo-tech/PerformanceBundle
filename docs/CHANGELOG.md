@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Sub-request tracking support** - Added `track_sub_requests` configuration option
+  - Allows tracking performance metrics for sub-requests (ESI, fragments, includes) in addition to main requests
+  - Default: `false` (maintains backward compatibility, only main requests tracked)
+  - When enabled, tracks both main requests and sub-requests separately
+  - Useful for monitoring ESI performance, fragment rendering, and debugging sub-request bottlenecks
+  - Includes request type (main/sub) in logging for better diagnostics
 
 ## [0.0.7] - 2025-01-27
 

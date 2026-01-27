@@ -102,6 +102,28 @@ nowo_performance:
     track_request_time: false  # Disable request time tracking
 ```
 
+### `track_sub_requests`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Track sub-requests in addition to main requests. When enabled, performance metrics will be collected for both main requests and sub-requests (e.g., ESI, fragments, includes).
+
+By default, only main requests are tracked to avoid duplicate metrics and reduce database load. Enable this option if you need to track performance of sub-requests separately.
+
+```yaml
+nowo_performance:
+    track_sub_requests: true  # Enable tracking of sub-requests
+```
+
+**Use cases:**
+- Tracking ESI (Edge Side Includes) performance
+- Monitoring fragment rendering performance
+- Analyzing include/embed performance
+- Debugging sub-request bottlenecks
+
+**Note:** Enabling this feature will increase database storage requirements as it creates metrics for every sub-request (subject to sampling_rate).
+
 ### `enable_access_records`
 
 **Type:** `boolean`  
