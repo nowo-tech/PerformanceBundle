@@ -2,6 +2,60 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 1.0.6 (2026-01-27)
+
+### Symfony 7 Compatibility and Test Coverage
+
+This version fixes compatibility with Symfony 7.x and adds comprehensive test coverage.
+
+#### Changes
+
+- **Symfony 7 compatibility fix**: Fixed compatibility issue with Symfony 7.x commands
+  - Moved `help` parameter from `#[AsCommand]` attribute to `configure()` method
+  - All commands now use `setHelp()` in `configure()` method
+  - Compatible with both Symfony 6.x and 7.x
+  - Fixes "Unknown named parameter $help" error
+- **Test coverage**: Added 60+ new tests for improved reliability
+  - Tests for chart data generation
+  - Tests for access statistics
+  - Tests for subscriber detection
+  - Tests for environment filtering
+  - Tests for export functionality
+  - Tests for filter building
+
+#### What This Means
+
+- **Symfony 7 support**: All commands now work correctly with Symfony 7.x
+- **Better reliability**: Comprehensive test coverage ensures edge cases are handled
+- **No breaking changes**: All changes are backward compatible with Symfony 6.x
+- **Improved code quality**: More tests mean fewer bugs
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **No configuration changes required**: The fix is automatic and backward compatible
+
+#### Troubleshooting
+
+**Q: I still see "Unknown named parameter $help" error**  
+A: Make sure you're using v1.0.6 or higher. Clear cache and verify:
+   ```bash
+   composer show nowo-tech/performance-bundle
+   php bin/console cache:clear
+   ```
+
+**Q: Commands work but help text is missing**  
+A: This should be fixed in v1.0.6. The help text is now set in the `configure()` method. Clear cache and try again.
+
 ## Upgrading to 1.0.5 (2026-01-27)
 
 ### Bug Fix

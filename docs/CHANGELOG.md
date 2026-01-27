@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-01-27
+
+### Fixed
+- **Symfony 7 compatibility** - Fixed compatibility issue with Symfony 7.x commands
+  - Moved `help` parameter from `#[AsCommand]` attribute to `configure()` method using `setHelp()`
+  - Fixed "Unknown named parameter $help" error in all commands
+  - All commands now use `configure()` method for help text (compatible with Symfony 6.x and 7.x)
+  - Commands affected: `check-dependencies`, `diagnose`, `create-table`, `create-records-table`, `set-route`
+
+### Added
+- **Comprehensive test coverage** - Added 60+ new tests for improved reliability
+  - 7 tests for `getChartData()` method covering all metrics (requestTime, queryTime, totalQueries, memoryUsage)
+  - 5 tests for `accessStatistics()` method covering disabled states, exceptions, and date ranges
+  - 7 tests for subscriber detection in diagnose page
+  - 13 tests for `getAvailableEnvironments()` method (already in v1.0.4)
+  - 16 tests for export functionality (CSV and JSON) (already in v1.0.4)
+  - 12 tests for `buildFiltersFromRequest()` method (already in v1.0.4)
+  - Improves code quality and ensures edge cases are properly handled
+
 ## [1.0.5] - 2026-01-27
 
 ### Fixed
