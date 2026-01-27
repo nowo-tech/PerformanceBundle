@@ -301,6 +301,8 @@ class PerformanceDataCollector extends DataCollector
             'missing_columns' => $missingColumns,
             'record_was_new' => $this->recordWasNew,
             'record_was_updated' => $this->recordWasUpdated,
+            'configured_environments' => $this->configuredEnvironments,
+            'current_environment' => $this->currentEnvironment ?? $env,
         ];
     }
 
