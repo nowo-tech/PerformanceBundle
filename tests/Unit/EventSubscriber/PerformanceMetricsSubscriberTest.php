@@ -39,7 +39,13 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             ['dev', 'test'],
             ['_wdt', '_profiler'],
             true,
-            true
+            true,
+            false, // trackSubRequests
+            false, // async
+            1.0,   // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            null,  // requestStack
+            null   // kernel
         );
     }
 
@@ -62,7 +68,13 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             ['dev'],
             [],
             true,
-            true
+            true,
+            false, // trackSubRequests
+            false, // async
+            1.0,   // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            null,  // requestStack
+            null   // kernel
         );
 
         $request = Request::create('/');
@@ -85,6 +97,62 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             ->expects($this->once())
             ->method('setEnabled')
             ->with(false);
+
+        $this->subscriber->onKernelRequest($event);
+    }
+
+    public function testOnKernelRequestWhenSubRequestAndTrackSubRequestsEnabled(): void
+    {
+        $subscriber = new PerformanceMetricsSubscriber(
+            $this->metricsService,
+            $this->registry,
+            'default',
+            $this->dataCollector,
+            true,  // enabled
+            ['dev', 'test'],
+            [],     // no ignored routes
+            true,   // trackQueries
+            true,   // trackRequestTime
+            true,   // trackSubRequests = ENABLED
+            false,  // async
+            1.0,    // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            null,   // requestStack
+            null    // kernel
+        );
+
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::SUB_REQUEST);
+
+        $this->dataCollector
+            ->expects($this->once())
+            ->method('setEnabled')
+            ->with(true);
+
+        $this->dataCollector
+            ->expects($this->once())
+            ->method('setRouteName')
+            ->with(null);
+
+        $subscriber->onKernelRequest($event);
+    }
+
+    public function testOnKernelRequestWhenSubRequestAndTrackSubRequestsDisabled(): void
+    {
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::SUB_REQUEST);
+
+        $this->dataCollector
+            ->expects($this->once())
+            ->method('setEnabled')
+            ->with(false);
+
+        $this->dataCollector
+            ->expects($this->once())
+            ->method('setDisabledReason')
+            ->with($this->stringContains('sub-request'));
 
         $this->subscriber->onKernelRequest($event);
     }

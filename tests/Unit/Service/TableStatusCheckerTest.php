@@ -145,4 +145,78 @@ final class TableStatusCheckerTest extends TestCase
         
         $this->assertTrue($checker->tableExists());
     }
+
+    public function testGetMissingColumnsUsesGetColumnNameForDBAL3x(): void
+    {
+        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata->table = ['name' => 'routes_data'];
+        
+        $column = $this->createMock(Column::class);
+        $column->method('getQuotedName')->willReturn('`name`');
+        
+        $table = $this->createMock(Table::class);
+        $table->method('getColumns')->willReturn([$column]);
+        
+        $this->connection->method('createSchemaManager')->willReturn($this->schemaManager);
+        $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturn(true);
+        $this->schemaManager->method('introspectTable')->with('routes_data')->willReturn($table);
+        $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
+        $this->registry->method('getManager')->with('default')->willReturn($this->entityManager);
+        $this->entityManager->method('getMetadataFactory')->willReturn($this->metadataFactory);
+        $this->metadataFactory->method('getMetadataFor')
+            ->with('Nowo\PerformanceBundle\Entity\RouteData')
+            ->willReturn($metadata);
+        
+        $this->connection->method('getDatabasePlatform')
+            ->willReturn($this->createMock(\Doctrine\DBAL\Platforms\AbstractPlatform::class));
+        
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data'
+        );
+        
+        // Should not throw exception when getQuotedName is available (DBAL 3.x)
+        $missing = $checker->getMissingColumns();
+        $this->assertIsArray($missing);
+    }
+
+    public function testGetMissingColumnsFallsBackToGetNameForDBAL2x(): void
+    {
+        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata->table = ['name' => 'routes_data'];
+        
+        $column = $this->createMock(Column::class);
+        $column->method('getName')->willReturn('name');
+        // getQuotedName doesn't exist in DBAL 2.x
+        if (method_exists($column, 'getQuotedName')) {
+            $column->method('getQuotedName')->willThrowException(new \BadMethodCallException());
+        }
+        
+        $table = $this->createMock(Table::class);
+        $table->method('getColumns')->willReturn([$column]);
+        
+        $this->connection->method('createSchemaManager')->willReturn($this->schemaManager);
+        $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturn(true);
+        $this->schemaManager->method('introspectTable')->with('routes_data')->willReturn($table);
+        $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
+        $this->registry->method('getManager')->with('default')->willReturn($this->entityManager);
+        $this->entityManager->method('getMetadataFactory')->willReturn($this->metadataFactory);
+        $this->metadataFactory->method('getMetadataFor')
+            ->with('Nowo\PerformanceBundle\Entity\RouteData')
+            ->willReturn($metadata);
+        
+        $platform = $this->createMock(\Doctrine\DBAL\Platforms\AbstractPlatform::class);
+        $this->connection->method('getDatabasePlatform')->willReturn($platform);
+        
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data'
+        );
+        
+        // Should not throw exception when getName is used (DBAL 2.x fallback)
+        $missing = $checker->getMissingColumns();
+        $this->assertIsArray($missing);
+    }
 }
