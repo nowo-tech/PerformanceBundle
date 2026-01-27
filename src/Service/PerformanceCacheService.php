@@ -262,9 +262,9 @@ class PerformanceCacheService
     /**
      * Cache a value by key.
      *
-     * @param string   $key The cache key
+     * @param string   $key   The cache key
      * @param mixed    $value The value to cache
-     * @param int|null $ttl  Time to live in seconds (default: 1 hour)
+     * @param int|null $ttl   Time to live in seconds (default: 1 hour)
      *
      * @return bool True if cached successfully
      */

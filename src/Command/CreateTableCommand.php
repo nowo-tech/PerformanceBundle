@@ -879,10 +879,10 @@ final class CreateTableCommand extends Command
             $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
             $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-                $sql = \sprintf(
-                    'ALTER TABLE %s ADD COLUMN %s %s',
-                    $this->quoteIdentifier($platform, $actualTableName),
-                    $this->quoteIdentifier($platform, $columnName),
+            $sql = \sprintf(
+                'ALTER TABLE %s ADD COLUMN %s %s',
+                $this->quoteIdentifier($platform, $actualTableName),
+                $this->quoteIdentifier($platform, $columnName),
                 $columnDefinition
             );
 
@@ -955,7 +955,7 @@ final class CreateTableCommand extends Command
     /**
      * Quote a single identifier (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform The database platform
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   The database platform
      * @param string                                    $identifier The identifier to quote
      *
      * @return string The quoted identifier
@@ -974,7 +974,7 @@ final class CreateTableCommand extends Command
     /**
      * Get column name from Column object (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Schema\Column $column The column object
+     * @param \Doctrine\DBAL\Schema\Column $column     The column object
      * @param \Doctrine\DBAL\Connection    $connection The database connection
      *
      * @return string The column name
@@ -989,6 +989,7 @@ final class CreateTableCommand extends Command
         // Fallback to getName() for DBAL 2.x
         if (method_exists($column, 'getName')) {
             $name = $column->getName();
+
             // getName() might return a Name object in DBAL 3.x, convert to string
             return \is_string($name) ? $name : (string) $name;
         }
@@ -999,6 +1000,7 @@ final class CreateTableCommand extends Command
             $nameProperty = $reflection->getProperty('name');
             $nameProperty->setAccessible(true);
             $name = $nameProperty->getValue($column);
+
             return \is_string($name) ? $name : (string) $name;
         } catch (\Exception $e) {
             return '';
@@ -1008,7 +1010,7 @@ final class CreateTableCommand extends Command
     /**
      * Get asset name from AbstractAsset object (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Schema\AbstractAsset $asset The asset object (Column, Index, etc.)
+     * @param \Doctrine\DBAL\Schema\AbstractAsset $asset      The asset object (Column, Index, etc.)
      * @param \Doctrine\DBAL\Connection           $connection The database connection
      *
      * @return string The asset name
@@ -1023,6 +1025,7 @@ final class CreateTableCommand extends Command
         // Fallback to getName() for DBAL 2.x
         if (method_exists($asset, 'getName')) {
             $name = $asset->getName();
+
             // getName() might return a Name object in DBAL 3.x, convert to string
             return \is_string($name) ? $name : (string) $name;
         }
@@ -1033,6 +1036,7 @@ final class CreateTableCommand extends Command
             $nameProperty = $reflection->getProperty('name');
             $nameProperty->setAccessible(true);
             $name = $nameProperty->getValue($asset);
+
             return \is_string($name) ? $name : (string) $name;
         } catch (\Exception $e) {
             return '';
@@ -1071,7 +1075,7 @@ final class CreateTableCommand extends Command
                 $column = [];
                 // DBAL 3.x requires 'name' key in the column array (mandatory)
                 $column['name'] = $columnName;
-                
+
                 if (null !== $length) {
                     $column['length'] = $length;
                 } elseif (isset($options['length'])) {

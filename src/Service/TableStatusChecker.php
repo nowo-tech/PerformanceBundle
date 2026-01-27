@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use Doctrine\Persistence\ManagerRegistry;
-use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**

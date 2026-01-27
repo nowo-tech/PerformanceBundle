@@ -53,7 +53,7 @@ final class LogHelper
     /**
      * Log a message if logging is enabled.
      *
-     * @param string   $message        The message to log
+     * @param string    $message       The message to log
      * @param bool|null $enableLogging The logging configuration value (from container parameter)
      *
      * @return bool True if the message was logged, false otherwise
@@ -66,6 +66,7 @@ final class LogHelper
 
         if (\function_exists('error_log')) {
             error_log($message);
+
             return true;
         }
 
@@ -75,9 +76,9 @@ final class LogHelper
     /**
      * Log a formatted message if logging is enabled.
      *
-     * @param string   $format        The format string (sprintf format)
+     * @param string    $format        The format string (sprintf format)
      * @param bool|null $enableLogging The logging configuration value (from container parameter)
-     * @param mixed    ...$args       Arguments for the format string
+     * @param mixed     ...$args       Arguments for the format string
      *
      * @return bool True if the message was logged, false otherwise
      */
@@ -89,6 +90,7 @@ final class LogHelper
 
         if (\function_exists('error_log')) {
             error_log(\sprintf($format, ...$args));
+
             return true;
         }
 
