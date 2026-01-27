@@ -145,6 +145,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 error_log('[PerformanceBundle] Tracking disabled: enabled=false');
             }
             $this->dataCollector->setEnabled(false);
+            $this->dataCollector->setDisabledReason('Bundle is disabled in configuration (nowo_performance.enabled: false)');
 
             return;
         }
@@ -154,6 +155,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 error_log('[PerformanceBundle] Tracking disabled: not main request');
             }
             $this->dataCollector->setEnabled(false);
+            $this->dataCollector->setDisabledReason('Not a main request (sub-request)');
 
             return;
         }
@@ -191,11 +193,13 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 error_log(\sprintf('[PerformanceBundle] Tracking disabled: env=%s not in allowed environments: %s', $env, implode(', ', $this->environments)));
             }
             $this->dataCollector->setEnabled(false);
+            $this->dataCollector->setDisabledReason(\sprintf('Environment "%s" is not in allowed environments: %s', $env, implode(', ', $this->environments)));
 
             return;
         }
 
         $this->dataCollector->setEnabled(true);
+        $this->dataCollector->setDisabledReason(null); // Clear any previous reason
 
         // Get route name
         $this->routeName = $request->attributes->get('_route');
@@ -204,6 +208,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // Skip ignored routes
         if (null !== $this->routeName && \in_array($this->routeName, $this->ignoreRoutes, true)) {
             $this->dataCollector->setEnabled(false);
+            $this->dataCollector->setDisabledReason(\sprintf('Route "%s" is in ignore_routes list', $this->routeName));
             // Inform collector that route is ignored
             $this->dataCollector->setRecordOperation(false, false);
 

@@ -86,6 +86,11 @@ class PerformanceDataCollector extends DataCollector
     private ?string $currentEnvironment = null;
 
     /**
+     * Reason why tracking is disabled (if disabled).
+     */
+    private ?string $disabledReason = null;
+
+    /**
      * Constructor.
      *
      * @param RouteDataRepository|null $repository         The route data repository (optional)
@@ -172,6 +177,16 @@ class PerformanceDataCollector extends DataCollector
     public function setCurrentEnvironment(string $environment): void
     {
         $this->currentEnvironment = $environment;
+    }
+
+    /**
+     * Set reason why tracking is disabled.
+     *
+     * @param string $reason The reason for being disabled
+     */
+    public function setDisabledReason(string $reason): void
+    {
+        $this->disabledReason = $reason;
     }
 
     /**
@@ -554,6 +569,16 @@ class PerformanceDataCollector extends DataCollector
     public function getCurrentEnvironment(): ?string
     {
         return $this->data['current_environment'] ?? null;
+    }
+
+    /**
+     * Get reason why tracking is disabled.
+     *
+     * @return string|null The reason for being disabled or null if enabled
+     */
+    public function getDisabledReason(): ?string
+    {
+        return $this->data['disabled_reason'] ?? null;
     }
 
     /**

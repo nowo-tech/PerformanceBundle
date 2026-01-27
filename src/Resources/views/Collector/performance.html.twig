@@ -84,7 +84,9 @@
             <div class="sf-toolbar-info-piece">
                 <b>Reason</b>
                 <span style="color: #999;">
-                    {% if not collector.enabled %}
+                    {% if collector.disabledReason %}
+                        {{ collector.disabledReason }}
+                    {% else %}
                         Bundle disabled or environment not tracked
                     {% endif %}
                 </span>
