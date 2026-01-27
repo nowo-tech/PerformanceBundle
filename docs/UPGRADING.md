@@ -2,7 +2,61 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
-## Upgrading to 0.0.2 (Unreleased)
+## Upgrading to 0.0.3 (2025-01-27)
+
+### Compatibility Fix
+
+This version fixes a compatibility issue with DoctrineBundle middleware configuration.
+
+#### Changes
+
+- **DoctrineBundle middleware configuration**: Changed from using `yamlMiddleware` to always using `middlewares` for DoctrineBundle 2.x
+- The `yamlMiddleware` option is not reliably available across all DoctrineBundle 2.x versions, even when the version suggests it should be supported
+- The `middlewares` option is more widely supported and works consistently across all DoctrineBundle 2.x versions
+
+#### What This Means
+
+- **No configuration changes required**: The bundle automatically uses the correct configuration method
+- **No database changes required**: This is a configuration-only fix
+- **Fixes installation errors**: Resolves "Unrecognized option 'yamlMiddleware'" errors when installing the bundle
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache**:
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Verify installation**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   ```
+
+#### Troubleshooting
+
+**Issue: Still seeing "Unrecognized option 'yamlMiddleware'" error**
+
+- **Solution**: Clear Symfony cache and verify the bundle version:
+  ```bash
+  php bin/console cache:clear
+  composer show nowo-tech/performance-bundle
+  ```
+  Make sure you're using version 0.0.3 or higher.
+
+**Issue: Middleware not being registered**
+
+- **Solution**: Run the diagnose command to check middleware registration:
+  ```bash
+  php bin/console nowo:performance:diagnose
+  ```
+  The command will show which method is being used to register the middleware.
+
+## Upgrading to 0.0.2 (2025-01-27)
 
 ### New Features Overview
 

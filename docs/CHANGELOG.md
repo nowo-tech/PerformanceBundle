@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.0.3] - 2025-01-27
+
+### Fixed
+- **DoctrineBundle middleware configuration** - Fixed compatibility issue with `yamlMiddleware` option
+  - Changed from using `yamlMiddleware` to always using `middlewares` for DoctrineBundle 2.x
+  - `yamlMiddleware` is not reliably available across all DoctrineBundle 2.x versions
+  - `middlewares` is more widely supported and works consistently across all 2.x versions
+  - Fixes "Unrecognized option 'yamlMiddleware'" errors when installing the bundle
+  - Updated documentation to reflect this change
+
 ## [0.0.2] - 2025-01-27
 
 ### Added
@@ -22,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests for platform compatibility (MySQL vs PostgreSQL)
   - Tests for error handling when restoring foreign keys
   - Total: 20+ tests covering all edge cases
+
+### Changed
+- **Symfony Flex recipe** - Added uninstall hook
+  - Automatically removes bundle from `config/bundles.php` when uninstalling
+  - Automatically removes configuration files (`config/packages/nowo_performance.yaml` and dev-specific config)
+  - Proper cleanup when running `composer remove nowo-tech/performance-bundle`
 
 ### Fixed
 - **AUTO_INCREMENT for id column** - Fixed issue where `id` column was not configured as AUTO_INCREMENT in MySQL/MariaDB

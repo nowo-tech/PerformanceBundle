@@ -200,23 +200,9 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
 
                 // Only prepend if not already registered
                 if (!$hasMiddleware && !$hasYamlMiddleware) {
-                    // Priority 1: Use yamlMiddleware if supported (DoctrineBundle 2.10.0+)
-                    if (QueryTrackingMiddlewareRegistry::supportsYamlMiddleware()) {
-                        $doctrineConfig = [
-                            'dbal' => [
-                                'connections' => [
-                                    $connectionName => [
-                                        'yamlMiddleware' => [
-                                            QueryTrackingMiddleware::class,
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ];
-                        $container->prependExtensionConfig('doctrine', $doctrineConfig);
-                    }
-                    // Priority 2: Fall back to middlewares if supported (DoctrineBundle 2.x < 2.10.0)
-                    elseif (QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()) {
+                    // Use 'middlewares' for DoctrineBundle 2.x (more widely supported than yamlMiddleware)
+                    // For DoctrineBundle 3.x, middleware is applied via QueryTrackingConnectionSubscriber
+                    if (QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()) {
                         $doctrineConfig = [
                             'dbal' => [
                                 'connections' => [
@@ -230,6 +216,8 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
                         ];
                         $container->prependExtensionConfig('doctrine', $doctrineConfig);
                     }
+                    // For DoctrineBundle 3.x, middleware is applied via QueryTrackingConnectionSubscriber
+                    // which uses reflection to wrap the driver after connection creation
                 }
             }
             // For DoctrineBundle 3.x, middleware is applied via QueryTrackingConnectionSubscriber

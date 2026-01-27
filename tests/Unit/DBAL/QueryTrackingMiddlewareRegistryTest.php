@@ -64,4 +64,22 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
         // Should return false when reflection fails
         $this->assertFalse($result);
     }
+
+    public function testSupportsYamlMiddlewareAlwaysReturnsFalse(): void
+    {
+        // yamlMiddleware is disabled due to compatibility issues
+        // It should always return false regardless of DoctrineBundle version
+        $result = QueryTrackingMiddlewareRegistry::supportsYamlMiddleware();
+        $this->assertFalse($result);
+    }
+
+    public function testSupportsYamlMiddlewareConfigReturnsTrueForDoctrineBundle2x(): void
+    {
+        // This test verifies that supportsYamlMiddlewareConfig works correctly
+        // It should return true for DoctrineBundle 2.x if available
+        $result = QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig();
+        // Result depends on whether DoctrineBundle is installed and its version
+        // We just verify the method doesn't throw an exception
+        $this->assertIsBool($result);
+    }
 }

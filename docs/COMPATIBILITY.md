@@ -32,7 +32,7 @@ The bundle is compatible with the following versions:
 
 **Features**:
 - Supports middleware configuration in YAML using `middlewares` (since 2.0)
-- Supports `yamlMiddleware` (since 2.10.0) - preferred method
+- Note: `yamlMiddleware` is not used due to compatibility issues across versions
 
 **YAML Configuration**:
 ```yaml
@@ -40,12 +40,8 @@ doctrine:
     dbal:
         connections:
             default:
-                # Option 1: middlewares (2.0+)
+                # Use middlewares (2.0+) - more widely supported
                 middlewares:
-                    - Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware
-                
-                # Option 2: yamlMiddleware (2.10.0+) - Preferred
-                yamlMiddleware:
                     - Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware
 ```
 
@@ -61,12 +57,10 @@ doctrine:
 **How the bundle handles it**:
 The bundle automatically detects the DoctrineBundle version and applies the middleware using the appropriate method:
 
-1. **DoctrineBundle 2.10.0+**: Uses `yamlMiddleware` (preferred method)
-2. **DoctrineBundle 2.8.0 - 2.9.x**: Uses `middlewares`
-3. **DoctrineBundle 3.x**: Uses `QueryTrackingConnectionSubscriber` which applies middleware via reflection
+1. **DoctrineBundle 2.x (all versions)**: Uses `middlewares` (more widely supported and reliable)
+2. **DoctrineBundle 3.x**: Uses `QueryTrackingConnectionSubscriber` which applies middleware via reflection
 
 **Relevant code**:
-- `QueryTrackingMiddlewareRegistry::supportsYamlMiddleware()` - Detects if `yamlMiddleware` is available
 - `QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()` - Detects if `middlewares` is available
 - `QueryTrackingConnectionSubscriber` - Applies middleware in DoctrineBundle 3.x
 

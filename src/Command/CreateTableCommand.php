@@ -495,20 +495,20 @@ final class CreateTableCommand extends Command
                         throw $e;
                     }
                 } else {
-                    $columnDefinition = $this->getColumnDefinition($expected, $platform);
-                    $sql = sprintf(
-                        'ALTER TABLE %s MODIFY COLUMN %s %s',
-                        $platform->quoteIdentifier($actualTableName),
-                        $platform->quoteIdentifier($columnName),
-                        $columnDefinition
-                    );
+                $columnDefinition = $this->getColumnDefinition($expected, $platform);
+                $sql = sprintf(
+                    'ALTER TABLE %s MODIFY COLUMN %s %s',
+                    $platform->quoteIdentifier($actualTableName),
+                    $platform->quoteIdentifier($columnName),
+                    $columnDefinition
+                );
 
-                    try {
-                        $connection->executeStatement($sql);
-                        $io->text(sprintf('  ✓ Updated column <info>%s</info>', $columnName));
-                    } catch (\Exception $e) {
-                        $io->error(sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
-                        throw $e;
+                try {
+                    $connection->executeStatement($sql);
+                    $io->text(sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                } catch (\Exception $e) {
+                    $io->error(sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
+                    throw $e;
                     }
                 }
             }
@@ -925,7 +925,7 @@ final class CreateTableCommand extends Command
         }
 
         $nullConstraint = $nullable ? ' NULL' : ' NOT NULL';
-        
+
         // Add AUTO_INCREMENT for MySQL/MariaDB if column is autoincremental
         $autoincrement = '';
         if ($isAutoincrement) {
