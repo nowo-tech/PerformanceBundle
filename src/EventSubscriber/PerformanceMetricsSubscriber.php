@@ -159,7 +159,28 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        $env = $this->kernel?->getEnvironment() ?? $request->server->get('APP_ENV') ?? 'dev';
+        
+        // Try multiple methods to detect environment
+        $env = null;
+        if (null !== $this->kernel) {
+            $env = $this->kernel->getEnvironment();
+        } elseif ($request->server->has('APP_ENV')) {
+            $env = $request->server->get('APP_ENV');
+        } elseif (isset($_SERVER['APP_ENV'])) {
+            $env = $_SERVER['APP_ENV'];
+        } elseif (isset($_ENV['APP_ENV'])) {
+            $env = $_ENV['APP_ENV'];
+        } else {
+            $env = 'dev'; // Default fallback
+        }
+
+        if (\function_exists('error_log')) {
+            error_log(\sprintf('[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s', 
+                null !== $this->kernel ? $this->kernel->getEnvironment() : 'null', 
+                $env, 
+                implode(', ', $this->environments)
+            ));
+        }
 
         if (!\in_array($env, $this->environments, true)) {
             if (\function_exists('error_log')) {
@@ -238,7 +259,20 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        $env = $this->kernel?->getEnvironment() ?? $request->server->get('APP_ENV') ?? 'dev';
+        
+        // Try multiple methods to detect environment
+        $env = null;
+        if (null !== $this->kernel) {
+            $env = $this->kernel->getEnvironment();
+        } elseif ($request->server->has('APP_ENV')) {
+            $env = $request->server->get('APP_ENV');
+        } elseif (isset($_SERVER['APP_ENV'])) {
+            $env = $_SERVER['APP_ENV'];
+        } elseif (isset($_ENV['APP_ENV'])) {
+            $env = $_ENV['APP_ENV'];
+        } else {
+            $env = 'dev'; // Default fallback
+        }
 
         // Get route name here, as it should be resolved by now
         $this->routeName = $this->routeName ?? $request->attributes->get('_route');
