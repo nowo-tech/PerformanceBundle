@@ -229,6 +229,7 @@ class PerformanceMetricsService
 
         // Otherwise, record synchronously
         LogHelper::log('[PerformanceBundle] recordMetrics: Recording synchronously', $this->enableLogging);
+
         return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes);
     }
 
@@ -262,14 +263,14 @@ class PerformanceMetricsService
     ): array {
         $isNew = false;
         $wasUpdated = false;
-        
+
         LogHelper::logf(
             '[PerformanceBundle] recordMetricsSync: Looking for existing record - route=%s, env=%s',
             $this->enableLogging,
             $routeName,
             $env
         );
-        
+
         $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
 
         if (null === $routeData) {
@@ -306,12 +307,12 @@ class PerformanceMetricsService
                 $env,
                 (string) $routeData->getAccessCount()
             );
-            
+
             // Always increment access count when route is accessed
             $routeData->incrementAccessCount();
             // Incrementing access count always updates the record (last_accessed_at changes)
             $wasUpdated = true;
-            
+
             LogHelper::logf(
                 '[PerformanceBundle] recordMetricsSync: Access count incremented - newAccessCount=%s',
                 $this->enableLogging,
@@ -335,7 +336,7 @@ class PerformanceMetricsService
                 null !== $totalQueries ? (string) $totalQueries : 'null',
                 null !== $routeData->getTotalQueries() ? (string) $routeData->getTotalQueries() : 'null'
             );
-            
+
             if ($shouldUpdate) {
                 // Metrics update also updates the record
                 LogHelper::log('[PerformanceBundle] recordMetricsSync: Updating metrics', $this->enableLogging);
@@ -435,13 +436,13 @@ class PerformanceMetricsService
             if (isset($errorReporting)) {
                 error_reporting($errorReporting);
             }
-            
+
             LogHelper::logf(
                 '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, exception=%s, message=%s',
                 $this->enableLogging,
                 $routeName,
                 $env,
-                \get_class($e),
+                $e::class,
                 $e->getMessage()
             );
 
