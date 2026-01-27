@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Useful for monitoring ESI performance, fragment rendering, and debugging sub-request bottlenecks
   - Includes request type (main/sub) in logging for better diagnostics
 
+### Fixed
+- **Doctrine DBAL deprecation warnings** - Fixed deprecation warnings in CreateTableCommand and TableStatusChecker
+  - Replaced deprecated `AbstractPlatform::quoteIdentifier()` with helper method compatible with DBAL 2.x and 3.x
+  - Replaced deprecated `Column::getName()` with `getColumnName()` helper method
+  - Replaced deprecated `AbstractAsset::getName()` (for Index objects) with `getAssetName()` helper method
+  - All helper methods use `getQuotedName()` for DBAL 3.x and fallback to `getName()` for DBAL 2.x
+  - Eliminates deprecation warnings when running `nowo:performance:create-table --update`
+  - Maintains full backward compatibility with DBAL 2.x
+
 ## [0.0.7] - 2025-01-27
 
 ### Added

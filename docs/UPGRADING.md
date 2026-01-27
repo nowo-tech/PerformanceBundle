@@ -2,6 +2,61 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to Unreleased (Next Version)
+
+### Sub-Request Tracking Support
+
+This version adds support for tracking sub-requests in addition to main requests.
+
+#### Changes
+
+- **New configuration option**: `track_sub_requests`
+  - Type: `boolean`
+  - Default: `false` (maintains backward compatibility)
+  - When enabled, tracks both main requests and sub-requests separately
+
+#### What This Means
+
+- **No breaking changes**: Default behavior unchanged (only main requests tracked)
+- **Optional feature**: Enable only if you need to track sub-requests
+- **Use cases**: ESI performance, fragment rendering, debugging sub-request bottlenecks
+- **Database impact**: Enabling will increase database storage (subject to sampling_rate)
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Enable sub-request tracking** (optional):
+   ```yaml
+   # config/packages/nowo_performance.yaml
+   nowo_performance:
+       track_sub_requests: true  # Enable tracking of sub-requests
+   ```
+
+4. **Verify installation**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   ```
+
+#### Troubleshooting
+
+**Q: I see deprecation warnings when running `nowo:performance:create-table --update`**  
+A: These warnings have been fixed in this version. Update to the latest version to eliminate them.
+
+**Q: Should I enable `track_sub_requests`?**  
+A: Only if you need to monitor sub-request performance separately. By default, only main requests are tracked to avoid duplicate metrics and reduce database load.
+
+**Q: Will enabling this affect performance?**  
+A: There will be a small overhead for tracking sub-requests, and database storage will increase. Use `sampling_rate` to reduce load for high-traffic routes.
+
 ## Upgrading to 0.0.7 (2025-01-27)
 
 ### Enhanced Environment Detection and Collector Display
