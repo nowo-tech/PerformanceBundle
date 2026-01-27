@@ -339,6 +339,17 @@ class PerformanceDataCollector extends DataCollector
         // Resetting it would cause issues if reset() is called before onKernelRequest
     }
 
+    /**
+     * Check if Symfony Messenger is available.
+     *
+     * @return bool True if Messenger is available
+     */
+    private function isMessengerAvailable(): bool
+    {
+        return interface_exists(\Symfony\Component\Messenger\MessageBusInterface::class)
+            || class_exists(\Symfony\Component\Messenger\MessageBusInterface::class);
+    }
+
     public function getName(): string
     {
         return 'performance';
