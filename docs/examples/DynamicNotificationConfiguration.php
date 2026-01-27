@@ -8,7 +8,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
-use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -36,16 +35,16 @@ class DynamicNotificationConfiguration
     /**
      * Constructor.
      *
-     * @param EntityManagerInterface $entityManager Para acceder a la base de datos
-     * @param MailerInterface|null $mailer Symfony Mailer (opcional)
-     * @param HttpClientInterface|null $httpClient Symfony HTTP Client (opcional)
-     * @param Environment|null $twig Twig Environment para renderizar templates (opcional)
+     * @param EntityManagerInterface   $entityManager Para acceder a la base de datos
+     * @param MailerInterface|null     $mailer        Symfony Mailer (opcional)
+     * @param HttpClientInterface|null $httpClient    Symfony HTTP Client (opcional)
+     * @param Environment|null         $twig          Twig Environment para renderizar templates (opcional)
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly ?MailerInterface $mailer = null,
         private readonly ?HttpClientInterface $httpClient = null,
-        private readonly ?Environment $twig = null
+        private readonly ?Environment $twig = null,
     ) {
     }
 
@@ -56,6 +55,7 @@ class DynamicNotificationConfiguration
      * Ajusta según tu estructura de base de datos.
      *
      * @return array<string, mixed> Configuración de notificaciones
+     *
      * @example
      * [
      *     'enabled' => true,
@@ -84,32 +84,31 @@ class DynamicNotificationConfiguration
     {
         // Ejemplo: Obtener configuración desde una entidad Settings
         // Ajusta según tu estructura de base de datos
-        
+
         try {
             // Opción 1: Desde una entidad Settings
             $settings = $this->entityManager
                 ->getRepository('App\Entity\NotificationSettings')
                 ->findOneBy(['key' => 'performance_notifications']);
-            
+
             if ($settings && $settings->getValue()) {
                 return json_decode($settings->getValue(), true) ?? [];
             }
-            
+
             // Opción 2: Desde una tabla de configuración simple
             // $connection = $this->entityManager->getConnection();
             // $stmt = $connection->prepare('SELECT * FROM notification_config WHERE type = :type');
             // $stmt->execute(['type' => 'performance']);
             // $config = $stmt->fetchAssociative();
             // return $config ? json_decode($config['value'], true) ?? [] : [];
-            
         } catch (\Exception $e) {
             // Log error y retornar configuración por defecto
-            error_log(sprintf(
+            error_log(\sprintf(
                 'Error loading notification config from database: %s',
                 $e->getMessage()
             ));
         }
-        
+
         // Configuración por defecto si no hay datos en BD
         return [
             'enabled' => false,
@@ -181,12 +180,11 @@ class DynamicNotificationConfiguration
 
     /**
      * Verifica si las notificaciones están habilitadas según la configuración de la BD.
-     *
-     * @return bool
      */
     public function areNotificationsEnabled(): bool
     {
         $config = $this->getNotificationConfigFromDatabase();
+
         return $config['enabled'] ?? false;
     }
 }

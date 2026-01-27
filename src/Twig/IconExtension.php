@@ -48,6 +48,7 @@ class IconExtension extends AbstractExtension
                 // ux_icon is a global function provided by Symfony UX Icons
                 /** @var callable $uxIconFunction */
                 $uxIconFunction = 'ux_icon';
+
                 return (string) $uxIconFunction($name, $options);
             } catch (\Throwable $e) {
                 // If icon doesn't exist in UX Icons, fall back to SVG

@@ -23,30 +23,27 @@ final class EmailNotificationChannel implements NotificationChannelInterface
     /**
      * Constructor.
      *
-     * @param MailerInterface|null $mailer Symfony Mailer service
-     * @param string $fromEmail Sender email address
-     * @param array<string> $toEmails Recipient email addresses
-     * @param bool $enabled Whether this channel is enabled
+     * @param MailerInterface|null $mailer    Symfony Mailer service
+     * @param string               $fromEmail Sender email address
+     * @param array<string>        $toEmails  Recipient email addresses
+     * @param bool                 $enabled   Whether this channel is enabled
      */
     public function __construct(
         private readonly ?MailerInterface $mailer,
         private readonly string $fromEmail = 'noreply@example.com',
         private readonly array $toEmails = [],
-        private readonly bool $enabled = false
+        private readonly bool $enabled = false,
     ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function send(PerformanceAlert $alert, RouteData $routeData): bool
     {
-        if (!$this->isEnabled() || $this->mailer === null || empty($this->toEmails)) {
+        if (!$this->isEnabled() || null === $this->mailer || empty($this->toEmails)) {
             return false;
         }
 
         try {
-            $subject = sprintf(
+            $subject = \sprintf(
                 '[Performance Alert] %s: %s - %s',
                 strtoupper($alert->getSeverity()),
                 $routeData->getName() ?? 'Unknown Route',
@@ -67,22 +64,17 @@ final class EmailNotificationChannel implements NotificationChannelInterface
             return true;
         } catch (\Exception $e) {
             // Log error but don't throw
-            error_log(sprintf('Failed to send email notification: %s', $e->getMessage()));
+            error_log(\sprintf('Failed to send email notification: %s', $e->getMessage()));
+
             return false;
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isEnabled(): bool
     {
-        return $this->enabled && $this->mailer !== null && !empty($this->toEmails);
+        return $this->enabled && null !== $this->mailer && !empty($this->toEmails);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'email';
@@ -91,8 +83,9 @@ final class EmailNotificationChannel implements NotificationChannelInterface
     /**
      * Build the email body HTML.
      *
-     * @param PerformanceAlert $alert The alert
-     * @param RouteData $routeData The route data
+     * @param PerformanceAlert $alert     The alert
+     * @param RouteData        $routeData The route data
+     *
      * @return string HTML email body
      */
     private function buildEmailBody(PerformanceAlert $alert, RouteData $routeData): string
@@ -102,11 +95,11 @@ final class EmailNotificationChannel implements NotificationChannelInterface
 
         // Extract values to avoid parsing issues in heredoc
         $httpMethod = $routeData->getHttpMethod() ?? 'N/A';
-        $requestTime = $routeData->getRequestTime() !== null ? number_format($routeData->getRequestTime(), 4) . 's' : 'N/A';
+        $requestTime = null !== $routeData->getRequestTime() ? number_format($routeData->getRequestTime(), 4).'s' : 'N/A';
         $queryCount = $routeData->getTotalQueries() ?? 'N/A';
-        $queryTime = $routeData->getQueryTime() !== null ? number_format($routeData->getQueryTime(), 4) . 's' : 'N/A';
-        $memoryUsage = $routeData->getMemoryUsage() !== null ? number_format($routeData->getMemoryUsage() / 1024 / 1024, 2) . ' MB' : 'N/A';
-        $lastAccessed = $routeData->getLastAccessedAt() !== null ? $routeData->getLastAccessedAt()->format('Y-m-d H:i:s') : 'N/A';
+        $queryTime = null !== $routeData->getQueryTime() ? number_format($routeData->getQueryTime(), 4).'s' : 'N/A';
+        $memoryUsage = null !== $routeData->getMemoryUsage() ? number_format($routeData->getMemoryUsage() / 1024 / 1024, 2).' MB' : 'N/A';
+        $lastAccessed = null !== $routeData->getLastAccessedAt() ? $routeData->getLastAccessedAt()->format('Y-m-d H:i:s') : 'N/A';
 
         $html = <<<HTML
 <!DOCTYPE html>

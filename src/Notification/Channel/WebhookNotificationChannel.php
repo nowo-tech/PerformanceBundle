@@ -23,26 +23,23 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
      * Constructor.
      *
      * @param HttpClientInterface|null $httpClient Symfony HTTP Client
-     * @param string $webhookUrl Webhook URL
-     * @param string $format Payload format ('json', 'slack', 'teams')
-     * @param array<string, mixed> $headers Additional HTTP headers
-     * @param bool $enabled Whether this channel is enabled
+     * @param string                   $webhookUrl Webhook URL
+     * @param string                   $format     Payload format ('json', 'slack', 'teams')
+     * @param array<string, mixed>     $headers    Additional HTTP headers
+     * @param bool                     $enabled    Whether this channel is enabled
      */
     public function __construct(
         private readonly ?HttpClientInterface $httpClient,
         private readonly string $webhookUrl = '',
         private readonly string $format = 'json',
         private readonly array $headers = [],
-        private readonly bool $enabled = false
+        private readonly bool $enabled = false,
     ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function send(PerformanceAlert $alert, RouteData $routeData): bool
     {
-        if (!$this->isEnabled() || $this->httpClient === null || empty($this->webhookUrl)) {
+        if (!$this->isEnabled() || null === $this->httpClient || empty($this->webhookUrl)) {
             return false;
         }
 
@@ -58,22 +55,17 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
             return true;
         } catch (\Exception $e) {
             // Log error but don't throw
-            error_log(sprintf('Failed to send webhook notification: %s', $e->getMessage()));
+            error_log(\sprintf('Failed to send webhook notification: %s', $e->getMessage()));
+
             return false;
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isEnabled(): bool
     {
-        return $this->enabled && $this->httpClient !== null && !empty($this->webhookUrl);
+        return $this->enabled && null !== $this->httpClient && !empty($this->webhookUrl);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'webhook';
@@ -82,8 +74,9 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build the webhook payload based on format.
      *
-     * @param PerformanceAlert $alert The alert
-     * @param RouteData $routeData The route data
+     * @param PerformanceAlert $alert     The alert
+     * @param RouteData        $routeData The route data
+     *
      * @return array<string, mixed> Payload array
      */
     private function buildPayload(PerformanceAlert $alert, RouteData $routeData): array
@@ -98,8 +91,9 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build JSON payload (generic format).
      *
-     * @param PerformanceAlert $alert The alert
-     * @param RouteData $routeData The route data
+     * @param PerformanceAlert $alert     The alert
+     * @param RouteData        $routeData The route data
+     *
      * @return array<string, mixed>
      */
     private function buildJsonPayload(PerformanceAlert $alert, RouteData $routeData): array
@@ -129,8 +123,9 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build Slack webhook payload.
      *
-     * @param PerformanceAlert $alert The alert
-     * @param RouteData $routeData The route data
+     * @param PerformanceAlert $alert     The alert
+     * @param RouteData        $routeData The route data
+     *
      * @return array<string, mixed>
      */
     private function buildSlackPayload(PerformanceAlert $alert, RouteData $routeData): array
@@ -139,11 +134,11 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
         $emoji = $alert->isCritical() ? '🚨' : '⚠️';
 
         return [
-            'text' => sprintf('%s Performance Alert: %s', $emoji, $alert->getMessage()),
+            'text' => \sprintf('%s Performance Alert: %s', $emoji, $alert->getMessage()),
             'attachments' => [
                 [
                     'color' => $color,
-                    'title' => sprintf('%s Alert - %s', ucfirst($alert->getSeverity()), $routeData->getName()),
+                    'title' => \sprintf('%s Alert - %s', ucfirst($alert->getSeverity()), $routeData->getName()),
                     'fields' => [
                         [
                             'title' => 'Route',
@@ -157,7 +152,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
                         ],
                         [
                             'title' => 'Request Time',
-                            'value' => $routeData->getRequestTime() !== null ? number_format($routeData->getRequestTime(), 4) . 's' : 'N/A',
+                            'value' => null !== $routeData->getRequestTime() ? number_format($routeData->getRequestTime(), 4).'s' : 'N/A',
                             'short' => true,
                         ],
                         [
@@ -186,8 +181,9 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build Microsoft Teams webhook payload.
      *
-     * @param PerformanceAlert $alert The alert
-     * @param RouteData $routeData The route data
+     * @param PerformanceAlert $alert     The alert
+     * @param RouteData        $routeData The route data
+     *
      * @return array<string, mixed>
      */
     private function buildTeamsPayload(PerformanceAlert $alert, RouteData $routeData): array
@@ -198,9 +194,9 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
         return [
             '@type' => 'MessageCard',
             '@context' => 'https://schema.org/extensions',
-            'summary' => sprintf('Performance Alert: %s', $alert->getMessage()),
+            'summary' => \sprintf('Performance Alert: %s', $alert->getMessage()),
             'themeColor' => $color,
-            'title' => sprintf('%s Performance Alert', $severity),
+            'title' => \sprintf('%s Performance Alert', $severity),
             'sections' => [
                 [
                     'activityTitle' => $alert->getMessage(),
@@ -215,7 +211,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
                         ],
                         [
                             'name' => 'Request Time',
-                            'value' => $routeData->getRequestTime() !== null ? number_format($routeData->getRequestTime(), 4) . 's' : 'N/A',
+                            'value' => null !== $routeData->getRequestTime() ? number_format($routeData->getRequestTime(), 4).'s' : 'N/A',
                         ],
                         [
                             'name' => 'Query Count',

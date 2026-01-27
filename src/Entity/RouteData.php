@@ -568,28 +568,27 @@ class RouteData
     /**
      * Mark this route as reviewed with optional improvement information.
      *
-     * @param bool|null $queriesImproved Whether queries improved
-     * @param bool|null $timeImproved Whether time improved
-     * @param string|null $reviewedBy The reviewer username
-     * @return self
+     * @param bool|null   $queriesImproved Whether queries improved
+     * @param bool|null   $timeImproved    Whether time improved
+     * @param string|null $reviewedBy      The reviewer username
      */
     public function markAsReviewed(?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null): self
     {
         $this->reviewed = true;
         $this->reviewedAt = new \DateTimeImmutable();
-        
-        if ($queriesImproved !== null) {
+
+        if (null !== $queriesImproved) {
             $this->queriesImproved = $queriesImproved;
         }
-        
-        if ($timeImproved !== null) {
+
+        if (null !== $timeImproved) {
             $this->timeImproved = $timeImproved;
         }
-        
-        if ($reviewedBy !== null) {
+
+        if (null !== $reviewedBy) {
             $this->reviewedBy = $reviewedBy;
         }
-        
+
         $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
@@ -669,7 +668,6 @@ class RouteData
      * Set HTTP status codes counts.
      *
      * @param array<int, int>|null $statusCodes Status codes counts
-     * @return self
      */
     public function setStatusCodes(?array $statusCodes): self
     {
@@ -683,11 +681,10 @@ class RouteData
      * Increment count for a specific HTTP status code.
      *
      * @param int $statusCode The HTTP status code
-     * @return self
      */
     public function incrementStatusCode(int $statusCode): self
     {
-        if ($this->statusCodes === null) {
+        if (null === $this->statusCodes) {
             $this->statusCodes = [];
         }
 
@@ -695,7 +692,7 @@ class RouteData
             $this->statusCodes[$statusCode] = 0;
         }
 
-        $this->statusCodes[$statusCode]++;
+        ++$this->statusCodes[$statusCode];
         $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
@@ -705,6 +702,7 @@ class RouteData
      * Get the count for a specific HTTP status code.
      *
      * @param int $statusCode The HTTP status code
+     *
      * @return int The count for the status code (0 if not found)
      */
     public function getStatusCodeCount(int $statusCode): int
@@ -716,20 +714,22 @@ class RouteData
      * Get the ratio (percentage) for a specific HTTP status code.
      *
      * @param int $statusCode The HTTP status code
+     *
      * @return float The ratio as a percentage (0.0 to 100.0)
      */
     public function getStatusCodeRatio(int $statusCode): float
     {
-        if ($this->statusCodes === null || empty($this->statusCodes)) {
+        if (null === $this->statusCodes || empty($this->statusCodes)) {
             return 0.0;
         }
 
         $total = array_sum($this->statusCodes);
-        if ($total === 0) {
+        if (0 === $total) {
             return 0.0;
         }
 
         $count = $this->getStatusCodeCount($statusCode);
+
         return ($count / $total) * 100.0;
     }
 
@@ -740,7 +740,7 @@ class RouteData
      */
     public function getTotalResponses(): int
     {
-        if ($this->statusCodes === null || empty($this->statusCodes)) {
+        if (null === $this->statusCodes || empty($this->statusCodes)) {
             return 0;
         }
 
@@ -769,7 +769,6 @@ class RouteData
      * Add an access record.
      *
      * @param RouteDataRecord $accessRecord The access record
-     * @return self
      */
     public function addAccessRecord(RouteDataRecord $accessRecord): self
     {
@@ -785,7 +784,6 @@ class RouteData
      * Remove an access record.
      *
      * @param RouteDataRecord $accessRecord The access record
-     * @return self
      */
     public function removeAccessRecord(RouteDataRecord $accessRecord): self
     {

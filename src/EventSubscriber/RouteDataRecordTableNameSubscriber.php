@@ -7,7 +7,6 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Events;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -28,7 +27,7 @@ class RouteDataRecordTableNameSubscriber implements EventSubscriber
      */
     public function __construct(
         #[Autowire('%nowo_performance.table_name%')]
-        private readonly string $mainTableName
+        private readonly string $mainTableName,
     ) {
     }
 
@@ -48,25 +47,24 @@ class RouteDataRecordTableNameSubscriber implements EventSubscriber
      * Dynamically sets the table name for RouteDataRecord entity based on the main table name.
      *
      * @param LoadClassMetadataEventArgs $eventArgs The event arguments
-     * @return void
      */
     public function loadClassMetadata(LoadClassMetadataEventArgs $eventArgs): void
     {
         $classMetadata = $eventArgs->getClassMetadata();
-        
+
         // Only modify RouteDataRecord entity
-        if ($classMetadata->getName() !== 'Nowo\PerformanceBundle\Entity\RouteDataRecord') {
+        if ('Nowo\PerformanceBundle\Entity\RouteDataRecord' !== $classMetadata->getName()) {
             return;
         }
 
         // Table name is main table name + '_records'
-        $recordsTableName = $this->mainTableName . '_records';
-        
+        $recordsTableName = $this->mainTableName.'_records';
+
         // Get existing table configuration to preserve indexes
         $currentTableName = method_exists($classMetadata, 'getTableName')
             ? $classMetadata->getTableName()
             : ($classMetadata->table['name'] ?? 'routes_data_records');
-        
+
         if ($currentTableName !== $recordsTableName) {
             // Get existing indexes
             $reflection = new \ReflectionClass($classMetadata);
@@ -74,7 +72,7 @@ class RouteDataRecordTableNameSubscriber implements EventSubscriber
             $tableProperty->setAccessible(true);
             $existingTable = $tableProperty->getValue($classMetadata);
             $existingIndexes = $existingTable['indexes'] ?? [];
-            
+
             // Set the table name with all existing indexes
             $classMetadata->setPrimaryTable([
                 'name' => $recordsTableName,

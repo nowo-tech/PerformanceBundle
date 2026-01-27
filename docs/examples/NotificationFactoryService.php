@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Service\DynamicNotificationConfiguration;
-use Nowo\PerformanceBundle\Service\NotificationService;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Service\NotificationService;
 
 /**
  * Factory Service para crear NotificationService con canales dinámicos.
@@ -29,7 +28,7 @@ class NotificationFactoryService
      * @param DynamicNotificationConfiguration $configService Servicio para obtener configuración de BD
      */
     public function __construct(
-        private readonly DynamicNotificationConfiguration $configService
+        private readonly DynamicNotificationConfiguration $configService,
     ) {
     }
 
@@ -38,8 +37,6 @@ class NotificationFactoryService
      *
      * Este método crea una nueva instancia de NotificationService cada vez que se llama,
      * lo que permite tener configuración completamente dinámica.
-     *
-     * @return NotificationService
      */
     public function createNotificationService(): NotificationService
     {
@@ -55,7 +52,6 @@ class NotificationFactoryService
      * Útil para añadir canales que no están en la configuración de BD.
      *
      * @param array<NotificationChannelInterface> $additionalChannels Canales adicionales
-     * @return NotificationService
      */
     public function createNotificationServiceWithAdditionalChannels(array $additionalChannels): NotificationService
     {

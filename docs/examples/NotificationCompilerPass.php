@@ -27,8 +27,6 @@ class NotificationCompilerPass implements CompilerPassInterface
 {
     /**
      * Procesa el contenedor para registrar canales dinámicos.
-     *
-     * @param ContainerBuilder $container
      */
     public function process(ContainerBuilder $container): void
     {
@@ -40,7 +38,7 @@ class NotificationCompilerPass implements CompilerPassInterface
         // Obtener configuración desde la base de datos
         // NOTA: Esto requiere que la BD esté disponible durante la compilación
         // Si no es posible, considera usar un Factory Service en su lugar
-        
+
         try {
             // Crear una instancia temporal del servicio de configuración
             // para obtener la configuración de la BD
@@ -57,11 +55,11 @@ class NotificationCompilerPass implements CompilerPassInterface
             // Registrar cada canal como un servicio
             foreach ($channels as $index => $channel) {
                 $channelName = $channel->getName();
-                $serviceId = sprintf('nowo_performance.notification.channel.dynamic.%s', $channelName);
+                $serviceId = \sprintf('nowo_performance.notification.channel.dynamic.%s', $channelName);
 
                 // Crear definición del servicio
-                $definition = new Definition(get_class($channel));
-                
+                $definition = new Definition($channel::class);
+
                 // Configurar argumentos según el tipo de canal
                 if ($channel instanceof EmailNotificationChannel) {
                     $definition->setArguments([
@@ -78,11 +76,11 @@ class NotificationCompilerPass implements CompilerPassInterface
                         'webhook' => $config['webhook'] ?? [],
                         default => [],
                     };
-                    
+
                     $definition->setArguments([
                         new Reference('?http_client'),
                         $webhookConfig['webhook_url'] ?? $webhookConfig['url'] ?? '',
-                        $webhookConfig['format'] ?? ($channelName === 'slack' ? 'slack' : ($channelName === 'teams' ? 'teams' : 'json')),
+                        $webhookConfig['format'] ?? ('slack' === $channelName ? 'slack' : ('teams' === $channelName ? 'teams' : 'json')),
                         $webhookConfig['headers'] ?? [],
                         true,
                     ]);
@@ -100,11 +98,10 @@ class NotificationCompilerPass implements CompilerPassInterface
             if (isset($config['enabled'])) {
                 $container->setParameter('nowo_performance.notifications.enabled', $config['enabled']);
             }
-
         } catch (\Exception $e) {
             // Si hay un error, usar configuración por defecto del YAML
             // Esto permite que la aplicación funcione incluso si la BD no está disponible
-            error_log(sprintf(
+            error_log(\sprintf(
                 'Error loading notification config from database in CompilerPass: %s. Using YAML config instead.',
                 $e->getMessage()
             ));
@@ -114,7 +111,6 @@ class NotificationCompilerPass implements CompilerPassInterface
     /**
      * Obtiene la configuración de notificaciones.
      *
-     * @param DynamicNotificationConfiguration $configService
      * @return array<string, mixed>
      */
     private function getNotificationConfig(DynamicNotificationConfiguration $configService): array
@@ -123,7 +119,7 @@ class NotificationCompilerPass implements CompilerPassInterface
         $reflection = new \ReflectionClass($configService);
         $method = $reflection->getMethod('getNotificationConfigFromDatabase');
         $method->setAccessible(true);
-        
+
         return $method->invoke($configService);
     }
 }

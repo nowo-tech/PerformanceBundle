@@ -67,15 +67,11 @@ class PerformanceDataCollector extends DataCollector
 
     /**
      * Whether a new record was created.
-     *
-     * @var bool|null
      */
     private ?bool $recordWasNew = null;
 
     /**
      * Whether an existing record was updated.
-     *
-     * @var bool|null
      */
     private ?bool $recordWasUpdated = null;
 
@@ -181,9 +177,8 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Set record operation information.
      *
-     * @param bool $isNew Whether a new record was created
+     * @param bool $isNew      Whether a new record was created
      * @param bool $wasUpdated Whether an existing record was updated
-     * @return void
      */
     public function setRecordOperation(bool $isNew, bool $wasUpdated): void
     {
@@ -191,9 +186,6 @@ class PerformanceDataCollector extends DataCollector
         $this->recordWasUpdated = $wasUpdated;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function collect(Request $request, Response $response, ?Throwable $exception = null): void
     {
         $requestTime = null;
@@ -225,13 +217,13 @@ class PerformanceDataCollector extends DataCollector
         $tableIsComplete = false;
         $tableName = null;
         $missingColumns = [];
-        
-        if ($this->tableStatusChecker !== null) {
+
+        if (null !== $this->tableStatusChecker) {
             try {
                 $tableExists = $this->tableStatusChecker->tableExists();
                 $tableIsComplete = $this->tableStatusChecker->tableIsComplete();
                 $tableName = $this->tableStatusChecker->getTableName();
-                
+
                 // Get missing columns if table exists but is incomplete
                 if ($tableExists && !$tableIsComplete) {
                     $missingColumns = $this->tableStatusChecker->getMissingColumns();
@@ -520,15 +512,15 @@ class PerformanceDataCollector extends DataCollector
         $isNew = $this->wasRecordNew();
         $wasUpdated = $this->wasRecordUpdated();
 
-        if ($isNew === true) {
+        if (true === $isNew) {
             return 'New record created';
         }
 
-        if ($wasUpdated === true) {
+        if (true === $wasUpdated) {
             return 'Existing record updated';
         }
 
-        if ($isNew === false && $wasUpdated === false) {
+        if (false === $isNew && false === $wasUpdated) {
             return 'No changes (metrics not worse than existing)';
         }
 
