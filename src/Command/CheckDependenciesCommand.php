@@ -47,14 +47,11 @@ final class CheckDependenciesCommand extends Command
      * @param DependencyChecker $dependencyChecker Dependency checker service
      */
     public function __construct(
-        private readonly DependencyChecker $dependencyChecker
+        private readonly DependencyChecker $dependencyChecker,
     ) {
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
@@ -67,10 +64,10 @@ final class CheckDependenciesCommand extends Command
 
         foreach ($status as $feature => $info) {
             if ($info['available']) {
-                $io->success(sprintf('%s: ✓ Installed (%s)', $feature, $info['package']));
+                $io->success(\sprintf('%s: ✓ Installed (%s)', $feature, $info['package']));
             } else {
                 $hasIssues = true;
-                $io->warning(sprintf('%s: ✗ Not installed (%s)', $feature, $info['package']));
+                $io->warning(\sprintf('%s: ✗ Not installed (%s)', $feature, $info['package']));
             }
         }
 
@@ -96,7 +93,7 @@ final class CheckDependenciesCommand extends Command
             $io->newLine();
             $io->info('To install all missing optional dependencies, run:');
             foreach ($missing as $dep) {
-                $io->text(sprintf('  <comment>%s</comment>', $dep['install_command']));
+                $io->text(\sprintf('  <comment>%s</comment>', $dep['install_command']));
             }
         } else {
             $io->success('All optional dependencies are installed!');

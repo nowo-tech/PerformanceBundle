@@ -20,13 +20,10 @@ use Twig\TwigFunction;
 class IconExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly DependencyChecker $dependencyChecker
+        private readonly DependencyChecker $dependencyChecker,
     ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getFunctions(): array
     {
         return [
@@ -37,15 +34,16 @@ class IconExtension extends AbstractExtension
     /**
      * Render an icon using UX Icons or fallback SVG.
      *
-     * @param string $name Icon name (for UX Icons) or 'svg' for custom SVG
-     * @param array<string, mixed> $options Options for the icon (class, size, etc.)
-     * @param string|null $fallbackSvg Fallback SVG code if UX Icons is not available
+     * @param string               $name        Icon name (for UX Icons) or 'svg' for custom SVG
+     * @param array<string, mixed> $options     Options for the icon (class, size, etc.)
+     * @param string|null          $fallbackSvg Fallback SVG code if UX Icons is not available
+     *
      * @return string Rendered icon HTML
      */
     public function renderIcon(string $name, array $options = [], ?string $fallbackSvg = null): string
     {
         // If UX Icons is available, use it
-        if ($this->dependencyChecker->isIconsAvailable() && function_exists('ux_icon')) {
+        if ($this->dependencyChecker->isIconsAvailable() && \function_exists('ux_icon')) {
             try {
                 // ux_icon is a global function provided by Symfony UX Icons
                 /** @var callable $uxIconFunction */
@@ -57,17 +55,17 @@ class IconExtension extends AbstractExtension
         }
 
         // Otherwise, use fallback SVG if provided
-        if ($fallbackSvg !== null) {
+        if (null !== $fallbackSvg) {
             // If fallback SVG already contains the SVG tag, return it directly
             if (str_contains($fallbackSvg, '<svg')) {
                 return $fallbackSvg;
             }
-            
+
             // Otherwise, wrap it in a span
             $class = $options['class'] ?? '';
             $style = $options['style'] ?? '';
-            
-            return sprintf(
+
+            return \sprintf(
                 '<span class="%s" style="%s">%s</span>',
                 $class,
                 $style,

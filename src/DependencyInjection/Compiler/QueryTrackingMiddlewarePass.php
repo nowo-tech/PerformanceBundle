@@ -25,7 +25,6 @@ class QueryTrackingMiddlewarePass implements CompilerPassInterface
      * Registers QueryTrackingMiddleware with Doctrine DBAL configuration.
      *
      * @param ContainerBuilder $container The container builder
-     * @return void
      */
     public function process(ContainerBuilder $container): void
     {
@@ -35,9 +34,9 @@ class QueryTrackingMiddlewarePass implements CompilerPassInterface
         }
 
         // Check if parameters are set
-        if (!$container->hasParameter('nowo_performance.enabled') || 
-            !$container->hasParameter('nowo_performance.track_queries') ||
-            !$container->hasParameter('nowo_performance.connection')) {
+        if (!$container->hasParameter('nowo_performance.enabled')
+            || !$container->hasParameter('nowo_performance.track_queries')
+            || !$container->hasParameter('nowo_performance.connection')) {
             return;
         }
 

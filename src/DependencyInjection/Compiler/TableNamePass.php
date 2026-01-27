@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Compiler pass to configure the table name for RouteData entity.
- * 
+ *
  * This pass stores the table name configuration so it can be used
  * by Doctrine event listeners to modify the entity metadata.
  *
@@ -26,7 +26,6 @@ class TableNamePass implements CompilerPassInterface
      * which modifies the entity metadata at runtime.
      *
      * @param ContainerBuilder $container The container builder
-     * @return void
      */
     public function process(ContainerBuilder $container): void
     {

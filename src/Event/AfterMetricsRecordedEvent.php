@@ -21,11 +21,11 @@ final class AfterMetricsRecordedEvent extends Event
      * Constructor.
      *
      * @param RouteData $routeData The route data entity that was saved
-     * @param bool $isNew Whether this is a new record (true) or an update (false)
+     * @param bool      $isNew     Whether this is a new record (true) or an update (false)
      */
     public function __construct(
         private readonly RouteData $routeData,
-        private readonly bool $isNew
+        private readonly bool $isNew,
     ) {
     }
 

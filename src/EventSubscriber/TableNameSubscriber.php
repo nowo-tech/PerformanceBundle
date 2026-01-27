@@ -7,7 +7,6 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Events;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -25,7 +24,7 @@ class TableNameSubscriber implements EventSubscriber
      */
     public function __construct(
         #[Autowire('%nowo_performance.table_name%')]
-        private readonly string $tableName
+        private readonly string $tableName,
     ) {
     }
 
@@ -45,14 +44,13 @@ class TableNameSubscriber implements EventSubscriber
      * Dynamically sets the table name for RouteData entity based on configuration.
      *
      * @param LoadClassMetadataEventArgs $eventArgs The event arguments
-     * @return void
      */
     public function loadClassMetadata(LoadClassMetadataEventArgs $eventArgs): void
     {
         $classMetadata = $eventArgs->getClassMetadata();
-        
+
         // Only modify RouteData entity
-        if ($classMetadata->getName() !== 'Nowo\PerformanceBundle\Entity\RouteData') {
+        if ('Nowo\PerformanceBundle\Entity\RouteData' !== $classMetadata->getName()) {
             return;
         }
 
@@ -61,17 +59,17 @@ class TableNameSubscriber implements EventSubscriber
         $currentTableName = method_exists($classMetadata, 'getTableName')
             ? $classMetadata->getTableName()
             : ($classMetadata->table['name'] ?? 'route_data');
-        
+
         if ($currentTableName !== $this->tableName) {
             // Get existing table configuration to preserve indexes
             $reflection = new \ReflectionClass($classMetadata);
             $tableProperty = $reflection->getProperty('table');
             $tableProperty->setAccessible(true);
             $existingTable = $tableProperty->getValue($classMetadata);
-            
+
             // Preserve existing indexes if they exist
             $existingIndexes = $existingTable['indexes'] ?? [];
-            
+
             // Set the table name with all existing indexes
             $classMetadata->setPrimaryTable([
                 'name' => $this->tableName,

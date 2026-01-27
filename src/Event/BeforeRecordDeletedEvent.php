@@ -25,7 +25,7 @@ final class BeforeRecordDeletedEvent extends Event
      * @param RouteData $routeData The route data entity to be deleted
      */
     public function __construct(
-        private readonly RouteData $routeData
+        private readonly RouteData $routeData,
     ) {
     }
 
@@ -36,8 +36,6 @@ final class BeforeRecordDeletedEvent extends Event
 
     /**
      * Prevent the deletion from happening.
-     *
-     * @return void
      */
     public function preventDeletion(): void
     {

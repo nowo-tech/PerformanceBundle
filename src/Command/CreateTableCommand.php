@@ -53,9 +53,9 @@ final class CreateTableCommand extends Command
     /**
      * Constructor.
      *
-     * @param ManagerRegistry $registry Doctrine registry
-     * @param string $connectionName The name of the Doctrine connection to use
-     * @param string $tableName The configured table name
+     * @param ManagerRegistry $registry       Doctrine registry
+     * @param string          $connectionName The name of the Doctrine connection to use
+     * @param string          $tableName      The configured table name
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
@@ -71,8 +71,6 @@ final class CreateTableCommand extends Command
 
     /**
      * Configure the command.
-     *
-     * @return void
      */
     protected function configure(): void
     {
@@ -106,8 +104,9 @@ final class CreateTableCommand extends Command
     /**
      * Execute the command.
      *
-     * @param InputInterface $input The input interface
+     * @param InputInterface  $input  The input interface
      * @param OutputInterface $output The output interface
+     *
      * @return int Command exit code
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -130,7 +129,7 @@ final class CreateTableCommand extends Command
             $tableExists = $schemaManager->tablesExist([$actualTableName]);
 
             if ($tableExists && !$input->getOption('force') && !$input->getOption('update')) {
-                $io->warning(sprintf('Table "%s" already exists.', $actualTableName));
+                $io->warning(\sprintf('Table "%s" already exists.', $actualTableName));
                 $io->note('Use --update to add missing columns without losing data.');
                 $io->note('Use --force to drop and recreate the table (WARNING: This will delete all data).');
                 $io->note('Alternatively, use Doctrine migrations to update the schema:');
@@ -145,8 +144,8 @@ final class CreateTableCommand extends Command
             if ($tableExists && $input->getOption('update')) {
                 $io->section('Updating Table Schema');
                 $io->text([
-                    sprintf('Table name: <info>%s</info>', $actualTableName),
-                    sprintf('Connection: <info>%s</info>', $this->connectionName),
+                    \sprintf('Table name: <info>%s</info>', $actualTableName),
+                    \sprintf('Connection: <info>%s</info>', $this->connectionName),
                 ]);
 
                 $this->updateTableSchema($entityManager, $io);
@@ -164,21 +163,21 @@ final class CreateTableCommand extends Command
             }
 
             if ($tableExists && $input->getOption('force')) {
-                $io->warning(sprintf('Dropping existing table "%s"...', $actualTableName));
+                $io->warning(\sprintf('Dropping existing table "%s"...', $actualTableName));
                 $schemaManager->dropTable($actualTableName);
                 $io->success('Table dropped.');
             }
 
             $io->section('Creating Table');
             $io->text([
-                sprintf('Table name: <info>%s</info>', $actualTableName),
-                sprintf('Connection: <info>%s</info>', $this->connectionName),
+                \sprintf('Table name: <info>%s</info>', $actualTableName),
+                \sprintf('Connection: <info>%s</info>', $this->connectionName),
             ]);
 
             // Use Doctrine's schema tool to create the table
             $this->createTableUsingSchemaTool($entityManager, $io);
 
-            $io->success(sprintf('Table "%s" created successfully!', $actualTableName));
+            $io->success(\sprintf('Table "%s" created successfully!', $actualTableName));
             $io->note('The table is now ready to store performance metrics.');
 
             // Also create records table if access records are enabled
@@ -190,7 +189,7 @@ final class CreateTableCommand extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $io->error(sprintf('Failed to create table: %s', $e->getMessage()));
+            $io->error(\sprintf('Failed to create table: %s', $e->getMessage()));
             $io->note('You can also use Doctrine\'s standard commands:');
             $io->text([
                 '  php bin/console doctrine:schema:update --force',
@@ -207,8 +206,7 @@ final class CreateTableCommand extends Command
      * Create the table using Doctrine's schema tool.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @return void
+     * @param SymfonyStyle           $io            The Symfony style output
      */
     private function createTableUsingSchemaTool(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
@@ -216,8 +214,8 @@ final class CreateTableCommand extends Command
         $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
 
         // Filter to only RouteData entity
-        $routeDataMetadata = array_filter($metadata, function ($meta) {
-            return $meta->getName() === 'Nowo\PerformanceBundle\Entity\RouteData';
+        $routeDataMetadata = array_filter($metadata, static function ($meta) {
+            return 'Nowo\PerformanceBundle\Entity\RouteData' === $meta->getName();
         });
 
         if (empty($routeDataMetadata)) {
@@ -229,6 +227,7 @@ final class CreateTableCommand extends Command
 
         if (empty($sql)) {
             $io->warning('No SQL statements to execute. Table might already exist.');
+
             return;
         }
 
@@ -283,8 +282,7 @@ final class CreateTableCommand extends Command
      * Update the table schema by adding missing columns and updating existing ones.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @return void
+     * @param SymfonyStyle           $io            The Symfony style output
      */
     private function updateTableSchema(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
@@ -300,10 +298,11 @@ final class CreateTableCommand extends Command
         
         // Verify table exists
         if (!$schemaManager->tablesExist([$actualTableName])) {
-            $io->error(sprintf('Table "%s" does not exist. Use the create command without --update to create it.', $actualTableName));
+            $io->error(\sprintf('Table "%s" does not exist. Use the create command without --update to create it.', $actualTableName));
+
             return;
         }
-        
+
         $table = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
@@ -867,10 +866,10 @@ final class CreateTableCommand extends Command
         // Add missing columns
         $io->section(sprintf('Adding <info>%d</info> missing column(s):', count($columnsToAdd)));
         foreach ($columnsToAdd as $columnName => $columnInfo) {
-            $io->text(sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
+            $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
             $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-            $sql = sprintf(
+            $sql = \sprintf(
                 'ALTER TABLE %s ADD COLUMN %s %s',
                 $platform->quoteIdentifier($actualTableName),
                 $platform->quoteIdentifier($columnName),
@@ -879,9 +878,9 @@ final class CreateTableCommand extends Command
 
             try {
                 $connection->executeStatement($sql);
-                $io->text(sprintf('  ✓ Added column <info>%s</info>', $columnName));
+                $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
             } catch (\Exception $e) {
-                $io->error(sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
+                $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
                 throw $e;
             }
         }
@@ -892,8 +891,9 @@ final class CreateTableCommand extends Command
     /**
      * Get SQL column definition for a column.
      *
-     * @param array<string, mixed> $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param array<string, mixed>                      $columnInfo Column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   Database platform
+     *
      * @return string SQL column definition
      */
     private function getColumnDefinition(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
@@ -1005,10 +1005,9 @@ final class CreateTableCommand extends Command
     /**
      * Add missing indexes to the table.
      *
-     * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @param \Doctrine\DBAL\Schema\Table $table The table schema
-     * @return void
+     * @param EntityManagerInterface      $entityManager The entity manager
+     * @param SymfonyStyle                $io            The Symfony style output
+     * @param \Doctrine\DBAL\Schema\Table $table         The table schema
      */
     private function addMissingIndexes(EntityManagerInterface $entityManager, SymfonyStyle $io, \Doctrine\DBAL\Schema\Table $table): void
     {
@@ -1075,10 +1074,10 @@ final class CreateTableCommand extends Command
             return;
         }
 
-        $io->text(sprintf('Adding <info>%d</info> missing index(es):', count($indexesToAdd)));
+        $io->text(\sprintf('Adding <info>%d</info> missing index(es):', \count($indexesToAdd)));
 
         foreach ($indexesToAdd as $indexName => $columns) {
-            $quotedColumns = array_map(function ($col) use ($platform) {
+            $quotedColumns = array_map(static function ($col) use ($platform) {
                 return $platform->quoteIdentifier($col);
             }, $columns);
 
@@ -1098,7 +1097,7 @@ final class CreateTableCommand extends Command
                 $connection->executeStatement($sql);
                 $io->text(sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
             } catch (\Exception $e) {
-                $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
+                $io->warning(\sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
         }
     }

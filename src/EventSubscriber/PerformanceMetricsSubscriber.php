@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\EventSubscriber;
 
 use Doctrine\DBAL\Logging\Middleware;
-use Doctrine\DBAL\Configuration;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
@@ -35,36 +34,26 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 {
     /**
      * Request start time for timing calculation.
-     *
-     * @var float|null
      */
     private ?float $startTime = null;
 
     /**
      * Initial memory usage at request start.
-     *
-     * @var int|null
      */
     private ?int $startMemory = null;
 
     /**
      * Query logger instance for tracking database queries.
-     *
-     * @var QueryLogger|null
      */
     private ?QueryLogger $queryLogger = null;
 
     /**
      * Stopwatch instance for tracking query execution time.
-     *
-     * @var Stopwatch|null
      */
     private ?Stopwatch $stopwatch = null;
 
     /**
      * Profiler instance for accessing Doctrine DataCollector.
-     *
-     * @var Profiler|null
      */
     private readonly ?Profiler $profiler;
 
@@ -77,15 +66,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
     /**
      * Current route name being tracked.
-     *
-     * @var string|null
      */
     private ?string $routeName = null;
 
     /**
      * Route parameters for the current request.
-     *
-     * @var array|null
      */
     private ?array $routeParams = null;
 
@@ -93,8 +78,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * Constructor.
      *
      * @param PerformanceMetricsService $metricsService Service for recording metrics
-     * @param ManagerRegistry $registry Doctrine registry for entity manager access
-     * @param PerformanceDataCollector $dataCollector Data collector for WebProfiler
+     * @param ManagerRegistry           $registry       Doctrine registry for entity manager access
+     * @param PerformanceDataCollector  $dataCollector  Data collector for WebProfiler
      */
     public function __construct(
         private readonly PerformanceMetricsService $metricsService,
@@ -153,7 +138,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * and the environment is configured for tracking.
      *
      * @param RequestEvent $event The request event
-     * @return void
      */
     #[AsEventListener(event: KernelEvents::REQUEST, priority: 1024)]
     public function onKernelRequest(RequestEvent $event): void
@@ -171,6 +155,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 error_log('[PerformanceBundle] Tracking disabled: not main request');
             }
             $this->dataCollector->setEnabled(false);
+
             return;
         }
 
@@ -182,6 +167,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 error_log(sprintf('[PerformanceBundle] Tracking disabled: env=%s not in allowed environments: %s', $env, implode(', ', $this->environments)));
             }
             $this->dataCollector->setEnabled(false);
+
             return;
         }
 
@@ -192,7 +178,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         $this->dataCollector->setRouteName($this->routeName);
 
         // Skip ignored routes
-        if ($this->routeName !== null && \in_array($this->routeName, $this->ignoreRoutes, true)) {
+        if (null !== $this->routeName && \in_array($this->routeName, $this->ignoreRoutes, true)) {
             $this->dataCollector->setEnabled(false);
             // Inform collector that route is ignored
             $this->dataCollector->setRecordOperation(false, false);
@@ -227,7 +213,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * This is called after the response has been sent to the client.
      *
      * @param TerminateEvent $event The terminate event
-     * @return void
      */
     #[AsEventListener(event: KernelEvents::TERMINATE, priority: -1024)]
     public function onKernelTerminate(TerminateEvent $event): void
@@ -277,7 +262,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Calculate request time
         $requestTime = null;
-        if ($this->trackRequestTime && $this->startTime !== null) {
+        if ($this->trackRequestTime && null !== $this->startTime) {
             $requestTime = microtime(true) - $this->startTime;
             $this->dataCollector->setRequestTime($requestTime);
         }
@@ -295,7 +280,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Calculate peak memory usage
         $memoryUsage = null;
-        if ($this->startMemory !== null) {
+        if (null !== $this->startMemory) {
             $peakMemory = memory_get_peak_usage(true);
             $memoryUsage = $peakMemory - $this->startMemory;
             // Ensure non-negative (in case memory was freed)
@@ -326,7 +311,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         try {
             // Suppress error reporting temporarily to prevent warnings from generating output
             $errorReporting = error_reporting(0);
-            
+
             // Use output buffering to catch any potential output
             // Only start a new buffer if we're not already in one (to avoid closing buffers we didn't open)
             $obLevel = ob_get_level();
@@ -335,7 +320,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 ob_start();
                 $obStarted = true;
             }
-            
+
             if (\function_exists('error_log')) {
                 error_log(sprintf(
                     '[PerformanceBundle] Attempting to save metrics: route=%s, env=%s, method=%s, statusCode=%s, requestTime=%s, queryCount=%s',
@@ -391,7 +376,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             if ($obStarted && ob_get_level() > 0) {
                 ob_end_clean();
             }
-            
+
             // Restore error reporting
             error_reporting($errorReporting);
         } catch (\Exception $e) {
@@ -404,7 +389,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             if (isset($obStarted) && $obStarted && ob_get_level() > 0) {
                 ob_end_clean();
             }
-            
+
             // Log the error for debugging
             if (\function_exists('error_log')) {
                 error_log(sprintf(
@@ -441,20 +426,18 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * Start tracking database queries.
      *
      * Initializes the query logger for the current request.
-     *
-     * @return void
      */
     private function startQueryTracking(): void
     {
-        if ($this->queryLogger === null) {
+        if (null === $this->queryLogger) {
             return;
         }
 
         // Reset query logger for new request
         $this->queryLogger->reset();
-        
+
         // Start stopwatch for query tracking
-        if ($this->stopwatch !== null) {
+        if (null !== $this->stopwatch) {
             $this->stopwatch->reset();
             $this->stopwatch->start('doctrine.queries');
         }
@@ -464,13 +447,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * Stop tracking database queries.
      *
      * Performs cleanup after query tracking is complete.
-     *
-     * @return void
      */
     private function stopQueryTracking(): void
     {
         // Stop stopwatch if it was started
-        if ($this->stopwatch !== null && $this->stopwatch->isStarted('doctrine.queries')) {
+        if (null !== $this->stopwatch && $this->stopwatch->isStarted('doctrine.queries')) {
             $this->stopwatch->stop('doctrine.queries');
         }
     }
@@ -479,6 +460,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * Get query metrics from QueryTrackingMiddleware, Doctrine DataCollector, or fallback.
      *
      * @param \Symfony\Component\HttpFoundation\Request|null $request The request object (optional, will use RequestStack if not provided)
+     *
      * @return array{count: int, time: float} Array with query count and total time
      */
     private function getQueryMetrics(?\Symfony\Component\HttpFoundation\Request $request = null): array
@@ -490,16 +472,16 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         try {
             $queryCount = QueryTrackingMiddleware::getQueryCount();
             $queryTime = QueryTrackingMiddleware::getTotalQueryTime();
-            
+
             // Even if count is 0, return it if we got valid data (time might be 0 for very fast queries)
             // Only fallback if both are 0 AND we have a request to check profiler
-            if ($queryCount > 0 || ($queryTime > 0 && $request === null)) {
+            if ($queryCount > 0 || ($queryTime > 0 && null === $request)) {
                 return ['count' => $queryCount, 'time' => $queryTime];
             }
-            
+
             // If middleware returned 0/0, it might not be working, try fallback
             // But only if we have a request to check profiler
-            if ($queryCount === 0 && $queryTime === 0.0 && $request !== null) {
+            if (0 === $queryCount && 0.0 === $queryTime && null !== $request) {
                 // Continue to fallback methods
             } else {
                 // Return what we got from middleware
@@ -515,53 +497,53 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Priority 3: Try to get from request attributes (fallback)
         // Use provided request or get from RequestStack
-        if ($request === null && $this->requestStack !== null) {
+        if (null === $request && null !== $this->requestStack) {
             $request = $this->requestStack->getMainRequest();
         }
-        
-        if ($request !== null) {
+
+        if (null !== $request) {
             try {
                 // Try multiple ways to get the profiler from request
                 $profilerProfile = $request->attributes->get('_profiler');
-                
+
                 // If not in attributes, try to get from parent request (for sub-requests)
-                if ($profilerProfile === null && $this->requestStack !== null) {
+                if (null === $profilerProfile && null !== $this->requestStack) {
                     $parentRequest = $this->requestStack->getParentRequest();
-                    if ($parentRequest !== null) {
+                    if (null !== $parentRequest) {
                         $profilerProfile = $parentRequest->attributes->get('_profiler');
                     }
                 }
-                
+
                 // Also try _profiler_profile (alternative attribute name)
-                if ($profilerProfile === null) {
+                if (null === $profilerProfile) {
                     $profilerProfile = $request->attributes->get('_profiler_profile');
                 }
-                
-                if ($profilerProfile !== null) {
+
+                if (null !== $profilerProfile) {
                     // Try to get DoctrineDataCollector
                     $doctrineCollector = null;
-                    
+
                     // Method 1: Direct get() call
                     if (method_exists($profilerProfile, 'get')) {
                         $doctrineCollector = $profilerProfile->get('doctrine');
                     }
-                    
+
                     // Method 2: getCollector() method
-                    if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollector')) {
+                    if (null === $doctrineCollector && method_exists($profilerProfile, 'getCollector')) {
                         $doctrineCollector = $profilerProfile->getCollector('doctrine');
                     }
-                    
+
                     // Method 3: getCollectors() and find 'db' or 'doctrine'
-                    if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollectors')) {
+                    if (null === $doctrineCollector && method_exists($profilerProfile, 'getCollectors')) {
                         $collectors = $profilerProfile->getCollectors();
                         $doctrineCollector = $collectors['db'] ?? $collectors['doctrine'] ?? null;
                     }
-                    
+
                     if ($doctrineCollector instanceof DoctrineDataCollector) {
                         // Get query count and time from Doctrine DataCollector
                         $queryCount = $doctrineCollector->getQueryCount();
                         $queryTime = $doctrineCollector->getTime() / 1000.0; // Convert from milliseconds to seconds
-                        
+
                         // If we got valid data, return it
                         if ($queryCount > 0 || $queryTime > 0) {
                             return ['count' => $queryCount, 'time' => $queryTime];
@@ -575,11 +557,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Priority 3: Fallback to Stopwatch for time tracking only
         // Note: Stopwatch won't give us accurate query count
-        if ($this->stopwatch !== null) {
+        if (null !== $this->stopwatch) {
             try {
                 if ($this->stopwatch->isStarted('doctrine.queries')) {
                     $event = $this->stopwatch->getEvent('doctrine.queries');
-                    if ($event !== null) {
+                    if (null !== $event) {
                         $queryTime = $event->getDuration() / 1000.0; // Convert from milliseconds to seconds
                     }
                 }

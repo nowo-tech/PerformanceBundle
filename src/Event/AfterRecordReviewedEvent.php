@@ -23,7 +23,7 @@ final class AfterRecordReviewedEvent extends Event
      * @param RouteData $routeData The route data entity that was reviewed
      */
     public function __construct(
-        private readonly RouteData $routeData
+        private readonly RouteData $routeData,
     ) {
     }
 

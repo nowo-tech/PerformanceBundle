@@ -51,15 +51,13 @@ final class SetRouteMetricsCommand extends Command
      * @param PerformanceMetricsService $metricsService Service for recording metrics
      */
     public function __construct(
-        private readonly PerformanceMetricsService $metricsService
+        private readonly PerformanceMetricsService $metricsService,
     ) {
         parent::__construct();
     }
 
     /**
      * Configure the command.
-     *
-     * @return void
      */
     protected function configure(): void
     {
@@ -76,8 +74,9 @@ final class SetRouteMetricsCommand extends Command
     /**
      * Execute the command.
      *
-     * @param InputInterface $input The input interface
+     * @param InputInterface  $input  The input interface
      * @param OutputInterface $output The output interface
+     *
      * @return int Command exit code (0 for success, 1 for failure)
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -86,24 +85,24 @@ final class SetRouteMetricsCommand extends Command
 
         $routeName = $input->getArgument('route');
         $env = $input->getOption('env');
-        $requestTime = $input->getOption('request-time') !== null ? (float) $input->getOption('request-time') : null;
-        $totalQueries = $input->getOption('queries') !== null ? (int) $input->getOption('queries') : null;
-        $queryTime = $input->getOption('query-time') !== null ? (float) $input->getOption('query-time') : null;
-        $memoryUsage = $input->getOption('memory') !== null ? (int) $input->getOption('memory') : null;
+        $requestTime = null !== $input->getOption('request-time') ? (float) $input->getOption('request-time') : null;
+        $totalQueries = null !== $input->getOption('queries') ? (int) $input->getOption('queries') : null;
+        $queryTime = null !== $input->getOption('query-time') ? (float) $input->getOption('query-time') : null;
+        $memoryUsage = null !== $input->getOption('memory') ? (int) $input->getOption('memory') : null;
         $paramsJson = $input->getOption('params');
         $params = null;
 
-        if ($paramsJson !== null) {
+        if (null !== $paramsJson) {
             $params = json_decode($paramsJson, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $io->error(sprintf('Invalid JSON in params: %s', json_last_error_msg()));
+            if (\JSON_ERROR_NONE !== json_last_error()) {
+                $io->error(\sprintf('Invalid JSON in params: %s', json_last_error_msg()));
 
                 return Command::FAILURE;
             }
         }
 
         // Validate that at least one metric is provided
-        if ($requestTime === null && $totalQueries === null && $queryTime === null && $memoryUsage === null) {
+        if (null === $requestTime && null === $totalQueries && null === $queryTime && null === $memoryUsage) {
             $io->error('At least one metric must be provided (--request-time, --queries, --query-time, or --memory)');
 
             return Command::FAILURE;
@@ -113,10 +112,10 @@ final class SetRouteMetricsCommand extends Command
             // Check if route exists
             $existingRoute = $this->metricsService->getRouteData($routeName, $env);
 
-            if ($existingRoute === null) {
-                $io->info(sprintf('Creating new route metrics for "%s" in environment "%s"', $routeName, $env));
+            if (null === $existingRoute) {
+                $io->info(\sprintf('Creating new route metrics for "%s" in environment "%s"', $routeName, $env));
             } else {
-                $io->info(sprintf('Updating route metrics for "%s" in environment "%s"', $routeName, $env));
+                $io->info(\sprintf('Updating route metrics for "%s" in environment "%s"', $routeName, $env));
             }
 
             // Record metrics
@@ -133,17 +132,17 @@ final class SetRouteMetricsCommand extends Command
             // Get updated route data
             $routeData = $this->metricsService->getRouteData($routeName, $env);
 
-            if ($routeData !== null) {
+            if (null !== $routeData) {
                 $io->success('Route metrics saved successfully!');
                 $io->table(
                     ['Metric', 'Value'],
                     [
                         ['Route Name', $routeData->getName() ?? 'N/A'],
                         ['Environment', $routeData->getEnv() ?? 'N/A'],
-                        ['Request Time', $routeData->getRequestTime() !== null ? sprintf('%.4f s', $routeData->getRequestTime()) : 'N/A'],
+                        ['Request Time', null !== $routeData->getRequestTime() ? \sprintf('%.4f s', $routeData->getRequestTime()) : 'N/A'],
                         ['Total Queries', $routeData->getTotalQueries() ?? 'N/A'],
-                        ['Query Time', $routeData->getQueryTime() !== null ? sprintf('%.4f s', $routeData->getQueryTime()) : 'N/A'],
-                        ['Memory Usage', $routeData->getMemoryUsage() !== null ? sprintf('%s MB', number_format($routeData->getMemoryUsage() / 1024 / 1024, 2)) : 'N/A'],
+                        ['Query Time', null !== $routeData->getQueryTime() ? \sprintf('%.4f s', $routeData->getQueryTime()) : 'N/A'],
+                        ['Memory Usage', null !== $routeData->getMemoryUsage() ? \sprintf('%s MB', number_format($routeData->getMemoryUsage() / 1024 / 1024, 2)) : 'N/A'],
                         ['Updated At', $routeData->getUpdatedAt()?->format('Y-m-d H:i:s') ?? 'N/A'],
                     ]
                 );
@@ -151,7 +150,7 @@ final class SetRouteMetricsCommand extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $io->error(sprintf('Error saving route metrics: %s', $e->getMessage()));
+            $io->error(\sprintf('Error saving route metrics: %s', $e->getMessage()));
 
             return Command::FAILURE;
         }

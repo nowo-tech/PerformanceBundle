@@ -41,15 +41,11 @@ class PerformanceMetricsService
 
     /**
      * The entity manager for the configured connection.
-     *
-     * @var EntityManagerInterface
      */
     private EntityManagerInterface $entityManager;
 
     /**
      * The repository for RouteData entities.
-     *
-     * @var RouteDataRepository
      */
     private RouteDataRepository $repository;
 
@@ -69,15 +65,11 @@ class PerformanceMetricsService
 
     /**
      * Cache service for performance metrics (optional).
-     *
-     * @var PerformanceCacheService|null
      */
     private ?PerformanceCacheService $cacheService = null;
 
     /**
      * Event dispatcher (optional).
-     *
-     * @var EventDispatcherInterface|null
      */
     private ?EventDispatcherInterface $eventDispatcher = null;
 
@@ -90,17 +82,15 @@ class PerformanceMetricsService
 
     /**
      * Whether to use async mode.
-     *
-     * @var bool
      */
     private readonly bool $async;
 
     /**
      * Constructor.
      *
-     * @param ManagerRegistry $registry The Doctrine registry
-     * @param string $connectionName The name of the Doctrine connection to use
-     * @param bool $async Whether to use async mode
+     * @param ManagerRegistry $registry       The Doctrine registry
+     * @param string          $connectionName The name of the Doctrine connection to use
+     * @param bool            $async          Whether to use async mode
      */
     public function __construct(
         ManagerRegistry $registry,
@@ -124,7 +114,6 @@ class PerformanceMetricsService
      * Set the cache service (optional, for cache invalidation).
      *
      * @param PerformanceCacheService|null $cacheService The cache service
-     * @return void
      */
     #[Required]
     public function setCacheService(?PerformanceCacheService $cacheService): void
@@ -136,7 +125,6 @@ class PerformanceMetricsService
      * Set the event dispatcher (optional, for event dispatching).
      *
      * @param EventDispatcherInterface|null $eventDispatcher The event dispatcher
-     * @return void
      */
     #[Required]
     public function setEventDispatcher(?EventDispatcherInterface $eventDispatcher): void
@@ -152,7 +140,6 @@ class PerformanceMetricsService
      * method will not be called and $messageBus will remain null.
      *
      * @param object|null $messageBus The message bus (MessageBusInterface from Symfony Messenger)
-     * @return void
      */
     public function setMessageBus(?object $messageBus): void
     {
@@ -187,7 +174,7 @@ class PerformanceMetricsService
         array $trackStatusCodes = []
     ): array {
         // Dispatch before event to allow modification of metrics
-        if ($this->eventDispatcher !== null) {
+        if (null !== $this->eventDispatcher) {
             $beforeEvent = new BeforeMetricsRecordedEvent(
                 $routeName,
                 $env,
@@ -210,7 +197,7 @@ class PerformanceMetricsService
         }
 
         // If async mode is enabled and message bus is available, dispatch message
-        if ($this->async && $this->messageBus !== null) {
+        if ($this->async && null !== $this->messageBus) {
             $message = new RecordMetricsMessage(
                 $routeName,
                 $env,
@@ -262,7 +249,7 @@ class PerformanceMetricsService
         $wasUpdated = false;
         $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
 
-        if ($routeData === null) {
+        if (null === $routeData) {
             // Create new record (accessCount defaults to 1)
             $routeData = new RouteData();
             $routeData->setName($routeName);
@@ -300,11 +287,11 @@ class PerformanceMetricsService
                     $routeData->setRequestTime($requestTime);
                 }
 
-                if ($totalQueries !== null && ($routeData->getTotalQueries() === null || $totalQueries > $routeData->getTotalQueries())) {
+                if (null !== $totalQueries && (null === $routeData->getTotalQueries() || $totalQueries > $routeData->getTotalQueries())) {
                     $routeData->setTotalQueries($totalQueries);
                 }
 
-                if ($queryTime !== null) {
+                if (null !== $queryTime) {
                     $routeData->setQueryTime($queryTime);
                 }
 
@@ -346,7 +333,7 @@ class PerformanceMetricsService
             error_reporting($errorReporting);
 
             if (\function_exists('error_log')) {
-                error_log(sprintf(
+                error_log(\sprintf(
                     '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
                     $routeName,
                     $env,
@@ -355,7 +342,7 @@ class PerformanceMetricsService
             }
 
             // Invalidate cache for this environment after update
-            if ($this->cacheService !== null) {
+            if (null !== $this->cacheService) {
                 $this->cacheService->invalidateStatistics($env);
             }
 
@@ -371,7 +358,7 @@ class PerformanceMetricsService
             }
 
             // Dispatch after event
-            if ($this->eventDispatcher !== null) {
+            if (null !== $this->eventDispatcher) {
                 $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew);
                 $this->eventDispatcher->dispatch($afterEvent);
             }
@@ -397,7 +384,7 @@ class PerformanceMetricsService
                     $this->entityManager->isOpen() ? 'true' : 'false'
                 ));
             }
-            
+
             // Re-throw to let the subscriber handle it
             throw $e;
         }
@@ -410,7 +397,8 @@ class PerformanceMetricsService
      * Get route data by name and environment.
      *
      * @param string $routeName The route name
-     * @param string $env The environment (dev, test, prod)
+     * @param string $env       The environment (dev, test, prod)
+     *
      * @return RouteData|null The route data or null if not found
      */
     public function getRouteData(string $routeName, string $env): ?RouteData
@@ -433,8 +421,9 @@ class PerformanceMetricsService
      *
      * Returns routes ordered by request time descending (worst first).
      *
-     * @param string $env The environment (dev, test, prod)
-     * @param int $limit Maximum number of results to return (default: 10)
+     * @param string $env   The environment (dev, test, prod)
+     * @param int    $limit Maximum number of results to return (default: 10)
+     *
      * @return RouteData[] Array of route data entities
      */
     public function getWorstPerformingRoutes(string $env, int $limit = 10): array

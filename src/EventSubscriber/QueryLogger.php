@@ -6,7 +6,7 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 
 /**
  * Custom SQL logger for tracking query count and execution time.
- * 
+ *
  * Note: In DBAL 3.x, SQLLogger was removed. This class tracks queries
  * using a simple counter and timer approach that works with DBAL 3.x.
  *
@@ -17,15 +17,11 @@ class QueryLogger
 {
     /**
      * Total number of queries executed.
-     *
-     * @var int
      */
     private int $queryCount = 0;
 
     /**
      * Total execution time for all queries in seconds.
-     *
-     * @var float
      */
     private float $totalQueryTime = 0.0;
 
@@ -40,7 +36,6 @@ class QueryLogger
      * Record the start of a query execution.
      *
      * @param string $queryId Unique identifier for the query
-     * @return void
      */
     public function startQuery(string $queryId): void
     {
@@ -53,7 +48,6 @@ class QueryLogger
      * Calculates the execution time and updates the total query time and count.
      *
      * @param string $queryId Unique identifier for the query
-     * @return void
      */
     public function stopQuery(string $queryId): void
     {
@@ -61,7 +55,7 @@ class QueryLogger
             return;
         }
 
-        $this->queryCount++;
+        ++$this->queryCount;
         $this->totalQueryTime += microtime(true) - $this->queryStartTimes[$queryId];
         unset($this->queryStartTimes[$queryId]);
     }
@@ -90,8 +84,6 @@ class QueryLogger
      * Reset all query tracking metrics.
      *
      * Clears the query count, total time, and start times.
-     *
-     * @return void
      */
     public function reset(): void
     {

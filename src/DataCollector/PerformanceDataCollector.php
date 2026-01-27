@@ -6,12 +6,10 @@ namespace Nowo\PerformanceBundle\DataCollector;
 
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Throwable;
 
 /**
  * Data collector for Performance Bundle.
@@ -24,64 +22,46 @@ class PerformanceDataCollector extends DataCollector
 {
     /**
      * Request start time for timing calculation.
-     *
-     * @var float|null
      */
     private ?float $startTime = null;
 
     /**
      * Total number of database queries executed.
-     *
-     * @var int|null
      */
     private ?int $queryCount = null;
 
     /**
      * Total database query execution time in seconds.
-     *
-     * @var float|null
      */
     private ?float $queryTime = null;
 
     /**
      * Current route name being tracked.
-     *
-     * @var string|null
      */
     private ?string $routeName = null;
 
     /**
      * Whether the collector is enabled for the current request.
-     *
-     * @var bool
      */
     private bool $enabled = false;
 
     /**
      * Whether async mode is enabled.
-     *
-     * @var bool
      */
     private bool $async = false;
 
     /**
      * Route data repository (optional, for ranking information).
-     *
-     * @var RouteDataRepository|null
      */
     private ?RouteDataRepository $repository = null;
 
     /**
      * Kernel interface (optional, for environment detection).
-     *
-     * @var KernelInterface|null
      */
     private ?KernelInterface $kernel = null;
 
     /**
      * Table status checker (optional, for table existence verification).
-     *
-     * @var TableStatusChecker|null
      */
     private ?TableStatusChecker $tableStatusChecker = null;
 
@@ -102,14 +82,14 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Constructor.
      *
-     * @param RouteDataRepository|null $repository The route data repository (optional)
-     * @param KernelInterface|null $kernel The kernel interface (optional)
-     * @param TableStatusChecker|null $tableStatusChecker The table status checker (optional)
+     * @param RouteDataRepository|null $repository         The route data repository (optional)
+     * @param KernelInterface|null     $kernel             The kernel interface (optional)
+     * @param TableStatusChecker|null  $tableStatusChecker The table status checker (optional)
      */
     public function __construct(
         ?RouteDataRepository $repository = null,
         ?KernelInterface $kernel = null,
-        ?TableStatusChecker $tableStatusChecker = null
+        ?TableStatusChecker $tableStatusChecker = null,
     ) {
         $this->repository = $repository;
         $this->kernel = $kernel;
@@ -120,7 +100,6 @@ class PerformanceDataCollector extends DataCollector
      * Set the start time for request tracking.
      *
      * @param float $startTime The start time as microtime(true)
-     * @return void
      */
     public function setStartTime(float $startTime): void
     {
@@ -130,9 +109,8 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Set query metrics.
      *
-     * @param int $queryCount The total number of queries
-     * @param float $queryTime The total query execution time in seconds
-     * @return void
+     * @param int   $queryCount The total number of queries
+     * @param float $queryTime  The total query execution time in seconds
      */
     public function setQueryMetrics(int $queryCount, float $queryTime): void
     {
@@ -144,7 +122,6 @@ class PerformanceDataCollector extends DataCollector
      * Set the route name.
      *
      * @param string|null $routeName The route name
-     * @return void
      */
     public function setRouteName(?string $routeName): void
     {
@@ -155,7 +132,6 @@ class PerformanceDataCollector extends DataCollector
      * Enable or disable the collector.
      *
      * @param bool $enabled Whether the collector is enabled
-     * @return void
      */
     public function setEnabled(bool $enabled): void
     {
@@ -166,7 +142,6 @@ class PerformanceDataCollector extends DataCollector
      * Set async mode status.
      *
      * @param bool $async Whether async mode is enabled
-     * @return void
      */
     public function setAsync(bool $async): void
     {
@@ -177,7 +152,6 @@ class PerformanceDataCollector extends DataCollector
      * Set the request time.
      *
      * @param float $requestTime The request time in seconds
-     * @return void
      */
     public function setRequestTime(float $requestTime): void
     {
@@ -188,7 +162,6 @@ class PerformanceDataCollector extends DataCollector
      * Set the query count.
      *
      * @param int $queryCount The query count
-     * @return void
      */
     public function setQueryCount(int $queryCount): void
     {
@@ -199,7 +172,6 @@ class PerformanceDataCollector extends DataCollector
      * Set the query time.
      *
      * @param float $queryTime The query time in seconds
-     * @return void
      */
     public function setQueryTime(float $queryTime): void
     {
@@ -225,7 +197,7 @@ class PerformanceDataCollector extends DataCollector
     public function collect(Request $request, Response $response, ?Throwable $exception = null): void
     {
         $requestTime = null;
-        if ($this->startTime !== null) {
+        if (null !== $this->startTime) {
             $requestTime = microtime(true) - $this->startTime;
         }
 
@@ -233,8 +205,8 @@ class PerformanceDataCollector extends DataCollector
         // This ensures we have the latest values even if collect() is called before onKernelTerminate
         $queryCount = $this->queryCount;
         $queryTime = $this->queryTime;
-        
-        if ($queryCount === null || $queryTime === null) {
+
+        if (null === $queryCount || null === $queryTime) {
             try {
                 $queryCount = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getQueryCount();
                 $queryTime = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getTotalQueryTime();
@@ -275,10 +247,10 @@ class PerformanceDataCollector extends DataCollector
         $rankingByQueryCount = null;
         $totalRoutes = null;
 
-        if ($this->repository !== null && $routeName !== null) {
+        if (null !== $this->repository && null !== $routeName) {
             try {
                 $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
-                if ($routeData !== null) {
+                if (null !== $routeData) {
                     $accessCount = $routeData->getAccessCount();
                     // Pass the RouteData entity directly to avoid duplicate queries
                     $rankingByRequestTime = $this->repository->getRankingByRequestTime($routeData);
@@ -310,9 +282,6 @@ class PerformanceDataCollector extends DataCollector
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function reset(): void
     {
         $this->data = [];
@@ -325,9 +294,6 @@ class PerformanceDataCollector extends DataCollector
         $this->recordWasUpdated = null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'performance';
@@ -360,7 +326,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function getRequestTime(): ?float
     {
-        return $this->data['request_time'] !== null ? $this->data['request_time'] * 1000 : null;
+        return null !== $this->data['request_time'] ? $this->data['request_time'] * 1000 : null;
     }
 
     /**
@@ -393,14 +359,14 @@ class PerformanceDataCollector extends DataCollector
     public function getFormattedRequestTime(): string
     {
         $time = $this->getRequestTime();
-        if ($time === null) {
+        if (null === $time) {
             return 'N/A';
         }
 
         return match (true) {
-            $time < 1 => sprintf('%.2f ms', $time),
-            $time < 1000 => sprintf('%.0f ms', $time),
-            default => sprintf('%.2f s', $time / 1000),
+            $time < 1 => \sprintf('%.2f ms', $time),
+            $time < 1000 => \sprintf('%.0f ms', $time),
+            default => \sprintf('%.2f s', $time / 1000),
         };
     }
 
@@ -414,10 +380,11 @@ class PerformanceDataCollector extends DataCollector
     public function getFormattedQueryTime(): string
     {
         $time = $this->getQueryTime();
+
         return match (true) {
-            $time < 1 => sprintf('%.2f ms', $time),
-            $time < 1000 => sprintf('%.0f ms', $time),
-            default => sprintf('%.2f s', $time / 1000),
+            $time < 1 => \sprintf('%.2f ms', $time),
+            $time < 1000 => \sprintf('%.0f ms', $time),
+            default => \sprintf('%.2f s', $time / 1000),
         };
     }
 

@@ -30,8 +30,6 @@ class PerformanceCacheService
 
     /**
      * Cache pool instance.
-     *
-     * @var CacheItemPoolInterface|null
      */
     private readonly ?CacheItemPoolInterface $cachePool;
 
@@ -42,7 +40,7 @@ class PerformanceCacheService
      */
     public function __construct(
         #[Autowire('?cache.app')]
-        CacheItemPoolInterface|string|null $cachePool = null
+        CacheItemPoolInterface|string|null $cachePool = null,
     ) {
         // Handle case where cache service might not be available (string passed instead of null)
         // or when the service is not configured
@@ -57,11 +55,12 @@ class PerformanceCacheService
      * Get cached statistics for an environment.
      *
      * @param string $env The environment
+     *
      * @return array<string, mixed>|null Cached statistics or null if not cached
      */
     public function getCachedStatistics(string $env): ?array
     {
-        if ($this->cachePool === null) {
+        if (null === $this->cachePool) {
             return null;
         }
 
@@ -78,14 +77,15 @@ class PerformanceCacheService
     /**
      * Cache statistics for an environment.
      *
-     * @param string $env The environment
+     * @param string               $env        The environment
      * @param array<string, mixed> $statistics The statistics to cache
-     * @param int|null $ttl Time to live in seconds (default: 1 hour)
+     * @param int|null             $ttl        Time to live in seconds (default: 1 hour)
+     *
      * @return bool True if cached successfully
      */
     public function cacheStatistics(string $env, array $statistics, ?int $ttl = null): bool
     {
-        if ($this->cachePool === null) {
+        if (null === $this->cachePool) {
             return false;
         }
 
@@ -104,7 +104,7 @@ class PerformanceCacheService
      */
     public function getCachedEnvironments(): ?array
     {
-        if ($this->cachePool === null) {
+        if (null === $this->cachePool) {
             return null;
         }
 
@@ -122,12 +122,13 @@ class PerformanceCacheService
      * Cache environment list.
      *
      * @param string[] $environments The environment list to cache
-     * @param int|null $ttl Time to live in seconds (default: 1 hour)
+     * @param int|null $ttl          Time to live in seconds (default: 1 hour)
+     *
      * @return bool True if cached successfully
      */
     public function cacheEnvironments(array $environments, ?int $ttl = null): bool
     {
-        if ($this->cachePool === null) {
+        if (null === $this->cachePool) {
             return false;
         }
 
@@ -143,15 +144,17 @@ class PerformanceCacheService
      * Invalidate statistics cache for an environment.
      *
      * @param string $env The environment
+     *
      * @return bool True if invalidated successfully
      */
     public function invalidateStatistics(string $env): bool
     {
-        if ($this->cachePool === null) {
+        if (null === $this->cachePool) {
             return false;
         }
 
         $key = $this->getStatisticsKey($env);
+
         return $this->cachePool->deleteItem($key);
     }
 
@@ -162,11 +165,12 @@ class PerformanceCacheService
      */
     public function invalidateEnvironments(): bool
     {
-        if ($this->cachePool === null) {
+        if (null === $this->cachePool) {
             return false;
         }
 
         $key = $this->getEnvironmentsKey();
+
         return $this->cachePool->deleteItem($key);
     }
 
@@ -177,7 +181,7 @@ class PerformanceCacheService
      */
     public function invalidateAll(): bool
     {
-        if ($this->cachePool === null) {
+        if (null === $this->cachePool) {
             return false;
         }
 
@@ -191,6 +195,7 @@ class PerformanceCacheService
      * Alias for invalidateStatistics().
      *
      * @param string $env The environment
+     *
      * @return bool True if cleared successfully
      */
     public function clearStatistics(string $env): bool
@@ -214,11 +219,12 @@ class PerformanceCacheService
      * Get cache key for statistics.
      *
      * @param string $env The environment
+     *
      * @return string The cache key
      */
     private function getStatisticsKey(string $env): string
     {
-        return self::CACHE_PREFIX . 'stats_' . $env;
+        return self::CACHE_PREFIX.'stats_'.$env;
     }
 
     /**
@@ -228,6 +234,6 @@ class PerformanceCacheService
      */
     private function getEnvironmentsKey(): string
     {
-        return self::CACHE_PREFIX . 'environments';
+        return self::CACHE_PREFIX.'environments';
     }
 }

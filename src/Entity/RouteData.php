@@ -29,8 +29,6 @@ class RouteData
 {
     /**
      * Primary key identifier.
-     *
-     * @var int|null
      */
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'AUTO')]
@@ -39,136 +37,102 @@ class RouteData
 
     /**
      * Environment name (dev, test, prod).
-     *
-     * @var string|null
      */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $env = null;
 
     /**
      * Route name.
-     *
-     * @var string|null
      */
     #[ORM\Column(type: Types::STRING, nullable: true)]
     private ?string $name = null;
 
     /**
      * HTTP method (GET, POST, PUT, DELETE, etc.).
-     *
-     * @var string|null
      */
     #[ORM\Column(type: Types::STRING, length: 10, nullable: true)]
     private ?string $httpMethod = null;
 
     /**
      * Total number of database queries executed.
-     *
-     * @var int|null
      */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $totalQueries = null;
 
     /**
      * Route parameters as JSON array.
-     *
-     * @var array|null
      */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $params = null;
 
     /**
      * Request execution time in seconds.
-     *
-     * @var float|null
      */
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
     private ?float $requestTime = null;
 
     /**
      * Total database query execution time in seconds.
-     *
-     * @var float|null
      */
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
     private ?float $queryTime = null;
 
     /**
      * Peak memory usage in bytes.
-     *
-     * @var int|null
      */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $memoryUsage = null;
 
     /**
      * Number of times this route has been accessed.
-     *
-     * @var int
      */
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
     private int $accessCount = 1;
 
     /**
      * Creation timestamp.
-     *
-     * @var \DateTimeImmutable|null
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $createdAt = null;
 
     /**
      * Last update timestamp.
-     *
-     * @var \DateTimeImmutable|null
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
     /**
      * Last access timestamp.
-     *
-     * @var \DateTimeImmutable|null
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $lastAccessedAt = null;
 
     /**
      * Whether this route has been reviewed.
-     *
-     * @var bool
      */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $reviewed = false;
 
     /**
      * Review timestamp.
-     *
-     * @var \DateTimeImmutable|null
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $reviewedAt = null;
 
     /**
      * Whether queries improved after review.
-     *
-     * @var bool|null
      */
     #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
     private ?bool $queriesImproved = null;
 
     /**
      * Whether request time improved after review.
-     *
-     * @var bool|null
      */
     #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
     private ?bool $timeImproved = null;
 
     /**
      * User who reviewed this route (optional).
-     *
-     * @var string|null
      */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $reviewedBy = null;
@@ -218,7 +182,6 @@ class RouteData
      * Set the environment name.
      *
      * @param string|null $env The environment name
-     * @return self
      */
     public function setEnv(?string $env): self
     {
@@ -241,7 +204,6 @@ class RouteData
      * Set the route name.
      *
      * @param string|null $name The route name
-     * @return self
      */
     public function setName(?string $name): self
     {
@@ -264,7 +226,6 @@ class RouteData
      * Set the HTTP method.
      *
      * @param string|null $httpMethod The HTTP method
-     * @return self
      */
     public function setHttpMethod(?string $httpMethod): self
     {
@@ -287,7 +248,6 @@ class RouteData
      * Set the total number of database queries.
      *
      * @param int|null $totalQueries The query count
-     * @return self
      */
     public function setTotalQueries(?int $totalQueries): self
     {
@@ -310,7 +270,6 @@ class RouteData
      * Set the route parameters.
      *
      * @param array|null $params The route parameters
-     * @return self
      */
     public function setParams(?array $params): self
     {
@@ -333,7 +292,6 @@ class RouteData
      * Set the request execution time in seconds.
      *
      * @param float|null $requestTime The request time in seconds
-     * @return self
      */
     public function setRequestTime(?float $requestTime): self
     {
@@ -357,7 +315,6 @@ class RouteData
      * Set the total query execution time in seconds.
      *
      * @param float|null $queryTime The query time in seconds
-     * @return self
      */
     public function setQueryTime(?float $queryTime): self
     {
@@ -381,7 +338,6 @@ class RouteData
      * Set the creation timestamp.
      *
      * @param \DateTimeImmutable|null $createdAt The creation date
-     * @return self
      */
     public function setCreatedAt(?\DateTimeImmutable $createdAt): self
     {
@@ -404,7 +360,6 @@ class RouteData
      * Set the last update timestamp.
      *
      * @param \DateTimeImmutable|null $updatedAt The update date
-     * @return self
      */
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): self
     {
@@ -427,7 +382,6 @@ class RouteData
      * Set the peak memory usage in bytes.
      *
      * @param int|null $memoryUsage The memory usage in bytes
-     * @return self
      */
     public function setMemoryUsage(?int $memoryUsage): self
     {
@@ -451,7 +405,6 @@ class RouteData
      * Set the number of times this route has been accessed.
      *
      * @param int $accessCount The access count
-     * @return self
      */
     public function setAccessCount(int $accessCount): self
     {
@@ -463,12 +416,10 @@ class RouteData
 
     /**
      * Increment the access count by one.
-     *
-     * @return self
      */
     public function incrementAccessCount(): self
     {
-        $this->accessCount++;
+        ++$this->accessCount;
         $this->updatedAt = new \DateTimeImmutable();
         $this->lastAccessedAt = new \DateTimeImmutable();
 
@@ -489,7 +440,6 @@ class RouteData
      * Set the last access timestamp.
      *
      * @param \DateTimeImmutable|null $lastAccessedAt The last access date
-     * @return self
      */
     public function setLastAccessedAt(?\DateTimeImmutable $lastAccessedAt): self
     {
@@ -505,25 +455,26 @@ class RouteData
      * Returns true if the new metrics indicate worse performance (higher request time
      * or more queries) than the current stored values.
      *
-     * @param float|null $newRequestTime The new request time to compare
-     * @param int|null $newTotalQueries The new query count to compare
+     * @param float|null $newRequestTime  The new request time to compare
+     * @param int|null   $newTotalQueries The new query count to compare
+     *
      * @return bool True if the record should be updated, false otherwise
      */
     public function shouldUpdate(?float $newRequestTime, ?int $newTotalQueries): bool
     {
         // Update if request time is worse (higher)
-        if ($newRequestTime !== null && $this->requestTime !== null && $newRequestTime > $this->requestTime) {
+        if (null !== $newRequestTime && null !== $this->requestTime && $newRequestTime > $this->requestTime) {
             return true;
         }
 
         // Update if query count is worse (higher)
-        if ($newTotalQueries !== null && $this->totalQueries !== null && $newTotalQueries > $this->totalQueries) {
+        if (null !== $newTotalQueries && null !== $this->totalQueries && $newTotalQueries > $this->totalQueries) {
             return true;
         }
 
         // Update if we have new data but no existing data
-        return ($this->requestTime === null && $newRequestTime !== null)
-            || ($this->totalQueries === null && $newTotalQueries !== null);
+        return (null === $this->requestTime && null !== $newRequestTime)
+            || (null === $this->totalQueries && null !== $newTotalQueries);
     }
 
     /**
@@ -540,7 +491,6 @@ class RouteData
      * Set whether this route has been reviewed.
      *
      * @param bool $reviewed Whether the route is reviewed
-     * @return self
      */
     public function setReviewed(bool $reviewed): self
     {
@@ -563,7 +513,6 @@ class RouteData
      * Set the review timestamp.
      *
      * @param \DateTimeImmutable|null $reviewedAt The review date
-     * @return self
      */
     public function setReviewedAt(?\DateTimeImmutable $reviewedAt): self
     {
@@ -586,7 +535,6 @@ class RouteData
      * Set whether queries improved after review.
      *
      * @param bool|null $queriesImproved True if improved, false if not, null if not specified
-     * @return self
      */
     public function setQueriesImproved(?bool $queriesImproved): self
     {
@@ -609,7 +557,6 @@ class RouteData
      * Set whether request time improved after review.
      *
      * @param bool|null $timeImproved True if improved, false if not, null if not specified
-     * @return self
      */
     public function setTimeImproved(?bool $timeImproved): self
     {
@@ -662,7 +609,6 @@ class RouteData
      * Set the user who reviewed this route.
      *
      * @param string|null $reviewedBy The reviewer identifier
-     * @return self
      */
     public function setReviewedBy(?string $reviewedBy): self
     {
@@ -681,31 +627,31 @@ class RouteData
     public function __toString(): string
     {
         $parts = [];
-        
-        if ($this->httpMethod !== null) {
+
+        if (null !== $this->httpMethod) {
             $parts[] = $this->httpMethod;
         }
-        
-        if ($this->name !== null) {
+
+        if (null !== $this->name) {
             $parts[] = $this->name;
         }
-        
-        if ($this->env !== null) {
-            $parts[] = sprintf('(%s)', $this->env);
+
+        if (null !== $this->env) {
+            $parts[] = \sprintf('(%s)', $this->env);
         }
-        
-        if ($this->requestTime !== null) {
-            $parts[] = sprintf('%.2fms', $this->requestTime * 1000);
+
+        if (null !== $this->requestTime) {
+            $parts[] = \sprintf('%.2fms', $this->requestTime * 1000);
         }
-        
-        if ($this->totalQueries !== null) {
-            $parts[] = sprintf('%dq', $this->totalQueries);
+
+        if (null !== $this->totalQueries) {
+            $parts[] = \sprintf('%dq', $this->totalQueries);
         }
-        
+
         if (empty($parts)) {
-            return sprintf('RouteData#%s', $this->id ?? 'new');
+            return \sprintf('RouteData#%s', $this->id ?? 'new');
         }
-        
+
         return implode(' ', $parts);
     }
 

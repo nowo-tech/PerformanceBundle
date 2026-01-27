@@ -29,13 +29,12 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
      * Processes the bundle configuration and sets container parameters
      * for all configurable options.
      *
-     * @param array<string, mixed> $configs The configuration array
-     * @param ContainerBuilder $container The container builder
-     * @return void
+     * @param array<string, mixed> $configs   The configuration array
+     * @param ContainerBuilder     $container The container builder
      */
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yaml');
 
         $configuration = $this->getConfiguration($configs, $container);
@@ -60,7 +59,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $requestTimeThresholds = $thresholdsConfig['request_time'] ?? [];
         $queryCountThresholds = $thresholdsConfig['query_count'] ?? [];
         $memoryUsageThresholds = $thresholdsConfig['memory_usage'] ?? [];
-        
+
         $container->setParameter('nowo_performance.thresholds.request_time.warning', $requestTimeThresholds['warning'] ?? 0.5);
         $container->setParameter('nowo_performance.thresholds.request_time.critical', $requestTimeThresholds['critical'] ?? 1.0);
         $container->setParameter('nowo_performance.thresholds.query_count.warning', $queryCountThresholds['warning'] ?? 20);
@@ -117,9 +116,6 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         return Configuration::ALIAS;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getConfiguration(array $config, ContainerBuilder $container): ?Configuration
     {
         return new Configuration();
@@ -129,14 +125,13 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
      * Prepend Twig and Doctrine configuration.
      *
      * @param ContainerBuilder $container The container builder
-     * @return void
      */
     public function prepend(ContainerBuilder $container): void
     {
         // Prepend Twig configuration
         if ($container->hasExtension('twig')) {
             $bundleDir = \dirname(__DIR__, 2);
-            $viewsPath = $bundleDir . '/src/Resources/views';
+            $viewsPath = $bundleDir.'/src/Resources/views';
 
             $container->prependExtensionConfig('twig', [
                 'paths' => [
