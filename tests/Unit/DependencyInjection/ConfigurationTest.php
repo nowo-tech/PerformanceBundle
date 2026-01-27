@@ -23,7 +23,7 @@ final class ConfigurationTest extends TestCase
         $config = $this->processor->processConfiguration($configuration, []);
 
         $this->assertTrue($config['enabled']);
-        $this->assertSame(['dev', 'test'], $config['environments']);
+        $this->assertSame(['prod', 'dev', 'test'], $config['environments']);
         $this->assertSame('default', $config['connection']);
         $this->assertSame('routes_data', $config['table_name']);
         $this->assertTrue($config['track_queries']);
@@ -79,7 +79,7 @@ final class ConfigurationTest extends TestCase
         ]]);
 
         $this->assertFalse($config['enabled']);
-        $this->assertSame(['dev', 'test'], $config['environments']); // Default
+        $this->assertSame(['prod', 'dev', 'test'], $config['environments']); // Default
         $this->assertSame('default', $config['connection']); // Default
         
         // Dashboard should have defaults even when not specified

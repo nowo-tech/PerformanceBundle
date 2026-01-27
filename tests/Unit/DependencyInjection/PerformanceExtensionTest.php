@@ -29,7 +29,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->extension->load([], $this->container);
 
         $this->assertTrue($this->container->getParameter('nowo_performance.enabled'));
-        $this->assertSame(['dev', 'test'], $this->container->getParameter('nowo_performance.environments'));
+        $this->assertSame(['prod', 'dev', 'test'], $this->container->getParameter('nowo_performance.environments'));
         $this->assertSame('default', $this->container->getParameter('nowo_performance.connection'));
         $this->assertSame('routes_data', $this->container->getParameter('nowo_performance.table_name'));
         $this->assertTrue($this->container->getParameter('nowo_performance.track_queries'));

@@ -2,6 +2,76 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 1.0.8 (2026-01-27)
+
+### Default Environments Now Include Production
+
+This version changes the default value for the `environments` configuration to include production, making the bundle more suitable for production monitoring out of the box.
+
+#### Changes
+
+- **Default environments updated**: Changed from `['dev', 'test']` to `['prod', 'dev', 'test']`
+  - The bundle now tracks performance in production by default
+  - This is more appropriate for a performance monitoring bundle
+  - Only affects new installations or configurations that don't explicitly set `environments`
+  - Existing configurations are not affected
+
+#### What This Means
+
+- **Production tracking by default**: New installations will track production environments automatically
+- **No breaking changes**: Existing configurations continue to work as before
+- **Better defaults**: More sensible default for a performance monitoring tool
+- **Easy to override**: Can still be customized via configuration
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Review your configuration** (if you have one):
+   - If you have `environments: ['dev', 'test']` explicitly set, it will continue to work
+   - If you want to include production, update to: `environments: ['prod', 'dev', 'test']`
+   - If you don't have `environments` configured, it will now default to including `prod`
+
+3. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+4. **Verify tracking**: Check that performance data is being recorded in your production environment
+
+#### Configuration Example
+
+If you want to explicitly configure environments (recommended for clarity):
+
+```yaml
+nowo_performance:
+    environments: ['prod', 'dev', 'test', 'stage']  # Add your custom environments
+```
+
+#### Troubleshooting
+
+**Q: I don't want to track production by default**  
+A: Explicitly set `environments` in your configuration:
+   ```yaml
+   nowo_performance:
+       environments: ['dev', 'test']  # Only dev and test
+   ```
+
+**Q: My production data is not being tracked**  
+A: Check that:
+   - Your `APP_ENV` is set to `prod`
+   - The `environments` configuration includes `prod` (or is not set to use the new default)
+   - The bundle is enabled: `enabled: true`
+   - Clear the cache: `php bin/console cache:clear`
+
+**Q: I see "env=prod not in allowed environments" in logs**  
+A: This means your configuration explicitly excludes `prod`. Either:
+   - Remove the `environments` configuration to use the new default
+   - Or add `prod` to your `environments` array
+
 ## Upgrading to 1.0.7 (2026-01-27)
 
 ### Enhanced Debug Logging and Test Coverage

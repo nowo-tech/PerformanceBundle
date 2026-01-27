@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-01-27
+
+### Changed
+- **Default environments now include production** - Changed default value for `environments` configuration
+  - Default changed from `['dev', 'test']` to `['prod', 'dev', 'test']`
+  - Bundle now tracks performance in production by default
+  - This is more appropriate for a performance monitoring bundle
+  - Existing configurations are not affected (only applies when not explicitly configured)
+  - Fixes issue where production environments were not tracked by default
+
+### Fixed
+- **Demo environments configuration** - Fixed demo projects to allow `APP_ENV=prod`
+  - Updated `docker-compose.yml` in both Symfony 7 and Symfony 8 demos
+  - Changed from hardcoded `APP_ENV=dev` to `APP_ENV=${APP_ENV:-dev}`
+  - Added `APP_DEBUG=${APP_DEBUG:-0}` for better environment control
+  - Updated Makefiles to include `APP_DEBUG=1` in default `.env` creation
+  - Removed `when@dev:` condition from `nowo_performance.yaml` in demos
+  - Configuration now applies to all environments, not just `dev`
+
+### Added
+- **Comprehensive environment configuration tests** - Added extensive test coverage for environment handling
+  - 5 tests for `PerformanceExtension` environment defaults and configurations
+  - 6 tests for `Configuration` environment defaults and edge cases
+  - 4 tests for `PerformanceMetricsSubscriber` environment filtering
+  - 3 tests for `PerformanceController` diagnose suggestions
+  - All tests verify the new default includes `prod`
+  - Tests cover edge cases like empty configs, single environments, and custom environments
+  - Updated existing tests to reflect new default values
+
 ## [1.0.7] - 2026-01-27
 
 ### Added
