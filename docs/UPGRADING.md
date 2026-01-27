@@ -2,6 +2,52 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 0.0.4 (2025-01-27)
+
+### Bug Fix
+
+This version fixes a fatal error that occurred during container compilation.
+
+#### Changes
+
+- **PerformanceDataCollector Throwable import**: Added missing `use Throwable;` import statement
+- Fixes "Class 'Nowo\PerformanceBundle\DataCollector\Throwable' not found" error
+- Resolves ReflectionException during container compilation
+
+#### What This Means
+
+- **No configuration changes required**: This is a code-only fix
+- **No database changes required**: No schema changes
+- **Fixes fatal error**: Resolves the error that prevented the application from starting
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache**:
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Verify installation**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   ```
+
+#### Troubleshooting
+
+**Issue: Still seeing the Throwable error**
+
+- **Solution**: Clear Symfony cache and verify the bundle version:
+  ```bash
+  php bin/console cache:clear
+  composer show nowo-tech/performance-bundle
+  ```
+  Make sure you're using version 0.0.4 or higher.
+
 ## Upgrading to 0.0.3 (2025-01-27)
 
 ### Compatibility Fix
