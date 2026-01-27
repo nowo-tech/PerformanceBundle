@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Notification\Channel;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -54,8 +55,8 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
 
             return true;
         } catch (\Exception $e) {
-            // Log error but don't throw
-            error_log(\sprintf('Failed to send webhook notification: %s', $e->getMessage()));
+            // Log error but don't throw (logging enabled by default for backward compatibility)
+            LogHelper::logf('Failed to send webhook notification: %s', null, $e->getMessage());
 
             return false;
         }

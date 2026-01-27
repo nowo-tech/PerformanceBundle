@@ -44,6 +44,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false, // async
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging
             null,  // requestStack
             null   // kernel
         );
@@ -73,6 +74,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false, // async
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging
             null,  // requestStack
             null   // kernel
         );
@@ -117,6 +119,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false,  // async
             1.0,    // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
+            true,   // enableLogging
             null,   // requestStack
             null    // kernel
         );
@@ -236,6 +239,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false, // async
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging
             null,  // requestStack
             null   // kernel
         );
@@ -268,6 +272,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false, // async
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging
             null,  // requestStack
             null   // kernel
         );
@@ -298,6 +303,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false, // async
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging
             null,  // requestStack
             null   // kernel
         );
@@ -537,6 +543,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false, // async
             0.0,   // sampling rate = 0.0 means never record
             [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging
             null,  // requestStack
             null   // kernel
         );
@@ -550,8 +557,8 @@ final class PerformanceMetricsSubscriberTest extends TestCase
 
         $this->dataCollector
             ->expects($this->once())
-            ->method('setSavingToDatabase')
-            ->with(false, $this->stringContains('Sampled out'));
+            ->method('setRecordOperation')
+            ->with(false, false);
 
         $this->metricsService
             ->expects($this->never())
@@ -578,6 +585,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             false, // async
             1.0,   // sampling rate = 1.0 means always record
             [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging
             null,  // requestStack
             null   // kernel
         );
@@ -590,7 +598,7 @@ final class PerformanceMetricsSubscriberTest extends TestCase
         $subscriber->onKernelRequest($requestEvent);
 
         $this->dataCollector
-            ->method('setSavingToDatabase')
+            ->method('setRecordOperation')
             ->with($this->anything(), $this->anything());
 
         $this->metricsService
@@ -599,5 +607,69 @@ final class PerformanceMetricsSubscriberTest extends TestCase
 
         $terminateEvent = new TerminateEvent($this->kernel, $request, new \Symfony\Component\HttpFoundation\Response());
         $subscriber->onKernelTerminate($terminateEvent);
+    }
+
+    public function testLoggingDisabledDoesNotLogMessages(): void
+    {
+        // Create subscriber with logging disabled
+        $subscriber = new PerformanceMetricsSubscriber(
+            $this->metricsService,
+            $this->registry,
+            'default',
+            $this->dataCollector,
+            true,
+            ['dev', 'test'],
+            ['_wdt', '_profiler'],
+            true,
+            true,
+            false, // trackSubRequests
+            false, // async
+            1.0,   // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            false, // enableLogging = false
+            null,  // requestStack
+            null   // kernel
+        );
+
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', 'app_home');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+
+        // Should not throw any exception even with logging disabled
+        $subscriber->onKernelRequest($event);
+        $this->assertTrue(true);
+    }
+
+    public function testLoggingEnabledLogsMessages(): void
+    {
+        // Create subscriber with logging enabled (default)
+        $subscriber = new PerformanceMetricsSubscriber(
+            $this->metricsService,
+            $this->registry,
+            'default',
+            $this->dataCollector,
+            true,
+            ['dev', 'test'],
+            ['_wdt', '_profiler'],
+            true,
+            true,
+            false, // trackSubRequests
+            false, // async
+            1.0,   // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            true,  // enableLogging = true
+            null,  // requestStack
+            null   // kernel
+        );
+
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', 'app_home');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+
+        // Should work normally with logging enabled
+        $subscriber->onKernelRequest($event);
+        $this->assertTrue(true);
     }
 }

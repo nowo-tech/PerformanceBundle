@@ -14,29 +14,29 @@
                 {{ form_start(form, {'action': path('nowo_performance.index'), 'attr': {'class': 'row g-3'}}) }}
                     {# Basic Filters #}
                     <div class="col-md-3">
-                        {{ form_label(form.env) }}
-                        {{ form_widget(form.env) }}
-                        {{ form_errors(form.env) }}
+                        {% if not form.env.isRendered %}
+                            {{ form_row(form.env, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-select'}}) }}
+                        {% endif %}
                     </div>
                     <div class="col-md-3">
-                        {{ form_label(form.route) }}
-                        {{ form_widget(form.route) }}
-                        {{ form_errors(form.route) }}
+                        {% if not form.route.isRendered %}
+                            {{ form_row(form.route, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-control'}}) }}
+                        {% endif %}
                     </div>
                     <div class="col-md-2">
-                        {{ form_label(form.sort) }}
-                        {{ form_widget(form.sort) }}
-                        {{ form_errors(form.sort) }}
+                        {% if not form.sort.isRendered %}
+                            {{ form_row(form.sort, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-select'}}) }}
+                        {% endif %}
                     </div>
                     <div class="col-md-2">
-                        {{ form_label(form.order) }}
-                        {{ form_widget(form.order) }}
-                        {{ form_errors(form.order) }}
+                        {% if not form.order.isRendered %}
+                            {{ form_row(form.order, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-select'}}) }}
+                        {% endif %}
                     </div>
                     <div class="col-md-2">
-                        {{ form_label(form.limit) }}
-                        {{ form_widget(form.limit) }}
-                        {{ form_errors(form.limit) }}
+                        {% if not form.limit.isRendered %}
+                            {{ form_row(form.limit, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-control'}}) }}
+                        {% endif %}
                     </div>
 
                     {# Advanced Filters (Collapsible) #}
@@ -66,20 +66,24 @@
                                 <div class="card-body py-3">
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            {{ form_label(form.min_request_time, null, {'attr': {'class': 'form-label small text-muted'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">{{ 'filters.min'|trans({}, 'nowo_performance') }}</span>
-                                                {{ form_widget(form.min_request_time, {'attr': {'class': 'form-control', 'placeholder': '0.0000'}}) }}
-                                            </div>
-                                            {{ form_errors(form.min_request_time) }}
+                                            {% if not form.min_request_time.isRendered %}
+                                                {{ form_label(form.min_request_time, null, {'attr': {'class': 'form-label small text-muted'}}) }}
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">{{ 'filters.min'|trans({}, 'nowo_performance') }}</span>
+                                                    {{ form_widget(form.min_request_time, {'attr': {'class': 'form-control', 'placeholder': '0.0000'}}) }}
+                                                </div>
+                                                {{ form_errors(form.min_request_time) }}
+                                            {% endif %}
                                         </div>
                                         <div class="col-md-6">
-                                            {{ form_label(form.max_request_time, null, {'attr': {'class': 'form-label small text-muted'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">{{ 'filters.max'|trans({}, 'nowo_performance') }}</span>
-                                                {{ form_widget(form.max_request_time, {'attr': {'class': 'form-control', 'placeholder': '1.0000'}}) }}
-                                            </div>
-                                            {{ form_errors(form.max_request_time) }}
+                                            {% if not form.max_request_time.isRendered %}
+                                                {{ form_label(form.max_request_time, null, {'attr': {'class': 'form-label small text-muted'}}) }}
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">{{ 'filters.max'|trans({}, 'nowo_performance') }}</span>
+                                                    {{ form_widget(form.max_request_time, {'attr': {'class': 'form-control', 'placeholder': '1.0000'}}) }}
+                                                </div>
+                                                {{ form_errors(form.max_request_time) }}
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -101,20 +105,24 @@
                                 <div class="card-body py-3">
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            {{ form_label(form.min_query_count, null, {'attr': {'class': 'form-label small text-muted'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">{{ 'filters.min'|trans({}, 'nowo_performance') }}</span>
-                                                {{ form_widget(form.min_query_count, {'attr': {'class': 'form-control', 'placeholder': '0'}}) }}
-                                            </div>
-                                            {{ form_errors(form.min_query_count) }}
+                                            {% if not form.min_query_count.isRendered %}
+                                                {{ form_label(form.min_query_count, null, {'attr': {'class': 'form-label small text-muted'}}) }}
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">{{ 'filters.min'|trans({}, 'nowo_performance') }}</span>
+                                                    {{ form_widget(form.min_query_count, {'attr': {'class': 'form-control', 'placeholder': '0'}}) }}
+                                                </div>
+                                                {{ form_errors(form.min_query_count) }}
+                                            {% endif %}
                                         </div>
                                         <div class="col-md-6">
-                                            {{ form_label(form.max_query_count, null, {'attr': {'class': 'form-label small text-muted'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">{{ 'filters.max'|trans({}, 'nowo_performance') }}</span>
-                                                {{ form_widget(form.max_query_count, {'attr': {'class': 'form-control', 'placeholder': '100'}}) }}
-                                            </div>
-                                            {{ form_errors(form.max_query_count) }}
+                                            {% if not form.max_query_count.isRendered %}
+                                                {{ form_label(form.max_query_count, null, {'attr': {'class': 'form-label small text-muted'}}) }}
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">{{ 'filters.max'|trans({}, 'nowo_performance') }}</span>
+                                                    {{ form_widget(form.max_query_count, {'attr': {'class': 'form-control', 'placeholder': '100'}}) }}
+                                                </div>
+                                                {{ form_errors(form.max_query_count) }}
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -135,30 +143,34 @@
                                 <div class="card-body py-3">
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            {{ form_label(form.date_from, null, {'attr': {'class': 'form-label small text-muted'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                                        <path d="M8 4a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4z"/>
-                                                        <path d="M8 0a5 5 0 0 0-5 5c0 .676.13 1.323.367 1.916l.01.03.01.03c.1.27.2.52.3.73a5.5 5.5 0 0 0 8.646 0l.01-.03.01-.03c.237-.593.367-1.24.367-1.916A5 5 0 0 0 8 0zM5 5a3 3 0 1 1 6 0c0 .314-.06.616-.17.9l-.01.03-.01.03a4.5 4.5 0 0 1-5.64 0l-.01-.03-.01-.03A2.9 2.9 0 0 1 5 5z"/>
-                                                    </svg>
-                                                </span>
-                                                {{ form_widget(form.date_from, {'attr': {'class': 'form-control'}}) }}
-                                            </div>
-                                            {{ form_errors(form.date_from) }}
+                                            {% if not form.date_from.isRendered %}
+                                                {{ form_label(form.date_from, null, {'attr': {'class': 'form-label small text-muted'}}) }}
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M8 4a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4z"/>
+                                                            <path d="M8 0a5 5 0 0 0-5 5c0 .676.13 1.323.367 1.916l.01.03.01.03c.1.27.2.52.3.73a5.5 5.5 0 0 0 8.646 0l.01-.03.01-.03c.237-.593.367-1.24.367-1.916A5 5 0 0 0 8 0zM5 5a3 3 0 1 1 6 0c0 .314-.06.616-.17.9l-.01.03-.01.03a4.5 4.5 0 0 1-5.64 0l-.01-.03-.01-.03A2.9 2.9 0 0 1 5 5z"/>
+                                                        </svg>
+                                                    </span>
+                                                    {{ form_widget(form.date_from, {'attr': {'class': 'form-control'}}) }}
+                                                </div>
+                                                {{ form_errors(form.date_from) }}
+                                            {% endif %}
                                         </div>
                                         <div class="col-md-6">
-                                            {{ form_label(form.date_to, null, {'attr': {'class': 'form-label small text-muted'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                                        <path d="M8 4a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4z"/>
-                                                        <path d="M8 0a5 5 0 0 0-5 5c0 .676.13 1.323.367 1.916l.01.03.01.03c.1.27.2.52.3.73a5.5 5.5 0 0 0 8.646 0l.01-.03.01-.03c.237-.593.367-1.24.367-1.916A5 5 0 0 0 8 0zM5 5a3 3 0 1 1 6 0c0 .314-.06.616-.17.9l-.01.03-.01.03a4.5 4.5 0 0 1-5.64 0l-.01-.03-.01-.03A2.9 2.9 0 0 1 5 5z"/>
-                                                    </svg>
-                                                </span>
-                                                {{ form_widget(form.date_to, {'attr': {'class': 'form-control'}}) }}
-                                            </div>
-                                            {{ form_errors(form.date_to) }}
+                                            {% if not form.date_to.isRendered %}
+                                                {{ form_label(form.date_to, null, {'attr': {'class': 'form-label small text-muted'}}) }}
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M8 4a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4z"/>
+                                                            <path d="M8 0a5 5 0 0 0-5 5c0 .676.13 1.323.367 1.916l.01.03.01.03c.1.27.2.52.3.73a5.5 5.5 0 0 0 8.646 0l.01-.03.01-.03c.237-.593.367-1.24.367-1.916A5 5 0 0 0 8 0zM5 5a3 3 0 1 1 6 0c0 .314-.06.616-.17.9l-.01.03-.01.03a4.5 4.5 0 0 1-5.64 0l-.01-.03-.01-.03A2.9 2.9 0 0 1 5 5z"/>
+                                                        </svg>
+                                                    </span>
+                                                    {{ form_widget(form.date_to, {'attr': {'class': 'form-control'}}) }}
+                                                </div>
+                                                {{ form_errors(form.date_to) }}
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -167,10 +179,12 @@
                     </div>
 
                     <div class="col-12">
-                        {{ form_widget(form.submit) }}
+                        {% if not form.submit.isRendered %}
+                            {{ form_widget(form.submit) }}
+                        {% endif %}
                         <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">Reset</a>
                     </div>
-                {{ form_end(form) }}
+                {{ form_end(form, {'render_rest': false}) }}
             </div>
         </div>
     </div>

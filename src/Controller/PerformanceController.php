@@ -17,6 +17,7 @@ use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -55,6 +56,7 @@ class PerformanceController extends AbstractController
         private readonly string $template = 'bootstrap',
         private readonly ?PerformanceCacheService $cacheService = null,
         private readonly ?DependencyChecker $dependencyChecker = null,
+        private readonly ?TableStatusChecker $tableStatusChecker = null,
         #[Autowire('%nowo_performance.dashboard.enable_record_management%')]
         private readonly bool $enableRecordManagement = false,
         #[Autowire('%nowo_performance.dashboard.enable_review_system%')]
@@ -83,6 +85,26 @@ class PerformanceController extends AbstractController
         private readonly ?\Nowo\PerformanceBundle\Repository\RouteDataRecordRepository $recordRepository = null,
         #[Autowire('%nowo_performance.enable_access_records%')]
         private readonly bool $enableAccessRecords = false,
+        #[Autowire('%nowo_performance.enabled%')]
+        private readonly bool $bundleEnabled = true,
+        #[Autowire('%nowo_performance.environments%')]
+        private readonly array $allowedEnvironments = ['dev', 'test'],
+        #[Autowire('%nowo_performance.connection%')]
+        private readonly string $connectionName = 'default',
+        #[Autowire('%nowo_performance.track_queries%')]
+        private readonly bool $trackQueries = true,
+        #[Autowire('%nowo_performance.track_request_time%')]
+        private readonly bool $trackRequestTime = true,
+        #[Autowire('%nowo_performance.track_sub_requests%')]
+        private readonly bool $trackSubRequests = false,
+        #[Autowire('%nowo_performance.ignore_routes%')]
+        private readonly array $ignoreRoutes = [],
+        #[Autowire('%nowo_performance.async%')]
+        private readonly bool $async = false,
+        #[Autowire('%nowo_performance.sampling_rate%')]
+        private readonly float $samplingRate = 1.0,
+        #[Autowire('%nowo_performance.enable_logging%')]
+        private readonly bool $enableLogging = true,
     ) {
     }
 
@@ -152,9 +174,11 @@ class PerformanceController extends AbstractController
         ]);
 
         $form->handleRequest($request);
-
-        // Get form data (from submission or defaults)
+        
+        // Get form data before creating view to ensure form is fully processed
         $formData = $form->getData();
+
+        // Use form data that was already retrieved
         $env = $formData['env'] ?? $this->getParameter('kernel.environment');
         $routeName = $formData['route'] ?? null;
         $sortBy = $formData['sort'] ?? 'requestTime';
@@ -240,6 +264,25 @@ class PerformanceController extends AbstractController
             }
         }
 
+        // Create a fresh form instance and view to avoid "field already rendered" errors
+        // This ensures we have a clean form state for rendering
+        $formForView = $this->createForm(PerformanceFiltersType::class, null, [
+            'environments' => $environments,
+            'current_env' => $request->query->get('env') ?? $this->getParameter('kernel.environment'),
+            'current_route' => $request->query->get('route'),
+            'current_sort_by' => $request->query->get('sort', 'requestTime'),
+            'current_order' => $request->query->get('order', 'DESC'),
+            'current_limit' => (int) $request->query->get('limit', 100),
+            'current_min_request_time' => $request->query->get('min_request_time') ? (float) $request->query->get('min_request_time') : null,
+            'current_max_request_time' => $request->query->get('max_request_time') ? (float) $request->query->get('max_request_time') : null,
+            'current_min_query_count' => $request->query->get('min_query_count') ? (int) $request->query->get('min_query_count') : null,
+            'current_max_query_count' => $request->query->get('max_query_count') ? (int) $request->query->get('max_query_count') : null,
+            'current_date_from' => $request->query->get('date_from') ? new \DateTimeImmutable($request->query->get('date_from')) : null,
+            'current_date_to' => $request->query->get('date_to') ? new \DateTimeImmutable($request->query->get('date_to')) : null,
+        ]);
+        $formForView->handleRequest($request);
+        $formView = $formForView->createView();
+        
         return $this->render('@NowoPerformanceBundle/Performance/index.html.twig', [
             'routes' => $routes,
             'stats' => $stats,
@@ -250,7 +293,7 @@ class PerformanceController extends AbstractController
             'limit' => $limit,
             'environments' => $environments,
             'template' => $this->template,
-            'form' => $form->createView(),
+            'form' => $formView,
             'reviewForms' => $reviewForms,
             'useComponents' => $useComponents,
             'missingDependencies' => $missingDependencies,
@@ -982,6 +1025,256 @@ class PerformanceController extends AbstractController
     }
 
     /**
+     * Diagnostic page to check configuration and detect why data might not be recorded.
+     *
+     * Reviews configuration, database tables, environment, registered data, and ignored routes.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return Response The HTTP response
+     */
+    #[Route(
+        path: '/diagnose',
+        name: 'nowo_performance.diagnose',
+        methods: ['GET']
+    )]
+    public function diagnose(Request $request): Response
+    {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to access the diagnostic page.');
+            }
+        }
+
+        $diagnostic = [];
+
+        // 1. Configuration Check
+        $diagnostic['configuration'] = [
+            'bundle_enabled' => $this->bundleEnabled,
+            'track_queries' => $this->trackQueries,
+            'track_request_time' => $this->trackRequestTime,
+            'track_sub_requests' => $this->trackSubRequests,
+            'async' => $this->async,
+            'sampling_rate' => $this->samplingRate,
+            'enable_logging' => $this->enableLogging,
+            'enable_access_records' => $this->enableAccessRecords,
+            'connection_name' => $this->connectionName,
+            'ignore_routes' => $this->ignoreRoutes,
+            'allowed_environments' => $this->allowedEnvironments,
+        ];
+
+        // 2. Environment Check
+        $currentEnv = $this->getParameter('kernel.environment');
+        $diagnostic['environment'] = [
+            'current' => $currentEnv,
+            'allowed' => $this->allowedEnvironments,
+            'is_allowed' => \in_array($currentEnv, $this->allowedEnvironments, true),
+        ];
+
+        // 3. Database Connection Check
+        $connectionStatus = [
+            'connection_name' => $this->connectionName,
+            'connected' => false,
+            'error' => null,
+        ];
+        try {
+            $connection = $this->metricsService->getRepository()->getEntityManager()->getConnection();
+            // Test connection by executing a simple query (this will auto-connect if needed)
+            $connection->executeQuery('SELECT 1');
+            $connectionStatus['connected'] = true;
+            $connectionStatus['database_name'] = $connection->getDatabase();
+            $connectionStatus['driver'] = $this->getDriverName($connection);
+        } catch (\Exception $e) {
+            $connectionStatus['error'] = $e->getMessage();
+        }
+        $diagnostic['database_connection'] = $connectionStatus;
+
+        // 4. Table Status Check
+        $tableStatus = [
+            'main_table_exists' => false,
+            'main_table_complete' => false,
+            'main_table_name' => null,
+            'missing_columns' => [],
+            'records_table_exists' => false,
+            'records_table_name' => null,
+        ];
+
+        if (null !== $this->tableStatusChecker) {
+            try {
+                $tableStatus['main_table_exists'] = $this->tableStatusChecker->tableExists();
+                $tableStatus['main_table_complete'] = $this->tableStatusChecker->tableIsComplete();
+                $tableStatus['main_table_name'] = $this->tableStatusChecker->getTableName();
+                $tableStatus['missing_columns'] = $this->tableStatusChecker->getMissingColumns();
+            } catch (\Exception $e) {
+                $tableStatus['error'] = $e->getMessage();
+            }
+        }
+
+        // Check records table if enabled
+        if ($this->enableAccessRecords && null !== $this->recordRepository) {
+            try {
+                $entityManager = $this->recordRepository->getEntityManager();
+                $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+                $recordsTableName = method_exists($metadata, 'getTableName')
+                    ? $metadata->getTableName()
+                    : ($metadata->table['name'] ?? $this->tableStatusChecker?->getTableName().'_records');
+                $connection = $entityManager->getConnection();
+                // Get schema manager (compatible with DBAL 2.x and 3.x)
+                if (method_exists($connection, 'createSchemaManager')) {
+                    $schemaManager = $connection->createSchemaManager();
+                } else {
+                    /** @var callable $getSchemaManager */
+                    $getSchemaManager = [$connection, 'getSchemaManager'];
+                    $schemaManager = $getSchemaManager();
+                }
+                $tableStatus['records_table_exists'] = $schemaManager->tablesExist([$recordsTableName]);
+                $tableStatus['records_table_name'] = $recordsTableName;
+            } catch (\Exception $e) {
+                $tableStatus['records_table_error'] = $e->getMessage();
+            }
+        }
+
+        $diagnostic['table_status'] = $tableStatus;
+
+        // 5. Data Registration Check
+        $dataStatus = [
+            'has_data' => false,
+            'total_records' => 0,
+            'first_record_date' => null,
+            'last_record_date' => null,
+            'records_by_environment' => [],
+            'recent_activity' => false,
+        ];
+
+        try {
+            $repository = $this->metricsService->getRepository();
+            $totalRecords = $repository->count([]);
+            $dataStatus['total_records'] = $totalRecords;
+            $dataStatus['has_data'] = $totalRecords > 0;
+
+            if ($totalRecords > 0) {
+                // Get first and last record dates
+                $firstRecord = $repository->createQueryBuilder('r')
+                    ->orderBy('r.createdAt', 'ASC')
+                    ->setMaxResults(1)
+                    ->getQuery()
+                    ->getOneOrNullResult();
+                $lastRecord = $repository->createQueryBuilder('r')
+                    ->orderBy('r.updatedAt', 'DESC')
+                    ->setMaxResults(1)
+                    ->getQuery()
+                    ->getOneOrNullResult();
+
+                if (null !== $firstRecord) {
+                    $dataStatus['first_record_date'] = $firstRecord->getCreatedAt();
+                }
+                if (null !== $lastRecord) {
+                    $dataStatus['last_record_date'] = $lastRecord->getUpdatedAt();
+                    // Check if last update was in the last 24 hours
+                    if (null !== $dataStatus['last_record_date']) {
+                        $now = new \DateTimeImmutable();
+                        $diff = $now->diff($dataStatus['last_record_date']);
+                        $dataStatus['recent_activity'] = $diff->days === 0 && $diff->h < 24;
+                    }
+                }
+
+                // Count by environment
+                foreach ($this->allowedEnvironments as $env) {
+                    $count = $repository->createQueryBuilder('r')
+                        ->select('COUNT(r.id)')
+                        ->where('r.env = :env')
+                        ->setParameter('env', $env)
+                        ->getQuery()
+                        ->getSingleScalarResult();
+                    $dataStatus['records_by_environment'][$env] = (int) $count;
+                }
+            }
+        } catch (\Exception $e) {
+            $dataStatus['error'] = $e->getMessage();
+        }
+
+        $diagnostic['data_status'] = $dataStatus;
+
+        // 6. Route Tracking Check
+        $routeTracking = [
+            'ignored_routes_count' => \count($this->ignoreRoutes),
+            'ignored_routes' => $this->ignoreRoutes,
+            'current_route' => $request->attributes->get('_route'),
+            'current_route_ignored' => \in_array($request->attributes->get('_route'), $this->ignoreRoutes, true),
+        ];
+
+        $diagnostic['route_tracking'] = $routeTracking;
+
+        // 7. Potential Issues Summary
+        $issues = [];
+        $warnings = [];
+        $suggestions = [];
+
+        if (!$this->bundleEnabled) {
+            $issues[] = 'El bundle está deshabilitado (nowo_performance.enabled: false)';
+        }
+
+        if (!$diagnostic['environment']['is_allowed']) {
+            $issues[] = \sprintf('El entorno actual "%s" no está en la lista de entornos permitidos: %s', $currentEnv, implode(', ', $this->allowedEnvironments));
+        }
+
+        if (!$diagnostic['database_connection']['connected']) {
+            $issues[] = 'No se puede conectar a la base de datos: '.($diagnostic['database_connection']['error'] ?? 'Error desconocido');
+        }
+
+        if (!$tableStatus['main_table_exists']) {
+            $issues[] = 'La tabla principal no existe. Ejecuta: php bin/console nowo:performance:create-table';
+        } elseif (!$tableStatus['main_table_complete']) {
+            $issues[] = 'La tabla principal está incompleta. Faltan columnas: '.implode(', ', $tableStatus['missing_columns']);
+            $suggestions[] = 'Ejecuta: php bin/console nowo:performance:create-table --update';
+        }
+
+        if ($this->enableAccessRecords && !$tableStatus['records_table_exists']) {
+            $warnings[] = 'La tabla de registros de acceso no existe aunque está habilitada. Ejecuta: php bin/console nowo:performance:create-records-table';
+        }
+
+        if (!$dataStatus['has_data']) {
+            $warnings[] = 'No hay datos registrados todavía. Asegúrate de que el bundle esté habilitado y que las rutas no estén en la lista de ignoradas.';
+        } elseif (!$dataStatus['recent_activity']) {
+            $warnings[] = 'No hay actividad reciente (última actualización hace más de 24 horas). Verifica que el tracking esté funcionando.';
+        }
+
+        if ($this->samplingRate < 1.0) {
+            $warnings[] = \sprintf('El sampling rate está configurado en %.1f%%, por lo que solo se registrará el %.1f%% de las peticiones', $this->samplingRate * 100, $this->samplingRate * 100);
+        }
+
+        if (!$this->trackQueries && !$this->trackRequestTime) {
+            $warnings[] = 'Tanto el tracking de queries como el de request time están deshabilitados. No se registrarán métricas.';
+        }
+
+        if (\count($this->ignoreRoutes) > 10) {
+            $warnings[] = 'Hay muchas rutas ignoradas ('.count($this->ignoreRoutes).'). Esto puede estar limitando el tracking.';
+        }
+
+        $diagnostic['issues'] = $issues;
+        $diagnostic['warnings'] = $warnings;
+        $diagnostic['suggestions'] = $suggestions;
+
+        return $this->render('@NowoPerformanceBundle/Performance/diagnose.html.twig', [
+            'diagnostic' => $diagnostic,
+            'template' => $this->template,
+        ]);
+    }
+
+    /**
      * Clear all performance records from the database.
      *
      * Optionally filters by environment. Requires CSRF token validation.
@@ -1534,5 +1827,77 @@ class PerformanceController extends AbstractController
             'dateTimeFormat' => $this->dateTimeFormat,
             'dateFormat' => $this->dateFormat,
         ]);
+    }
+
+    /**
+     * Get driver name from connection (compatible with wrapped drivers).
+     *
+     * When the driver is wrapped with middleware (like AbstractDriverMiddleware),
+     * the getName() method may not be available. This method handles both cases.
+     *
+     * @param \Doctrine\DBAL\Connection $connection The database connection
+     *
+     * @return string The driver name or 'unknown' if unable to determine
+     */
+    private function getDriverName(\Doctrine\DBAL\Connection $connection): string
+    {
+        try {
+            $driver = $connection->getDriver();
+
+            // Try direct getName() method (works for unwrapped drivers)
+            if (method_exists($driver, 'getName')) {
+                try {
+                    /** @var callable $getName */
+                    $getName = [$driver, 'getName'];
+                    return (string) $getName();
+                } catch (\Exception $e) {
+                    // Continue to next method
+                }
+            }
+
+            // If driver is wrapped with middleware, try to get the underlying driver
+            // using reflection to access the wrapped driver
+            $reflection = new \ReflectionClass($driver);
+
+            // Check if it's a middleware wrapper (AbstractDriverMiddleware)
+            if ($reflection->hasProperty('driver')) {
+                try {
+                    $driverProperty = $reflection->getProperty('driver');
+                    $driverProperty->setAccessible(true);
+                    $wrappedDriver = $driverProperty->getValue($driver);
+
+                    if ($wrappedDriver instanceof \Doctrine\DBAL\Driver && method_exists($wrappedDriver, 'getName')) {
+                        /** @var callable $getName */
+                        $getName = [$wrappedDriver, 'getName'];
+                        return (string) $getName();
+                    }
+                } catch (\Exception $e) {
+                    // Continue to next method
+                }
+            }
+
+            // Fallback: try to get driver name from database platform class name
+            $platform = $connection->getDatabasePlatform();
+            $platformClass = $platform::class;
+
+            // Infer driver name from platform class name
+            if (str_contains($platformClass, 'MySQL')) {
+                return 'pdo_mysql';
+            }
+            if (str_contains($platformClass, 'PostgreSQL')) {
+                return 'pdo_pgsql';
+            }
+            if (str_contains($platformClass, 'SQLite')) {
+                return 'pdo_sqlite';
+            }
+            if (str_contains($platformClass, 'SQLServer')) {
+                return 'pdo_sqlsrv';
+            }
+
+            return 'unknown';
+        } catch (\Exception $e) {
+            // If all methods fail, return 'unknown'
+            return 'unknown';
+        }
     }
 }

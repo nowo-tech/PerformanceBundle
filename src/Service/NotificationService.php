@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 
@@ -51,11 +52,13 @@ class NotificationService
                 try {
                     $results[$channel->getName()] = $channel->send($alert, $routeData);
                 } catch (\Exception $e) {
-                    error_log(\sprintf(
+                    // Log error but don't throw (logging enabled by default for backward compatibility)
+                    LogHelper::logf(
                         'Failed to send notification via channel %s: %s',
+                        null,
                         $channel->getName(),
                         $e->getMessage()
-                    ));
+                    );
                     $results[$channel->getName()] = false;
                 }
             }

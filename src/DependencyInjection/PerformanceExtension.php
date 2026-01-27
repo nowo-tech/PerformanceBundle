@@ -52,6 +52,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter('nowo_performance.query_tracking_threshold', $config['query_tracking_threshold'] ?? 0);
         $container->setParameter('nowo_performance.track_status_codes', $config['track_status_codes'] ?? [200, 404, 500, 503]);
         $container->setParameter('nowo_performance.enable_access_records', $config['enable_access_records'] ?? false);
+        $container->setParameter('nowo_performance.enable_logging', $config['enable_logging'] ?? true);
 
         // Thresholds configuration
         $thresholdsConfig = $config['thresholds'] ?? [];

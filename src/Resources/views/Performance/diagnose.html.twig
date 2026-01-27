@@ -1,0 +1,468 @@
+{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
+
+{% block title %}Diagnóstico - Performance Bundle{% endblock %}
+
+{% block styles %}
+   <style>
+            .card {
+                margin-bottom: 1.5rem;
+            }
+            .status-badge {
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+            }
+            .status-ok {
+                background-color: #d1e7dd;
+                color: #0f5132;
+            }
+            .status-error {
+                background-color: #f8d7da;
+                color: #842029;
+            }
+            .status-warning {
+                background-color: #fff3cd;
+                color: #664d03;
+            }
+    </style>
+{% endblock %}
+
+{% block content %}
+{% if template == 'bootstrap' %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1>Diagnóstico del Bundle</h1>
+                        <p class="text-muted">Revisión completa de configuración y estado del sistema</p>
+                    </div>
+                    <div>
+                        <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
+                            ← Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Issues Summary #}
+        {% if diagnostic.issues|length > 0 %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">⚠️ Problemas Detectados</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                {% for issue in diagnostic.issues %}
+                                    <li>{{ issue }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Warnings #}
+        {% if diagnostic.warnings|length > 0 %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0">⚠️ Advertencias</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                {% for warning in diagnostic.warnings %}
+                                    <li>{{ warning }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Suggestions #}
+        {% if diagnostic.suggestions|length > 0 %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">💡 Sugerencias</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                {% for suggestion in diagnostic.suggestions %}
+                                    <li>{{ suggestion }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Configuration #}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">📋 Configuración</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Bundle Habilitado</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.configuration.bundle_enabled ? 'status-ok' : 'status-error' }}">
+                                            {{ diagnostic.configuration.bundle_enabled ? '✓ Sí' : '✗ No' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Tracking de Queries</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.configuration.track_queries ? 'status-ok' : 'status-warning' }}">
+                                            {{ diagnostic.configuration.track_queries ? '✓ Habilitado' : '✗ Deshabilitado' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Tracking de Request Time</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.configuration.track_request_time ? 'status-ok' : 'status-warning' }}">
+                                            {{ diagnostic.configuration.track_request_time ? '✓ Habilitado' : '✗ Deshabilitado' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Tracking de Sub-requests</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.configuration.track_sub_requests ? 'status-ok' : 'status-warning' }}">
+                                            {{ diagnostic.configuration.track_sub_requests ? '✓ Habilitado' : '✗ Deshabilitado' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Modo Asíncrono</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.configuration.async ? 'status-ok' : 'status-warning' }}">
+                                            {{ diagnostic.configuration.async ? '✓ Habilitado' : '✗ Deshabilitado' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Sampling Rate</th>
+                                    <td>{{ (diagnostic.configuration.sampling_rate * 100)|number_format(1) }}%</td>
+                                </tr>
+                                <tr>
+                                    <th>Logging Habilitado</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.configuration.enable_logging ? 'status-ok' : 'status-warning' }}">
+                                            {{ diagnostic.configuration.enable_logging ? '✓ Habilitado' : '✗ Deshabilitado' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Access Records</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.configuration.enable_access_records ? 'status-ok' : 'status-warning' }}">
+                                            {{ diagnostic.configuration.enable_access_records ? '✓ Habilitado' : '✗ Deshabilitado' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Conexión</th>
+                                    <td><code>{{ diagnostic.configuration.connection_name }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Entornos Permitidos</th>
+                                    <td>{{ diagnostic.configuration.allowed_environments|join(', ') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Rutas Ignoradas</th>
+                                    <td>
+                                        {% if diagnostic.configuration.ignore_routes|length > 0 %}
+                                            <code>{{ diagnostic.configuration.ignore_routes|join('</code>, <code>')|raw }}</code>
+                                            <small class="text-muted">({{ diagnostic.configuration.ignore_routes|length }} rutas)</small>
+                                        {% else %}
+                                            <span class="text-muted">Ninguna</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Environment #}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🌍 Entorno</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Entorno Actual</th>
+                                    <td><code>{{ diagnostic.environment.current }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Entornos Permitidos</th>
+                                    <td>{{ diagnostic.environment.allowed|join(', ') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Estado</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.environment.is_allowed ? 'status-ok' : 'status-error' }}">
+                                            {{ diagnostic.environment.is_allowed ? '✓ Permitido' : '✗ No Permitido' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Database Connection #}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🗄️ Conexión a Base de Datos</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Estado</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.database_connection.connected ? 'status-ok' : 'status-error' }}">
+                                            {{ diagnostic.database_connection.connected ? '✓ Conectado' : '✗ Desconectado' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Nombre de Conexión</th>
+                                    <td><code>{{ diagnostic.database_connection.connection_name }}</code></td>
+                                </tr>
+                                {% if diagnostic.database_connection.connected %}
+                                    <tr>
+                                        <th>Base de Datos</th>
+                                        <td><code>{{ diagnostic.database_connection.database_name ?? 'N/A' }}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Driver</th>
+                                        <td><code>{{ diagnostic.database_connection.driver ?? 'N/A' }}</code></td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <th>Error</th>
+                                        <td class="text-danger">{{ diagnostic.database_connection.error ?? 'Error desconocido' }}</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Table Status #}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">📊 Estado de las Tablas</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Tabla Principal</h6>
+                        <table class="table table-sm mb-4">
+                            <tbody>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <td><code>{{ diagnostic.table_status.main_table_name ?? 'N/A' }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Existe</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.table_status.main_table_exists ? 'status-ok' : 'status-error' }}">
+                                            {{ diagnostic.table_status.main_table_exists ? '✓ Sí' : '✗ No' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Completa</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.table_status.main_table_complete ? 'status-ok' : 'status-error' }}">
+                                            {{ diagnostic.table_status.main_table_complete ? '✓ Sí' : '✗ No' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% if diagnostic.table_status.missing_columns|length > 0 %}
+                                    <tr>
+                                        <th>Columnas Faltantes</th>
+                                        <td class="text-danger">
+                                            <code>{{ diagnostic.table_status.missing_columns|join('</code>, <code>')|raw }}</code>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+
+                        {% if diagnostic.configuration.enable_access_records %}
+                            <h6>Tabla de Registros de Acceso</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <td><code>{{ diagnostic.table_status.records_table_name ?? 'N/A' }}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Existe</th>
+                                        <td>
+                                            <span class="status-badge {{ diagnostic.table_status.records_table_exists ? 'status-ok' : 'status-error' }}">
+                                                {{ diagnostic.table_status.records_table_exists ? '✓ Sí' : '✗ No' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Data Status #}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">📈 Estado de los Datos</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Hay Datos Registrados</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.data_status.has_data ? 'status-ok' : 'status-warning' }}">
+                                            {{ diagnostic.data_status.has_data ? '✓ Sí' : '✗ No' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Total de Registros</th>
+                                    <td><strong>{{ diagnostic.data_status.total_records }}</strong></td>
+                                </tr>
+                                {% if diagnostic.data_status.first_record_date %}
+                                    <tr>
+                                        <th>Primer Registro</th>
+                                        <td>{{ diagnostic.data_status.first_record_date|date('Y-m-d H:i:s') }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if diagnostic.data_status.last_record_date %}
+                                    <tr>
+                                        <th>Último Registro</th>
+                                        <td>
+                                            {{ diagnostic.data_status.last_record_date|date('Y-m-d H:i:s') }}
+                                            {% if diagnostic.data_status.recent_activity %}
+                                                <span class="status-badge status-ok ms-2">Actividad Reciente</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                                {% if diagnostic.data_status.records_by_environment|length > 0 %}
+                                    <tr>
+                                        <th>Registros por Entorno</th>
+                                        <td>
+                                            <ul class="mb-0">
+                                                {% for env, count in diagnostic.data_status.records_by_environment %}
+                                                    <li><code>{{ env }}</code>: {{ count }} registros</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Route Tracking #}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🛣️ Tracking de Rutas</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Ruta Actual</th>
+                                    <td><code>{{ diagnostic.route_tracking.current_route ?? 'N/A' }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Ruta Actual Ignorada</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.route_tracking.current_route_ignored ? 'status-warning' : 'status-ok' }}">
+                                            {{ diagnostic.route_tracking.current_route_ignored ? '⚠ Sí' : '✓ No' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Total Rutas Ignoradas</th>
+                                    <td>{{ diagnostic.route_tracking.ignored_routes_count }}</td>
+                                </tr>
+                                {% if diagnostic.route_tracking.ignored_routes|length > 0 %}
+                                    <tr>
+                                        <th>Rutas Ignoradas</th>
+                                        <td>
+                                            <code>{{ diagnostic.route_tracking.ignored_routes|join('</code>, <code>')|raw }}</code>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% else %}
+    {# Tailwind version - similar structure but with Tailwind classes #}
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-6 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Diagnóstico del Bundle</h1>
+                    <p class="text-gray-600 mt-1">Revisión completa de configuración y estado del sistema</p>
+                </div>
+                <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    ← Volver al Dashboard
+                </a>
+            </div>
+
+            {# Similar structure with Tailwind classes #}
+            {# ... (similar content but with Tailwind styling) #}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

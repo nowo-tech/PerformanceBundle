@@ -147,6 +147,25 @@ nowo_performance:
 
 **Note:** Enabling this feature will increase database storage requirements as it creates a record for every route access (subject to sampling_rate).
 
+### `enable_logging`
+
+**Type:** `boolean`  
+**Default:** `true`
+
+Enable or disable bundle logging. When disabled, no `error_log()` calls will be made by the bundle. Recommended to disable in production for better performance and reduced log noise.
+
+```yaml
+nowo_performance:
+    enable_logging: false  # Disable logging in production
+```
+
+**Use cases:**
+- Production environments where log noise should be minimized
+- High-traffic applications where logging overhead matters
+- When using external monitoring tools that don't need bundle logs
+
+**Note:** When disabled, the bundle will still function normally but won't emit any log messages. This can help reduce I/O operations and improve performance in production.
+
 ### `ignore_routes`
 
 **Type:** `array`  
@@ -348,6 +367,26 @@ nowo_performance:
 - Visual countdown indicator
 - Automatically pauses when window loses focus
 - Resume when window regains focus
+
+#### `dashboard.enable_ranking_queries`
+
+**Type:** `boolean`  
+**Default:** `true`
+
+Enable ranking queries in WebProfiler. When enabled, the WebProfiler will show ranking information (position by request time and query count) for the current route. Disable this to reduce database queries on each request.
+
+```yaml
+nowo_performance:
+    dashboard:
+        enable_ranking_queries: false  # Disable ranking queries
+```
+
+**Use cases:**
+- High-traffic production environments where every query counts
+- When WebProfiler ranking information is not needed
+- To reduce database load on each request
+
+**Note:** When disabled, the WebProfiler will still show all other performance metrics, but won't display ranking information (e.g., "Rank 5 of 100 routes by request time").
 
 ### `track_status_codes`
 

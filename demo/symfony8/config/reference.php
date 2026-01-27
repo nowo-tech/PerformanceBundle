@@ -921,12 +921,14 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     table_name?: scalar|Param|null, // Table name for storing route performance data // Default: "routes_data"
  *     track_queries?: bool|Param, // Track database query count and execution time // Default: true
  *     track_request_time?: bool|Param, // Track request execution time // Default: true
+ *     track_sub_requests?: bool|Param, // Track sub-requests in addition to main requests. When enabled, performance metrics will be collected for both main requests and sub-requests (e.g., ESI, fragments, includes). // Default: false
  *     ignore_routes?: list<scalar|Param|null>,
  *     track_status_codes?: list<int|Param>,
  *     async?: bool|Param, // Record metrics asynchronously using Symfony Messenger (requires symfony/messenger) // Default: false
  *     sampling_rate?: float|Param, // Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking). Reduces database load for frequently accessed routes. // Default: 1.0
  *     query_tracking_threshold?: int|Param, // Minimum query count to track query execution time. Queries below this threshold are counted but not timed individually. // Default: 0
  *     enable_access_records?: bool|Param, // Enable temporal access records tracking. Creates individual records for each route access with timestamp, status code, and response time. Useful for analyzing access patterns by time of day. // Default: false
+ *     enable_logging?: bool|Param, // Enable or disable bundle logging. When disabled, no error_log() calls will be made. Recommended to disable in production for better performance. // Default: true
  *     thresholds?: array{ // Performance thresholds for warning and critical levels
  *         request_time?: array{ // Request time thresholds in seconds
  *             warning?: float|Param, // Request time threshold for warning (seconds) // Default: 0.5
@@ -954,6 +956,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             date?: scalar|Param|null, // Format for date only without seconds (e.g., Y-m-d H:i) // Default: "Y-m-d H:i"
  *         },
  *         auto_refresh_interval?: int|Param, // Auto-refresh interval in seconds (0 to disable). Dashboard will automatically reload data at this interval. // Default: 0
+ *         enable_ranking_queries?: bool|Param, // Enable ranking queries in WebProfiler (request time and query count rankings). Disable to reduce database queries on each request. // Default: true
  *     },
  *     notifications?: array{ // Performance alert notifications configuration
  *         enabled?: bool|Param, // Enable or disable performance notifications // Default: false
@@ -1006,6 +1009,14 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     },
  *     ignore_not_found?: bool|Param, // Ignore error when an icon is not found. Set to 'true' to fail silently. // Default: false
  * }
+ * @psalm-type NowoTwigInspectorConfig = array{
+ *     enabled_extensions?: list<scalar|Param|null>,
+ *     excluded_templates?: list<scalar|Param|null>,
+ *     excluded_blocks?: list<scalar|Param|null>,
+ *     enable_metrics?: bool|Param, // Enable collection of template usage metrics in DataCollector // Default: true
+ *     optimize_output_buffering?: bool|Param, // Skip output buffering when inspector is disabled (performance optimization) // Default: true
+ *     cookie_name?: scalar|Param|null, // Name of the cookie used to enable/disable the inspector // Default: "twig_inspector_is_active"
+ * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
@@ -1028,6 +1039,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         nowo_performance?: NowoPerformanceConfig,
  *         twig_component?: TwigComponentConfig,
  *         ux_icons?: UxIconsConfig,
+ *         nowo_twig_inspector?: NowoTwigInspectorConfig,
  *     },
  *     "when@prod"?: array{
  *         imports?: ImportsConfig,
@@ -1052,6 +1064,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         nowo_performance?: NowoPerformanceConfig,
  *         twig_component?: TwigComponentConfig,
  *         ux_icons?: UxIconsConfig,
+ *         nowo_twig_inspector?: NowoTwigInspectorConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,

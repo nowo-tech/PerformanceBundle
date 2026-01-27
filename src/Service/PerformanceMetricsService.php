@@ -11,6 +11,7 @@ use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Event\BeforeMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
+use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -78,6 +79,11 @@ class PerformanceMetricsService
     private readonly bool $async;
 
     /**
+     * Whether logging is enabled.
+     */
+    private readonly bool $enableLogging;
+
+    /**
      * Constructor.
      *
      * @param ManagerRegistry $registry       The Doctrine registry
@@ -92,6 +98,8 @@ class PerformanceMetricsService
         bool $async = false,
         #[Autowire('%nowo_performance.enable_access_records%')]
         bool $enableAccessRecords = false,
+        #[Autowire('%nowo_performance.enable_logging%')]
+        bool $enableLogging = true,
     ) {
         $this->registry = $registry;
         $this->connectionName = $connectionName;
@@ -100,6 +108,7 @@ class PerformanceMetricsService
         $this->recordRepository = $this->entityManager->getRepository(RouteDataRecord::class);
         $this->async = $async;
         $this->enableAccessRecords = $enableAccessRecords;
+        $this->enableLogging = $enableLogging;
     }
 
     /**
@@ -308,15 +317,14 @@ class PerformanceMetricsService
         }
 
         try {
-            if (\function_exists('error_log')) {
-                error_log(\sprintf(
-                    '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s, entityManagerOpen=%s',
-                    $routeName,
-                    $env,
-                    $isNew ? 'true' : 'false',
-                    $this->entityManager->isOpen() ? 'true' : 'false'
-                ));
-            }
+            LogHelper::logf(
+                '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s, entityManagerOpen=%s',
+                $this->enableLogging,
+                $routeName,
+                $env,
+                $isNew ? 'true' : 'false',
+                $this->entityManager->isOpen() ? 'true' : 'false'
+            );
 
             // Ensure EntityManager is open before flush
             if (!$this->entityManager->isOpen()) {
@@ -328,14 +336,13 @@ class PerformanceMetricsService
             $this->entityManager->flush();
             error_reporting($errorReporting);
 
-            if (\function_exists('error_log')) {
-                error_log(\sprintf(
-                    '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
-                    $routeName,
-                    $env,
-                    $isNew ? 'true' : 'false'
-                ));
-            }
+            LogHelper::logf(
+                '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
+                $this->enableLogging,
+                $routeName,
+                $env,
+                $isNew ? 'true' : 'false'
+            );
 
             // Invalidate cache for this environment after update
             if (null !== $this->cacheService) {
@@ -371,15 +378,14 @@ class PerformanceMetricsService
             $this->resetEntityManager();
 
             // Log the error for debugging
-            if (\function_exists('error_log')) {
-                error_log(\sprintf(
-                    '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s, entityManagerOpen=%s',
-                    $routeName,
-                    $env,
-                    $e->getMessage(),
-                    $this->entityManager->isOpen() ? 'true' : 'false'
-                ));
-            }
+            LogHelper::logf(
+                '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s, entityManagerOpen=%s',
+                $this->enableLogging,
+                $routeName,
+                $env,
+                $e->getMessage(),
+                $this->entityManager->isOpen() ? 'true' : 'false'
+            );
 
             // Re-throw to let the subscriber handle it
             throw $e;
@@ -453,9 +459,7 @@ class PerformanceMetricsService
             $this->repository = $this->entityManager->getRepository(RouteData::class);
             $this->recordRepository = $this->entityManager->getRepository(RouteDataRecord::class);
 
-            if (\function_exists('error_log')) {
-                error_log('[PerformanceBundle] EntityManager reset after being closed');
-            }
+            LogHelper::log('[PerformanceBundle] EntityManager reset after being closed', $this->enableLogging);
         }
     }
 }

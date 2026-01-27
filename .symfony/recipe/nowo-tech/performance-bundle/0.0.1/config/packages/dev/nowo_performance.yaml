@@ -24,7 +24,7 @@ nowo_performance:
     # Track sub-requests in addition to main requests
     # When enabled, performance metrics will be collected for both main requests and sub-requests
     # (e.g., ESI, fragments, includes). Default: false (only main requests are tracked)
-    track_sub_requests: false
+    track_sub_requests: true
 
     # Record metrics asynchronously using Symfony Messenger (requires symfony/messenger)
     # When enabled, metrics are dispatched via message bus instead of direct database writes
@@ -66,6 +66,11 @@ nowo_performance:
         # Enable the record review system
         # When enabled, users can mark records as reviewed and indicate improvements
         enable_review_system: false
+
+        # Enable ranking queries in WebProfiler
+        # When enabled, the WebProfiler will show ranking information (position by request time and query count)
+        # Disable this to reduce database queries on each request
+        enable_ranking_queries: true
 
         # Date format configuration for displaying dates in the dashboard
         date_formats:

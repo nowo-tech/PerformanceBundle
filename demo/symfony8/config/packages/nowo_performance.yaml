@@ -29,7 +29,7 @@ when@dev:
         # Track sub-requests in addition to main requests
         # When enabled, performance metrics will be collected for both main requests and sub-requests
         # (e.g., ESI, fragments, includes). Default: false (only main requests are tracked)
-        track_sub_requests: false
+        track_sub_requests: true
 
         # Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking)
         # Reduces database load for frequently accessed routes by tracking only a percentage of requests
@@ -110,6 +110,16 @@ when@dev:
             # Dashboard will automatically reload data at this interval
             # Useful for monitoring dashboards that need real-time updates
             auto_refresh_interval: 0
+
+            # Enable ranking queries in WebProfiler
+            # When enabled, the WebProfiler will show ranking information (position by request time and query count)
+            # Disable this to reduce database queries on each request (recommended for high-traffic production)
+            enable_ranking_queries: true
+
+        # Enable or disable bundle logging
+        # When disabled, no error_log() calls will be made by the bundle
+        # Recommended to disable in production for better performance and reduced log noise
+        enable_logging: true
 
         # Performance thresholds for warning and critical levels
         # Used for visual indicators in dashboard (color coding) and automatic notifications

@@ -1,43 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Metrics Dashboard</title>
-    {% if template == 'bootstrap' %}
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <style>
-            body {
-                background-color: #f8f9fa;
-            }
-            .card {
-                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-                border: 1px solid rgba(0, 0, 0, 0.125);
-            }
-            code {
-                background-color: #f8f9fa;
-                padding: 0.2rem 0.4rem;
-                border-radius: 0.25rem;
-                font-size: 0.875em;
-            }
-        </style>
-    {% else %}
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-            code {
-                background-color: #f3f4f6;
-                padding: 0.2rem 0.4rem;
-                border-radius: 0.25rem;
-                font-size: 0.875em;
-            }
-        </style>
-    {% endif %}
-</head>
-<body>
+{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
-{% block body %}
-{% if template == 'bootstrap' %}
-    <div class="container-fluid py-4">
+{% block title %}Performance Metrics Dashboard{% endblock %}
+
+{% block content %}
+    {# Header Section #}
+    {% if template == 'bootstrap' %}
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
@@ -46,6 +13,10 @@
                         <p class="text-muted">{{ 'dashboard.subtitle'|trans({}, 'nowo_performance') }}</p>
                     </div>
                     <div class="d-flex gap-2">
+                        <a href="{{ path('nowo_performance.diagnose') }}" class="btn btn-warning text-dark">
+                            {{ performance_icon('wrench', {class: 'me-1'}, '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><path d="M.102 2.223A3.004 3.004 0 0 0 3.78 5.897l6.341 6.252A3.003 3.003 0 0 0 13 16a3 3 0 0 0 1.102-5.777l-6.34-6.252A3.003 3.003 0 0 0 7 1a3 3 0 0 0-2.898 1.223zM7 2a2 2 0 0 1 1.897 1.383l-.384.19a1 1 0 0 0-.434.434l-.19.384A2 2 0 0 1 5.618 6.5l-.19-.384a1 1 0 0 0-.434-.434l-.384-.19A2 2 0 0 1 7 2zM13 7a2 2 0 0 1-1.383 1.897l-.19.384a1 1 0 0 0-.434.434l-.384.19A2 2 0 0 1 9.5 10.382l.19.384a1 1 0 0 0 .434.434l.384.19A2 2 0 0 1 13 14a2 2 0 0 1-1.897-1.383l.384-.19a1 1 0 0 0 .434-.434l.19-.384A2 2 0 0 1 13 7z"/></svg>') }}
+                            Diagnose
+                        </a>
                         <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="btn btn-info text-white">
                             {{ performance_icon('chart-bar', {class: 'me-1'}, '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><path d="M4 11a1 1 0 1 1 2 0v1a1 1 0 1 1-2 0v-1zm6-4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V7zM7 9a1 1 0 0 1 2 0v3a1 1 0 1 1-2 0V9z"/><path d="M9 1.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zM5 1.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zM3.5 3A.5.5 0 0 0 3 3.5v.5A.5.5 0 0 0 3.5 4h.5a.5.5 0 0 0 .5-.5v-.5A.5.5 0 0 0 4 3h-.5zm9 0a.5.5 0 0 0-.5.5v.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5v-.5a.5.5 0 0 0-.5-.5h-.5zM4 4.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-7z"/></svg>') }}
                             {{ 'dashboard.advanced_statistics'|trans({}, 'nowo_performance') }}
@@ -70,23 +41,44 @@
                 </div>
             </div>
         </div>
-
-        {# Flash messages #}
-        {% for message in app.flashes('success') %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    {% else %}
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ 'dashboard.title'|trans({}, 'nowo_performance') }}</h1>
+                <p class="mt-2 text-sm text-gray-600">{{ 'dashboard.subtitle'|trans({}, 'nowo_performance') }}</p>
             </div>
-        {% endfor %}
-        {% for message in app.flashes('error') %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="flex space-x-2">
+                <a href="{{ path('nowo_performance.diagnose') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    {{ performance_icon('wrench', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>') }}
+                    Diagnose
+                </a>
+                <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    {{ performance_icon('chart-bar', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>') }}
+                    {{ 'dashboard.advanced_statistics'|trans({}, 'nowo_performance') }}
+                </a>
+                <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    {{ performance_icon('arrow-down-tray', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>') }}
+                    {{ 'dashboard.export_csv'|trans({}, 'nowo_performance') }}
+                </a>
+                <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
+                    {{ performance_icon('document-text', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>') }}
+                    {{ 'dashboard.export_json'|trans({}, 'nowo_performance') }}
+                </a>
+                <form method="post" action="{{ path('nowo_performance.clear') }}" onsubmit="return confirm('{{ 'confirmations.clear_all_records'|trans({}, 'nowo_performance') }}');" class="inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('clear_performance_data') }}">
+                    <input type="hidden" name="env" value="{{ environment }}">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        {{ performance_icon('trash', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>') }}
+                        {{ 'dashboard.clear_all_records'|trans({}, 'nowo_performance') }}
+                    </button>
+                </form>
             </div>
-        {% endfor %}
+        </div>
+    {% endif %}
 
-        {# Show missing dependencies warning #}
-        {% if missingDependencies is not empty %}
+    {# Show missing dependencies warning #}
+    {% if missingDependencies is not empty %}
+        {% if template == 'bootstrap' %}
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -105,183 +97,82 @@
                     </div>
                 </div>
             </div>
-        {% endif %}
-
-        {% if useComponents and component is defined %}
-            {# Statistics Component - Using Symfony UX Twig Component #}
-            {{ component('nowo_performance.Statistics', { stats: stats, template: template }) }}
-
-            {# Filters Component - Using Symfony UX Twig Component #}
-            {{ component('nowo_performance.Filters', { form: form, template: template }) }}
-
-            {# Charts Component - Using Symfony UX Twig Component #}
-            {{ component('nowo_performance.Charts', { 
-                environment: environment, 
-                currentRoute: currentRoute, 
-                    chartDataUrl: path('nowo_performance.api.chart_data'),
-                template: template 
-            }) }}
-
-            {# Routes Table Component - Using Symfony UX Twig Component #}
-            {{ component('nowo_performance.RoutesTable', { 
-                routes: routes, 
-                template: template,
-                thresholds: thresholds|default({}),
-                enableRecordManagement: enableRecordManagement,
-                enableReviewSystem: enableReviewSystem,
-                reviewForms: reviewForms|default({})
-            }) }}
         {% else %}
-            {# Fallback to includes if components are not available #}
-            {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ template ~ '.html.twig' %}
-
-            {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ template ~ '.html.twig' %}
-
-            {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ template ~ '.html.twig' %}
-
-            {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ template ~ '.html.twig' with {
-                thresholds: thresholds|default({}),
-                enableRecordManagement: enableRecordManagement,
-                enableReviewSystem: enableReviewSystem,
-                reviewForms: reviewForms|default({})
-            } %}
+            <div class="mb-8 rounded-md bg-yellow-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        {{ performance_icon('exclamation-triangle', {class: 'h-5 w-5 text-yellow-400'}, '<svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>') }}
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="text-sm font-medium text-yellow-800">Optional Dependencies Missing</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <p class="mb-2">Some features are using fallback mode. For better performance, consider installing:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                {% for dep in missingDependencies %}
+                                    <li>
+                                        <strong>{{ dep.feature }}:</strong> {{ dep.message }}
+                                        <br>
+                                        <code class="bg-yellow-100 px-2 py-1 rounded text-xs">{{ dep.install_command }}</code>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         {% endif %}
-        
-        {# Include dependency modal #}
-        {% include '@NowoPerformanceBundle/Performance/components/_dependency_modal.html.twig' with {template: template} %}
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {% endif %}
+
+    {# Components Section - Shared for both templates #}
+    {% if useComponents and component is defined %}
+        {# Statistics Component - Using Symfony UX Twig Component #}
+        {{ component('nowo_performance.Statistics', { stats: stats, template: template }) }}
+
+        {# Filters Component - Using Symfony UX Twig Component #}
+        {{ component('nowo_performance.Filters', { form: form, template: template }) }}
+
+        {# Charts Component - Using Symfony UX Twig Component #}
+        {{ component('nowo_performance.Charts', { 
+            environment: environment, 
+            currentRoute: currentRoute, 
+            chartDataUrl: path('nowo_performance.api.chart_data'),
+            template: template 
+        }) }}
+
+        {# Routes Table Component - Using Symfony UX Twig Component #}
+        {{ component('nowo_performance.RoutesTable', { 
+            routes: routes, 
+            template: template,
+            thresholds: thresholds|default({}),
+            enableRecordManagement: enableRecordManagement,
+            enableReviewSystem: enableReviewSystem,
+            reviewForms: reviewForms|default({})
+        }) }}
+    {% else %}
+        {# Fallback to includes if components are not available #}
+        {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ template ~ '.html.twig' %}
+
+        {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ template ~ '.html.twig' %}
+
+        {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ template ~ '.html.twig' %}
+
+        {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ template ~ '.html.twig' with {
+            thresholds: thresholds|default({}),
+            enableRecordManagement: enableRecordManagement,
+            enableReviewSystem: enableReviewSystem,
+            reviewForms: reviewForms|default({})
+        } %}
+    {% endif %}
+    
+    {# Include dependency modal #}
+    {% include '@NowoPerformanceBundle/Performance/components/_dependency_modal.html.twig' with {template: template} %}
+{% endblock %}
+
+{% block scripts_extra %}
     <script>
         // Make missingDependencies available to JavaScript
         window.missingDependencies = {{ missingDependencies|json_encode|raw }};
     </script>
-{% else %}
-    <div class="min-h-screen bg-gray-50 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mb-8 flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">{{ 'dashboard.title'|trans({}, 'nowo_performance') }}</h1>
-                    <p class="mt-2 text-sm text-gray-600">{{ 'dashboard.subtitle'|trans({}, 'nowo_performance') }}</p>
-                </div>
-                <div class="flex space-x-2">
-                    <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        {{ performance_icon('chart-bar', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>') }}
-                        {{ 'dashboard.advanced_statistics'|trans({}, 'nowo_performance') }}
-                    </a>
-                    <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        {{ performance_icon('arrow-down-tray', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>') }}
-                        {{ 'dashboard.export_csv'|trans({}, 'nowo_performance') }}
-                    </a>
-                    <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                        {{ performance_icon('document-text', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>') }}
-                        {{ 'dashboard.export_json'|trans({}, 'nowo_performance') }}
-                    </a>
-                    <form method="post" action="{{ path('nowo_performance.clear') }}" onsubmit="return confirm('{{ 'confirmations.clear_all_records'|trans({}, 'nowo_performance') }}');" class="inline">
-                        <input type="hidden" name="_token" value="{{ csrf_token('clear_performance_data') }}">
-                        <input type="hidden" name="env" value="{{ environment }}">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                            {{ performance_icon('trash', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>') }}
-                            {{ 'dashboard.clear_all_records'|trans({}, 'nowo_performance') }}
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {# Flash messages #}
-            {% for message in app.flashes('success') %}
-                <div class="mb-4 rounded-md bg-green-50 p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            {{ performance_icon('check-circle', {class: 'h-5 w-5 text-green-400'}, '<svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>') }}
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-green-800">{{ message }}</p>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-            {% for message in app.flashes('error') %}
-                <div class="mb-4 rounded-md bg-red-50 p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            {{ performance_icon('x-circle', {class: 'h-5 w-5 text-red-400'}, '<svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>') }}
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-red-800">{{ message }}</p>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-
-            {# Show missing dependencies warning #}
-            {% if missingDependencies is not empty %}
-                <div class="mb-8 rounded-md bg-yellow-50 p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            {{ performance_icon('exclamation-triangle', {class: 'h-5 w-5 text-yellow-400'}, '<svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>') }}
-                        </div>
-                        <div class="ml-3 flex-1">
-                            <h3 class="text-sm font-medium text-yellow-800">Optional Dependencies Missing</h3>
-                            <div class="mt-2 text-sm text-yellow-700">
-                                <p class="mb-2">Some features are using fallback mode. For better performance, consider installing:</p>
-                                <ul class="list-disc list-inside space-y-1">
-                                    {% for dep in missingDependencies %}
-                                        <li>
-                                            <strong>{{ dep.feature }}:</strong> {{ dep.message }}
-                                            <br>
-                                            <code class="bg-yellow-100 px-2 py-1 rounded text-xs">{{ dep.install_command }}</code>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if useComponents and component is defined %}
-                {# Statistics Component - Using Symfony UX Twig Component #}
-                {{ component('nowo_performance.Statistics', { stats: stats, template: template }) }}
-
-                {# Filters Component - Using Symfony UX Twig Component #}
-                {{ component('nowo_performance.Filters', { form: form, template: template }) }}
-
-                {# Charts Component - Using Symfony UX Twig Component #}
-                {{ component('nowo_performance.Charts', { 
-                    environment: environment, 
-                    currentRoute: currentRoute, 
-                    chartDataUrl: path('nowo_performance.api.chart_data'),
-                    template: template 
-                }) }}
-
-                {# Routes Table Component - Using Symfony UX Twig Component #}
-                {{ component('nowo_performance.RoutesTable', { 
-                    routes: routes, 
-                    template: template,
-                    thresholds: thresholds|default({}),
-                    enableRecordManagement: enableRecordManagement,
-                    enableReviewSystem: enableReviewSystem,
-                    reviewForms: reviewForms|default({})
-                }) }}
-            {% else %}
-                {# Fallback to includes if components are not available #}
-                {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ template ~ '.html.twig' %}
-
-                {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ template ~ '.html.twig' %}
-
-                {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ template ~ '.html.twig' %}
-
-                {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ template ~ '.html.twig' with {
-                    thresholds: thresholds|default({}),
-                    enableRecordManagement: enableRecordManagement,
-                    enableReviewSystem: enableReviewSystem,
-                    reviewForms: reviewForms|default({})
-                } %}
-            {% endif %}
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     {% if autoRefreshInterval > 0 %}
     <script>
         // Auto-refresh dashboard
@@ -335,7 +226,4 @@
         })();
     </script>
     {% endif %}
-{% endif %}
 {% endblock %}
-</body>
-</html>

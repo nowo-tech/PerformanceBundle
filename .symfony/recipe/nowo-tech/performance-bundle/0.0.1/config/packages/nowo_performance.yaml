@@ -29,7 +29,7 @@ nowo_performance:
     # Track sub-requests in addition to main requests
     # When enabled, performance metrics will be collected for both main requests and sub-requests
     # (e.g., ESI, fragments, includes). Default: false (only main requests are tracked)
-    track_sub_requests: false
+    track_sub_requests: true
 
     # Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking)
     # Reduces database load for frequently accessed routes by tracking only a percentage of requests
@@ -54,6 +54,12 @@ nowo_performance:
     # Note: Enabling this will increase database storage requirements
     enable_access_records: false
 
+    # Enable or disable bundle logging
+    # When disabled, no error_log() calls will be made by the bundle
+    # Recommended to disable in production for better performance and reduced log noise
+    # Default: true (enabled)
+    enable_logging: true
+
     # List of route names to ignore (not tracked)
     # Routes in this list will not have their performance metrics recorded
     ignore_routes:
@@ -64,7 +70,19 @@ nowo_performance:
     # HTTP status codes to track and calculate ratios for
     # Only the configured status codes will be tracked and displayed in the dashboard
     # The bundle automatically increments the count for each status code when a response is recorded
-    track_status_codes: [200, 404, 500, 503]
+    track_status_codes: [
+        200, # OK
+        301, # Moved Permanently
+        302, # Found
+        401, # Unauthorized
+        403, # Forbidden
+        404, # Not Found
+        429, # Too Many Requests
+        500, # Internal Server Error
+        502, # Bad Gateway
+        503, # Service Unavailable
+        504 # Gateway Timeout
+    ]
 
     # Performance thresholds for warning and critical levels
     # Used for visual indicators in dashboard (color coding) and automatic notifications
@@ -125,6 +143,12 @@ nowo_performance:
         # Dashboard will automatically reload data at this interval
         # Useful for monitoring dashboards that need real-time updates
         auto_refresh_interval: 0
+
+        # Enable ranking queries in WebProfiler
+        # When enabled, the WebProfiler will show ranking information (position by request time and query count)
+        # Disable this to reduce database queries on each request (recommended for high-traffic production)
+        # Default: true (enabled)
+        enable_ranking_queries: true
 
     # Performance alert notifications
     # Configure notifications to be sent when performance thresholds are exceeded

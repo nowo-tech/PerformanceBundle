@@ -240,19 +240,25 @@
                                                                     </div>
                                                                     <div class="modal-body">
                                                                         <div class="mb-3">
-                                                                            {{ form_label(reviewForm.queries_improved) }}
-                                                                            {{ form_widget(reviewForm.queries_improved) }}
-                                                                            {{ form_errors(reviewForm.queries_improved) }}
+                                                                            {% if not reviewForm.queries_improved.isRendered %}
+                                                                                {{ form_label(reviewForm.queries_improved) }}
+                                                                                {{ form_widget(reviewForm.queries_improved) }}
+                                                                                {{ form_errors(reviewForm.queries_improved) }}
+                                                                            {% endif %}
                                                                         </div>
                                                                         <div class="mb-3">
-                                                                            {{ form_label(reviewForm.time_improved) }}
-                                                                            {{ form_widget(reviewForm.time_improved) }}
-                                                                            {{ form_errors(reviewForm.time_improved) }}
+                                                                            {% if not reviewForm.time_improved.isRendered %}
+                                                                                {{ form_label(reviewForm.time_improved) }}
+                                                                                {{ form_widget(reviewForm.time_improved) }}
+                                                                                {{ form_errors(reviewForm.time_improved) }}
+                                                                            {% endif %}
                                                                         </div>
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'routes_table.cancel'|trans({}, 'nowo_performance') }}</button>
-                                                                        {{ form_widget(reviewForm.submit) }}
+                                                                        {% if not reviewForm.submit.isRendered %}
+                                                                            {{ form_widget(reviewForm.submit) }}
+                                                                        {% endif %}
                                                                     </div>
                                                                 {{ form_end(reviewForm) }}
                                                             </div>

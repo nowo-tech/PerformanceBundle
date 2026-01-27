@@ -14,29 +14,39 @@
                     {{ form_start(form, {'action': path('nowo_performance.index'), 'attr': {'class': 'row g-3'}}) }}
                         {# Basic Filters #}
                         <div class="col-md-3">
-                            {{ form_label(form.env) }}
-                            {{ form_widget(form.env) }}
-                            {{ form_errors(form.env) }}
+                            {% if not form.env.isRendered %}
+                                {{ form_label(form.env) }}
+                                {{ form_widget(form.env) }}
+                                {{ form_errors(form.env) }}
+                            {% endif %}
                         </div>
                         <div class="col-md-3">
-                            {{ form_label(form.route) }}
-                            {{ form_widget(form.route, {'attr': {'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
-                            {{ form_errors(form.route) }}
+                            {% if not form.route.isRendered %}
+                                {{ form_label(form.route) }}
+                                {{ form_widget(form.route, {'attr': {'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
+                                {{ form_errors(form.route) }}
+                            {% endif %}
                         </div>
                         <div class="col-md-2">
-                            {{ form_label(form.sort) }}
-                            {{ form_widget(form.sort) }}
-                            {{ form_errors(form.sort) }}
+                            {% if not form.sort.isRendered %}
+                                {{ form_label(form.sort) }}
+                                {{ form_widget(form.sort) }}
+                                {{ form_errors(form.sort) }}
+                            {% endif %}
                         </div>
                         <div class="col-md-2">
-                            {{ form_label(form.order) }}
-                            {{ form_widget(form.order) }}
-                            {{ form_errors(form.order) }}
+                            {% if not form.order.isRendered %}
+                                {{ form_label(form.order) }}
+                                {{ form_widget(form.order) }}
+                                {{ form_errors(form.order) }}
+                            {% endif %}
                         </div>
                         <div class="col-md-2">
-                            {{ form_label(form.limit) }}
-                            {{ form_widget(form.limit) }}
-                            {{ form_errors(form.limit) }}
+                            {% if not form.limit.isRendered %}
+                                {{ form_label(form.limit) }}
+                                {{ form_widget(form.limit) }}
+                                {{ form_errors(form.limit) }}
+                            {% endif %}
                         </div>
 
                         {# Advanced Filters (Collapsible) #}
@@ -46,42 +56,56 @@
                                 <h6 class="mb-3">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h6>
                             </div>
                             <div class="col-md-3">
-                                {{ form_label(form.min_request_time) }}
-                                {{ form_widget(form.min_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
-                                {{ form_errors(form.min_request_time) }}
+                                {% if not form.min_request_time.isRendered %}
+                                    {{ form_label(form.min_request_time) }}
+                                    {{ form_widget(form.min_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_errors(form.min_request_time) }}
+                                {% endif %}
                             </div>
                             <div class="col-md-3">
-                                {{ form_label(form.max_request_time) }}
-                                {{ form_widget(form.max_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
-                                {{ form_errors(form.max_request_time) }}
+                                {% if not form.max_request_time.isRendered %}
+                                    {{ form_label(form.max_request_time) }}
+                                    {{ form_widget(form.max_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_errors(form.max_request_time) }}
+                                {% endif %}
                             </div>
                             <div class="col-md-3">
-                                {{ form_label(form.min_query_count) }}
-                                {{ form_widget(form.min_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
-                                {{ form_errors(form.min_query_count) }}
+                                {% if not form.min_query_count.isRendered %}
+                                    {{ form_label(form.min_query_count) }}
+                                    {{ form_widget(form.min_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_errors(form.min_query_count) }}
+                                {% endif %}
                             </div>
                             <div class="col-md-3">
-                                {{ form_label(form.max_query_count) }}
-                                {{ form_widget(form.max_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
-                                {{ form_errors(form.max_query_count) }}
+                                {% if not form.max_query_count.isRendered %}
+                                    {{ form_label(form.max_query_count) }}
+                                    {{ form_widget(form.max_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_errors(form.max_query_count) }}
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
-                                {{ form_label(form.date_from) }}
-                                {{ form_widget(form.date_from) }}
-                                {{ form_errors(form.date_from) }}
+                                {% if not form.date_from.isRendered %}
+                                    {{ form_label(form.date_from) }}
+                                    {{ form_widget(form.date_from) }}
+                                    {{ form_errors(form.date_from) }}
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
-                                {{ form_label(form.date_to) }}
-                                {{ form_widget(form.date_to) }}
-                                {{ form_errors(form.date_to) }}
+                                {% if not form.date_to.isRendered %}
+                                    {{ form_label(form.date_to) }}
+                                    {{ form_widget(form.date_to) }}
+                                    {{ form_errors(form.date_to) }}
+                                {% endif %}
                             </div>
                         </div>
 
                         <div class="col-12">
-                            {{ form_widget(form.submit) }}
+                            {% if not form.submit.isRendered %}
+                                {{ form_widget(form.submit) }}
+                            {% endif %}
                             <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">{{ 'filters.reset'|trans({}, 'nowo_performance') }}</a>
                         </div>
-                    {{ form_end(form) }}
+                    {{ form_end(form, {'render_rest': false}) }}
                 </div>
             </div>
         </div>
@@ -138,39 +162,49 @@
                 {# Basic Filters #}
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                     <div>
-                        {{ form_label(form.env, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                        <div class="mt-1">
-                            {{ form_widget(form.env, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                        </div>
-                        {{ form_errors(form.env) }}
+                        {% if not form.env.isRendered %}
+                            {{ form_label(form.env, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.env, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                            </div>
+                            {{ form_errors(form.env) }}
+                        {% endif %}
                     </div>
                     <div>
-                        {{ form_label(form.route, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                        <div class="mt-1">
-                            {{ form_widget(form.route, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
-                        </div>
-                        {{ form_errors(form.route) }}
+                        {% if not form.route.isRendered %}
+                            {{ form_label(form.route, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.route, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
+                            </div>
+                            {{ form_errors(form.route) }}
+                        {% endif %}
                     </div>
                     <div>
-                        {{ form_label(form.sort, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                        <div class="mt-1">
-                            {{ form_widget(form.sort, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                        </div>
-                        {{ form_errors(form.sort) }}
+                        {% if not form.sort.isRendered %}
+                            {{ form_label(form.sort, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.sort, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                            </div>
+                            {{ form_errors(form.sort) }}
+                        {% endif %}
                     </div>
                     <div>
-                        {{ form_label(form.order, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                        <div class="mt-1">
-                            {{ form_widget(form.order, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                        </div>
-                        {{ form_errors(form.order) }}
+                        {% if not form.order.isRendered %}
+                            {{ form_label(form.order, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.order, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                            </div>
+                            {{ form_errors(form.order) }}
+                        {% endif %}
                     </div>
                     <div>
-                        {{ form_label(form.limit, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                        <div class="mt-1">
-                            {{ form_widget(form.limit, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                        </div>
-                        {{ form_errors(form.limit) }}
+                        {% if not form.limit.isRendered %}
+                            {{ form_label(form.limit, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                            <div class="mt-1">
+                                {{ form_widget(form.limit, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                            </div>
+                            {{ form_errors(form.limit) }}
+                        {% endif %}
                     </div>
                 </div>
 
@@ -179,57 +213,71 @@
                     <h4 class="text-md font-semibold text-gray-900 mb-4">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h4>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
-                            {{ form_label(form.min_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            <div class="mt-1">
-                                {{ form_widget(form.min_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
-                            </div>
-                            {{ form_errors(form.min_request_time) }}
+                            {% if not form.min_request_time.isRendered %}
+                                {{ form_label(form.min_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                                <div class="mt-1">
+                                    {{ form_widget(form.min_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                </div>
+                                {{ form_errors(form.min_request_time) }}
+                            {% endif %}
                         </div>
                         <div>
-                            {{ form_label(form.max_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            <div class="mt-1">
-                                {{ form_widget(form.max_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
-                            </div>
-                            {{ form_errors(form.max_request_time) }}
+                            {% if not form.max_request_time.isRendered %}
+                                {{ form_label(form.max_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                                <div class="mt-1">
+                                    {{ form_widget(form.max_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                </div>
+                                {{ form_errors(form.max_request_time) }}
+                            {% endif %}
                         </div>
                         <div>
-                            {{ form_label(form.min_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            <div class="mt-1">
-                                {{ form_widget(form.min_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
-                            </div>
-                            {{ form_errors(form.min_query_count) }}
+                            {% if not form.min_query_count.isRendered %}
+                                {{ form_label(form.min_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                                <div class="mt-1">
+                                    {{ form_widget(form.min_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                </div>
+                                {{ form_errors(form.min_query_count) }}
+                            {% endif %}
                         </div>
                         <div>
-                            {{ form_label(form.max_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            <div class="mt-1">
-                                {{ form_widget(form.max_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
-                            </div>
-                            {{ form_errors(form.max_query_count) }}
+                            {% if not form.max_query_count.isRendered %}
+                                {{ form_label(form.max_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                                <div class="mt-1">
+                                    {{ form_widget(form.max_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                </div>
+                                {{ form_errors(form.max_query_count) }}
+                            {% endif %}
                         </div>
                         <div>
-                            {{ form_label(form.date_from, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            <div class="mt-1">
-                                {{ form_widget(form.date_from, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                            </div>
-                            {{ form_errors(form.date_from) }}
+                            {% if not form.date_from.isRendered %}
+                                {{ form_label(form.date_from, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                                <div class="mt-1">
+                                    {{ form_widget(form.date_from, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                                </div>
+                                {{ form_errors(form.date_from) }}
+                            {% endif %}
                         </div>
                         <div>
-                            {{ form_label(form.date_to, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            <div class="mt-1">
-                                {{ form_widget(form.date_to, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                            </div>
-                            {{ form_errors(form.date_to) }}
+                            {% if not form.date_to.isRendered %}
+                                {{ form_label(form.date_to, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                                <div class="mt-1">
+                                    {{ form_widget(form.date_to, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                                </div>
+                                {{ form_errors(form.date_to) }}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
                 <div class="flex space-x-3">
-                    {{ form_widget(form.submit, {'attr': {'class': 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'}}) }}
+                    {% if not form.submit.isRendered %}
+                        {{ form_widget(form.submit, {'attr': {'class': 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'}}) }}
+                    {% endif %}
                     <a href="{{ path('nowo_performance.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         {{ 'filters.reset'|trans({}, 'nowo_performance') }}
                     </a>
                 </div>
-            {{ form_end(form) }}
+            {{ form_end(form, {'render_rest': false}) }}
         </div>
     </div>
 

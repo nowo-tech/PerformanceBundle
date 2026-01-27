@@ -2,6 +2,57 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 1.0.3 (2026-01-27)
+
+### Bug Fix
+
+This version fixes a critical error that occurred when trying to get the driver name from a connection wrapped with middleware.
+
+#### Changes
+
+- **Driver name detection fix**: Fixed error when getting driver name from wrapped drivers
+  - Resolves "Attempted to call an undefined method named 'getName' of class 'AbstractDriverMiddleware'" error
+  - Created `getDriverName()` helper method that handles drivers wrapped with middleware
+  - Uses reflection to access the underlying driver when wrapped
+  - Falls back to platform class name inference when direct methods are unavailable
+  - Fixes error in `nowo:performance:diagnose` command when using query tracking middleware
+
+#### What This Means
+
+- **Bug fix**: Diagnose command now works correctly with query tracking middleware enabled
+- **Better compatibility**: Works with all DBAL versions and middleware configurations
+- **No breaking changes**: All changes are internal and backward compatible
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Verify installation**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   ```
+   The diagnose command should now work without errors, even when query tracking middleware is enabled.
+
+#### Troubleshooting
+
+**Q: I still see the "getName()" error in diagnose command**  
+A: Make sure you're using v1.0.3 or higher. Clear cache and try again:
+   ```bash
+   php bin/console cache:clear
+   php bin/console nowo:performance:diagnose
+   ```
+
+**Q: The diagnose command shows "unknown" for driver name**  
+A: This is normal if the driver cannot be detected. The bundle will try multiple methods to detect the driver name, and if all fail, it will show "unknown" instead of crashing.
+
 ## Upgrading to 1.0.2 (2026-01-27)
 
 ### Bug Fixes and Improvements

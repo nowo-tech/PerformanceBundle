@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-01-27
+
+### Fixed
+- **Driver name detection with middleware** - Fixed error when getting driver name from wrapped drivers
+  - Fixed "Attempted to call an undefined method named 'getName' of class 'AbstractDriverMiddleware'" error
+  - Created `getDriverName()` helper method in `PerformanceController` that handles wrapped drivers
+  - Uses reflection to access underlying driver when wrapped with middleware
+  - Falls back to platform class name inference when direct methods are unavailable
+  - Compatible with all DBAL versions and middleware configurations
+  - Fixes error in diagnose command when driver is wrapped with `QueryTrackingMiddleware`
+
 ## [1.0.2] - 2026-01-27
 
 ### Fixed

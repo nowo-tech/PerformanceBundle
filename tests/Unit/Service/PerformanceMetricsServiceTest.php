@@ -478,7 +478,7 @@ final class PerformanceMetricsServiceTest extends TestCase
 
     public function testRecordMetricsCreatesRouteDataRecordWhenEnabled(): void
     {
-        $service = new PerformanceMetricsService($this->registry, 'default', false, true);
+        $service = new PerformanceMetricsService($this->registry, 'default', false, true, true);
 
         $this->repository
             ->expects($this->once())
@@ -542,6 +542,259 @@ final class PerformanceMetricsServiceTest extends TestCase
             null,
             'GET',
             200,
+            [200, 404, 500, 503]
+        );
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
+    }
+
+    public function testLoggingDisabledDoesNotLogMessages(): void
+    {
+        // Create service with logging disabled
+        $service = new PerformanceMetricsService($this->registry, 'default', false, false, false);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(\Nowo\PerformanceBundle\Entity\RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        // Should work normally even with logging disabled
+        $result = $service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2);
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('is_new', $result);
+        $this->assertArrayHasKey('was_updated', $result);
+    }
+
+    public function testLoggingEnabledLogsMessages(): void
+    {
+        // Create service with logging enabled (default)
+        $service = new PerformanceMetricsService($this->registry, 'default', false, false, true);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(\Nowo\PerformanceBundle\Entity\RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        // Should work normally with logging enabled
+        $result = $service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2);
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('is_new', $result);
+        $this->assertArrayHasKey('was_updated', $result);
+    }
+
+    public function testRecordMetricsWithClosedEntityManagerResetsManager(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->exactly(2))
+            ->method('isOpen')
+            ->willReturnOnConsecutiveCalls(false, true);
+
+        $this->registry
+            ->expects($this->once())
+            ->method('resetManager')
+            ->with('default');
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $result = $this->service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2);
+        $this->assertIsArray($result);
+    }
+
+    public function testRecordMetricsWithAsyncModeReturnsEarly(): void
+    {
+        $messageBus = $this->createMock(\Symfony\Component\Messenger\MessageBusInterface::class);
+        $service = new PerformanceMetricsService($this->registry, 'default', true, false, true);
+        $service->setMessageBus($messageBus);
+
+        $messageBus
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with($this->isInstanceOf(\Nowo\PerformanceBundle\Message\RecordMetricsMessage::class));
+
+        $this->repository
+            ->expects($this->never())
+            ->method('findByRouteAndEnv');
+
+        $result = $service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2);
+        
+        $this->assertIsArray($result);
+        $this->assertFalse($result['is_new']);
+        $this->assertFalse($result['was_updated']);
+    }
+
+    public function testRecordMetricsWithCacheServiceInvalidatesCache(): void
+    {
+        $cacheService = $this->createMock(\Nowo\PerformanceBundle\Service\PerformanceCacheService::class);
+        $this->service->setCacheService($cacheService);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('isOpen')
+            ->willReturn(true);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $cacheService
+            ->expects($this->once())
+            ->method('invalidateStatistics')
+            ->with('dev');
+
+        $result = $this->service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2);
+        $this->assertIsArray($result);
+    }
+
+    public function testRecordMetricsWithAccessRecordsEnabledCreatesRecord(): void
+    {
+        $service = new PerformanceMetricsService($this->registry, 'default', false, true, true);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->exactly(2))
+            ->method('persist')
+            ->with($this->callback(function ($entity) {
+                return $entity instanceof RouteData || $entity instanceof \Nowo\PerformanceBundle\Entity\RouteDataRecord;
+            }));
+
+        $this->entityManager
+            ->expects($this->exactly(2))
+            ->method('flush');
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('isOpen')
+            ->willReturn(true);
+
+        $result = $service->recordMetrics('app_home', 'dev', 0.5, 10, 0.2, null, null, 'GET', 200, [200, 404, 500, 503]);
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
+    }
+
+    public function testRecordMetricsWithStatusCodeTracking(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->callback(function ($routeData) {
+                return $routeData instanceof RouteData;
+            }));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('isOpen')
+            ->willReturn(true);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $result = $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            200,
+            [200, 404, 500, 503]
+        );
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
+    }
+
+    public function testRecordMetricsWithStatusCodeNotInTrackList(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('isOpen')
+            ->willReturn(true);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        // Status code 201 is not in track list [200, 404, 500, 503]
+        $result = $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'POST',
+            201,
             [200, 404, 500, 503]
         );
 
