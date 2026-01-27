@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.0.7] - 2025-01-27
+
+### Added
+- **Environment information in PerformanceDataCollector** - Added environment configuration and current environment display
+  - Shows configured environments (where tracking is enabled) in collector toolbar and panel
+  - Displays current system environment with status indicator
+  - Visual indicators: green if current environment is enabled, red if disabled
+  - Helps diagnose why tracking might be disabled (environment not in allowed list)
+  - Information available in both toolbar tooltip and detailed panel view
+
+### Fixed
+- **Environment detection in PerformanceMetricsSubscriber** - Improved environment detection robustness
+  - Enhanced environment detection to try multiple methods: kernel, request server, `$_SERVER`, `$_ENV`
+  - Added debug logging to show which method was used for environment detection
+  - More reliable fallback chain to ensure environment is always detected
+  - Fixes issues when kernel is not available or `APP_ENV` is not in expected location
+- **PerformanceDataCollector visibility** - Collector now always visible in profiler toolbar
+  - Collector displays even when disabled to provide status information
+  - Shows "Disabled" status when tracking is disabled
+  - Displays reason for being disabled (bundle disabled or environment not tracked)
+  - Still shows table status even when disabled
+  - Fixes issue where collector was completely hidden when disabled
+
+### Changed
+- **COMPATIBILITY.md documentation** - Updated with discovered compatibility information
+  - Added detailed information about DoctrineBundle 2.17.1 not supporting YAML middleware config
+  - Expanded middleware registration section with universal approach explanation
+  - Added troubleshooting section with common issues and solutions
+  - Updated compatibility matrix with tested versions (2.17.1)
+  - Documented reflection-based middleware application approach
+  - Added error messages and solutions for YAML configuration issues
+
 ## [0.0.6] - 2025-01-27
 
 ### Added

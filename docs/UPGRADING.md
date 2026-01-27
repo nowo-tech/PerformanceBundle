@@ -2,6 +2,78 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 0.0.7 (2025-01-27)
+
+### Enhanced Environment Detection and Collector Display
+
+This version improves environment detection and adds environment information to the collector for better diagnostics.
+
+#### Changes
+
+- **Environment detection improvements**: Enhanced robustness of environment detection
+  - Tries multiple methods to detect environment: kernel, request server, `$_SERVER`, `$_ENV`
+  - Added debug logging to show which method was used
+  - More reliable fallback chain ensures environment is always detected
+- **Collector always visible**: Collector now displays even when disabled
+  - Shows status information when tracking is disabled
+  - Displays reason for being disabled
+  - Helps diagnose configuration issues
+- **Environment information in collector**: Added environment configuration display
+  - Shows configured environments (where tracking is enabled)
+  - Displays current system environment with status indicator
+  - Visual indicators show if current environment is enabled or disabled
+
+#### What This Means
+
+- **Better diagnostics**: You can now see why tracking might be disabled
+- **Environment visibility**: Clear indication of configured vs. current environment
+- **No breaking changes**: All changes are additive and backward compatible
+- **No configuration changes required**: No changes to bundle configuration needed
+- **No database changes required**: No schema changes
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Verify installation**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   ```
+
+4. **Check collector in Web Profiler**:
+   - Open any page in development environment
+   - Check the Performance collector in the Web Profiler toolbar
+   - You should now see:
+     - Configured environments (e.g., `dev, test, stage`)
+     - Current environment (e.g., `dev`)
+     - Status indicator showing if current environment is enabled
+
+#### Troubleshooting
+
+**Issue**: Collector shows "Tracking Disabled" even though `APP_ENV=dev`
+
+**Solution**: 
+1. Check the collector panel to see:
+   - Configured environments (should include your current environment)
+   - Current environment (should match `APP_ENV`)
+2. If current environment is not in the configured list, add it to `nowo_performance.environments` in your configuration
+3. Check the debug logs for environment detection messages:
+   ```
+   [PerformanceBundle] Environment detection: kernel=dev, detected_env=dev, allowed=dev, test, stage
+   ```
+
+**Issue**: Environment detection shows "null" for kernel
+
+**Solution**: This is normal if the kernel is not injected. The bundle will try other methods (`$_SERVER['APP_ENV']`, `$_ENV['APP_ENV']`) automatically.
+
 ## Upgrading to 0.0.6 (2025-01-27)
 
 ### Test Coverage Improvement
