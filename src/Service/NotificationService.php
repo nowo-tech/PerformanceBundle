@@ -22,19 +22,20 @@ class NotificationService
      * Constructor.
      *
      * @param iterable<NotificationChannelInterface> $channels Notification channels
-     * @param bool $enabled Whether notifications are enabled
+     * @param bool                                   $enabled  Whether notifications are enabled
      */
     public function __construct(
         private readonly iterable $channels = [],
-        private readonly bool $enabled = false
+        private readonly bool $enabled = false,
     ) {
     }
 
     /**
      * Send a performance alert to all enabled channels.
      *
-     * @param PerformanceAlert $alert The alert to send
-     * @param RouteData $routeData The route data that triggered the alert
+     * @param PerformanceAlert $alert     The alert to send
+     * @param RouteData        $routeData The route data that triggered the alert
+     *
      * @return array<string, bool> Results for each channel (channel name => success)
      */
     public function sendAlert(PerformanceAlert $alert, RouteData $routeData): array
@@ -50,7 +51,7 @@ class NotificationService
                 try {
                     $results[$channel->getName()] = $channel->send($alert, $routeData);
                 } catch (\Exception $e) {
-                    error_log(sprintf(
+                    error_log(\sprintf(
                         'Failed to send notification via channel %s: %s',
                         $channel->getName(),
                         $e->getMessage()
@@ -65,8 +66,6 @@ class NotificationService
 
     /**
      * Check if notifications are enabled.
-     *
-     * @return bool
      */
     public function isEnabled(): bool
     {
@@ -86,6 +85,7 @@ class NotificationService
                 $enabled[] = $channel->getName();
             }
         }
+
         return $enabled;
     }
 }

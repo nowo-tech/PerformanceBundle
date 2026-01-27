@@ -58,24 +58,22 @@ final class CreateRecordsTableCommand extends Command
     /**
      * Constructor.
      *
-     * @param ManagerRegistry $registry Doctrine registry
-     * @param string $connectionName The name of the Doctrine connection to use
-     * @param string $mainTableName The configured main table name (to derive records table name)
+     * @param ManagerRegistry $registry       Doctrine registry
+     * @param string          $connectionName The name of the Doctrine connection to use
+     * @param string          $mainTableName  The configured main table name (to derive records table name)
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
         #[Autowire('%nowo_performance.connection%')]
         private readonly string $connectionName,
         #[Autowire('%nowo_performance.table_name%')]
-        private readonly string $mainTableName
+        private readonly string $mainTableName,
     ) {
         parent::__construct();
     }
 
     /**
      * Configure the command options.
-     *
-     * @return void
      */
     protected function configure(): void
     {
@@ -88,6 +86,7 @@ final class CreateRecordsTableCommand extends Command
      * Get schema manager from connection (compatible with DBAL 2.x and 3.x).
      *
      * @param \Doctrine\DBAL\Connection $connection The database connection
+     *
      * @return \Doctrine\DBAL\Schema\AbstractSchemaManager The schema manager
      */
     private function getSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
@@ -101,6 +100,7 @@ final class CreateRecordsTableCommand extends Command
             // @phpstan-ignore-next-line - getSchemaManager() exists in DBAL 2.x but not in type definitions for DBAL 3.x
             /** @var callable $getSchemaManager */
             $getSchemaManager = [$connection, 'getSchemaManager'];
+
             return $getSchemaManager();
         }
         throw new \RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
@@ -109,8 +109,9 @@ final class CreateRecordsTableCommand extends Command
     /**
      * Execute the command.
      *
-     * @param InputInterface $input The input interface
+     * @param InputInterface  $input  The input interface
      * @param OutputInterface $output The output interface
+     *
      * @return int Command exit code
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -121,20 +122,20 @@ final class CreateRecordsTableCommand extends Command
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
-            
+
             // Get the actual table name from entity metadata (after RouteDataRecordTableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
-            
+
             // Get table name from metadata (compatible with different Doctrine versions)
             $actualTableName = method_exists($metadata, 'getTableName')
                 ? $metadata->getTableName()
-                : ($metadata->table['name'] ?? $this->mainTableName . '_records');
-            
+                : ($metadata->table['name'] ?? $this->mainTableName.'_records');
+
             $tableExists = $schemaManager->tablesExist([$actualTableName]);
 
             if ($tableExists && !$input->getOption('force') && !$input->getOption('update')) {
-                $io->warning(sprintf('Table "%s" already exists.', $actualTableName));
+                $io->warning(\sprintf('Table "%s" already exists.', $actualTableName));
                 $io->note('Use --update to add missing columns without losing data.');
                 $io->note('Use --force to drop and recreate the table (WARNING: This will delete all data).');
                 $io->note('Alternatively, use Doctrine migrations to update the schema:');
@@ -149,37 +150,38 @@ final class CreateRecordsTableCommand extends Command
             if ($tableExists && $input->getOption('update')) {
                 $io->section('Updating Table Schema');
                 $io->text([
-                    sprintf('Table name: <info>%s</info>', $actualTableName),
-                    sprintf('Connection: <info>%s</info>', $this->connectionName),
+                    \sprintf('Table name: <info>%s</info>', $actualTableName),
+                    \sprintf('Connection: <info>%s</info>', $this->connectionName),
                 ]);
 
                 $this->updateTableSchema($entityManager, $io);
 
-                $io->success(sprintf('Table "%s" updated successfully!', $actualTableName));
+                $io->success(\sprintf('Table "%s" updated successfully!', $actualTableName));
+
                 return Command::SUCCESS;
             }
 
             if ($tableExists && $input->getOption('force')) {
-                $io->warning(sprintf('Dropping existing table "%s"...', $actualTableName));
+                $io->warning(\sprintf('Dropping existing table "%s"...', $actualTableName));
                 $schemaManager->dropTable($actualTableName);
                 $io->success('Table dropped.');
             }
 
             $io->section('Creating Table');
             $io->text([
-                sprintf('Table name: <info>%s</info>', $actualTableName),
-                sprintf('Connection: <info>%s</info>', $this->connectionName),
+                \sprintf('Table name: <info>%s</info>', $actualTableName),
+                \sprintf('Connection: <info>%s</info>', $this->connectionName),
             ]);
 
             // Use Doctrine's schema tool to create the table
             $this->createTableUsingSchemaTool($entityManager, $io);
 
-            $io->success(sprintf('Table "%s" created successfully!', $actualTableName));
+            $io->success(\sprintf('Table "%s" created successfully!', $actualTableName));
             $io->note('The table is now ready to store access records for temporal analysis.');
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $io->error(sprintf('Failed to create table: %s', $e->getMessage()));
+            $io->error(\sprintf('Failed to create table: %s', $e->getMessage()));
             $io->note('You can also use Doctrine\'s standard commands:');
             $io->text([
                 '  php bin/console doctrine:schema:update --force',
@@ -196,8 +198,7 @@ final class CreateRecordsTableCommand extends Command
      * Create the table using Doctrine's schema tool.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @return void
+     * @param SymfonyStyle           $io            The Symfony style output
      */
     private function createTableUsingSchemaTool(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
@@ -205,8 +206,8 @@ final class CreateRecordsTableCommand extends Command
         $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
 
         // Filter to only RouteDataRecord entity
-        $routeDataRecordMetadata = array_filter($metadata, function ($meta) {
-            return $meta->getName() === 'Nowo\PerformanceBundle\Entity\RouteDataRecord';
+        $routeDataRecordMetadata = array_filter($metadata, static function ($meta) {
+            return 'Nowo\PerformanceBundle\Entity\RouteDataRecord' === $meta->getName();
         });
 
         if (empty($routeDataRecordMetadata)) {
@@ -218,12 +219,13 @@ final class CreateRecordsTableCommand extends Command
 
         if (empty($sql)) {
             $io->warning('No SQL statements to execute. Table might already exist.');
+
             return;
         }
 
         $connection = $entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
-        
+
         foreach ($sql as $statement) {
             // Fix invalid datetime defaults that MySQL might generate
             $statement = preg_replace(
@@ -231,8 +233,8 @@ final class CreateRecordsTableCommand extends Command
                 '',
                 $statement
             );
-            
-            $io->text(sprintf('  <comment>%s</comment>', $statement));
+
+            $io->text(\sprintf('  <comment>%s</comment>', $statement));
             $connection->executeStatement($statement);
         }
 
@@ -243,26 +245,26 @@ final class CreateRecordsTableCommand extends Command
      * Update the table schema by adding missing columns.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @return void
+     * @param SymfonyStyle           $io            The Symfony style output
      */
     private function updateTableSchema(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
         $connection = $entityManager->getConnection();
         $schemaManager = $this->getSchemaManager($connection);
-        
+
         // Get the actual table name from entity metadata
         $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
         $actualTableName = method_exists($metadata, 'getTableName')
             ? $metadata->getTableName()
-            : ($metadata->table['name'] ?? $this->mainTableName . '_records');
-        
+            : ($metadata->table['name'] ?? $this->mainTableName.'_records');
+
         // Verify table exists
         if (!$schemaManager->tablesExist([$actualTableName])) {
-            $io->error(sprintf('Table "%s" does not exist. Use the create command without --update to create it.', $actualTableName));
+            $io->error(\sprintf('Table "%s" does not exist. Use the create command without --update to create it.', $actualTableName));
+
             return;
         }
-        
+
         $table = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
@@ -275,12 +277,12 @@ final class CreateRecordsTableCommand extends Command
             $columnName = $metadata->getColumnName($fieldName);
             // getFieldMapping() returns array in DBAL 2.x, FieldMapping object in DBAL 3.x
             $fieldMapping = $metadata->getFieldMapping($fieldName);
-            $fieldMappingArray = is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
-            
+            $fieldMappingArray = \is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
+
             $options = $fieldMappingArray['options'] ?? [];
-            
+
             $defaultValue = $options['default'] ?? $fieldMappingArray['default'] ?? null;
-            
+
             $expectedColumns[strtolower($columnName)] = [
                 'field' => $fieldName,
                 'column' => $columnName,
@@ -298,7 +300,7 @@ final class CreateRecordsTableCommand extends Command
         // Compare each expected column with existing ones
         foreach ($expectedColumns as $columnNameLower => $expectedInfo) {
             $columnName = $expectedInfo['column'];
-            
+
             if (!isset($existingColumnsMap[$columnNameLower])) {
                 // Column doesn't exist, needs to be added
                 $columnsToAdd[$columnName] = $expectedInfo;
@@ -309,20 +311,21 @@ final class CreateRecordsTableCommand extends Command
             $io->success('All columns are up to date. No changes needed.');
             // Still check indexes
             $this->addMissingIndexes($entityManager, $io, $table);
+
             return;
         }
 
-        $io->text(sprintf('Using table name: <info>%s</info>', $actualTableName));
+        $io->text(\sprintf('Using table name: <info>%s</info>', $actualTableName));
         $io->newLine();
 
         // Add missing columns
         if (!empty($columnsToAdd)) {
-            $io->section(sprintf('Adding <info>%d</info> missing column(s):', count($columnsToAdd)));
+            $io->section(\sprintf('Adding <info>%d</info> missing column(s):', \count($columnsToAdd)));
             foreach ($columnsToAdd as $columnName => $columnInfo) {
-                $io->text(sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
+                $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
                 $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-                $sql = sprintf(
+                $sql = \sprintf(
                     'ALTER TABLE %s ADD COLUMN %s %s',
                     $platform->quoteIdentifier($actualTableName),
                     $platform->quoteIdentifier($columnName),
@@ -331,9 +334,9 @@ final class CreateRecordsTableCommand extends Command
 
                 try {
                     $connection->executeStatement($sql);
-                    $io->text(sprintf('  ✓ Added column <info>%s</info>', $columnName));
+                    $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
                 } catch (\Exception $e) {
-                    $io->error(sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
+                    $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
@@ -347,8 +350,9 @@ final class CreateRecordsTableCommand extends Command
     /**
      * Get SQL column definition for a column.
      *
-     * @param array<string, mixed> $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param array<string, mixed>                      $columnInfo Column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   Database platform
+     *
      * @return string SQL column definition
      */
     private function getColumnDefinition(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
@@ -361,29 +365,30 @@ final class CreateRecordsTableCommand extends Command
         $default = '';
         if (isset($columnInfo['default'])) {
             $defaultValue = $columnInfo['default'];
-            
+
             // Skip default for datetime types
-            if ($defaultValue !== null && !in_array($type, ['datetime', 'datetime_immutable', 'date', 'time'], true)) {
-                if (is_bool($defaultValue)) {
-                    $default = ' DEFAULT ' . ($defaultValue ? '1' : '0');
+            if (null !== $defaultValue && !\in_array($type, ['datetime', 'datetime_immutable', 'date', 'time'], true)) {
+                if (\is_bool($defaultValue)) {
+                    $default = ' DEFAULT '.($defaultValue ? '1' : '0');
                 } elseif (is_numeric($defaultValue)) {
-                    $default = ' DEFAULT ' . $defaultValue;
-                } elseif (is_string($defaultValue)) {
-                    $default = ' DEFAULT ' . $platform->quoteStringLiteral($defaultValue);
+                    $default = ' DEFAULT '.$defaultValue;
+                } elseif (\is_string($defaultValue)) {
+                    $default = ' DEFAULT '.$platform->quoteStringLiteral($defaultValue);
                 }
             }
         }
 
         $nullConstraint = $nullable ? ' NULL' : ' NOT NULL';
 
-        return $sqlType . $nullConstraint . $default;
+        return $sqlType.$nullConstraint.$default;
     }
 
     /**
      * Get SQL type string for a column.
      *
-     * @param array<string, mixed> $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param array<string, mixed>                      $columnInfo Column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   Database platform
+     *
      * @return string SQL type declaration
      */
     private function getColumnSQLType(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
@@ -404,20 +409,21 @@ final class CreateRecordsTableCommand extends Command
                 // DBAL 2.x method
                 $doctrineType = \Doctrine\DBAL\Types\Type::getType($type);
             }
-            
-            if ($doctrineType !== null) {
+
+            if (null !== $doctrineType) {
                 $column = [];
-                if ($length !== null) {
+                if (null !== $length) {
                     $column['length'] = $length;
                 } elseif (isset($options['length'])) {
                     $column['length'] = $options['length'];
                 }
+
                 return $doctrineType->getSQLDeclaration($column, $platform);
             }
         } catch (\Exception $e) {
             // Fall through to fallback mapping
         }
-        
+
         // Fallback to manual mapping (used if Type system fails or is not available)
         $typeMap = [
             'boolean' => 'BOOLEAN',
@@ -431,9 +437,9 @@ final class CreateRecordsTableCommand extends Command
         $sqlType = $typeMap[strtolower($type)] ?? 'VARCHAR(255)';
 
         // Handle string length
-        if ($type === 'string') {
+        if ('string' === $type) {
             $finalLength = $length ?? $options['length'] ?? 255;
-            $sqlType = sprintf('VARCHAR(%d)', $finalLength);
+            $sqlType = \sprintf('VARCHAR(%d)', $finalLength);
         }
 
         return $sqlType;
@@ -442,10 +448,9 @@ final class CreateRecordsTableCommand extends Command
     /**
      * Add missing indexes to the table.
      *
-     * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @param \Doctrine\DBAL\Schema\Table $table The table schema
-     * @return void
+     * @param EntityManagerInterface      $entityManager The entity manager
+     * @param SymfonyStyle                $io            The Symfony style output
+     * @param \Doctrine\DBAL\Schema\Table $table         The table schema
      */
     private function addMissingIndexes(EntityManagerInterface $entityManager, SymfonyStyle $io, \Doctrine\DBAL\Schema\Table $table): void
     {
@@ -456,9 +461,9 @@ final class CreateRecordsTableCommand extends Command
         // Get expected indexes from entity metadata
         $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
         $expectedIndexes = [];
-        
+
         // Get indexes from table metadata
-        if (isset($metadata->table['indexes']) && is_array($metadata->table['indexes'])) {
+        if (isset($metadata->table['indexes']) && \is_array($metadata->table['indexes'])) {
             foreach ($metadata->table['indexes'] as $indexName => $indexDefinition) {
                 $columns = $indexDefinition['columns'] ?? [];
                 if (!empty($columns)) {
@@ -468,7 +473,7 @@ final class CreateRecordsTableCommand extends Command
         }
 
         // Also check for Index attributes
-        if (PHP_VERSION_ID >= 80000) {
+        if (\PHP_VERSION_ID >= 80000) {
             try {
                 $reflection = new \ReflectionClass('Nowo\PerformanceBundle\Entity\RouteDataRecord');
                 $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\Index::class);
@@ -512,19 +517,19 @@ final class CreateRecordsTableCommand extends Command
             return;
         }
 
-        $io->text(sprintf('Adding <info>%d</info> missing index(es):', count($indexesToAdd)));
+        $io->text(\sprintf('Adding <info>%d</info> missing index(es):', \count($indexesToAdd)));
 
         foreach ($indexesToAdd as $indexName => $columns) {
-            $quotedColumns = array_map(function ($col) use ($platform) {
+            $quotedColumns = array_map(static function ($col) use ($platform) {
                 return $platform->quoteIdentifier($col);
             }, $columns);
 
             // Get the actual table name from entity metadata
             $actualTableName = method_exists($metadata, 'getTableName')
                 ? $metadata->getTableName()
-                : ($metadata->table['name'] ?? $this->mainTableName . '_records');
-            
-            $sql = sprintf(
+                : ($metadata->table['name'] ?? $this->mainTableName.'_records');
+
+            $sql = \sprintf(
                 'CREATE INDEX %s ON %s (%s)',
                 $platform->quoteIdentifier($indexName),
                 $platform->quoteIdentifier($actualTableName),
@@ -533,9 +538,9 @@ final class CreateRecordsTableCommand extends Command
 
             try {
                 $connection->executeStatement($sql);
-                $io->text(sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
+                $io->text(\sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
             } catch (\Exception $e) {
-                $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
+                $io->warning(\sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
         }
     }

@@ -30,23 +30,21 @@ final class PerformanceAlert
     /**
      * Constructor.
      *
-     * @param string $type Alert type (request_time, query_count, etc.)
-     * @param string $severity Alert severity (warning, critical)
-     * @param string $message Alert message
-     * @param array<string, mixed> $context Additional context data
+     * @param string               $type     Alert type (request_time, query_count, etc.)
+     * @param string               $severity Alert severity (warning, critical)
+     * @param string               $message  Alert message
+     * @param array<string, mixed> $context  Additional context data
      */
     public function __construct(
         private readonly string $type,
         private readonly string $severity,
         private readonly string $message,
-        private readonly array $context = []
+        private readonly array $context = [],
     ) {
     }
 
     /**
      * Get the alert type.
-     *
-     * @return string
      */
     public function getType(): string
     {
@@ -55,8 +53,6 @@ final class PerformanceAlert
 
     /**
      * Get the alert severity.
-     *
-     * @return string
      */
     public function getSeverity(): string
     {
@@ -65,8 +61,6 @@ final class PerformanceAlert
 
     /**
      * Get the alert message.
-     *
-     * @return string
      */
     public function getMessage(): string
     {
@@ -86,9 +80,8 @@ final class PerformanceAlert
     /**
      * Get a context value by key.
      *
-     * @param string $key The context key
-     * @param mixed $default Default value if key doesn't exist
-     * @return mixed
+     * @param string $key     The context key
+     * @param mixed  $default Default value if key doesn't exist
      */
     public function getContextValue(string $key, mixed $default = null): mixed
     {
@@ -97,21 +90,17 @@ final class PerformanceAlert
 
     /**
      * Check if this is a critical alert.
-     *
-     * @return bool
      */
     public function isCritical(): bool
     {
-        return $this->severity === self::SEVERITY_CRITICAL;
+        return self::SEVERITY_CRITICAL === $this->severity;
     }
 
     /**
      * Check if this is a warning alert.
-     *
-     * @return bool
      */
     public function isWarning(): bool
     {
-        return $this->severity === self::SEVERITY_WARNING;
+        return self::SEVERITY_WARNING === $this->severity;
     }
 }

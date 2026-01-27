@@ -27,15 +27,11 @@ class PerformanceMetricsService
 {
     /**
      * The Doctrine registry.
-     *
-     * @var ManagerRegistry
      */
     private readonly ManagerRegistry $registry;
 
     /**
      * The connection name.
-     *
-     * @var string
      */
     private readonly string $connectionName;
 
@@ -51,15 +47,11 @@ class PerformanceMetricsService
 
     /**
      * The repository for RouteDataRecord entities.
-     *
-     * @var RouteDataRecordRepository
      */
     private RouteDataRecordRepository $recordRepository;
 
     /**
      * Whether access records are enabled.
-     *
-     * @var bool
      */
     private readonly bool $enableAccessRecords;
 
@@ -99,7 +91,7 @@ class PerformanceMetricsService
         #[Autowire('%nowo_performance.async%')]
         bool $async = false,
         #[Autowire('%nowo_performance.enable_access_records%')]
-        bool $enableAccessRecords = false
+        bool $enableAccessRecords = false,
     ) {
         $this->registry = $registry;
         $this->connectionName = $connectionName;
@@ -149,16 +141,17 @@ class PerformanceMetricsService
     /**
      * Record or update route performance metrics.
      *
-     * @param string $routeName The route name
-     * @param string $env The environment (dev, test, prod)
-     * @param float|null $requestTime Request execution time in seconds
-     * @param int|null $totalQueries Total number of database queries
-     * @param float|null $queryTime Total query execution time in seconds
-     * @param array|null $params Route parameters
-     * @param int|null $memoryUsage Peak memory usage in bytes
-     * @param string|null $httpMethod HTTP method (GET, POST, PUT, DELETE, etc.)
-     * @param int|null $statusCode HTTP status code (200, 404, 500, etc.)
-     * @param array<int> $trackStatusCodes List of status codes to track
+     * @param string      $routeName        The route name
+     * @param string      $env              The environment (dev, test, prod)
+     * @param float|null  $requestTime      Request execution time in seconds
+     * @param int|null    $totalQueries     Total number of database queries
+     * @param float|null  $queryTime        Total query execution time in seconds
+     * @param array|null  $params           Route parameters
+     * @param int|null    $memoryUsage      Peak memory usage in bytes
+     * @param string|null $httpMethod       HTTP method (GET, POST, PUT, DELETE, etc.)
+     * @param int|null    $statusCode       HTTP status code (200, 404, 500, etc.)
+     * @param array<int>  $trackStatusCodes List of status codes to track
+     *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
     public function recordMetrics(
@@ -171,7 +164,7 @@ class PerformanceMetricsService
         ?int $memoryUsage = null,
         ?string $httpMethod = null,
         ?int $statusCode = null,
-        array $trackStatusCodes = []
+        array $trackStatusCodes = [],
     ): array {
         // Dispatch before event to allow modification of metrics
         if (null !== $this->eventDispatcher) {
@@ -209,6 +202,7 @@ class PerformanceMetricsService
                 $httpMethod
             );
             $this->messageBus->dispatch($message);
+
             // In async mode, we can't know if it was new or updated until the message is processed
             return ['is_new' => false, 'was_updated' => false];
         }
@@ -220,16 +214,17 @@ class PerformanceMetricsService
     /**
      * Record metrics synchronously (internal method).
      *
-     * @param string $routeName The route name
-     * @param string $env The environment
-     * @param float|null $requestTime Request execution time in seconds
-     * @param int|null $totalQueries Total number of database queries
-     * @param float|null $queryTime Total query execution time in seconds
-     * @param array|null $params Route parameters
-     * @param int|null $memoryUsage Peak memory usage in bytes
-     * @param string|null $httpMethod HTTP method (GET, POST, PUT, DELETE, etc.)
-     * @param int|null $statusCode HTTP status code (200, 404, 500, etc.)
-     * @param array<int> $trackStatusCodes List of status codes to track
+     * @param string      $routeName        The route name
+     * @param string      $env              The environment
+     * @param float|null  $requestTime      Request execution time in seconds
+     * @param int|null    $totalQueries     Total number of database queries
+     * @param float|null  $queryTime        Total query execution time in seconds
+     * @param array|null  $params           Route parameters
+     * @param int|null    $memoryUsage      Peak memory usage in bytes
+     * @param string|null $httpMethod       HTTP method (GET, POST, PUT, DELETE, etc.)
+     * @param int|null    $statusCode       HTTP status code (200, 404, 500, etc.)
+     * @param array<int>  $trackStatusCodes List of status codes to track
+     *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
     private function recordMetricsSync(
@@ -242,9 +237,8 @@ class PerformanceMetricsService
         ?int $memoryUsage = null,
         ?string $httpMethod = null,
         ?int $statusCode = null,
-        array $trackStatusCodes = []
+        array $trackStatusCodes = [],
     ): array {
-
         $isNew = false;
         $wasUpdated = false;
         $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
@@ -263,7 +257,7 @@ class PerformanceMetricsService
             // accessCount is already initialized to 1 in the entity
 
             // Track status code if configured
-            if ($statusCode !== null && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
+            if (null !== $statusCode && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
                 $routeData->incrementStatusCode($statusCode);
             }
 
@@ -274,7 +268,7 @@ class PerformanceMetricsService
             $routeData->incrementAccessCount();
 
             // Track status code if configured
-            if ($statusCode !== null && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
+            if (null !== $statusCode && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
                 $routeData->incrementStatusCode($statusCode);
                 $wasUpdated = true;
             }
@@ -282,8 +276,8 @@ class PerformanceMetricsService
             // Update metrics if they are worse (higher time or more queries)
             if ($routeData->shouldUpdate($requestTime, $totalQueries)) {
                 $wasUpdated = true;
-                
-                if ($requestTime !== null && ($routeData->getRequestTime() === null || $requestTime > $routeData->getRequestTime())) {
+
+                if (null !== $requestTime && (null === $routeData->getRequestTime() || $requestTime > $routeData->getRequestTime())) {
                     $routeData->setRequestTime($requestTime);
                 }
 
@@ -295,17 +289,17 @@ class PerformanceMetricsService
                     $routeData->setQueryTime($queryTime);
                 }
 
-                if ($params !== null) {
+                if (null !== $params) {
                     $routeData->setParams($params);
                 }
 
                 // Update memory usage if it's higher (worse)
-                if ($memoryUsage !== null && ($routeData->getMemoryUsage() === null || $memoryUsage > $routeData->getMemoryUsage())) {
+                if (null !== $memoryUsage && (null === $routeData->getMemoryUsage() || $memoryUsage > $routeData->getMemoryUsage())) {
                     $routeData->setMemoryUsage($memoryUsage);
                 }
 
                 // Update HTTP method if provided
-                if ($httpMethod !== null) {
+                if (null !== $httpMethod) {
                     $routeData->setHttpMethod($httpMethod);
                 }
             }
@@ -313,7 +307,7 @@ class PerformanceMetricsService
 
         try {
             if (\function_exists('error_log')) {
-                error_log(sprintf(
+                error_log(\sprintf(
                     '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s, entityManagerOpen=%s',
                     $routeName,
                     $env,
@@ -321,12 +315,12 @@ class PerformanceMetricsService
                     $this->entityManager->isOpen() ? 'true' : 'false'
                 ));
             }
-            
+
             // Ensure EntityManager is open before flush
             if (!$this->entityManager->isOpen()) {
                 $this->resetEntityManager();
             }
-            
+
             // Suppress any potential output from Doctrine
             $errorReporting = error_reporting(0);
             $this->entityManager->flush();
@@ -362,21 +356,21 @@ class PerformanceMetricsService
                 $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew);
                 $this->eventDispatcher->dispatch($afterEvent);
             }
-            
+
             return ['is_new' => $isNew, 'was_updated' => $wasUpdated];
         } catch (\Exception $e) {
             // Restore error reporting
             if (isset($errorReporting)) {
                 error_reporting($errorReporting);
             }
-            
+
             // Always reset EntityManager after an error (it may be closed)
             // This ensures subsequent operations can proceed
             $this->resetEntityManager();
-            
+
             // Log the error for debugging
             if (\function_exists('error_log')) {
-                error_log(sprintf(
+                error_log(\sprintf(
                     '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s, entityManagerOpen=%s',
                     $routeName,
                     $env,
@@ -388,7 +382,7 @@ class PerformanceMetricsService
             // Re-throw to let the subscriber handle it
             throw $e;
         }
-        
+
         // This should never be reached, but return default values if it does
         return ['is_new' => false, 'was_updated' => false];
     }
@@ -446,8 +440,6 @@ class PerformanceMetricsService
      *
      * This method should be called after an exception to ensure
      * the EntityManager is in a valid state for subsequent operations.
-     *
-     * @return void
      */
     private function resetEntityManager(): void
     {
@@ -458,7 +450,7 @@ class PerformanceMetricsService
             // Re-initialize repositories
             $this->repository = $this->entityManager->getRepository(RouteData::class);
             $this->recordRepository = $this->entityManager->getRepository(RouteDataRecord::class);
-            
+
             if (\function_exists('error_log')) {
                 error_log('[PerformanceBundle] EntityManager reset after being closed');
             }

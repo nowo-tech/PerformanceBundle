@@ -23,13 +23,13 @@ final class PerformanceAlertSubscriber
      * Constructor.
      *
      * @param NotificationService $notificationService Notification service
-     * @param float $requestTimeWarning Warning threshold for request time
-     * @param float $requestTimeCritical Critical threshold for request time
-     * @param int $queryCountWarning Warning threshold for query count
-     * @param int $queryCountCritical Critical threshold for query count
-     * @param float $memoryUsageWarning Warning threshold for memory usage (MB)
-     * @param float $memoryUsageCritical Critical threshold for memory usage (MB)
-     * @param bool $enabled Whether alerts are enabled
+     * @param float               $requestTimeWarning  Warning threshold for request time
+     * @param float               $requestTimeCritical Critical threshold for request time
+     * @param int                 $queryCountWarning   Warning threshold for query count
+     * @param int                 $queryCountCritical  Critical threshold for query count
+     * @param float               $memoryUsageWarning  Warning threshold for memory usage (MB)
+     * @param float               $memoryUsageCritical Critical threshold for memory usage (MB)
+     * @param bool                $enabled             Whether alerts are enabled
      */
     public function __construct(
         private readonly ?NotificationService $notificationService,
@@ -39,7 +39,7 @@ final class PerformanceAlertSubscriber
         private readonly int $queryCountCritical = 50,
         private readonly float $memoryUsageWarning = 20.0,
         private readonly float $memoryUsageCritical = 50.0,
-        private readonly bool $enabled = false
+        private readonly bool $enabled = false,
     ) {
     }
 
@@ -47,24 +47,23 @@ final class PerformanceAlertSubscriber
      * Handle AfterMetricsRecordedEvent.
      *
      * @param AfterMetricsRecordedEvent $event The event
-     * @return void
      */
     #[AsEventListener]
     public function onAfterMetricsRecorded(AfterMetricsRecordedEvent $event): void
     {
-        if (!$this->enabled || $this->notificationService === null || !$this->notificationService->isEnabled()) {
+        if (!$this->enabled || null === $this->notificationService || !$this->notificationService->isEnabled()) {
             return;
         }
 
         $routeData = $event->getRouteData();
 
         // Check request time
-        if ($routeData->getRequestTime() !== null) {
+        if (null !== $routeData->getRequestTime()) {
             if ($routeData->getRequestTime() >= $this->requestTimeCritical) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_REQUEST_TIME,
                     PerformanceAlert::SEVERITY_CRITICAL,
-                    sprintf(
+                    \sprintf(
                         'Critical: Route "%s" has request time of %.4fs (threshold: %.2fs)',
                         $routeData->getName() ?? 'Unknown',
                         $routeData->getRequestTime(),
@@ -80,7 +79,7 @@ final class PerformanceAlertSubscriber
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_REQUEST_TIME,
                     PerformanceAlert::SEVERITY_WARNING,
-                    sprintf(
+                    \sprintf(
                         'Warning: Route "%s" has request time of %.4fs (threshold: %.2fs)',
                         $routeData->getName() ?? 'Unknown',
                         $routeData->getRequestTime(),
@@ -96,12 +95,12 @@ final class PerformanceAlertSubscriber
         }
 
         // Check query count
-        if ($routeData->getTotalQueries() !== null) {
+        if (null !== $routeData->getTotalQueries()) {
             if ($routeData->getTotalQueries() >= $this->queryCountCritical) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_QUERY_COUNT,
                     PerformanceAlert::SEVERITY_CRITICAL,
-                    sprintf(
+                    \sprintf(
                         'Critical: Route "%s" has %d queries (threshold: %d)',
                         $routeData->getName() ?? 'Unknown',
                         $routeData->getTotalQueries(),
@@ -117,7 +116,7 @@ final class PerformanceAlertSubscriber
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_QUERY_COUNT,
                     PerformanceAlert::SEVERITY_WARNING,
-                    sprintf(
+                    \sprintf(
                         'Warning: Route "%s" has %d queries (threshold: %d)',
                         $routeData->getName() ?? 'Unknown',
                         $routeData->getTotalQueries(),
@@ -133,13 +132,13 @@ final class PerformanceAlertSubscriber
         }
 
         // Check memory usage
-        if ($routeData->getMemoryUsage() !== null) {
+        if (null !== $routeData->getMemoryUsage()) {
             $memoryMB = $routeData->getMemoryUsage() / 1024 / 1024;
             if ($memoryMB >= $this->memoryUsageCritical) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_MEMORY_USAGE,
                     PerformanceAlert::SEVERITY_CRITICAL,
-                    sprintf(
+                    \sprintf(
                         'Critical: Route "%s" uses %.2f MB of memory (threshold: %.2f MB)',
                         $routeData->getName() ?? 'Unknown',
                         $memoryMB,
@@ -155,7 +154,7 @@ final class PerformanceAlertSubscriber
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_MEMORY_USAGE,
                     PerformanceAlert::SEVERITY_WARNING,
-                    sprintf(
+                    \sprintf(
                         'Warning: Route "%s" uses %.2f MB of memory (threshold: %.2f MB)',
                         $routeData->getName() ?? 'Unknown',
                         $memoryMB,

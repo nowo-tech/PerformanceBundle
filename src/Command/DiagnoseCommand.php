@@ -132,9 +132,9 @@ final class DiagnoseCommand extends Command
         }
 
         $io->text([
-            'DoctrineBundle Version: ' . ($doctrineVersion ?? 'Unknown'),
-            'Registration Method: ' . $method,
-            'Supports middlewares: ' . ($supportsYaml ? 'Yes (2.x)' : 'No'),
+            'DoctrineBundle Version: '.($doctrineVersion ?? 'Unknown'),
+            'Registration Method: '.$method,
+            'Supports middlewares: '.($supportsYaml ? 'Yes (2.x)' : 'No'),
             '',
             'The bundle automatically detects the DoctrineBundle version and uses the appropriate method:',
             '',

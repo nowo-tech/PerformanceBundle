@@ -46,7 +46,7 @@ class PerformanceController extends AbstractController
      */
     public function __construct(
         private readonly PerformanceMetricsService $metricsService,
-        private readonly ?PerformanceAnalysisService $analysisService = null,
+        private readonly ?PerformanceAnalysisService $analysisService,
         #[Autowire('%nowo_performance.dashboard.enabled%')]
         private readonly bool $enabled,
         #[Autowire('%nowo_performance.dashboard.roles%')]
@@ -548,8 +548,8 @@ class PerformanceController extends AbstractController
         $efficiency = [];
         $recommendations = [];
         $trafficDistribution = [];
-        
-        if ($this->analysisService !== null) {
+
+        if (null !== $this->analysisService) {
             $correlations = $this->analysisService->analyzeCorrelations($routes);
             $efficiency = $this->analysisService->analyzeEfficiency($routes);
             $recommendations = $this->analysisService->generateRecommendations($routes, $advancedStats);
@@ -1462,6 +1462,7 @@ class PerformanceController extends AbstractController
      * Shows access counts, average response times, and status code distributions by hour.
      *
      * @param Request $request The HTTP request
+     *
      * @return Response The HTTP response
      */
     #[Route(
@@ -1500,12 +1501,12 @@ class PerformanceController extends AbstractController
         $statisticsByHour = [];
         $totalAccessCount = 0;
 
-        if ($this->recordRepository !== null) {
+        if (null !== $this->recordRepository) {
             try {
                 $statisticsByHour = $this->recordRepository->getStatisticsByHour($env, $startDate, $endDate);
                 $totalAccessCount = $this->recordRepository->getTotalAccessCount($env, $startDate, $endDate);
             } catch (\Exception $e) {
-                $this->addFlash('error', 'Error fetching hourly access statistics: ' . $e->getMessage());
+                $this->addFlash('error', 'Error fetching hourly access statistics: '.$e->getMessage());
                 $statisticsByHour = [];
             }
         } else {

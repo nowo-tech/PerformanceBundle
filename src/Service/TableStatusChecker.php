@@ -35,6 +35,7 @@ class TableStatusChecker
      * Get schema manager from connection (compatible with DBAL 2.x and 3.x).
      *
      * @param \Doctrine\DBAL\Connection $connection The database connection
+     *
      * @return \Doctrine\DBAL\Schema\AbstractSchemaManager The schema manager
      */
     private function getSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
@@ -48,6 +49,7 @@ class TableStatusChecker
             // @phpstan-ignore-next-line - getSchemaManager() exists in DBAL 2.x but not in type definitions for DBAL 3.x
             /** @var callable $getSchemaManager */
             $getSchemaManager = [$connection, 'getSchemaManager'];
+
             return $getSchemaManager();
         }
         throw new \RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
@@ -63,7 +65,7 @@ class TableStatusChecker
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
-            
+
             // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
@@ -100,6 +102,7 @@ class TableStatusChecker
         }
 
         $missingColumns = $this->getMissingColumns();
+
         return empty($missingColumns);
     }
 
@@ -113,14 +116,14 @@ class TableStatusChecker
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
-            
+
             // Get the actual table name from entity metadata
             $entityManager = $this->registry->getManager($this->connectionName);
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
             $actualTableName = method_exists($metadata, 'getTableName')
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName);
-            
+
             // Check if table exists
             if (!$schemaManager->tablesExist([$actualTableName])) {
                 // If table doesn't exist, all columns are missing
@@ -155,12 +158,13 @@ class TableStatusChecker
      * Get list of expected column names from entity metadata.
      *
      * @param \Doctrine\ORM\Mapping\ClassMetadata $metadata Entity metadata
+     *
      * @return array<string> List of expected column names
      */
     private function getExpectedColumns($metadata): array
     {
         $expectedColumns = [];
-        
+
         // Get all field names from entity metadata
         foreach ($metadata->getFieldNames() as $fieldName) {
             $columnName = $metadata->getColumnName($fieldName);

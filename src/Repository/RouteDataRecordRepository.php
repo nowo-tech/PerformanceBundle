@@ -31,15 +31,16 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Get access statistics grouped by hour of day.
      *
-     * @param string $env The environment (dev, test, prod)
+     * @param string                  $env       The environment (dev, test, prod)
      * @param \DateTimeImmutable|null $startDate Optional start date filter
-     * @param \DateTimeImmutable|null $endDate Optional end date filter
+     * @param \DateTimeImmutable|null $endDate   Optional end date filter
+     *
      * @return array<int, array{hour: int, count: int, avg_response_time: float, status_codes: array<int, int>}> Statistics by hour
      */
     public function getStatisticsByHour(
         string $env,
         ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null
+        ?\DateTimeImmutable $endDate = null,
     ): array {
         $qb = $this->createQueryBuilder('r')
             ->select('HOUR(r.accessedAt) as hour')
@@ -51,12 +52,12 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->groupBy('hour')
             ->orderBy('hour', 'ASC');
 
-        if ($startDate !== null) {
+        if (null !== $startDate) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if ($endDate !== null) {
+        if (null !== $endDate) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
@@ -75,12 +76,12 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->groupBy('hour', 'status_code')
             ->orderBy('hour', 'ASC');
 
-        if ($startDate !== null) {
+        if (null !== $startDate) {
             $statusCodeQb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if ($endDate !== null) {
+        if (null !== $endDate) {
             $statusCodeQb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
@@ -104,13 +105,13 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             $statistics[$hour] = [
                 'hour' => $hour,
                 'count' => (int) $row['count'],
-                'avg_response_time' => $row['avg_response_time'] !== null ? (float) $row['avg_response_time'] : 0.0,
+                'avg_response_time' => null !== $row['avg_response_time'] ? (float) $row['avg_response_time'] : 0.0,
                 'status_codes' => $statusCodesByHour[$hour] ?? [],
             ];
         }
 
         // Fill in missing hours (0-23) with zero counts
-        for ($hour = 0; $hour < 24; $hour++) {
+        for ($hour = 0; $hour < 24; ++$hour) {
             if (!isset($statistics[$hour])) {
                 $statistics[$hour] = [
                     'hour' => $hour,
@@ -129,15 +130,16 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Get total access count for a date range.
      *
-     * @param string $env The environment
+     * @param string                  $env       The environment
      * @param \DateTimeImmutable|null $startDate Optional start date
-     * @param \DateTimeImmutable|null $endDate Optional end date
+     * @param \DateTimeImmutable|null $endDate   Optional end date
+     *
      * @return int Total access count
      */
     public function getTotalAccessCount(
         string $env,
         ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null
+        ?\DateTimeImmutable $endDate = null,
     ): int {
         $qb = $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
@@ -145,12 +147,12 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->where('rd.env = :env')
             ->setParameter('env', $env);
 
-        if ($startDate !== null) {
+        if (null !== $startDate) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if ($endDate !== null) {
+        if (null !== $endDate) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
@@ -162,6 +164,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * Delete all records for a specific route data.
      *
      * @param int $routeDataId The route data ID
+     *
      * @return int Number of deleted records
      */
     public function deleteByRouteData(int $routeDataId): int
@@ -178,6 +181,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * Delete all records for an environment.
      *
      * @param string $env The environment
+     *
      * @return int Number of deleted records
      */
     public function deleteByEnvironment(string $env): int

@@ -21,6 +21,7 @@ class PerformanceAnalysisService
      * Analyze correlation between different metrics.
      *
      * @param array<RouteData> $routes Array of route data
+     *
      * @return array<string, mixed> Correlation analysis
      */
     public function analyzeCorrelations(array $routes): array
@@ -42,16 +43,16 @@ class PerformanceAnalysisService
         $accessCounts = [];
 
         foreach ($routes as $route) {
-            if ($route->getRequestTime() !== null) {
+            if (null !== $route->getRequestTime()) {
                 $requestTimes[] = $route->getRequestTime();
             }
-            if ($route->getQueryTime() !== null) {
+            if (null !== $route->getQueryTime()) {
                 $queryTimes[] = $route->getQueryTime();
             }
-            if ($route->getTotalQueries() !== null) {
+            if (null !== $route->getTotalQueries()) {
                 $queryCounts[] = $route->getTotalQueries();
             }
-            if ($route->getMemoryUsage() !== null) {
+            if (null !== $route->getMemoryUsage()) {
                 $memoryUsages[] = $route->getMemoryUsage() / 1024 / 1024; // Convert to MB
             }
             $accessCounts[] = $route->getAccessCount();
@@ -71,34 +72,35 @@ class PerformanceAnalysisService
      *
      * @param array<float> $x First array
      * @param array<float> $y Second array
+     *
      * @return array<string, mixed>|null Correlation data or null if insufficient data
      */
     private function calculateCorrelation(array $x, array $y): ?array
     {
         // Filter to only include pairs where both values exist
         $pairs = [];
-        $minLength = min(count($x), count($y));
-        for ($i = 0; $i < $minLength; $i++) {
-            if (isset($x[$i]) && isset($y[$i]) && $x[$i] !== null && $y[$i] !== null) {
+        $minLength = min(\count($x), \count($y));
+        for ($i = 0; $i < $minLength; ++$i) {
+            if (isset($x[$i]) && isset($y[$i]) && null !== $x[$i] && null !== $y[$i]) {
                 $pairs[] = ['x' => $x[$i], 'y' => $y[$i]];
             }
         }
 
-        if (count($pairs) < 2) {
+        if (\count($pairs) < 2) {
             return null;
         }
 
-        $n = count($pairs);
+        $n = \count($pairs);
         $sumX = array_sum(array_column($pairs, 'x'));
         $sumY = array_sum(array_column($pairs, 'y'));
-        $sumXY = array_sum(array_map(fn($p) => $p['x'] * $p['y'], $pairs));
-        $sumX2 = array_sum(array_map(fn($p) => $p['x'] * $p['x'], $pairs));
-        $sumY2 = array_sum(array_map(fn($p) => $p['y'] * $p['y'], $pairs));
+        $sumXY = array_sum(array_map(static fn ($p) => $p['x'] * $p['y'], $pairs));
+        $sumX2 = array_sum(array_map(static fn ($p) => $p['x'] * $p['x'], $pairs));
+        $sumY2 = array_sum(array_map(static fn ($p) => $p['y'] * $p['y'], $pairs));
 
         $numerator = ($n * $sumXY) - ($sumX * $sumY);
         $denominator = sqrt((($n * $sumX2) - ($sumX * $sumX)) * (($n * $sumY2) - ($sumY * $sumY)));
 
-        if ($denominator == 0) {
+        if (0 === $denominator) {
             return null;
         }
 
@@ -133,6 +135,7 @@ class PerformanceAnalysisService
      * Analyze efficiency metrics (e.g., request time vs query time ratio).
      *
      * @param array<RouteData> $routes Array of route data
+     *
      * @return array<string, mixed> Efficiency analysis
      */
     public function analyzeEfficiency(array $routes): array
@@ -155,11 +158,11 @@ class PerformanceAnalysisService
             $queryTime = $route->getQueryTime();
             $queryCount = $route->getTotalQueries();
 
-            if ($requestTime !== null && $requestTime > 0) {
-                $queryRatio = $queryTime !== null && $queryTime > 0 ? ($queryTime / $requestTime) * 100 : 0;
+            if (null !== $requestTime && $requestTime > 0) {
+                $queryRatio = null !== $queryTime && $queryTime > 0 ? ($queryTime / $requestTime) * 100 : 0;
 
                 // Routes where queries take up most of the request time (potential bottleneck)
-                if ($queryRatio > 80 && $queryTime !== null && $queryTime > 0.1) {
+                if ($queryRatio > 80 && null !== $queryTime && $queryTime > 0.1) {
                     $queryBottleneckRoutes[] = [
                         'route' => $route,
                         'query_ratio' => round($queryRatio, 2),
@@ -170,7 +173,7 @@ class PerformanceAnalysisService
                 }
 
                 // Efficient routes: low request time with reasonable query count
-                if ($requestTime < 0.2 && ($queryCount === null || $queryCount < 10)) {
+                if ($requestTime < 0.2 && (null === $queryCount || $queryCount < 10)) {
                     $efficientRoutes[] = [
                         'route' => $route,
                         'request_time' => $requestTime,
@@ -179,7 +182,7 @@ class PerformanceAnalysisService
                 }
 
                 // Inefficient routes: high request time or high query count
-                if ($requestTime > 1.0 || ($queryCount !== null && $queryCount > 50)) {
+                if ($requestTime > 1.0 || (null !== $queryCount && $queryCount > 50)) {
                     $inefficientRoutes[] = [
                         'route' => $route,
                         'request_time' => $requestTime,
@@ -195,30 +198,31 @@ class PerformanceAnalysisService
         foreach ($routes as $route) {
             $requestTime = $route->getRequestTime();
             $queryTime = $route->getQueryTime();
-            if ($requestTime !== null && $requestTime > 0 && $queryTime !== null && $queryTime > 0) {
+            if (null !== $requestTime && $requestTime > 0 && null !== $queryTime && $queryTime > 0) {
                 $queryRatios[] = ($queryTime / $requestTime) * 100;
             }
         }
 
-        $avgQueryRatio = !empty($queryRatios) ? array_sum($queryRatios) / count($queryRatios) : null;
+        $avgQueryRatio = !empty($queryRatios) ? array_sum($queryRatios) / \count($queryRatios) : null;
 
         // Sort by severity
-        usort($queryBottleneckRoutes, fn($a, $b) => $b['query_ratio'] <=> $a['query_ratio']);
-        usort($inefficientRoutes, fn($a, $b) => ($b['request_time'] ?? 0) <=> ($a['request_time'] ?? 0));
+        usort($queryBottleneckRoutes, static fn ($a, $b) => $b['query_ratio'] <=> $a['query_ratio']);
+        usort($inefficientRoutes, static fn ($a, $b) => ($b['request_time'] ?? 0) <=> ($a['request_time'] ?? 0));
 
         return [
-            'avg_query_ratio' => $avgQueryRatio !== null ? round($avgQueryRatio, 2) : null,
-            'efficient_routes' => array_slice($efficientRoutes, 0, 10), // Top 10
-            'inefficient_routes' => array_slice($inefficientRoutes, 0, 10), // Top 10 worst
-            'query_bottleneck_routes' => array_slice($queryBottleneckRoutes, 0, 10), // Top 10
+            'avg_query_ratio' => null !== $avgQueryRatio ? round($avgQueryRatio, 2) : null,
+            'efficient_routes' => \array_slice($efficientRoutes, 0, 10), // Top 10
+            'inefficient_routes' => \array_slice($inefficientRoutes, 0, 10), // Top 10 worst
+            'query_bottleneck_routes' => \array_slice($queryBottleneckRoutes, 0, 10), // Top 10
         ];
     }
 
     /**
      * Generate automated recommendations based on performance data.
      *
-     * @param array<RouteData> $routes Array of route data
+     * @param array<RouteData>     $routes        Array of route data
      * @param array<string, mixed> $advancedStats Advanced statistics
+     *
      * @return array<string, mixed> Recommendations
      */
     public function generateRecommendations(array $routes, array $advancedStats): array
@@ -234,7 +238,7 @@ class PerformanceAnalysisService
                     'type' => 'query_optimization',
                     'priority' => 'high',
                     'title' => 'High Average Query Count',
-                    'description' => sprintf(
+                    'description' => \sprintf(
                         'Average query count is %.1f queries per request. Consider implementing eager loading, query batching, or caching to reduce database load.',
                         $meanQueries
                     ),
@@ -245,7 +249,7 @@ class PerformanceAnalysisService
                     'type' => 'query_optimization',
                     'priority' => 'medium',
                     'title' => 'Moderate Query Count',
-                    'description' => sprintf(
+                    'description' => \sprintf(
                         'Average query count is %.1f queries per request. Consider optimizing queries for frequently accessed routes.',
                         $meanQueries
                     ),
@@ -263,7 +267,7 @@ class PerformanceAnalysisService
                     'type' => 'performance',
                     'priority' => 'high',
                     'title' => 'Slow 95th Percentile Response Time',
-                    'description' => sprintf(
+                    'description' => \sprintf(
                         '95%% of requests take less than %.2fs, but 5%% are slower. Focus optimization efforts on the slowest routes.',
                         $p95
                     ),
@@ -281,7 +285,7 @@ class PerformanceAnalysisService
                     'type' => 'memory',
                     'priority' => 'high',
                     'title' => 'High Memory Usage',
-                    'description' => sprintf(
+                    'description' => \sprintf(
                         'Average memory usage is %.1f MB per request. Consider implementing pagination, streaming, or reducing data loaded into memory.',
                         $meanMemory
                     ),
@@ -297,8 +301,8 @@ class PerformanceAnalysisService
                 $recommendations[] = [
                     'type' => 'outliers',
                     'priority' => 'medium',
-                    'title' => sprintf('%s Outliers Detected', ucfirst(str_replace('_', ' ', $metric))),
-                    'description' => sprintf(
+                    'title' => \sprintf('%s Outliers Detected', ucfirst(str_replace('_', ' ', $metric))),
+                    'description' => \sprintf(
                         '%d routes have outlier values for %s. These routes may need immediate attention.',
                         $stats['outliers_count'],
                         str_replace('_', ' ', $metric)
@@ -328,12 +332,12 @@ class PerformanceAnalysisService
         // Analyze correlation between query time and request time
         $correlations = $this->analyzeCorrelations($routes);
         $queryCorrelation = $correlations['request_time_vs_query_time'] ?? null;
-        if ($queryCorrelation !== null && $queryCorrelation['coefficient'] > 0.7) {
+        if (null !== $queryCorrelation && $queryCorrelation['coefficient'] > 0.7) {
             $recommendations[] = [
                 'type' => 'query_bottleneck',
                 'priority' => 'high',
                 'title' => 'Query Time Strongly Correlated with Request Time',
-                'description' => sprintf(
+                'description' => \sprintf(
                     'Query execution time shows a %s correlation (%.2f) with total request time. Database queries are likely the main performance bottleneck.',
                     $queryCorrelation['strength'],
                     $queryCorrelation['coefficient']
@@ -349,6 +353,7 @@ class PerformanceAnalysisService
      * Analyze traffic distribution and identify hot paths.
      *
      * @param array<RouteData> $routes Array of route data
+     *
      * @return array<string, mixed> Traffic distribution analysis
      */
     public function analyzeTrafficDistribution(array $routes): array
@@ -362,34 +367,34 @@ class PerformanceAnalysisService
             ];
         }
 
-        $totalAccesses = array_sum(array_map(fn($r) => $r->getAccessCount(), $routes));
+        $totalAccesses = array_sum(array_map(static fn ($r) => $r->getAccessCount(), $routes));
         $sortedRoutes = $routes;
-        usort($sortedRoutes, fn($a, $b) => $b->getAccessCount() <=> $a->getAccessCount());
+        usort($sortedRoutes, static fn ($a, $b) => $b->getAccessCount() <=> $a->getAccessCount());
 
         // Top 10% of routes by access count
-        $top10Percent = (int) ceil(count($routes) * 0.1);
-        $hotPaths = array_slice($sortedRoutes, 0, max(1, $top10Percent));
+        $top10Percent = (int) ceil(\count($routes) * 0.1);
+        $hotPaths = \array_slice($sortedRoutes, 0, max(1, $top10Percent));
 
         // Bottom 10% of routes by access count
-        $bottom10Percent = (int) ceil(count($routes) * 0.1);
-        $coldPaths = array_slice($sortedRoutes, -max(1, $bottom10Percent));
+        $bottom10Percent = (int) ceil(\count($routes) * 0.1);
+        $coldPaths = \array_slice($sortedRoutes, -max(1, $bottom10Percent));
 
         // Calculate traffic concentration (what % of traffic goes to top 10% of routes)
-        $hotPathAccesses = array_sum(array_map(fn($r) => $r->getAccessCount(), $hotPaths));
+        $hotPathAccesses = array_sum(array_map(static fn ($r) => $r->getAccessCount(), $hotPaths));
         $trafficConcentration = $totalAccesses > 0 ? ($hotPathAccesses / $totalAccesses) * 100 : null;
 
         return [
             'total_accesses' => $totalAccesses,
-            'hot_paths' => array_map(fn($r) => [
+            'hot_paths' => array_map(static fn ($r) => [
                 'route' => $r,
                 'access_count' => $r->getAccessCount(),
                 'percentage' => $totalAccesses > 0 ? round(($r->getAccessCount() / $totalAccesses) * 100, 2) : 0,
             ], $hotPaths),
-            'cold_paths' => array_map(fn($r) => [
+            'cold_paths' => array_map(static fn ($r) => [
                 'route' => $r,
                 'access_count' => $r->getAccessCount(),
             ], $coldPaths),
-            'traffic_concentration' => $trafficConcentration !== null ? round($trafficConcentration, 2) : null,
+            'traffic_concentration' => null !== $trafficConcentration ? round($trafficConcentration, 2) : null,
         ];
     }
 }

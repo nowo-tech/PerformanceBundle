@@ -28,8 +28,6 @@ class RouteDataRecord
 {
     /**
      * Primary key identifier.
-     *
-     * @var int|null
      */
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -38,8 +36,6 @@ class RouteDataRecord
 
     /**
      * Related route data entity.
-     *
-     * @var RouteData|null
      */
     #[ORM\ManyToOne(targetEntity: RouteData::class, inversedBy: 'accessRecords')]
     #[ORM\JoinColumn(name: 'route_data_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
@@ -47,24 +43,18 @@ class RouteDataRecord
 
     /**
      * Access timestamp.
-     *
-     * @var \DateTimeImmutable
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $accessedAt;
 
     /**
      * HTTP status code of the response.
-     *
-     * @var int|null
      */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $statusCode = null;
 
     /**
      * Response time in seconds.
-     *
-     * @var float|null
      */
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
     private ?float $responseTime = null;
@@ -101,7 +91,6 @@ class RouteDataRecord
      * Set the related route data.
      *
      * @param RouteData|null $routeData The route data entity
-     * @return self
      */
     public function setRouteData(?RouteData $routeData): self
     {
@@ -124,7 +113,6 @@ class RouteDataRecord
      * Set the access timestamp.
      *
      * @param \DateTimeImmutable $accessedAt The access timestamp
-     * @return self
      */
     public function setAccessedAt(\DateTimeImmutable $accessedAt): self
     {
@@ -147,7 +135,6 @@ class RouteDataRecord
      * Set the HTTP status code.
      *
      * @param int|null $statusCode The HTTP status code
-     * @return self
      */
     public function setStatusCode(?int $statusCode): self
     {
@@ -170,7 +157,6 @@ class RouteDataRecord
      * Set the response time.
      *
      * @param float|null $responseTime The response time in seconds
-     * @return self
      */
     public function setResponseTime(?float $responseTime): self
     {

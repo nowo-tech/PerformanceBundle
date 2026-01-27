@@ -64,7 +64,7 @@ final class CreateTableCommand extends Command
         #[Autowire('%nowo_performance.table_name%')]
         private readonly string $tableName,
         #[Autowire('%nowo_performance.enable_access_records%')]
-        private readonly bool $enableAccessRecords = false
+        private readonly bool $enableAccessRecords = false,
     ) {
         parent::__construct();
     }
@@ -83,6 +83,7 @@ final class CreateTableCommand extends Command
      * Get schema manager from connection (compatible with DBAL 2.x and 3.x).
      *
      * @param \Doctrine\DBAL\Connection $connection The database connection
+     *
      * @return \Doctrine\DBAL\Schema\AbstractSchemaManager The schema manager
      */
     private function getSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
@@ -96,6 +97,7 @@ final class CreateTableCommand extends Command
             // @phpstan-ignore-next-line - getSchemaManager() exists in DBAL 2.x but not in type definitions for DBAL 3.x
             /** @var callable $getSchemaManager */
             $getSchemaManager = [$connection, 'getSchemaManager'];
+
             return $getSchemaManager();
         }
         throw new \RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
@@ -117,15 +119,15 @@ final class CreateTableCommand extends Command
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
-            
+
             // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
             // Get table name from metadata (compatible with different Doctrine versions)
-            $actualTableName = isset($metadata->table['name']) 
-                ? $metadata->table['name'] 
+            $actualTableName = isset($metadata->table['name'])
+                ? $metadata->table['name']
                 : $this->tableName;
-            
+
             $tableExists = $schemaManager->tablesExist([$actualTableName]);
 
             if ($tableExists && !$input->getOption('force') && !$input->getOption('update')) {
@@ -150,15 +152,15 @@ final class CreateTableCommand extends Command
 
                 $this->updateTableSchema($entityManager, $io);
 
-                $io->success(sprintf('Table "%s" updated successfully!', $actualTableName));
-                
+                $io->success(\sprintf('Table "%s" updated successfully!', $actualTableName));
+
                 // Also update records table if access records are enabled
                 if ($this->enableAccessRecords) {
                     $io->newLine();
                     $io->section('Updating Access Records Table');
                     $this->updateRecordsTable($entityManager, $io);
                 }
-                
+
                 return Command::SUCCESS;
             }
 
@@ -233,19 +235,19 @@ final class CreateTableCommand extends Command
 
         $connection = $entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
-        
+
         foreach ($sql as $statement) {
             // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
-            $platformClass = get_class($platform);
+            $platformClass = $platform::class;
             $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
-            
+
             if ($isMySQL) {
                 // Check if this is a CREATE TABLE statement and id column exists
-                if (preg_match('/CREATE\s+TABLE/i', $statement) && 
-                    preg_match('/`?id`?\s+INT/i', $statement) && 
-                    !preg_match('/AUTO_INCREMENT/i', $statement)) {
+                if (preg_match('/CREATE\s+TABLE/i', $statement)
+                    && preg_match('/`?id`?\s+INT/i', $statement)
+                    && !preg_match('/AUTO_INCREMENT/i', $statement)) {
                     // Add AUTO_INCREMENT to the id column - handle both backticked and non-backticked column names
                     // Pattern: id INT or `id` INT followed by NOT NULL
                     $statement = preg_replace(
@@ -255,7 +257,7 @@ final class CreateTableCommand extends Command
                     );
                 }
             }
-            
+
             // Fix invalid datetime defaults that MySQL might generate
             // Remove DEFAULT '0000-00-00 00:00:00' for nullable datetime columns
             $statement = preg_replace(
@@ -263,15 +265,15 @@ final class CreateTableCommand extends Command
                 '',
                 $statement
             );
-            
+
             // Also remove DEFAULT '0000-00-00' for date columns
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00'/i",
                 '',
                 $statement
             );
-            
-            $io->text(sprintf('  <comment>%s</comment>', $statement));
+
+            $io->text(\sprintf('  <comment>%s</comment>', $statement));
             $connection->executeStatement($statement);
         }
 
@@ -288,14 +290,14 @@ final class CreateTableCommand extends Command
     {
         $connection = $entityManager->getConnection();
         $schemaManager = $this->getSchemaManager($connection);
-        
+
         // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
         $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
         // Get table name from metadata (compatible with different Doctrine versions)
-        $actualTableName = isset($metadata->table['name']) 
-            ? $metadata->table['name'] 
+        $actualTableName = isset($metadata->table['name'])
+            ? $metadata->table['name']
             : $this->tableName;
-        
+
         // Verify table exists
         if (!$schemaManager->tablesExist([$actualTableName])) {
             $io->error(\sprintf('Table "%s" does not exist. Use the create command without --update to create it.', $actualTableName));
@@ -311,11 +313,11 @@ final class CreateTableCommand extends Command
 
         // Check if id column has AUTO_INCREMENT (MySQL/MariaDB)
         $platform = $connection->getDatabasePlatform();
-        $platformClass = get_class($platform);
+        $platformClass = $platform::class;
         $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
             || str_contains(strtolower($platformClass), 'mysql')
             || str_contains(strtolower($platformClass), 'mariadb');
-        
+
         if ($isMySQL && isset($existingColumnsMap['id'])) {
             $idColumn = $existingColumnsMap['id'];
             // Check if column is INTEGER type and doesn't have AUTO_INCREMENT
@@ -323,10 +325,10 @@ final class CreateTableCommand extends Command
             // Check SQL declaration to determine if it's an integer type (works for both DBAL 2.x and 3.x)
             $sqlDeclaration = strtolower($columnType->getSQLDeclaration([], $platform));
             $isIntegerType = str_contains($sqlDeclaration, 'int') && !str_contains($sqlDeclaration, 'bigint');
-            
+
             if ($isIntegerType) {
                 // Check if AUTO_INCREMENT is missing by querying the database
-                $checkSql = sprintf(
+                $checkSql = \sprintf(
                     "SELECT COLUMN_NAME, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'id'",
                     $platform->quoteStringLiteral($actualTableName)
                 );
@@ -350,7 +352,7 @@ final class CreateTableCommand extends Command
                         }
                     }
                 } catch (\Exception $e) {
-                    $io->warning(sprintf('Could not check/fix AUTO_INCREMENT for id column: %s', $e->getMessage()));
+                    $io->warning(\sprintf('Could not check/fix AUTO_INCREMENT for id column: %s', $e->getMessage()));
                 }
             }
         }
@@ -359,36 +361,36 @@ final class CreateTableCommand extends Command
         $expectedColumns = [];
         foreach ($metadata->getFieldNames() as $fieldName) {
             $columnName = $metadata->getColumnName($fieldName);
-            
+
             // getFieldMapping() returns array in DBAL 2.x, FieldMapping object in DBAL 3.x
             $fieldMapping = $metadata->getFieldMapping($fieldName);
-            $fieldMappingArray = is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
-            
+            $fieldMappingArray = \is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
+
             $options = $fieldMappingArray['options'] ?? [];
-            
+
             // Get default value from options['default'] or fieldMapping['default']
             $defaultValue = $options['default'] ?? $fieldMappingArray['default'] ?? null;
-            
+
             // Check if this field is autoincremental (ID field with GeneratedValue)
             // In Doctrine, if a field is an identifier and is of type INTEGER, it's typically autoincremental
             $isAutoincrement = false;
             if ($metadata->isIdentifier($fieldName)) {
                 $fieldType = $metadata->getTypeOfField($fieldName);
                 // Check if it's an integer type (integer, smallint, bigint)
-                if (in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
+                if (\in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
                     // Check generator type if available
                     $generatorType = $metadata->generatorType ?? null;
                     // If generatorType is AUTO, IDENTITY, or SEQUENCE (for MySQL, AUTO and IDENTITY are the same)
                     // Or if generatorType is null/not set, assume AUTO for integer IDs
-                    if ($generatorType === null 
-                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO 
-                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY
-                        || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
+                    if (null === $generatorType
+                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO === $generatorType
+                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY === $generatorType
+                        || isset($fieldMappingArray['generated']) && true === $fieldMappingArray['generated']) {
                         $isAutoincrement = true;
                     }
                 }
             }
-            
+
             $expectedColumns[strtolower($columnName)] = [
                 'field' => $fieldName,
                 'column' => $columnName,
@@ -408,7 +410,7 @@ final class CreateTableCommand extends Command
         // Compare each expected column with existing ones
         foreach ($expectedColumns as $columnNameLower => $expectedInfo) {
             $columnName = $expectedInfo['column'];
-            
+
             if (!isset($existingColumnsMap[$columnNameLower])) {
                 // Column doesn't exist, needs to be added
                 $columnsToAdd[$columnName] = $expectedInfo;
@@ -416,7 +418,7 @@ final class CreateTableCommand extends Command
                 // Column exists, check if it needs to be updated
                 $existingColumn = $existingColumnsMap[$columnNameLower];
                 $needsUpdate = $this->columnNeedsUpdate($existingColumn, $expectedInfo, $platform);
-                
+
                 if ($needsUpdate) {
                     $columnsToUpdate[$columnName] = [
                         'expected' => $expectedInfo,
@@ -432,20 +434,21 @@ final class CreateTableCommand extends Command
             $io->success('All columns are up to date. No changes needed.');
             // Still check indexes
             $this->addMissingIndexes($entityManager, $io, $table);
+
             return;
         }
 
-        $io->text(sprintf('Using table name: <info>%s</info>', $actualTableName));
+        $io->text(\sprintf('Using table name: <info>%s</info>', $actualTableName));
         $io->newLine();
 
         // Add missing columns
         if (!empty($columnsToAdd)) {
-            $io->section(sprintf('Adding <info>%d</info> missing column(s):', count($columnsToAdd)));
+            $io->section(\sprintf('Adding <info>%d</info> missing column(s):', \count($columnsToAdd)));
             foreach ($columnsToAdd as $columnName => $columnInfo) {
-                $io->text(sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
+                $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
                 $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-                $sql = sprintf(
+                $sql = \sprintf(
                     'ALTER TABLE %s ADD COLUMN %s %s',
                     $platform->quoteIdentifier($actualTableName),
                     $platform->quoteIdentifier($columnName),
@@ -454,9 +457,9 @@ final class CreateTableCommand extends Command
 
                 try {
                     $connection->executeStatement($sql);
-                    $io->text(sprintf('  ✓ Added column <info>%s</info>', $columnName));
+                    $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
                 } catch (\Exception $e) {
-                    $io->error(sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
+                    $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
@@ -465,21 +468,21 @@ final class CreateTableCommand extends Command
 
         // Update existing columns that have differences
         if (!empty($columnsToUpdate)) {
-            $io->section(sprintf('Updating <info>%d</info> column(s) with differences:', count($columnsToUpdate)));
+            $io->section(\sprintf('Updating <info>%d</info> column(s) with differences:', \count($columnsToUpdate)));
             foreach ($columnsToUpdate as $columnName => $columnData) {
                 $expected = $columnData['expected'];
                 $existing = $columnData['existing'];
-                
-                $io->text(sprintf('  - <comment>%s</comment>', $columnName));
-                
+
+                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
+
                 // Show what's different
                 $differences = $this->getColumnDifferences($existing, $expected, $platform);
                 if (!empty($differences)) {
-                    $io->text('    Differences: ' . implode(', ', $differences));
+                    $io->text('    Differences: '.implode(', ', $differences));
                 }
 
                 // Special handling for id column with AUTO_INCREMENT when foreign keys exist
-                if (strtolower($columnName) === 'id' && ($expected['autoincrement'] ?? false)) {
+                if ('id' === strtolower($columnName) && ($expected['autoincrement'] ?? false)) {
                     try {
                         $this->fixAutoIncrementWithForeignKeys(
                             $connection,
@@ -488,26 +491,26 @@ final class CreateTableCommand extends Command
                             $actualTableName,
                             $io
                         );
-                        $io->text(sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                        $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
                     } catch (\Exception $e) {
-                        $io->error(sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
+                        $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
                         throw $e;
                     }
                 } else {
-                $columnDefinition = $this->getColumnDefinition($expected, $platform);
-                $sql = sprintf(
-                    'ALTER TABLE %s MODIFY COLUMN %s %s',
-                    $platform->quoteIdentifier($actualTableName),
-                    $platform->quoteIdentifier($columnName),
-                    $columnDefinition
-                );
+                    $columnDefinition = $this->getColumnDefinition($expected, $platform);
+                    $sql = \sprintf(
+                        'ALTER TABLE %s MODIFY COLUMN %s %s',
+                        $platform->quoteIdentifier($actualTableName),
+                        $platform->quoteIdentifier($columnName),
+                        $columnDefinition
+                    );
 
-                try {
-                    $connection->executeStatement($sql);
-                    $io->text(sprintf('  ✓ Updated column <info>%s</info>', $columnName));
-                } catch (\Exception $e) {
-                    $io->error(sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
-                    throw $e;
+                    try {
+                        $connection->executeStatement($sql);
+                        $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                    } catch (\Exception $e) {
+                        $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
+                        throw $e;
                     }
                 }
             }
@@ -521,15 +524,16 @@ final class CreateTableCommand extends Command
     /**
      * Check if a column needs to be updated.
      *
-     * @param \Doctrine\DBAL\Schema\Column $existingColumn The existing column
-     * @param array<string, mixed> $expectedInfo Expected column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param \Doctrine\DBAL\Schema\Column              $existingColumn The existing column
+     * @param array<string, mixed>                      $expectedInfo   Expected column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform       Database platform
+     *
      * @return bool True if column needs update
      */
     private function columnNeedsUpdate(
         \Doctrine\DBAL\Schema\Column $existingColumn,
         array $expectedInfo,
-        \Doctrine\DBAL\Platforms\AbstractPlatform $platform
+        \Doctrine\DBAL\Platforms\AbstractPlatform $platform,
     ): bool {
         // Check nullable
         if ($existingColumn->getNotnull() !== !$expectedInfo['nullable']) {
@@ -553,17 +557,17 @@ final class CreateTableCommand extends Command
             $columnArray,
             $platform
         );
-        
+
         // Normalize types for comparison (remove length, etc.)
         $expectedTypeNormalized = preg_replace('/\([^)]+\)/', '', $expectedType);
         $existingTypeNormalized = preg_replace('/\([^)]+\)/', '', $existingType);
-        
+
         if (strtolower($expectedTypeNormalized) !== strtolower($existingTypeNormalized)) {
             return true;
         }
 
         // Check length for string types
-        if ($expectedInfo['type'] === 'string' && $expectedInfo['length'] !== null) {
+        if ('string' === $expectedInfo['type'] && null !== $expectedInfo['length']) {
             $existingLength = $existingColumn->getLength();
             if ($existingLength !== $expectedInfo['length']) {
                 return true;
@@ -573,21 +577,21 @@ final class CreateTableCommand extends Command
         // Check default value
         $expectedDefault = $expectedInfo['default'] ?? null;
         $existingDefault = $existingColumn->getDefault();
-        
+
         // Normalize comparison: both null means no default
-        if ($expectedDefault === null && $existingDefault === null) {
+        if (null === $expectedDefault && null === $existingDefault) {
             // Both are null, no difference
         } elseif ($expectedDefault !== $existingDefault) {
             // Handle boolean defaults
-            if (is_bool($expectedDefault) && $existingDefault !== null) {
-                $normalizedExisting = in_array(strtolower((string)$existingDefault), ['1', 'true', 'yes'], true);
+            if (\is_bool($expectedDefault) && null !== $existingDefault) {
+                $normalizedExisting = \in_array(strtolower((string) $existingDefault), ['1', 'true', 'yes'], true);
                 if ($normalizedExisting !== $expectedDefault) {
                     return true;
                 }
-            } elseif (is_numeric($expectedDefault) && $existingDefault !== null) {
+            } elseif (is_numeric($expectedDefault) && null !== $existingDefault) {
                 // Compare numeric defaults (handle string vs int/float)
                 // MySQL stores numeric defaults as strings, so we need to compare values
-                if ((float)$expectedDefault !== (float)$existingDefault) {
+                if ((float) $expectedDefault !== (float) $existingDefault) {
                     return true;
                 }
             } elseif ($expectedDefault !== $existingDefault) {
@@ -599,7 +603,7 @@ final class CreateTableCommand extends Command
         $expectedAutoincrement = $expectedInfo['autoincrement'] ?? false;
         $existingAutoincrement = $existingColumn->getAutoincrement();
         if ($expectedAutoincrement !== $existingAutoincrement) {
-            $platformClass = get_class($platform);
+            $platformClass = $platform::class;
             $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
@@ -615,21 +619,22 @@ final class CreateTableCommand extends Command
     /**
      * Get human-readable list of column differences.
      *
-     * @param \Doctrine\DBAL\Schema\Column $existingColumn The existing column
-     * @param array<string, mixed> $expectedInfo Expected column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param \Doctrine\DBAL\Schema\Column              $existingColumn The existing column
+     * @param array<string, mixed>                      $expectedInfo   Expected column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform       Database platform
+     *
      * @return array<string> List of differences
      */
     private function getColumnDifferences(
         \Doctrine\DBAL\Schema\Column $existingColumn,
         array $expectedInfo,
-        \Doctrine\DBAL\Platforms\AbstractPlatform $platform
+        \Doctrine\DBAL\Platforms\AbstractPlatform $platform,
     ): array {
         $differences = [];
 
         // Check nullable
         if ($existingColumn->getNotnull() !== !$expectedInfo['nullable']) {
-            $differences[] = sprintf(
+            $differences[] = \sprintf(
                 'nullable: %s → %s',
                 $existingColumn->getNotnull() ? 'NOT NULL' : 'NULL',
                 $expectedInfo['nullable'] ? 'NULL' : 'NOT NULL'
@@ -654,21 +659,21 @@ final class CreateTableCommand extends Command
             $columnArray,
             $platform
         );
-        
+
         // Normalize types for comparison (remove length, etc.)
         $normalizedExpected = strtolower(preg_replace('/\([^)]+\)/', '', $expectedSQLType));
         $normalizedExisting = strtolower(preg_replace('/\([^)]+\)/', '', $existingSQLType));
-        
+
         if ($normalizedExisting !== $normalizedExpected) {
-            $existingTypeName = get_class($existingColumn->getType());
-            $differences[] = sprintf('type: %s → %s', $existingTypeName, $expectedInfo['type']);
+            $existingTypeName = \get_class($existingColumn->getType());
+            $differences[] = \sprintf('type: %s → %s', $existingTypeName, $expectedInfo['type']);
         }
 
         // Check length
-        if ($expectedInfo['length'] !== null) {
+        if (null !== $expectedInfo['length']) {
             $existingLength = $existingColumn->getLength();
             if ($existingLength !== $expectedInfo['length']) {
-                $differences[] = sprintf('length: %s → %s', $existingLength ?? 'NULL', $expectedInfo['length']);
+                $differences[] = \sprintf('length: %s → %s', $existingLength ?? 'NULL', $expectedInfo['length']);
             }
         }
 
@@ -676,7 +681,7 @@ final class CreateTableCommand extends Command
         $expectedDefault = $expectedInfo['default'] ?? null;
         $existingDefault = $existingColumn->getDefault();
         if ($expectedDefault !== $existingDefault) {
-            $differences[] = sprintf('default: %s → %s', $existingDefault ?? 'NULL', $expectedDefault ?? 'NULL');
+            $differences[] = \sprintf('default: %s → %s', $existingDefault ?? 'NULL', $expectedDefault ?? 'NULL');
         }
 
         return $differences;
@@ -686,8 +691,7 @@ final class CreateTableCommand extends Command
      * Create the access records table using Doctrine's schema tool.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @return void
+     * @param SymfonyStyle           $io            The Symfony style output
      */
     private function createRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
@@ -695,47 +699,49 @@ final class CreateTableCommand extends Command
         $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
 
         // Filter to only RouteDataRecord entity
-        $routeDataRecordMetadata = array_filter($metadata, function ($meta) {
-            return $meta->getName() === 'Nowo\PerformanceBundle\Entity\RouteDataRecord';
+        $routeDataRecordMetadata = array_filter($metadata, static function ($meta) {
+            return 'Nowo\PerformanceBundle\Entity\RouteDataRecord' === $meta->getName();
         });
 
         if (empty($routeDataRecordMetadata)) {
             $io->warning('RouteDataRecord entity metadata not found. Skipping records table creation.');
+
             return;
         }
 
         // Get the actual table name from entity metadata
         $recordMetadata = reset($routeDataRecordMetadata);
         // Get table name from metadata (compatible with different Doctrine versions)
-        $actualTableName = isset($recordMetadata->table['name']) 
-            ? $recordMetadata->table['name'] 
-            : ($this->tableName . '_records');
+        $actualTableName = isset($recordMetadata->table['name'])
+            ? $recordMetadata->table['name']
+            : ($this->tableName.'_records');
 
-        $io->text(sprintf('Table name: <info>%s</info>', $actualTableName));
+        $io->text(\sprintf('Table name: <info>%s</info>', $actualTableName));
         $io->text('Generating SQL statements...');
-        
+
         $sql = $schemaTool->getCreateSchemaSql($routeDataRecordMetadata);
 
         if (empty($sql)) {
             $io->warning('No SQL statements to execute. Table might already exist.');
+
             return;
         }
 
         $connection = $entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
-        
+
         foreach ($sql as $statement) {
             // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
-            $platformClass = get_class($platform);
+            $platformClass = $platform::class;
             $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
-            
+
             if ($isMySQL) {
                 // Check if this is a CREATE TABLE statement and id column exists
-                if (preg_match('/CREATE\s+TABLE/i', $statement) && 
-                    preg_match('/`?id`?\s+INT/i', $statement) && 
-                    !preg_match('/AUTO_INCREMENT/i', $statement)) {
+                if (preg_match('/CREATE\s+TABLE/i', $statement)
+                    && preg_match('/`?id`?\s+INT/i', $statement)
+                    && !preg_match('/AUTO_INCREMENT/i', $statement)) {
                     // Add AUTO_INCREMENT to the id column - handle both backticked and non-backticked column names
                     // Pattern: id INT or `id` INT followed by NOT NULL
                     $statement = preg_replace(
@@ -745,55 +751,55 @@ final class CreateTableCommand extends Command
                     );
                 }
             }
-            
+
             // Fix invalid datetime defaults that MySQL might generate
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00\s+00:00:00'/i",
                 '',
                 $statement
             );
-            
+
             // Also remove DEFAULT '0000-00-00' for date columns
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00'/i",
                 '',
                 $statement
             );
-            
-            $io->text(sprintf('  <comment>%s</comment>', $statement));
+
+            $io->text(\sprintf('  <comment>%s</comment>', $statement));
             $connection->executeStatement($statement);
         }
 
-        $io->success(sprintf('Access records table "%s" created successfully!', $actualTableName));
+        $io->success(\sprintf('Access records table "%s" created successfully!', $actualTableName));
     }
 
     /**
      * Update the access records table schema by adding missing columns.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle $io The Symfony style output
-     * @return void
+     * @param SymfonyStyle           $io            The Symfony style output
      */
     private function updateRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
         $connection = $entityManager->getConnection();
         $schemaManager = $this->getSchemaManager($connection);
-        
+
         // Get the actual table name from entity metadata
         $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
         $actualTableName = method_exists($metadata, 'getTableName')
             ? $metadata->getTableName()
-            : ($metadata->table['name'] ?? $this->tableName . '_records');
-        
+            : ($metadata->table['name'] ?? $this->tableName.'_records');
+
         // Verify table exists
         if (!$schemaManager->tablesExist([$actualTableName])) {
-            $io->note(sprintf('Access records table "%s" does not exist. Creating it...', $actualTableName));
+            $io->note(\sprintf('Access records table "%s" does not exist. Creating it...', $actualTableName));
             $this->createRecordsTable($entityManager, $io);
+
             return;
         }
-        
-        $io->text(sprintf('Table name: <info>%s</info>', $actualTableName));
-        
+
+        $io->text(\sprintf('Table name: <info>%s</info>', $actualTableName));
+
         $table = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
@@ -804,35 +810,35 @@ final class CreateTableCommand extends Command
         $expectedColumns = [];
         foreach ($metadata->getFieldNames() as $fieldName) {
             $columnName = $metadata->getColumnName($fieldName);
-            
+
             // getFieldMapping() returns array in DBAL 2.x, FieldMapping object in DBAL 3.x
             $fieldMapping = $metadata->getFieldMapping($fieldName);
-            $fieldMappingArray = is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
-            
+            $fieldMappingArray = \is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
+
             $options = $fieldMappingArray['options'] ?? [];
-            
+
             $defaultValue = $options['default'] ?? $fieldMappingArray['default'] ?? null;
-            
+
             // Check if this field is autoincremental (ID field with GeneratedValue)
             // In Doctrine, if a field is an identifier and is of type INTEGER, it's typically autoincremental
             $isAutoincrement = false;
             if ($metadata->isIdentifier($fieldName)) {
                 $fieldType = $metadata->getTypeOfField($fieldName);
                 // Check if it's an integer type (integer, smallint, bigint)
-                if (in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
+                if (\in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
                     // Check generator type if available
                     $generatorType = $metadata->generatorType ?? null;
                     // If generatorType is AUTO, IDENTITY, or SEQUENCE (for MySQL, AUTO and IDENTITY are the same)
                     // Or if generatorType is null/not set, assume AUTO for integer IDs
-                    if ($generatorType === null 
-                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO 
-                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY
-                        || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
+                    if (null === $generatorType
+                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO === $generatorType
+                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY === $generatorType
+                        || isset($fieldMappingArray['generated']) && true === $fieldMappingArray['generated']) {
                         $isAutoincrement = true;
                     }
                 }
             }
-            
+
             $expectedColumns[strtolower($columnName)] = [
                 'field' => $fieldName,
                 'column' => $columnName,
@@ -851,7 +857,7 @@ final class CreateTableCommand extends Command
         // Compare each expected column with existing ones
         foreach ($expectedColumns as $columnNameLower => $expectedInfo) {
             $columnName = $expectedInfo['column'];
-            
+
             if (!isset($existingColumnsMap[$columnNameLower])) {
                 // Column doesn't exist, needs to be added
                 $columnsToAdd[$columnName] = $expectedInfo;
@@ -860,11 +866,12 @@ final class CreateTableCommand extends Command
 
         if (empty($columnsToAdd)) {
             $io->success('All columns are up to date. No changes needed.');
+
             return;
         }
 
         // Add missing columns
-        $io->section(sprintf('Adding <info>%d</info> missing column(s):', count($columnsToAdd)));
+        $io->section(\sprintf('Adding <info>%d</info> missing column(s):', \count($columnsToAdd)));
         foreach ($columnsToAdd as $columnName => $columnInfo) {
             $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
@@ -884,8 +891,8 @@ final class CreateTableCommand extends Command
                 throw $e;
             }
         }
-        
-        $io->success(sprintf('Access records table "%s" updated successfully!', $actualTableName));
+
+        $io->success(\sprintf('Access records table "%s" updated successfully!', $actualTableName));
     }
 
     /**
@@ -911,15 +918,15 @@ final class CreateTableCommand extends Command
         $default = '';
         if (!$isAutoincrement && (isset($options['default']) || isset($columnInfo['default']))) {
             $defaultValue = $columnInfo['default'] ?? $options['default'];
-            
+
             // Skip default for datetime types (they should be nullable or use CURRENT_TIMESTAMP explicitly)
-            if ($defaultValue !== null && !in_array($type, ['datetime', 'datetime_immutable', 'date', 'time'], true)) {
-                if (is_bool($defaultValue)) {
-                    $default = ' DEFAULT ' . ($defaultValue ? '1' : '0');
+            if (null !== $defaultValue && !\in_array($type, ['datetime', 'datetime_immutable', 'date', 'time'], true)) {
+                if (\is_bool($defaultValue)) {
+                    $default = ' DEFAULT '.($defaultValue ? '1' : '0');
                 } elseif (is_numeric($defaultValue)) {
-                    $default = ' DEFAULT ' . $defaultValue;
-                } elseif (is_string($defaultValue)) {
-                    $default = ' DEFAULT ' . $platform->quoteStringLiteral($defaultValue);
+                    $default = ' DEFAULT '.$defaultValue;
+                } elseif (\is_string($defaultValue)) {
+                    $default = ' DEFAULT '.$platform->quoteStringLiteral($defaultValue);
                 }
             }
         }
@@ -929,24 +936,25 @@ final class CreateTableCommand extends Command
         // Add AUTO_INCREMENT for MySQL/MariaDB if column is autoincremental
         $autoincrement = '';
         if ($isAutoincrement) {
-            $platformClass = get_class($platform);
+            $platformClass = $platform::class;
             $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
-            
+
             if ($isMySQL) {
                 $autoincrement = ' AUTO_INCREMENT';
             }
         }
 
-        return $sqlType . $nullConstraint . $default . $autoincrement;
+        return $sqlType.$nullConstraint.$default.$autoincrement;
     }
 
     /**
      * Get SQL type string for a column.
      *
-     * @param array<string, mixed> $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param array<string, mixed>                      $columnInfo Column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   Database platform
+     *
      * @return string SQL type declaration
      */
     private function getColumnSQLType(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
@@ -967,20 +975,21 @@ final class CreateTableCommand extends Command
                 // DBAL 2.x method
                 $doctrineType = \Doctrine\DBAL\Types\Type::getType($type);
             }
-            
-            if ($doctrineType !== null) {
+
+            if (null !== $doctrineType) {
                 $column = [];
-                if ($length !== null) {
+                if (null !== $length) {
                     $column['length'] = $length;
                 } elseif (isset($options['length'])) {
                     $column['length'] = $options['length'];
                 }
+
                 return $doctrineType->getSQLDeclaration($column, $platform);
             }
         } catch (\Exception $e) {
             // Fall through to fallback mapping
         }
-        
+
         // Fallback to manual mapping (used if Type system fails or is not available)
         $typeMap = [
             'boolean' => 'BOOLEAN',
@@ -994,9 +1003,9 @@ final class CreateTableCommand extends Command
         $sqlType = $typeMap[strtolower($type)] ?? 'VARCHAR(255)';
 
         // Handle string length
-        if ($type === 'string') {
+        if ('string' === $type) {
             $finalLength = $length ?? $options['length'] ?? 255;
-            $sqlType = sprintf('VARCHAR(%d)', $finalLength);
+            $sqlType = \sprintf('VARCHAR(%d)', $finalLength);
         }
 
         return $sqlType;
@@ -1018,9 +1027,9 @@ final class CreateTableCommand extends Command
         // Get expected indexes from entity metadata
         $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
         $expectedIndexes = [];
-        
+
         // Get indexes from table metadata (Doctrine ORM 2.x style)
-        if (isset($metadata->table['indexes']) && is_array($metadata->table['indexes'])) {
+        if (isset($metadata->table['indexes']) && \is_array($metadata->table['indexes'])) {
             foreach ($metadata->table['indexes'] as $indexName => $indexDefinition) {
                 $columns = $indexDefinition['columns'] ?? [];
                 if (!empty($columns)) {
@@ -1030,7 +1039,7 @@ final class CreateTableCommand extends Command
         }
 
         // Also check for Index attributes (Doctrine ORM 3.x style with PHP 8 attributes)
-        if (PHP_VERSION_ID >= 80000) {
+        if (\PHP_VERSION_ID >= 80000) {
             try {
                 $reflection = new \ReflectionClass('Nowo\PerformanceBundle\Entity\RouteData');
                 $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\Index::class);
@@ -1085,8 +1094,8 @@ final class CreateTableCommand extends Command
             $actualTableName = method_exists($metadata, 'getTableName')
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName);
-            
-            $sql = sprintf(
+
+            $sql = \sprintf(
                 'CREATE INDEX %s ON %s (%s)',
                 $platform->quoteIdentifier($indexName),
                 $platform->quoteIdentifier($actualTableName),
@@ -1095,7 +1104,7 @@ final class CreateTableCommand extends Command
 
             try {
                 $connection->executeStatement($sql);
-                $io->text(sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
+                $io->text(\sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
             } catch (\Exception $e) {
                 $io->warning(\sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
@@ -1105,43 +1114,43 @@ final class CreateTableCommand extends Command
     /**
      * Fix AUTO_INCREMENT for id column, handling foreign key constraints.
      *
-     * @param \Doctrine\DBAL\Connection $connection The database connection
+     * @param \Doctrine\DBAL\Connection                   $connection    The database connection
      * @param \Doctrine\DBAL\Schema\AbstractSchemaManager $schemaManager The schema manager
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform The database platform
-     * @param string $tableName The table name
-     * @param SymfonyStyle $io The Symfony style output
-     * @return void
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform   $platform      The database platform
+     * @param string                                      $tableName     The table name
+     * @param SymfonyStyle                                $io            The Symfony style output
      */
     private function fixAutoIncrementWithForeignKeys(
         \Doctrine\DBAL\Connection $connection,
         \Doctrine\DBAL\Schema\AbstractSchemaManager $schemaManager,
         \Doctrine\DBAL\Platforms\AbstractPlatform $platform,
         string $tableName,
-        SymfonyStyle $io
+        SymfonyStyle $io,
     ): void {
-        $platformClass = get_class($platform);
+        $platformClass = $platform::class;
         $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
             || str_contains(strtolower($platformClass), 'mysql')
             || str_contains(strtolower($platformClass), 'mariadb');
 
         if (!$isMySQL) {
             // Only MySQL/MariaDB need this special handling
-            $alterSql = sprintf(
+            $alterSql = \sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s INT NOT NULL AUTO_INCREMENT',
                 $platform->quoteIdentifier($tableName),
                 $platform->quoteIdentifier('id')
             );
             $connection->executeStatement($alterSql);
+
             return;
         }
 
         // Get all foreign keys that reference the id column of this table
         $foreignKeysToRestore = [];
-        
+
         try {
             // Query INFORMATION_SCHEMA to find foreign keys referencing this table's id column
             // Need to JOIN KEY_COLUMN_USAGE with REFERENTIAL_CONSTRAINTS to get UPDATE_RULE and DELETE_RULE
-            $fkQuery = sprintf(
+            $fkQuery = \sprintf(
                 "SELECT 
                     kcu.CONSTRAINT_NAME,
                     kcu.TABLE_NAME,
@@ -1160,14 +1169,14 @@ final class CreateTableCommand extends Command
                     AND kcu.CONSTRAINT_NAME != 'PRIMARY'",
                 $platform->quoteStringLiteral($tableName)
             );
-            
+
             $foreignKeys = $connection->fetchAllAssociative($fkQuery);
-            
+
             // Drop foreign keys that reference this table's id column
             foreach ($foreignKeys as $fk) {
                 $fkName = $fk['CONSTRAINT_NAME'];
                 $fkTable = $fk['TABLE_NAME'];
-                
+
                 // Store FK info for restoration
                 $foreignKeysToRestore[] = [
                     'name' => $fkName,
@@ -1178,33 +1187,33 @@ final class CreateTableCommand extends Command
                     'update_rule' => $fk['UPDATE_RULE'],
                     'delete_rule' => $fk['DELETE_RULE'],
                 ];
-                
+
                 // Drop the foreign key
-                $dropFkSql = sprintf(
+                $dropFkSql = \sprintf(
                     'ALTER TABLE %s DROP FOREIGN KEY %s',
                     $platform->quoteIdentifier($fkTable),
                     $platform->quoteIdentifier($fkName)
                 );
-                
+
                 try {
                     $connection->executeStatement($dropFkSql);
-                    $io->text(sprintf('  Temporarily dropped foreign key <comment>%s</comment> from table <info>%s</info>', $fkName, $fkTable));
+                    $io->text(\sprintf('  Temporarily dropped foreign key <comment>%s</comment> from table <info>%s</info>', $fkName, $fkTable));
                 } catch (\Exception $e) {
-                    $io->warning(sprintf('  Could not drop foreign key %s: %s', $fkName, $e->getMessage()));
+                    $io->warning(\sprintf('  Could not drop foreign key %s: %s', $fkName, $e->getMessage()));
                 }
             }
-            
+
             // Now modify the id column to add AUTO_INCREMENT
-            $alterSql = sprintf(
+            $alterSql = \sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s INT NOT NULL AUTO_INCREMENT',
                 $platform->quoteIdentifier($tableName),
                 $platform->quoteIdentifier('id')
             );
             $connection->executeStatement($alterSql);
-            
+
             // Restore foreign keys
             foreach ($foreignKeysToRestore as $fkInfo) {
-                $restoreFkSql = sprintf(
+                $restoreFkSql = \sprintf(
                     'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s',
                     $platform->quoteIdentifier($fkInfo['table']),
                     $platform->quoteIdentifier($fkInfo['name']),
@@ -1214,12 +1223,12 @@ final class CreateTableCommand extends Command
                     $fkInfo['update_rule'],
                     $fkInfo['delete_rule']
                 );
-                
+
                 try {
                     $connection->executeStatement($restoreFkSql);
-                    $io->text(sprintf('  Restored foreign key <comment>%s</comment> on table <info>%s</info>', $fkInfo['name'], $fkInfo['table']));
+                    $io->text(\sprintf('  Restored foreign key <comment>%s</comment> on table <info>%s</info>', $fkInfo['name'], $fkInfo['table']));
                 } catch (\Exception $e) {
-                    $io->error(sprintf('  Failed to restore foreign key %s: %s', $fkInfo['name'], $e->getMessage()));
+                    $io->error(\sprintf('  Failed to restore foreign key %s: %s', $fkInfo['name'], $e->getMessage()));
                     throw $e;
                 }
             }
@@ -1227,7 +1236,7 @@ final class CreateTableCommand extends Command
             // If something went wrong, try to restore foreign keys before rethrowing
             foreach ($foreignKeysToRestore as $fkInfo) {
                 try {
-                    $restoreFkSql = sprintf(
+                    $restoreFkSql = \sprintf(
                         'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s',
                         $platform->quoteIdentifier($fkInfo['table']),
                         $platform->quoteIdentifier($fkInfo['name']),
@@ -1240,7 +1249,7 @@ final class CreateTableCommand extends Command
                     $connection->executeStatement($restoreFkSql);
                 } catch (\Exception $restoreException) {
                     // Log but don't throw - we want to throw the original exception
-                    $io->error(sprintf('  Failed to restore foreign key %s during error recovery: %s', $fkInfo['name'], $restoreException->getMessage()));
+                    $io->error(\sprintf('  Failed to restore foreign key %s during error recovery: %s', $fkInfo['name'], $restoreException->getMessage()));
                 }
             }
             throw $e;

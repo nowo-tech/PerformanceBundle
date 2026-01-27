@@ -19,8 +19,9 @@ interface NotificationChannelInterface
     /**
      * Send a performance alert notification.
      *
-     * @param PerformanceAlert $alert The performance alert
-     * @param RouteData $routeData The route data that triggered the alert
+     * @param PerformanceAlert $alert     The performance alert
+     * @param RouteData        $routeData The route data that triggered the alert
+     *
      * @return bool True if notification was sent successfully, false otherwise
      */
     public function send(PerformanceAlert $alert, RouteData $routeData): bool;

@@ -76,7 +76,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter('nowo_performance.dashboard.template', $dashboardConfig['template'] ?? 'bootstrap');
         $container->setParameter('nowo_performance.dashboard.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
         $container->setParameter('nowo_performance.dashboard.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
-        
+
         $dateFormatsConfig = $dashboardConfig['date_formats'] ?? [];
         $container->setParameter('nowo_performance.dashboard.date_formats.datetime', $dateFormatsConfig['datetime'] ?? 'Y-m-d H:i:s');
         $container->setParameter('nowo_performance.dashboard.date_formats.date', $dateFormatsConfig['date'] ?? 'Y-m-d H:i');
@@ -85,20 +85,20 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         // Notifications configuration
         $notificationsConfig = $config['notifications'] ?? [];
         $container->setParameter('nowo_performance.notifications.enabled', $notificationsConfig['enabled'] ?? false);
-        
+
         $emailConfig = $notificationsConfig['email'] ?? [];
         $container->setParameter('nowo_performance.notifications.email.enabled', $emailConfig['enabled'] ?? false);
         $container->setParameter('nowo_performance.notifications.email.from', $emailConfig['from'] ?? 'noreply@example.com');
         $container->setParameter('nowo_performance.notifications.email.to', $emailConfig['to'] ?? []);
-        
+
         $slackConfig = $notificationsConfig['slack'] ?? [];
         $container->setParameter('nowo_performance.notifications.slack.enabled', $slackConfig['enabled'] ?? false);
         $container->setParameter('nowo_performance.notifications.slack.webhook_url', $slackConfig['webhook_url'] ?? '');
-        
+
         $teamsConfig = $notificationsConfig['teams'] ?? [];
         $container->setParameter('nowo_performance.notifications.teams.enabled', $teamsConfig['enabled'] ?? false);
         $container->setParameter('nowo_performance.notifications.teams.webhook_url', $teamsConfig['webhook_url'] ?? '');
-        
+
         $webhookConfig = $notificationsConfig['webhook'] ?? [];
         $container->setParameter('nowo_performance.notifications.webhook.enabled', $webhookConfig['enabled'] ?? false);
         $container->setParameter('nowo_performance.notifications.webhook.url', $webhookConfig['url'] ?? '');
@@ -172,20 +172,20 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
                 foreach ($existingConfigs as $config) {
                     if (isset($config['dbal']['connections'][$connectionName])) {
                         $connectionConfig = $config['dbal']['connections'][$connectionName];
-                        
+
                         // Check for 'middlewares' (DoctrineBundle 2.x)
                         if (isset($connectionConfig['middlewares'])) {
                             $middlewares = $connectionConfig['middlewares'];
-                            if (is_array($middlewares) && in_array(QueryTrackingMiddleware::class, $middlewares, true)) {
+                            if (\is_array($middlewares) && \in_array(QueryTrackingMiddleware::class, $middlewares, true)) {
                                 $hasMiddleware = true;
                                 break;
                             }
                         }
-                        
+
                         // Check for 'yamlMiddleware' (DoctrineBundle 2.10.0+)
                         if (isset($connectionConfig['yamlMiddleware'])) {
                             $yamlMiddlewares = $connectionConfig['yamlMiddleware'];
-                            if (is_array($yamlMiddlewares) && in_array(QueryTrackingMiddleware::class, $yamlMiddlewares, true)) {
+                            if (\is_array($yamlMiddlewares) && \in_array(QueryTrackingMiddleware::class, $yamlMiddlewares, true)) {
                                 $hasYamlMiddleware = true;
                                 break;
                             }
