@@ -69,8 +69,9 @@ class TableStatusChecker
             // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
+            // Use method_exists check to avoid linter errors and ensure compatibility
             $actualTableName = method_exists($metadata, 'getTableName')
-                ? $metadata->getTableName()
+                ? /** @phpstan-ignore-next-line */ $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName);
 
             return $schemaManager->tablesExist([$actualTableName]);

@@ -207,12 +207,19 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Skip ignored routes
         if (null !== $this->routeName && \in_array($this->routeName, $this->ignoreRoutes, true)) {
+            if (\function_exists('error_log')) {
+                error_log(\sprintf('[PerformanceBundle] Tracking disabled: route "%s" is in ignore_routes list', $this->routeName));
+            }
             $this->dataCollector->setEnabled(false);
             $this->dataCollector->setDisabledReason(\sprintf('Route "%s" is in ignore_routes list', $this->routeName));
             // Inform collector that route is ignored
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
+        }
+
+        if (\function_exists('error_log')) {
+            error_log(\sprintf('[PerformanceBundle] Tracking enabled: route="%s", env=%s', $this->routeName ?? 'null', $env));
         }
 
         // Start timing
