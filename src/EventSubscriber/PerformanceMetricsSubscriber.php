@@ -159,7 +159,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        
+
         // Try multiple methods to detect environment
         $env = null;
         if (null !== $this->kernel) {
@@ -179,9 +179,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         $this->dataCollector->setCurrentEnvironment($env);
 
         if (\function_exists('error_log')) {
-            error_log(\sprintf('[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s', 
-                null !== $this->kernel ? $this->kernel->getEnvironment() : 'null', 
-                $env, 
+            error_log(\sprintf('[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s',
+                null !== $this->kernel ? $this->kernel->getEnvironment() : 'null',
+                $env,
                 implode(', ', $this->environments)
             ));
         }
@@ -263,7 +263,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        
+
         // Try multiple methods to detect environment
         $env = null;
         if (null !== $this->kernel) {
