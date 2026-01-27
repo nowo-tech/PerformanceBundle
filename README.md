@@ -31,6 +31,7 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ **Memory usage tracking** - Track peak memory consumption per route
 - ✅ **Access frequency tracking** - Track how often routes are accessed
 - ✅ **HTTP status code tracking** - Track and calculate ratios for HTTP status codes (200, 404, 500, etc.)
+- ✅ **Sub-request tracking** - Optional tracking of sub-requests (ESI, fragments, includes) in addition to main requests
 - ✅ **Performance notifications** - Email, Slack, Teams, and webhook notifications for performance alerts
 - ✅ Route data persistence in database
 - ✅ Environment-specific metrics (dev, test, prod)
@@ -167,6 +168,7 @@ nowo_performance:
     table_name: 'routes_data'        # Table name for metrics
     track_queries: true              # Track database queries
     track_request_time: true         # Track request time
+    track_sub_requests: false        # Track sub-requests (ESI, fragments, etc.)
     ignore_routes:                   # Routes to ignore
         - '_wdt'
         - '_profiler'

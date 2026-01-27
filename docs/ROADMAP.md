@@ -199,6 +199,13 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - ✅ Display in dashboard with badges
   - ✅ Sorting by access count
 
+- [x] **Sub-request tracking** ✅ **COMPLETED** (2025-01-27)
+  - ✅ Configurable `track_sub_requests` option
+  - ✅ Track sub-requests (ESI, fragments, includes) in addition to main requests
+  - ✅ Default: false (only main requests tracked for backward compatibility)
+  - ✅ Useful for monitoring ESI performance, fragment rendering, and debugging sub-request bottlenecks
+  - ✅ Request type (main/sub) included in logging for diagnostics
+
 - [ ] **Cache performance tracking**
   - Cache hit/miss ratios
   - Cache operation timing
@@ -620,8 +627,8 @@ This roadmap is a living document. We welcome feedback and contributions:
 
 ---
 
-**Last Updated:** 2025-01-26  
-**Next Review:** 2025-04-26
+**Last Updated:** 2025-01-27  
+**Next Review:** 2025-04-27
 
 ### Recent Improvements (2025-01-26)
 
@@ -643,3 +650,20 @@ This roadmap is a living document. We welcome feedback and contributions:
 - ✅ **Record Operation Status**: Added tracking and display of whether records were created or updated
   - Shows "New record created" or "Existing record updated" status
   - Helps debug metric recording behavior
+
+#### Compatibility & Code Quality
+- ✅ **Doctrine DBAL Deprecation Fixes** ✅ **ADDED** (2025-01-27)
+  - ✅ Fixed deprecation warnings in CreateTableCommand and TableStatusChecker
+  - ✅ Replaced deprecated `AbstractPlatform::quoteIdentifier()` with helper method compatible with DBAL 2.x and 3.x
+  - ✅ Replaced deprecated `Column::getName()` with `getColumnName()` helper method
+  - ✅ Replaced deprecated `AbstractAsset::getName()` (for Index objects) with `getAssetName()` helper method
+  - ✅ All helper methods use `getQuotedName()` for DBAL 3.x and fallback to `getName()` for DBAL 2.x
+  - ✅ Eliminates deprecation warnings when running `nowo:performance:create-table --update`
+  - ✅ Maintains full backward compatibility with DBAL 2.x
+
+#### Advanced Tracking
+- ✅ **Sub-request Tracking Support** ✅ **ADDED** (2025-01-27)
+  - ✅ Configurable `track_sub_requests` option (default: false)
+  - ✅ Tracks both main requests and sub-requests separately when enabled
+  - ✅ Useful for ESI performance monitoring, fragment rendering, and debugging sub-request bottlenecks
+  - ✅ Request type (main/sub) included in logging for better diagnostics

@@ -447,6 +447,7 @@ Notifications are automatically sent when:
 5. **Review periodically** - Review metrics to identify performance issues
 6. **Configure status code tracking** - Track relevant HTTP status codes for your application
 7. **Set up notifications** - Configure email/Slack/Teams alerts for production environments
+8. **Sub-request tracking** - Enable `track_sub_requests` only if you need to monitor ESI, fragments, or includes separately (increases database storage)
 
 ## Examples
 
