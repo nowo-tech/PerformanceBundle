@@ -39,6 +39,7 @@ nowo_performance:
     connection: 'default'
     track_queries: true
     track_request_time: true
+    track_sub_requests: false  # Set to true to track sub-requests (ESI, fragments, etc.)
     ignore_routes:
         - '_wdt'
         - '_profiler'
