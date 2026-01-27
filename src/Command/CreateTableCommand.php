@@ -308,7 +308,8 @@ final class CreateTableCommand extends Command
         $table = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
-            $existingColumnsMap[strtolower($column->getName())] = $column;
+            $columnName = $this->getColumnName($column, $connection);
+            $existingColumnsMap[strtolower($columnName)] = $column;
         }
 
         // Check if id column has AUTO_INCREMENT (MySQL/MariaDB)
