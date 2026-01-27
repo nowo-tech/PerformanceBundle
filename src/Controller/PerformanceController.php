@@ -716,57 +716,43 @@ class PerformanceController extends AbstractController
      */
     protected function getAvailableEnvironments(): array
     {
-        // Try to get from cache first
-        if (null !== $this->cacheService) {
-            $cached = $this->cacheService->getCachedEnvironments();
-            if (null !== $cached) {
-                return $cached;
-            }
-        }
+        // Always use configured allowed environments as the primary source
+        // This ensures all configured environments are available in the filter
+        if (!empty($this->allowedEnvironments)) {
+            $environments = $this->allowedEnvironments;
+        } else {
+            // If no allowed environments configured, try to get from database
+            try {
+                $environments = $this->metricsService->getRepository()->getDistinctEnvironments();
 
-        try {
-            $environments = $this->metricsService->getRepository()->getDistinctEnvironments();
-
-            // If no environments found in database, use configured allowed environments
-            // This ensures the filter always has options even when no data is recorded yet
-            if (empty($environments) && !empty($this->allowedEnvironments)) {
-                $environments = $this->allowedEnvironments;
-            }
-
-            // If still empty, add current environment as fallback
-            if (empty($environments)) {
-                try {
-                    $currentEnv = $this->getParameter('kernel.environment');
-                    if (null !== $currentEnv) {
-                        $environments = [$currentEnv];
+                // If still empty, add current environment as fallback
+                if (empty($environments)) {
+                    try {
+                        $currentEnv = $this->getParameter('kernel.environment');
+                        if (null !== $currentEnv) {
+                            $environments = [$currentEnv];
+                        }
+                    } catch (\Exception $e) {
+                        // Ignore if parameter is not available
                     }
-                } catch (\Exception $e) {
-                    // Ignore if parameter is not available
                 }
-            }
 
-            // Final fallback to default environments
-            if (empty($environments)) {
+                // Final fallback to default environments
+                if (empty($environments)) {
+                    $environments = ['dev', 'test', 'prod'];
+                }
+            } catch (\Exception $e) {
+                // Fallback to default environments if repository query fails
                 $environments = ['dev', 'test', 'prod'];
             }
-
-            // Cache the result
-            if (null !== $this->cacheService) {
-                $this->cacheService->cacheEnvironments($environments);
-            }
-
-            return $environments;
-        } catch (\Exception $e) {
-            // Fallback to configured allowed environments if repository query fails
-            $default = !empty($this->allowedEnvironments) ? $this->allowedEnvironments : ['dev', 'test', 'prod'];
-
-            // Cache the fallback
-            if (null !== $this->cacheService) {
-                $this->cacheService->cacheEnvironments($default);
-            }
-
-            return $default;
         }
+
+        // Cache the result
+        if (null !== $this->cacheService) {
+            $this->cacheService->cacheEnvironments($environments);
+        }
+
+        return $environments;
     }
 
     /**

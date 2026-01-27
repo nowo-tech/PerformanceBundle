@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-01-27
+
+### Added
+- **Enhanced debug logging** - Added comprehensive logging throughout the performance tracking flow
+  - Detailed logs in `onKernelRequest` showing collector state and configuration
+  - Detailed logs in `onKernelTerminate` showing start state, route checks, and environment validation
+  - Logs for request time calculation (when tracked and when not)
+  - Logs for query metrics calculation (count and time)
+  - Logs for memory usage calculation
+  - Logs when attempting to save metrics with all details (route, env, method, statusCode, requestTime, queryCount, queryTime, memoryUsage, samplingRate)
+  - Logs showing the result of `recordMetrics` (is_new, was_updated)
+  - Logs in `recordMetrics` showing start state and async/sync mode
+  - Logs in `recordMetricsSync` showing search for existing records, creation of new records, access count increments, shouldUpdate checks, before/after flush, and success/error states
+  - All logs include route name and environment for easy filtering
+  - Helps diagnose why data might not be saved in production environments
+
+### Added
+- **Comprehensive test coverage for debugging** - Added 33 new tests for logging and edge cases
+  - 13 tests for `PerformanceMetricsSubscriber` debug logging
+  - 12 tests for `PerformanceMetricsService` debug logging
+  - 8 tests for edge cases where data might not be saved
+  - Tests verify all debug logs are generated correctly
+  - Tests cover scenarios like collector disabled between REQUEST and TERMINATE, route name lost, environment changed, null startTime/startMemory, all metrics null, and sampling skips
+  - Improves reliability and helps diagnose production issues
+
 ## [1.0.6] - 2026-01-27
 
 ### Fixed

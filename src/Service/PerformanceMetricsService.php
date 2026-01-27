@@ -175,6 +175,16 @@ class PerformanceMetricsService
         ?int $statusCode = null,
         array $trackStatusCodes = [],
     ): array {
+        LogHelper::logf(
+            '[PerformanceBundle] recordMetrics: START - route=%s, env=%s, async=%s, requestTime=%s, totalQueries=%s',
+            $this->enableLogging,
+            $routeName,
+            $env,
+            $this->async ? 'true' : 'false',
+            null !== $requestTime ? (string) $requestTime : 'null',
+            null !== $totalQueries ? (string) $totalQueries : 'null'
+        );
+
         // Dispatch before event to allow modification of metrics
         if (null !== $this->eventDispatcher) {
             $beforeEvent = new BeforeMetricsRecordedEvent(
@@ -200,6 +210,7 @@ class PerformanceMetricsService
 
         // If async mode is enabled and message bus is available, dispatch message
         if ($this->async && null !== $this->messageBus) {
+            LogHelper::log('[PerformanceBundle] recordMetrics: Dispatching async message', $this->enableLogging);
             $message = new RecordMetricsMessage(
                 $routeName,
                 $env,
@@ -217,6 +228,7 @@ class PerformanceMetricsService
         }
 
         // Otherwise, record synchronously
+        LogHelper::log('[PerformanceBundle] recordMetrics: Recording synchronously', $this->enableLogging);
         return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes);
     }
 
@@ -250,9 +262,23 @@ class PerformanceMetricsService
     ): array {
         $isNew = false;
         $wasUpdated = false;
+        
+        LogHelper::logf(
+            '[PerformanceBundle] recordMetricsSync: Looking for existing record - route=%s, env=%s',
+            $this->enableLogging,
+            $routeName,
+            $env
+        );
+        
         $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
 
         if (null === $routeData) {
+            LogHelper::logf(
+                '[PerformanceBundle] recordMetricsSync: No existing record found, creating new - route=%s, env=%s',
+                $this->enableLogging,
+                $routeName,
+                $env
+            );
             // Create new record (accessCount defaults to 1)
             $routeData = new RouteData();
             $routeData->setName($routeName);
@@ -273,10 +299,24 @@ class PerformanceMetricsService
             $this->entityManager->persist($routeData);
             $isNew = true;
         } else {
+            LogHelper::logf(
+                '[PerformanceBundle] recordMetricsSync: Existing record found - route=%s, env=%s, currentAccessCount=%s',
+                $this->enableLogging,
+                $routeName,
+                $env,
+                (string) $routeData->getAccessCount()
+            );
+            
             // Always increment access count when route is accessed
             $routeData->incrementAccessCount();
             // Incrementing access count always updates the record (last_accessed_at changes)
             $wasUpdated = true;
+            
+            LogHelper::logf(
+                '[PerformanceBundle] recordMetricsSync: Access count incremented - newAccessCount=%s',
+                $this->enableLogging,
+                (string) $routeData->getAccessCount()
+            );
 
             // Track status code if configured
             if (null !== $statusCode && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
@@ -285,8 +325,20 @@ class PerformanceMetricsService
             }
 
             // Update metrics if they are worse (higher time or more queries)
-            if ($routeData->shouldUpdate($requestTime, $totalQueries)) {
+            $shouldUpdate = $routeData->shouldUpdate($requestTime, $totalQueries);
+            LogHelper::logf(
+                '[PerformanceBundle] recordMetricsSync: shouldUpdate check - result=%s, requestTime=%s (current=%s), totalQueries=%s (current=%s)',
+                $this->enableLogging,
+                $shouldUpdate ? 'true' : 'false',
+                null !== $requestTime ? (string) $requestTime : 'null',
+                null !== $routeData->getRequestTime() ? (string) $routeData->getRequestTime() : 'null',
+                null !== $totalQueries ? (string) $totalQueries : 'null',
+                null !== $routeData->getTotalQueries() ? (string) $routeData->getTotalQueries() : 'null'
+            );
+            
+            if ($shouldUpdate) {
                 // Metrics update also updates the record
+                LogHelper::log('[PerformanceBundle] recordMetricsSync: Updating metrics', $this->enableLogging);
 
                 if (null !== $requestTime && (null === $routeData->getRequestTime() || $requestTime > $routeData->getRequestTime())) {
                     $routeData->setRequestTime($requestTime);
@@ -313,6 +365,8 @@ class PerformanceMetricsService
                 if (null !== $httpMethod) {
                     $routeData->setHttpMethod($httpMethod);
                 }
+            } else {
+                LogHelper::log('[PerformanceBundle] recordMetricsSync: Metrics not updated (not worse than existing)', $this->enableLogging);
             }
         }
 
@@ -366,12 +420,30 @@ class PerformanceMetricsService
                 $this->eventDispatcher->dispatch($afterEvent);
             }
 
+            LogHelper::logf(
+                '[PerformanceBundle] recordMetricsSync: SUCCESS - route=%s, env=%s, isNew=%s, wasUpdated=%s',
+                $this->enableLogging,
+                $routeName,
+                $env,
+                $isNew ? 'true' : 'false',
+                $wasUpdated ? 'true' : 'false'
+            );
+
             return ['is_new' => $isNew, 'was_updated' => $wasUpdated];
         } catch (\Exception $e) {
             // Restore error reporting
             if (isset($errorReporting)) {
                 error_reporting($errorReporting);
             }
+            
+            LogHelper::logf(
+                '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, exception=%s, message=%s',
+                $this->enableLogging,
+                $routeName,
+                $env,
+                \get_class($e),
+                $e->getMessage()
+            );
 
             // Always reset EntityManager after an error (it may be closed)
             // This ensures subsequent operations can proceed

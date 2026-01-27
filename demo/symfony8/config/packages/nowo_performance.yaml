@@ -8,7 +8,7 @@ when@dev:
 
         # Environments where performance tracking is enabled
         # Only routes accessed in these environments will be tracked
-        environments: ['dev', 'test']
+        environments: ['prod', 'dev', 'test']
 
         # Doctrine connection name to use for storing metrics
         # Use 'default' for the main database connection, or specify a custom connection name

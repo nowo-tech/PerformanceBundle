@@ -2,6 +2,70 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 1.0.7 (2026-01-27)
+
+### Enhanced Debug Logging and Test Coverage
+
+This version adds comprehensive debug logging throughout the performance tracking flow and extensive test coverage to help diagnose issues.
+
+#### Changes
+
+- **Enhanced debug logging**: Added detailed logging at every step of the performance tracking process
+  - Logs show collector state, route checks, environment validation, metric calculations, and save attempts
+  - All logs include route name and environment for easy filtering
+  - Helps diagnose why data might not be saved in production
+  - Logs are controlled by `enable_logging` configuration (default: true)
+- **Comprehensive test coverage**: Added 33 new tests for logging and edge cases
+  - Tests verify all debug logs are generated correctly
+  - Tests cover edge cases that could prevent data from being saved
+  - Improves reliability and maintainability
+
+#### What This Means
+
+- **Better debugging**: Detailed logs help identify why data might not be saved
+- **Better reliability**: More tests mean fewer bugs and better edge case handling
+- **No breaking changes**: All changes are backward compatible
+- **Production ready**: Logs can be disabled via configuration for production environments
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **No configuration changes required**: The enhanced logging is enabled by default but respects the `enable_logging` configuration
+
+#### Troubleshooting
+
+**Q: I see too many logs in production**  
+A: Disable logging in production by setting `enable_logging: false` in your configuration:
+   ```yaml
+   nowo_performance:
+       enable_logging: false
+   ```
+
+**Q: How do I filter logs by route or environment?**  
+A: All logs include `[PerformanceBundle]` prefix and include route name and environment. You can filter using:
+   ```bash
+   grep "[PerformanceBundle]" /var/log/app.log | grep "route=app_home"
+   grep "[PerformanceBundle]" /var/log/app.log | grep "env=prod"
+   ```
+
+**Q: What do the logs tell me?**  
+A: The logs show:
+   - When tracking is enabled/disabled and why
+   - Route and environment checks
+   - Metric calculations (request time, query count, memory usage)
+   - Save attempts with all details
+   - Success/failure of save operations
+   - Any errors during the save process
+
 ## Upgrading to 1.0.6 (2026-01-27)
 
 ### Symfony 7 Compatibility and Test Coverage

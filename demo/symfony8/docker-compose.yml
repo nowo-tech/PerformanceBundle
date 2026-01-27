@@ -12,7 +12,6 @@ services:
     environment:
       - COMPOSER_ALLOW_SUPERUSER=1
       - DATABASE_URL=mysql://${MYSQL_USER:-demo_user}:${MYSQL_PASSWORD:-password}@mysql:3306/${MYSQL_DATABASE:-performance_demo}?serverVersion=8.0&charset=utf8mb4
-      - APP_ENV=dev
     command: ["php-fpm", "-F"]
     networks:
       - performance-demo-network
@@ -49,25 +48,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-    volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
 
 volumes:
   composer-cache:

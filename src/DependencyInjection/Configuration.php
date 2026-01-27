@@ -41,7 +41,7 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('environments')
                     ->info('Environments where performance tracking is enabled')
                     ->prototype('scalar')->end()
-                    ->defaultValue(['dev', 'test'])
+                    ->defaultValue(['prod', 'dev', 'test'])
                 ->end()
                 ->scalarNode('connection')
                     ->info('Doctrine connection name to use for storing metrics')

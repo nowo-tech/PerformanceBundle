@@ -404,6 +404,13 @@ class PerformanceDataCollector extends DataCollector
      */
     public function isEnabled(): bool
     {
+        // Read from property first (set in setEnabled()), then fallback to data array
+        // This ensures it works even when profiler is disabled and collect() is never called
+        if (isset($this->enabled)) {
+            return $this->enabled;
+        }
+        
+        // Fallback to data array (for when profiler is enabled and collect() has been called)
         return $this->data['enabled'] ?? false;
     }
 

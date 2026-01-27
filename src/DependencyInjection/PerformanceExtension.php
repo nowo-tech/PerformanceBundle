@@ -39,20 +39,20 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $config = $this->processConfiguration($configuration, $configs);
 
         // Set configuration parameters
-        $container->setParameter('nowo_performance.enabled', $config['enabled'] ?? true);
-        $container->setParameter('nowo_performance.environments', $config['environments'] ?? ['dev', 'test']);
-        $container->setParameter('nowo_performance.connection', $config['connection'] ?? 'default');
-        $container->setParameter('nowo_performance.table_name', $config['table_name'] ?? 'routes_data');
-        $container->setParameter('nowo_performance.track_queries', $config['track_queries'] ?? true);
-        $container->setParameter('nowo_performance.track_request_time', $config['track_request_time'] ?? true);
-        $container->setParameter('nowo_performance.track_sub_requests', $config['track_sub_requests'] ?? false);
-        $container->setParameter('nowo_performance.ignore_routes', $config['ignore_routes'] ?? []);
-        $container->setParameter('nowo_performance.async', $config['async'] ?? false);
-        $container->setParameter('nowo_performance.sampling_rate', $config['sampling_rate'] ?? 1.0);
-        $container->setParameter('nowo_performance.query_tracking_threshold', $config['query_tracking_threshold'] ?? 0);
-        $container->setParameter('nowo_performance.track_status_codes', $config['track_status_codes'] ?? [200, 404, 500, 503]);
-        $container->setParameter('nowo_performance.enable_access_records', $config['enable_access_records'] ?? false);
-        $container->setParameter('nowo_performance.enable_logging', $config['enable_logging'] ?? true);
+        $container->setParameter(Configuration::ALIAS . '.enabled', $config['enabled'] ?? true);
+        $container->setParameter(Configuration::ALIAS . '.environments', $config['environments'] ?? ['prod', 'dev', 'test']);
+        $container->setParameter(Configuration::ALIAS . '.connection', $config['connection'] ?? 'default');
+        $container->setParameter(Configuration::ALIAS . '.table_name', $config['table_name'] ?? 'routes_data');
+        $container->setParameter(Configuration::ALIAS . '.track_queries', $config['track_queries'] ?? true);
+        $container->setParameter(Configuration::ALIAS . '.track_request_time', $config['track_request_time'] ?? true);
+        $container->setParameter(Configuration::ALIAS . '.track_sub_requests', $config['track_sub_requests'] ?? false);
+        $container->setParameter(Configuration::ALIAS . '.ignore_routes', $config['ignore_routes'] ?? []);
+        $container->setParameter(Configuration::ALIAS . '.async', $config['async'] ?? false);
+        $container->setParameter(Configuration::ALIAS . '.sampling_rate', $config['sampling_rate'] ?? 1.0);
+        $container->setParameter(Configuration::ALIAS . '.query_tracking_threshold', $config['query_tracking_threshold'] ?? 0);
+        $container->setParameter(Configuration::ALIAS . '.track_status_codes', $config['track_status_codes'] ?? [200, 404, 500, 503]);
+        $container->setParameter(Configuration::ALIAS . '.enable_access_records', $config['enable_access_records'] ?? false);
+        $container->setParameter(Configuration::ALIAS . '.enable_logging', $config['enable_logging'] ?? true);
 
         // Thresholds configuration
         $thresholdsConfig = $config['thresholds'] ?? [];
@@ -60,51 +60,54 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $queryCountThresholds = $thresholdsConfig['query_count'] ?? [];
         $memoryUsageThresholds = $thresholdsConfig['memory_usage'] ?? [];
 
-        $container->setParameter('nowo_performance.thresholds.request_time.warning', $requestTimeThresholds['warning'] ?? 0.5);
-        $container->setParameter('nowo_performance.thresholds.request_time.critical', $requestTimeThresholds['critical'] ?? 1.0);
-        $container->setParameter('nowo_performance.thresholds.query_count.warning', $queryCountThresholds['warning'] ?? 20);
-        $container->setParameter('nowo_performance.thresholds.query_count.critical', $queryCountThresholds['critical'] ?? 50);
-        $container->setParameter('nowo_performance.thresholds.memory_usage.warning', $memoryUsageThresholds['warning'] ?? 20.0);
-        $container->setParameter('nowo_performance.thresholds.memory_usage.critical', $memoryUsageThresholds['critical'] ?? 50.0);
+        $thresholdsPath = Configuration::ALIAS . '.thresholds';
+        $container->setParameter($thresholdsPath . '.request_time.warning', $requestTimeThresholds['warning'] ?? 0.5);
+        $container->setParameter($thresholdsPath . '.request_time.critical', $requestTimeThresholds['critical'] ?? 1.0);
+        $container->setParameter($thresholdsPath . '.query_count.warning', $queryCountThresholds['warning'] ?? 20);
+        $container->setParameter($thresholdsPath . '.query_count.critical', $queryCountThresholds['critical'] ?? 50);
+        $container->setParameter($thresholdsPath . '.memory_usage.warning', $memoryUsageThresholds['warning'] ?? 20.0);
+        $container->setParameter($thresholdsPath . '.memory_usage.critical', $memoryUsageThresholds['critical'] ?? 50.0);
 
         // Dashboard configuration
         $dashboardConfig = $config['dashboard'] ?? [];
-        $container->setParameter('nowo_performance.dashboard.enabled', $dashboardConfig['enabled'] ?? true);
-        $container->setParameter('nowo_performance.dashboard.path', $dashboardConfig['path'] ?? '/performance');
-        $container->setParameter('nowo_performance.dashboard.prefix', $dashboardConfig['prefix'] ?? '');
-        $container->setParameter('nowo_performance.dashboard.roles', $dashboardConfig['roles'] ?? []);
-        $container->setParameter('nowo_performance.dashboard.template', $dashboardConfig['template'] ?? 'bootstrap');
-        $container->setParameter('nowo_performance.dashboard.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
-        $container->setParameter('nowo_performance.dashboard.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
+        $dashboardPath = Configuration::ALIAS . '.dashboard';
+        $container->setParameter($dashboardPath . '.enabled', $dashboardConfig['enabled'] ?? true);
+        $container->setParameter($dashboardPath . '.path', $dashboardConfig['path'] ?? '/performance');
+        $container->setParameter($dashboardPath . '.prefix', $dashboardConfig['prefix'] ?? '');
+        $container->setParameter($dashboardPath . '.roles', $dashboardConfig['roles'] ?? []);
+        $container->setParameter($dashboardPath . '.template', $dashboardConfig['template'] ?? 'bootstrap');
+        $container->setParameter($dashboardPath . '.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
+        $container->setParameter($dashboardPath . '.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
 
         $dateFormatsConfig = $dashboardConfig['date_formats'] ?? [];
-        $container->setParameter('nowo_performance.dashboard.date_formats.datetime', $dateFormatsConfig['datetime'] ?? 'Y-m-d H:i:s');
-        $container->setParameter('nowo_performance.dashboard.date_formats.date', $dateFormatsConfig['date'] ?? 'Y-m-d H:i');
-        $container->setParameter('nowo_performance.dashboard.auto_refresh_interval', $dashboardConfig['auto_refresh_interval'] ?? 0);
-        $container->setParameter('nowo_performance.dashboard.enable_ranking_queries', $dashboardConfig['enable_ranking_queries'] ?? true);
+        $container->setParameter($dashboardPath . '.date_formats.datetime', $dateFormatsConfig['datetime'] ?? 'Y-m-d H:i:s');
+        $container->setParameter($dashboardPath . '.date_formats.date', $dateFormatsConfig['date'] ?? 'Y-m-d H:i');
+        $container->setParameter($dashboardPath . '.auto_refresh_interval', $dashboardConfig['auto_refresh_interval'] ?? 0);
+        $container->setParameter($dashboardPath . '.enable_ranking_queries', $dashboardConfig['enable_ranking_queries'] ?? true);
 
         // Notifications configuration
         $notificationsConfig = $config['notifications'] ?? [];
-        $container->setParameter('nowo_performance.notifications.enabled', $notificationsConfig['enabled'] ?? false);
+        $notificationsPath = Configuration::ALIAS . '.notifications';
+        $container->setParameter($notificationsPath . '.enabled', $notificationsConfig['enabled'] ?? false);
 
         $emailConfig = $notificationsConfig['email'] ?? [];
-        $container->setParameter('nowo_performance.notifications.email.enabled', $emailConfig['enabled'] ?? false);
-        $container->setParameter('nowo_performance.notifications.email.from', $emailConfig['from'] ?? 'noreply@example.com');
-        $container->setParameter('nowo_performance.notifications.email.to', $emailConfig['to'] ?? []);
+        $container->setParameter($notificationsPath . '.email.enabled', $emailConfig['enabled'] ?? false);
+        $container->setParameter($notificationsPath . '.email.from', $emailConfig['from'] ?? 'noreply@example.com');
+        $container->setParameter($notificationsPath . '.email.to', $emailConfig['to'] ?? []);
 
         $slackConfig = $notificationsConfig['slack'] ?? [];
-        $container->setParameter('nowo_performance.notifications.slack.enabled', $slackConfig['enabled'] ?? false);
-        $container->setParameter('nowo_performance.notifications.slack.webhook_url', $slackConfig['webhook_url'] ?? '');
+        $container->setParameter($notificationsPath . '.slack.enabled', $slackConfig['enabled'] ?? false);
+        $container->setParameter($notificationsPath . '.slack.webhook_url', $slackConfig['webhook_url'] ?? '');
 
         $teamsConfig = $notificationsConfig['teams'] ?? [];
-        $container->setParameter('nowo_performance.notifications.teams.enabled', $teamsConfig['enabled'] ?? false);
-        $container->setParameter('nowo_performance.notifications.teams.webhook_url', $teamsConfig['webhook_url'] ?? '');
+        $container->setParameter($notificationsPath . '.teams.enabled', $teamsConfig['enabled'] ?? false);
+        $container->setParameter($notificationsPath . '.teams.webhook_url', $teamsConfig['webhook_url'] ?? '');
 
         $webhookConfig = $notificationsConfig['webhook'] ?? [];
-        $container->setParameter('nowo_performance.notifications.webhook.enabled', $webhookConfig['enabled'] ?? false);
-        $container->setParameter('nowo_performance.notifications.webhook.url', $webhookConfig['url'] ?? '');
-        $container->setParameter('nowo_performance.notifications.webhook.format', $webhookConfig['format'] ?? 'json');
-        $container->setParameter('nowo_performance.notifications.webhook.headers', $webhookConfig['headers'] ?? []);
+        $container->setParameter($notificationsPath . '.webhook.enabled', $webhookConfig['enabled'] ?? false);
+        $container->setParameter($notificationsPath . '.webhook.url', $webhookConfig['url'] ?? '');
+        $container->setParameter($notificationsPath . '.webhook.format', $webhookConfig['format'] ?? 'json');
+        $container->setParameter($notificationsPath . '.webhook.headers', $webhookConfig['headers'] ?? []);
     }
 
     /**

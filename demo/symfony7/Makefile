@@ -32,6 +32,7 @@ up:
 	@if [ ! -f .env ]; then \
 		echo "⚠️  .env file not found. Creating from defaults..."; \
 		echo "APP_ENV=dev" > .env; \
+		echo "APP_DEBUG=1" >> .env; \
 		echo "APP_SECRET=your-secret-key-change-this-in-production" >> .env; \
 		echo "DATABASE_URL=mysql://demo_user:password@mysql:3306/performance_demo?serverVersion=8.0&charset=utf8mb4" >> .env; \
 		echo "MYSQL_ROOT_PASSWORD=password" >> .env; \
