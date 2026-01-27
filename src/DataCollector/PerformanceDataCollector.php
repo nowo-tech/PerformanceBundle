@@ -182,9 +182,9 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Set reason why tracking is disabled.
      *
-     * @param string $reason The reason for being disabled
+     * @param string|null $reason The reason for being disabled, or null to clear
      */
-    public function setDisabledReason(string $reason): void
+    public function setDisabledReason(?string $reason): void
     {
         $this->disabledReason = $reason;
     }
@@ -318,6 +318,7 @@ class PerformanceDataCollector extends DataCollector
             'record_was_updated' => $this->recordWasUpdated,
             'configured_environments' => $this->configuredEnvironments,
             'current_environment' => $this->currentEnvironment ?? $env,
+            'disabled_reason' => $this->disabledReason,
         ];
     }
 
