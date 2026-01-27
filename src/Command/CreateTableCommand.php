@@ -1294,11 +1294,11 @@ final class CreateTableCommand extends Command
                 try {
                     $restoreFkSql = \sprintf(
                         'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s',
-                        $platform->quoteIdentifier($fkInfo['table']),
-                        $platform->quoteIdentifier($fkInfo['name']),
-                        $platform->quoteIdentifier($fkInfo['column']),
-                        $platform->quoteIdentifier($fkInfo['referenced_table']),
-                        $platform->quoteIdentifier($fkInfo['referenced_column']),
+                        $this->quoteIdentifier($platform, $fkInfo['table']),
+                        $this->quoteIdentifier($platform, $fkInfo['name']),
+                        $this->quoteIdentifier($platform, $fkInfo['column']),
+                        $this->quoteIdentifier($platform, $fkInfo['referenced_table']),
+                        $this->quoteIdentifier($platform, $fkInfo['referenced_column']),
                         $fkInfo['update_rule'],
                         $fkInfo['delete_rule']
                     );
