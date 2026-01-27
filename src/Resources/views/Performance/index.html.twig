@@ -275,6 +275,59 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {% if autoRefreshInterval > 0 %}
+    <script>
+        // Auto-refresh dashboard
+        (function() {
+            const refreshInterval = {{ autoRefreshInterval }} * 1000; // Convert to milliseconds
+            let refreshTimer;
+            
+            function refreshDashboard() {
+                // Reload the page to get fresh data
+                window.location.reload();
+            }
+            
+            // Start auto-refresh
+            refreshTimer = setInterval(refreshDashboard, refreshInterval);
+            
+            // Show refresh indicator
+            const refreshIndicator = document.createElement('div');
+            refreshIndicator.className = 'position-fixed bottom-0 end-0 m-3 p-2 bg-info text-white rounded shadow';
+            refreshIndicator.style.zIndex = '1050';
+            refreshIndicator.innerHTML = '<small><i class="bi bi-arrow-clockwise"></i> Auto-refresh: <span id="refresh-countdown">' + {{ autoRefreshInterval }} + '</span>s</small>';
+            document.body.appendChild(refreshIndicator);
+            
+            // Update countdown
+            let countdown = {{ autoRefreshInterval }};
+            const countdownElement = document.getElementById('refresh-countdown');
+            setInterval(function() {
+                countdown--;
+                if (countdown <= 0) {
+                    countdown = {{ autoRefreshInterval }};
+                }
+                if (countdownElement) {
+                    countdownElement.textContent = countdown;
+                }
+            }, 1000);
+            
+            // Pause on window focus/blur
+            let isPaused = false;
+            window.addEventListener('blur', function() {
+                if (!isPaused) {
+                    clearInterval(refreshTimer);
+                    isPaused = true;
+                }
+            });
+            
+            window.addEventListener('focus', function() {
+                if (isPaused) {
+                    refreshTimer = setInterval(refreshDashboard, refreshInterval);
+                    isPaused = false;
+                }
+            });
+        })();
+    </script>
+    {% endif %}
 {% endif %}
 {% endblock %}
 </body>

@@ -30,6 +30,8 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ Request execution time measurement
 - ✅ **Memory usage tracking** - Track peak memory consumption per route
 - ✅ **Access frequency tracking** - Track how often routes are accessed
+- ✅ **HTTP status code tracking** - Track and calculate ratios for HTTP status codes (200, 404, 500, etc.)
+- ✅ **Performance notifications** - Email, Slack, Teams, and webhook notifications for performance alerts
 - ✅ Route data persistence in database
 - ✅ Environment-specific metrics (dev, test, prod)
 - ✅ Configurable route ignore list
@@ -196,6 +198,8 @@ The `RouteData` entity stores:
 - `memoryUsage` - Peak memory usage in bytes (nullable)
 - `accessCount` - Number of times route was accessed (default: 1)
 - `lastAccessedAt` - Last access timestamp (nullable)
+- `httpMethod` - HTTP method (GET, POST, PUT, DELETE, etc.) (nullable)
+- `statusCodes` - HTTP status codes counts (JSON, e.g., {'200': 100, '404': 5}) (nullable)
 - `reviewed` - Whether record has been reviewed (default: false)
 - `reviewedAt` - Review timestamp (nullable)
 - `queriesImproved` - Whether queries improved after review (nullable)
@@ -238,6 +242,8 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 - [Configuration Guide](docs/CONFIGURATION.md) - Detailed configuration options
 - [Usage Guide](docs/USAGE.md) - Complete usage examples
 - [Commands](docs/COMMANDS.md) - Command documentation
+- [**Compatibility Guide**](docs/COMPATIBILITY.md) - Doctrine and DBAL version compatibility and breaking changes
+- [Notifications](docs/NOTIFICATIONS.md) - Performance alert notifications (Email, Slack, Teams, Webhooks)
 - [CHANGELOG](docs/CHANGELOG.md) - Version history
 - [UPGRADING](docs/UPGRADING.md) - Upgrade instructions
 - [ROADMAP](docs/ROADMAP.md) - Future improvements and features

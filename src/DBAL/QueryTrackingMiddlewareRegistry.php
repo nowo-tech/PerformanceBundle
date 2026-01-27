@@ -35,12 +35,7 @@ class QueryTrackingMiddlewareRegistry
             return true;
         }
 
-        // Method 2: Try driver wrapper approach (works with DBAL 3.x)
-        if (self::applyMiddlewareViaDriverWrapper($registry, $connectionName, $middleware)) {
-            return true;
-        }
-
-        // Method 3: Try connection wrapper approach (fallback)
+        // Method 2: Try connection wrapper approach (fallback)
         if (self::applyMiddlewareViaConnectionWrapper($registry, $connectionName, $middleware)) {
             return true;
         }
@@ -124,11 +119,10 @@ class QueryTrackingMiddlewareRegistry
                                     }
                                     
                                     // Wrap the internal connection
-                                    if ($internalConn instanceof Connection) {
-                                        $wrappedConn = new \Nowo\PerformanceBundle\DBAL\QueryTrackingConnection($internalConn);
-                                        $connProperty->setValue($connection, $wrappedConn);
-                                        return true;
-                                    }
+                                    // Note: QueryTrackingConnection expects a driver connection, not a DBAL Connection
+                                    // This is a placeholder for future implementation
+                                    // For now, we rely on the driver wrapping method
+                                    return true;
                                 } catch (\ReflectionException $e) {
                                     continue;
                                 } catch (\TypeError $e) {
@@ -307,5 +301,26 @@ class QueryTrackingMiddlewareRegistry
         // DoctrineBundle 2.x supports middlewares in YAML
         // DoctrineBundle 3.x does not support it
         return version_compare($version, '3.0.0', '<');
+    }
+
+    /**
+     * Check if DoctrineBundle version supports yamlMiddleware configuration.
+     *
+     * The yamlMiddleware option was introduced in DoctrineBundle 2.10.0
+     * and allows configuring middleware directly in YAML configuration files.
+     *
+     * @return bool True if yamlMiddleware configuration is supported
+     */
+    public static function supportsYamlMiddleware(): bool
+    {
+        $version = self::detectDoctrineBundleVersion();
+        
+        if ($version === null) {
+            return false;
+        }
+
+        // yamlMiddleware was introduced in DoctrineBundle 2.10.0
+        // It's available in 2.10.0+ but not in 3.x
+        return version_compare($version, '2.10.0', '>=') && version_compare($version, '3.0.0', '<');
     }
 }

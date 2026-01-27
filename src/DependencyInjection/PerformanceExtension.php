@@ -50,6 +50,10 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter('nowo_performance.track_request_time', $config['track_request_time'] ?? true);
         $container->setParameter('nowo_performance.ignore_routes', $config['ignore_routes'] ?? []);
         $container->setParameter('nowo_performance.async', $config['async'] ?? false);
+        $container->setParameter('nowo_performance.sampling_rate', $config['sampling_rate'] ?? 1.0);
+        $container->setParameter('nowo_performance.query_tracking_threshold', $config['query_tracking_threshold'] ?? 0);
+        $container->setParameter('nowo_performance.track_status_codes', $config['track_status_codes'] ?? [200, 404, 500, 503]);
+        $container->setParameter('nowo_performance.enable_access_records', $config['enable_access_records'] ?? false);
 
         // Thresholds configuration
         $thresholdsConfig = $config['thresholds'] ?? [];
@@ -64,15 +68,43 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter('nowo_performance.thresholds.memory_usage.warning', $memoryUsageThresholds['warning'] ?? 20.0);
         $container->setParameter('nowo_performance.thresholds.memory_usage.critical', $memoryUsageThresholds['critical'] ?? 50.0);
 
-            // Dashboard configuration
-            $dashboardConfig = $config['dashboard'] ?? [];
-            $container->setParameter('nowo_performance.dashboard.enabled', $dashboardConfig['enabled'] ?? true);
-            $container->setParameter('nowo_performance.dashboard.path', $dashboardConfig['path'] ?? '/performance');
-            $container->setParameter('nowo_performance.dashboard.prefix', $dashboardConfig['prefix'] ?? '');
-            $container->setParameter('nowo_performance.dashboard.roles', $dashboardConfig['roles'] ?? []);
-            $container->setParameter('nowo_performance.dashboard.template', $dashboardConfig['template'] ?? 'bootstrap');
-            $container->setParameter('nowo_performance.dashboard.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
-            $container->setParameter('nowo_performance.dashboard.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
+        // Dashboard configuration
+        $dashboardConfig = $config['dashboard'] ?? [];
+        $container->setParameter('nowo_performance.dashboard.enabled', $dashboardConfig['enabled'] ?? true);
+        $container->setParameter('nowo_performance.dashboard.path', $dashboardConfig['path'] ?? '/performance');
+        $container->setParameter('nowo_performance.dashboard.prefix', $dashboardConfig['prefix'] ?? '');
+        $container->setParameter('nowo_performance.dashboard.roles', $dashboardConfig['roles'] ?? []);
+        $container->setParameter('nowo_performance.dashboard.template', $dashboardConfig['template'] ?? 'bootstrap');
+        $container->setParameter('nowo_performance.dashboard.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
+        $container->setParameter('nowo_performance.dashboard.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
+        
+        $dateFormatsConfig = $dashboardConfig['date_formats'] ?? [];
+        $container->setParameter('nowo_performance.dashboard.date_formats.datetime', $dateFormatsConfig['datetime'] ?? 'Y-m-d H:i:s');
+        $container->setParameter('nowo_performance.dashboard.date_formats.date', $dateFormatsConfig['date'] ?? 'Y-m-d H:i');
+        $container->setParameter('nowo_performance.dashboard.auto_refresh_interval', $dashboardConfig['auto_refresh_interval'] ?? 0);
+
+        // Notifications configuration
+        $notificationsConfig = $config['notifications'] ?? [];
+        $container->setParameter('nowo_performance.notifications.enabled', $notificationsConfig['enabled'] ?? false);
+        
+        $emailConfig = $notificationsConfig['email'] ?? [];
+        $container->setParameter('nowo_performance.notifications.email.enabled', $emailConfig['enabled'] ?? false);
+        $container->setParameter('nowo_performance.notifications.email.from', $emailConfig['from'] ?? 'noreply@example.com');
+        $container->setParameter('nowo_performance.notifications.email.to', $emailConfig['to'] ?? []);
+        
+        $slackConfig = $notificationsConfig['slack'] ?? [];
+        $container->setParameter('nowo_performance.notifications.slack.enabled', $slackConfig['enabled'] ?? false);
+        $container->setParameter('nowo_performance.notifications.slack.webhook_url', $slackConfig['webhook_url'] ?? '');
+        
+        $teamsConfig = $notificationsConfig['teams'] ?? [];
+        $container->setParameter('nowo_performance.notifications.teams.enabled', $teamsConfig['enabled'] ?? false);
+        $container->setParameter('nowo_performance.notifications.teams.webhook_url', $teamsConfig['webhook_url'] ?? '');
+        
+        $webhookConfig = $notificationsConfig['webhook'] ?? [];
+        $container->setParameter('nowo_performance.notifications.webhook.enabled', $webhookConfig['enabled'] ?? false);
+        $container->setParameter('nowo_performance.notifications.webhook.url', $webhookConfig['url'] ?? '');
+        $container->setParameter('nowo_performance.notifications.webhook.format', $webhookConfig['format'] ?? 'json');
+        $container->setParameter('nowo_performance.notifications.webhook.headers', $webhookConfig['headers'] ?? []);
     }
 
     /**
@@ -116,45 +148,75 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         // Register QueryTrackingMiddleware via YAML if DoctrineBundle version supports it
         // DoctrineBundle 2.x supports 'middlewares' in YAML, 3.x does not
         if ($container->hasExtension('doctrine')) {
-            // Check if YAML middleware configuration is supported
-            if (QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()) {
-                // Get configuration to check if tracking is enabled
-                $configs = $container->getExtensionConfig($this->getAlias());
-                $enabled = true;
-                $trackQueries = true;
-                $connectionName = 'default';
+            // Get configuration to check if tracking is enabled
+            $configs = $container->getExtensionConfig($this->getAlias());
+            $enabled = true;
+            $trackQueries = true;
+            $connectionName = 'default';
 
-                foreach ($configs as $config) {
-                    if (isset($config['enabled'])) {
-                        $enabled = $config['enabled'];
-                    }
-                    if (isset($config['track_queries'])) {
-                        $trackQueries = $config['track_queries'];
-                    }
-                    if (isset($config['connection'])) {
-                        $connectionName = $config['connection'];
-                    }
+            foreach ($configs as $config) {
+                if (isset($config['enabled'])) {
+                    $enabled = $config['enabled'];
                 }
+                if (isset($config['track_queries'])) {
+                    $trackQueries = $config['track_queries'];
+                }
+                if (isset($config['connection'])) {
+                    $connectionName = $config['connection'];
+                }
+            }
 
-                // Only register middleware if tracking is enabled
-                if ($enabled && $trackQueries) {
-                    // Check existing Doctrine config to avoid overwriting
-                    $existingConfigs = $container->getExtensionConfig('doctrine');
-                    $hasMiddleware = false;
+            // Only register middleware if tracking is enabled
+            if ($enabled && $trackQueries) {
+                // Check existing Doctrine config to avoid overwriting
+                $existingConfigs = $container->getExtensionConfig('doctrine');
+                $hasMiddleware = false;
+                $hasYamlMiddleware = false;
 
-                    // Check if middleware is already registered
-                    foreach ($existingConfigs as $config) {
-                        if (isset($config['dbal']['connections'][$connectionName]['middlewares'])) {
-                            $middlewares = $config['dbal']['connections'][$connectionName]['middlewares'];
+                // Check if middleware is already registered via 'middlewares' or 'yamlMiddleware'
+                foreach ($existingConfigs as $config) {
+                    if (isset($config['dbal']['connections'][$connectionName])) {
+                        $connectionConfig = $config['dbal']['connections'][$connectionName];
+                        
+                        // Check for 'middlewares' (DoctrineBundle 2.x)
+                        if (isset($connectionConfig['middlewares'])) {
+                            $middlewares = $connectionConfig['middlewares'];
                             if (is_array($middlewares) && in_array(QueryTrackingMiddleware::class, $middlewares, true)) {
                                 $hasMiddleware = true;
                                 break;
                             }
                         }
+                        
+                        // Check for 'yamlMiddleware' (DoctrineBundle 2.10.0+)
+                        if (isset($connectionConfig['yamlMiddleware'])) {
+                            $yamlMiddlewares = $connectionConfig['yamlMiddleware'];
+                            if (is_array($yamlMiddlewares) && in_array(QueryTrackingMiddleware::class, $yamlMiddlewares, true)) {
+                                $hasYamlMiddleware = true;
+                                break;
+                            }
+                        }
                     }
+                }
 
-                    // Only prepend if not already registered
-                    if (!$hasMiddleware) {
+                // Only prepend if not already registered
+                if (!$hasMiddleware && !$hasYamlMiddleware) {
+                    // Priority 1: Use yamlMiddleware if supported (DoctrineBundle 2.10.0+)
+                    if (QueryTrackingMiddlewareRegistry::supportsYamlMiddleware()) {
+                        $doctrineConfig = [
+                            'dbal' => [
+                                'connections' => [
+                                    $connectionName => [
+                                        'yamlMiddleware' => [
+                                            QueryTrackingMiddleware::class,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ];
+                        $container->prependExtensionConfig('doctrine', $doctrineConfig);
+                    }
+                    // Priority 2: Fall back to middlewares if supported (DoctrineBundle 2.x < 2.10.0)
+                    elseif (QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()) {
                         $doctrineConfig = [
                             'dbal' => [
                                 'connections' => [
@@ -166,7 +228,6 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
                                 ],
                             ],
                         ];
-
                         $container->prependExtensionConfig('doctrine', $doctrineConfig);
                     }
                 }

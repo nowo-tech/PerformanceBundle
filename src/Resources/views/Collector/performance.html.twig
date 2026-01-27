@@ -37,9 +37,28 @@
                     {% endif %}
                 </span>
             </div>
+            {% if collector.tableName %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Table</b>
+                    <span>
+                        {% if collector.tableExists %}
+                            {% if collector.tableIsComplete %}
+                                <span style="color: #4caf50;">✓ Complete</span>
+                            {% else %}
+                                <span style="color: #f57c00;">⚠ Incomplete</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #d32f2f;">✗ Missing</span>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
         {% endset %}
 
         {% set status = request_time < 200 ? 'status-success' : (request_time < 500 ? 'status-warning' : 'status-error') %}
+        {% if collector.tableName and collector.tableExists and not collector.tableIsComplete %}
+            {% set status = 'status-error' %}
+        {% endif %}
         {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url, status: status }) }}
     {% endif %}
 {% endblock %}
@@ -167,8 +186,24 @@
                         {% if collector.tableName %}
                             <code>{{ collector.tableName }}</code>
                             {% if collector.tableExists %}
-                                <span style="color: #4caf50; font-weight: bold;">✓ Exists</span>
-                                <span class="text-muted">(ready to store metrics)</span>
+                                {% if collector.tableIsComplete %}
+                                    <span style="color: #4caf50; font-weight: bold;">✓ Complete</span>
+                                    <span class="text-muted">(all columns present, ready to store metrics)</span>
+                                {% else %}
+                                    <span style="color: #f57c00; font-weight: bold;">⚠ Incomplete</span>
+                                    <span class="text-muted">(table exists but missing columns)</span>
+                                    {% set missingColumns = collector.missingColumns %}
+                                    {% if missingColumns is not empty %}
+                                        <br>
+                                        <small style="color: #d32f2f; font-weight: bold;">
+                                            Missing columns: {{ missingColumns|join(', ') }}
+                                        </small>
+                                        <br>
+                                        <small class="text-muted">
+                                            Run: <code>php bin/console nowo:performance:create-table --update</code>
+                                        </small>
+                                    {% endif %}
+                                {% endif %}
                             {% else %}
                                 <span style="color: #d32f2f; font-weight: bold;">✗ Does not exist</span>
                                 <span class="text-muted">(metrics cannot be saved)</span>
@@ -182,6 +217,54 @@
                         {% endif %}
                     </td>
                 </tr>
+                <tr>
+                    <td>Data Saved to Database</td>
+                    <td>
+                        {% if collector.tableExists and collector.tableIsComplete %}
+                            {% if collector.wasRecordNew is not null or collector.wasRecordUpdated is not null %}
+                                {% if collector.wasRecordNew %}
+                                    <span style="color: #4caf50; font-weight: bold;">✓ Saved</span>
+                                    <span class="text-muted">(new record created in routes_data table)</span>
+                                {% elseif collector.wasRecordUpdated %}
+                                    <span style="color: #2196f3; font-weight: bold;">✓ Saved</span>
+                                    <span class="text-muted">(existing record updated in routes_data table)</span>
+                                {% else %}
+                                    <span style="color: #757575; font-weight: bold;">○ Not saved</span>
+                                    <span class="text-muted">(metrics were not worse than existing values, no update needed)</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #f57c00; font-weight: bold;">⚠ Unknown</span>
+                                <span class="text-muted">(subscriber may not have executed or route was ignored)</span>
+                            {% endif %}
+                        {% elseif collector.tableExists and not collector.tableIsComplete %}
+                            <span style="color: #f57c00; font-weight: bold;">⚠ Not saved</span>
+                            <span class="text-muted">(table is incomplete, missing columns)</span>
+                        {% elseif not collector.tableExists %}
+                            <span style="color: #d32f2f; font-weight: bold;">✗ Not saved</span>
+                            <span class="text-muted">(table does not exist)</span>
+                        {% else %}
+                            <span style="color: #757575; font-weight: bold;">○ Unknown</span>
+                            <span class="text-muted">(table status unknown)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if collector.wasRecordNew is not null or collector.wasRecordUpdated is not null %}
+                    <tr>
+                        <td>Record Operation Details</td>
+                        <td>
+                            {% if collector.wasRecordNew %}
+                                <span style="color: #4caf50; font-weight: bold;">New Record</span>
+                                <span class="text-muted">(first time tracking this route in this environment)</span>
+                            {% elseif collector.wasRecordUpdated %}
+                                <span style="color: #2196f3; font-weight: bold;">Updated Record</span>
+                                <span class="text-muted">(metrics were worse than previous values, record updated)</span>
+                            {% else %}
+                                <span style="color: #757575; font-weight: bold;">No Changes</span>
+                                <span class="text-muted">(metrics were not worse than existing values, no update needed)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     {% endif %}

@@ -86,6 +86,20 @@ class PerformanceDataCollector extends DataCollector
     private ?TableStatusChecker $tableStatusChecker = null;
 
     /**
+     * Whether a new record was created.
+     *
+     * @var bool|null
+     */
+    private ?bool $recordWasNew = null;
+
+    /**
+     * Whether an existing record was updated.
+     *
+     * @var bool|null
+     */
+    private ?bool $recordWasUpdated = null;
+
+    /**
      * Constructor.
      *
      * @param RouteDataRepository|null $repository The route data repository (optional)
@@ -193,6 +207,19 @@ class PerformanceDataCollector extends DataCollector
     }
 
     /**
+     * Set record operation information.
+     *
+     * @param bool $isNew Whether a new record was created
+     * @param bool $wasUpdated Whether an existing record was updated
+     * @return void
+     */
+    public function setRecordOperation(bool $isNew, bool $wasUpdated): void
+    {
+        $this->recordWasNew = $isNew;
+        $this->recordWasUpdated = $wasUpdated;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function collect(Request $request, Response $response, ?Throwable $exception = null): void
@@ -221,13 +248,22 @@ class PerformanceDataCollector extends DataCollector
         $routeName = $this->routeName ?? $request->attributes->get('_route');
         $env = $this->kernel?->getEnvironment() ?? 'dev';
 
-        // Check if table exists
+        // Check if table exists and is complete
         $tableExists = false;
+        $tableIsComplete = false;
         $tableName = null;
+        $missingColumns = [];
+        
         if ($this->tableStatusChecker !== null) {
             try {
                 $tableExists = $this->tableStatusChecker->tableExists();
+                $tableIsComplete = $this->tableStatusChecker->tableIsComplete();
                 $tableName = $this->tableStatusChecker->getTableName();
+                
+                // Get missing columns if table exists but is incomplete
+                if ($tableExists && !$tableIsComplete) {
+                    $missingColumns = $this->tableStatusChecker->getMissingColumns();
+                }
             } catch (\Exception $e) {
                 // Silently fail if table check fails
             }
@@ -266,7 +302,11 @@ class PerformanceDataCollector extends DataCollector
             'total_routes' => $totalRoutes,
             'async' => $this->async,
             'table_exists' => $tableExists,
+            'table_is_complete' => $tableIsComplete,
             'table_name' => $tableName,
+            'missing_columns' => $missingColumns,
+            'record_was_new' => $this->recordWasNew,
+            'record_was_updated' => $this->recordWasUpdated,
         ];
     }
 
@@ -281,6 +321,8 @@ class PerformanceDataCollector extends DataCollector
         $this->queryTime = null;
         $this->routeName = null;
         $this->async = false;
+        $this->recordWasNew = null;
+        $this->recordWasUpdated = null;
     }
 
     /**
@@ -450,6 +492,26 @@ class PerformanceDataCollector extends DataCollector
     }
 
     /**
+     * Check if the table is complete (has all required columns).
+     *
+     * @return bool True if the table exists and has all required columns, false otherwise
+     */
+    public function tableIsComplete(): bool
+    {
+        return $this->data['table_is_complete'] ?? false;
+    }
+
+    /**
+     * Get list of missing columns in the table.
+     *
+     * @return array<string> List of missing column names
+     */
+    public function getMissingColumns(): array
+    {
+        return $this->data['missing_columns'] ?? [];
+    }
+
+    /**
      * Get the configured table name.
      *
      * @return string|null The configured table name or null if not available
@@ -457,5 +519,52 @@ class PerformanceDataCollector extends DataCollector
     public function getTableName(): ?string
     {
         return $this->data['table_name'] ?? null;
+    }
+
+    /**
+     * Check if a new record was created.
+     *
+     * @return bool|null True if new record was created, false if existing record was updated, null if unknown
+     */
+    public function wasRecordNew(): ?bool
+    {
+        // Check data first (set during collect()), then fallback to property (set by setRecordOperation())
+        return $this->data['record_was_new'] ?? $this->recordWasNew;
+    }
+
+    /**
+     * Check if an existing record was updated.
+     *
+     * @return bool|null True if existing record was updated, false if new record was created, null if unknown
+     */
+    public function wasRecordUpdated(): ?bool
+    {
+        // Check data first (set during collect()), then fallback to property (set by setRecordOperation())
+        return $this->data['record_was_updated'] ?? $this->recordWasUpdated;
+    }
+
+    /**
+     * Get the record operation status as a human-readable string.
+     *
+     * @return string Status description (e.g., "New record created", "Existing record updated", "No changes")
+     */
+    public function getRecordOperationStatus(): string
+    {
+        $isNew = $this->wasRecordNew();
+        $wasUpdated = $this->wasRecordUpdated();
+
+        if ($isNew === true) {
+            return 'New record created';
+        }
+
+        if ($wasUpdated === true) {
+            return 'Existing record updated';
+        }
+
+        if ($isNew === false && $wasUpdated === false) {
+            return 'No changes (metrics not worse than existing)';
+        }
+
+        return 'Unknown';
     }
 }

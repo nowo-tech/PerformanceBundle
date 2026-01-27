@@ -55,7 +55,7 @@ final class PerformanceMetricsServiceTest extends TestCase
             ->expects($this->once())
             ->method('flush');
 
-        $this->service->recordMetrics(
+        $result = $this->service->recordMetrics(
             'app_home',
             'dev',
             0.5,
@@ -65,6 +65,12 @@ final class PerformanceMetricsServiceTest extends TestCase
             null,
             'GET'
         );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('is_new', $result);
+        $this->assertArrayHasKey('was_updated', $result);
+        $this->assertTrue($result['is_new']);
+        $this->assertFalse($result['was_updated']);
     }
 
     public function testRecordMetricsUpdatesExistingRouteData(): void
@@ -106,8 +112,8 @@ final class PerformanceMetricsServiceTest extends TestCase
         $existingRoute = new RouteData();
         $existingRoute->setName('app_home');
         $existingRoute->setEnv('dev');
-        $existingRoute->setRequestTime(0.5);
-        $existingRoute->setTotalQueries(10);
+        $existingRoute->setRequestTime(0.8);
+        $existingRoute->setTotalQueries(15);
 
         $this->repository
             ->expects($this->once())
@@ -119,21 +125,44 @@ final class PerformanceMetricsServiceTest extends TestCase
             ->expects($this->once())
             ->method('flush');
 
-        // Update with better metrics (should not update)
-        $this->service->recordMetrics(
+        // Try to update with better metrics (lower time, fewer queries)
+        $result = $this->service->recordMetrics(
             'app_home',
             'dev',
             0.3, // Better (lower)
             5,   // Better (fewer)
-            0.1,
-            null,
-            null,
-            'GET'
+            0.2
         );
 
-        // Should remain unchanged
-        $this->assertSame(0.5, $existingRoute->getRequestTime());
-        $this->assertSame(10, $existingRoute->getTotalQueries());
+        // Metrics should not be updated
+        $this->assertSame(0.8, $existingRoute->getRequestTime());
+        $this->assertSame(15, $existingRoute->getTotalQueries());
+        
+        $this->assertIsArray($result);
+        $this->assertFalse($result['is_new']);
+        $this->assertFalse($result['was_updated']); // No update because metrics were better
+    }
+
+    public function testRecordMetricsReturnsOperationInfoForNewRecord(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('new_route', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist');
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $result = $this->service->recordMetrics('new_route', 'dev', 0.5, 10);
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
+        $this->assertFalse($result['was_updated']);
     }
 
     public function testRecordMetricsWithNullValues(): void
@@ -383,5 +412,140 @@ final class PerformanceMetricsServiceTest extends TestCase
     {
         $repository = $this->service->getRepository();
         $this->assertSame($this->repository, $repository);
+    }
+
+    public function testRecordMetricsReturnsOperationInfoForUpdatedRecord(): void
+    {
+        $existingRoute = new RouteData();
+        $existingRoute->setName('app_home');
+        $existingRoute->setEnv('dev');
+        $existingRoute->setRequestTime(0.3);
+        $existingRoute->setTotalQueries(5);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn($existingRoute);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        // Update with worse metrics
+        $result = $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.8, // Worse
+            15   // Worse
+        );
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['is_new']);
+        $this->assertTrue($result['was_updated']);
+    }
+
+    public function testRecordMetricsReturnsOperationInfoForNoChanges(): void
+    {
+        $existingRoute = new RouteData();
+        $existingRoute->setName('app_home');
+        $existingRoute->setEnv('dev');
+        $existingRoute->setRequestTime(0.8);
+        $existingRoute->setTotalQueries(15);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn($existingRoute);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        // Try with better metrics (should not update)
+        $result = $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.3, // Better
+            5    // Better
+        );
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['is_new']);
+        $this->assertFalse($result['was_updated']);
+    }
+
+    public function testRecordMetricsCreatesRouteDataRecordWhenEnabled(): void
+    {
+        $service = new PerformanceMetricsService($this->registry, 'default', false, true);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->exactly(2))
+            ->method('persist')
+            ->with($this->callback(function ($entity) {
+                return $entity instanceof RouteData || $entity instanceof \Nowo\PerformanceBundle\Entity\RouteDataRecord;
+            }));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $result = $service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            ['id' => 123],
+            null,
+            'GET',
+            200,
+            [200, 404, 500, 503]
+        );
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
+    }
+
+    public function testRecordMetricsDoesNotCreateRouteDataRecordWhenDisabled(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        // Should only persist RouteData, not RouteDataRecord
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $result = $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            ['id' => 123],
+            null,
+            'GET',
+            200,
+            [200, 404, 500, 503]
+        );
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
     }
 }

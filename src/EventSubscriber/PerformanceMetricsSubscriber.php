@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\Profiler\Profiler;
 use Symfony\Component\Stopwatch\Stopwatch;
 
@@ -30,8 +31,6 @@ use Symfony\Component\Stopwatch\Stopwatch;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2025 Nowo.tech
  */
-#[AsEventListener(event: KernelEvents::REQUEST, priority: 1024)]
-#[AsEventListener(event: KernelEvents::TERMINATE, priority: -1024)]
 class PerformanceMetricsSubscriber implements EventSubscriberInterface
 {
     /**
@@ -68,6 +67,13 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * @var Profiler|null
      */
     private readonly ?Profiler $profiler;
+
+    /**
+     * Kernel interface for getting environment.
+     *
+     * @var KernelInterface|null
+     */
+    private readonly ?KernelInterface $kernel;
 
     /**
      * Current route name being tracked.
@@ -108,20 +114,27 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         private readonly bool $trackRequestTime,
         #[Autowire('%nowo_performance.async%')]
         private readonly bool $async = false,
+        #[Autowire('%nowo_performance.sampling_rate%')]
+        private readonly float $samplingRate = 1.0,
+        #[Autowire('%nowo_performance.track_status_codes%')]
+        private readonly array $trackStatusCodes = [200, 404, 500, 503],
         private readonly ?RequestStack $requestStack = null,
         #[Autowire(service: '?stopwatch')]
-        ?Stopwatch $stopwatch = null
+        ?Stopwatch $stopwatch = null,
+        #[Autowire(service: '?kernel')]
+        ?KernelInterface $kernel = null
     ) {
         $this->dataCollector->setEnabled($enabled);
         $this->dataCollector->setAsync($async);
         $this->stopwatch = $stopwatch;
+        $this->kernel = $kernel;
     }
 
     /**
      * Get the subscribed kernel events.
      *
-     * Note: This method is kept for compatibility but events are registered
-     * via #[AsEventListener] attributes above the class.
+     * Note: Events are registered via #[AsEventListener] attributes on methods,
+     * but this method is kept for compatibility with EventSubscriberInterface.
      *
      * @return array<string, string> Array of event names and handlers
      */
@@ -142,17 +155,32 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * @param RequestEvent $event The request event
      * @return void
      */
+    #[AsEventListener(event: KernelEvents::REQUEST, priority: 1024)]
     public function onKernelRequest(RequestEvent $event): void
     {
-        if (!$this->enabled || !$event->isMainRequest()) {
+        if (!$this->enabled) {
+            if (\function_exists('error_log')) {
+                error_log('[PerformanceBundle] Tracking disabled: enabled=false');
+            }
+            $this->dataCollector->setEnabled(false);
+            return;
+        }
+
+        if (!$event->isMainRequest()) {
+            if (\function_exists('error_log')) {
+                error_log('[PerformanceBundle] Tracking disabled: not main request');
+            }
             $this->dataCollector->setEnabled(false);
             return;
         }
 
         $request = $event->getRequest();
-        $env = $request->server->get('APP_ENV') ?? 'dev';
+        $env = $this->kernel?->getEnvironment() ?? $request->server->get('APP_ENV') ?? 'dev';
 
         if (!\in_array($env, $this->environments, true)) {
+            if (\function_exists('error_log')) {
+                error_log(sprintf('[PerformanceBundle] Tracking disabled: env=%s not in allowed environments: %s', $env, implode(', ', $this->environments)));
+            }
             $this->dataCollector->setEnabled(false);
             return;
         }
@@ -166,6 +194,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // Skip ignored routes
         if ($this->routeName !== null && \in_array($this->routeName, $this->ignoreRoutes, true)) {
             $this->dataCollector->setEnabled(false);
+            // Inform collector that route is ignored
+            $this->dataCollector->setRecordOperation(false, false);
             return;
         }
 
@@ -199,24 +229,49 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * @param TerminateEvent $event The terminate event
      * @return void
      */
+    #[AsEventListener(event: KernelEvents::TERMINATE, priority: -1024)]
     public function onKernelTerminate(TerminateEvent $event): void
     {
-        if (!$this->enabled || !$this->dataCollector->isEnabled()) {
+        if (!$this->enabled) {
+            if (\function_exists('error_log')) {
+                error_log('[PerformanceBundle] onKernelTerminate: enabled=false, skipping');
+            }
+            // Inform collector that tracking is disabled
+            $this->dataCollector->setRecordOperation(false, false);
+            return;
+        }
+
+        if (!$this->dataCollector->isEnabled()) {
+            if (\function_exists('error_log')) {
+                error_log('[PerformanceBundle] onKernelTerminate: dataCollector not enabled, skipping');
+            }
+            // Inform collector that collector is disabled
+            $this->dataCollector->setRecordOperation(false, false);
             return;
         }
 
         $request = $event->getRequest();
-        $env = $request->server->get('APP_ENV') ?? 'dev';
+        $env = $this->kernel?->getEnvironment() ?? $request->server->get('APP_ENV') ?? 'dev';
 
         // Get route name here, as it should be resolved by now
         $this->routeName = $this->routeName ?? $request->attributes->get('_route');
         $this->dataCollector->setRouteName($this->routeName);
 
         if ($this->routeName === null) {
+            if (\function_exists('error_log')) {
+                error_log('[PerformanceBundle] onKernelTerminate: routeName is null, skipping');
+            }
+            // Inform collector that no route name was available
+            $this->dataCollector->setRecordOperation(false, false);
             return;
         }
 
         if (!\in_array($env, $this->environments, true)) {
+            if (\function_exists('error_log')) {
+                error_log(sprintf('[PerformanceBundle] onKernelTerminate: env=%s not in allowed environments, skipping', $env));
+            }
+            // Inform collector that environment is not allowed
+            $this->dataCollector->setRecordOperation(false, false);
             return;
         }
 
@@ -252,29 +307,48 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // Get HTTP method
         $httpMethod = $request->getMethod();
 
+        // Get HTTP status code from response
+        $statusCode = null;
+        $response = $event->getResponse();
+        if ($response !== null) {
+            $statusCode = $response->getStatusCode();
+        }
+
+        // Apply sampling: skip recording if random value is above sampling rate
+        if ($this->samplingRate < 1.0 && mt_rand(1, 10000) / 10000 > $this->samplingRate) {
+            // Sampling: skip this request
+            // Inform collector that no data was saved due to sampling
+            $this->dataCollector->setRecordOperation(false, false);
+            return;
+        }
+
         // Record metrics - ensure no output is generated
         try {
             // Suppress error reporting temporarily to prevent warnings from generating output
             $errorReporting = error_reporting(0);
             
             // Use output buffering to catch any potential output
+            // Only start a new buffer if we're not already in one (to avoid closing buffers we didn't open)
             $obLevel = ob_get_level();
+            $obStarted = false;
             if ($obLevel === 0) {
                 ob_start();
+                $obStarted = true;
             }
             
             if (\function_exists('error_log')) {
                 error_log(sprintf(
-                    '[PerformanceBundle] Attempting to save metrics: route=%s, env=%s, method=%s, requestTime=%s, queryCount=%s',
+                    '[PerformanceBundle] Attempting to save metrics: route=%s, env=%s, method=%s, statusCode=%s, requestTime=%s, queryCount=%s',
                     $this->routeName ?? 'null',
                     $env,
                     $httpMethod,
+                    $statusCode !== null ? (string)$statusCode : 'null',
                     $requestTime !== null ? (string)$requestTime : 'null',
                     $queryCount !== null ? (string)$queryCount : 'null'
                 ));
             }
             
-            $this->metricsService->recordMetrics(
+            $result = $this->metricsService->recordMetrics(
                 $this->routeName,
                 $env,
                 $requestTime,
@@ -282,15 +356,39 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $queryTime,
                 $this->routeParams,
                 $memoryUsage,
-                $httpMethod
+                $httpMethod,
+                $statusCode,
+                $this->trackStatusCodes
             );
             
-            if (\function_exists('error_log')) {
-                error_log(sprintf('[PerformanceBundle] Metrics saved successfully for route: %s', $this->routeName ?? 'null'));
+            // Set record operation information in the collector
+            // Always set this, even if result indicates no changes (was_updated = false)
+            if (isset($result['is_new'], $result['was_updated'])) {
+                $this->dataCollector->setRecordOperation($result['is_new'], $result['was_updated']);
+                
+                if (\function_exists('error_log')) {
+                    error_log(sprintf(
+                        '[PerformanceBundle] Metrics saved successfully for route: %s (is_new=%s, was_updated=%s)',
+                        $this->routeName ?? 'null',
+                        $result['is_new'] ? 'true' : 'false',
+                        $result['was_updated'] ? 'true' : 'false'
+                    ));
+                }
+            } else {
+                // If result doesn't have the expected keys, log warning and assume no operation occurred
+                if (\function_exists('error_log')) {
+                    error_log(sprintf(
+                        '[PerformanceBundle] WARNING: recordMetrics returned unexpected result format for route: %s. Result keys: %s',
+                        $this->routeName ?? 'null',
+                        implode(', ', array_keys($result))
+                    ));
+                }
+                // Still set the operation to indicate we tried (even if it failed)
+                $this->dataCollector->setRecordOperation(false, false);
             }
             
-            // Clean output buffer if we started it
-            if ($obLevel === 0 && ob_get_level() > 0) {
+            // Clean output buffer only if we started it
+            if ($obStarted && ob_get_level() > 0) {
                 ob_end_clean();
             }
             
@@ -302,24 +400,36 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 error_reporting($errorReporting);
             }
             
-            // Clean output buffer if needed
-            $obLevel = ob_get_level();
-            if ($obLevel > 0) {
+            // Clean output buffer only if we started it
+            if (isset($obStarted) && $obStarted && ob_get_level() > 0) {
                 ob_end_clean();
             }
             
             // Log the error for debugging
             if (\function_exists('error_log')) {
                 error_log(sprintf(
-                    '[PerformanceBundle] Error saving metrics for route %s: %s',
+                    '[PerformanceBundle] Error saving metrics for route %s: %s (file: %s, line: %s)',
                     $this->routeName ?? 'null',
-                    $e->getMessage()
+                    $e->getMessage(),
+                    $e->getFile(),
+                    $e->getLine()
                 ));
             }
+            
+            // Inform collector that save failed
+            $this->dataCollector->setRecordOperation(false, false);
             
             // Silently fail to not break the application
             // In production, you might want to log this
         } finally {
+            // Ensure setRecordOperation is always called, even if there was an unexpected error
+            // This prevents "Unknown" status in the collector
+            if ($this->dataCollector->wasRecordNew() === null && $this->dataCollector->wasRecordUpdated() === null) {
+                // If we reach here and the operation status is still null, something went wrong
+                // Set it to indicate we tried but failed
+                $this->dataCollector->setRecordOperation(false, false);
+            }
+            
             // Stop query tracking
             if ($this->trackQueries) {
                 $this->stopQueryTracking();

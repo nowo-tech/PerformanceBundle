@@ -1,6 +1,6 @@
 {
     "bundles": {
-        "Nowo\\PerformanceBundle\\PerformanceBundle": ["all"]
+        "Nowo\\PerformanceBundle\\NowoPerformanceBundle": ["all"]
     },
     "copy-from-recipe": {
         "config/": "%CONFIG_DIR%/"

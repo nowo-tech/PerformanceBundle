@@ -15,10 +15,12 @@ nowo_performance:
     table_name: 'routes_data'        # Table name for storing metrics
     track_queries: true              # Track database query count and time
     track_request_time: true         # Track request execution time
+    enable_access_records: false     # Enable temporal access records tracking
     ignore_routes:                   # Routes to ignore (not tracked)
         - '_wdt'                     # Web Debug Toolbar
         - '_profiler'                # Symfony Profiler
         - '_error'                    # Error pages
+    track_status_codes: [200, 404, 500, 503]  # HTTP status codes to track
     dashboard:                       # Performance dashboard configuration
         enabled: true                # Enable/disable the dashboard
         path: '/performance'         # Route path for the dashboard
@@ -99,6 +101,28 @@ Track request execution time.
 nowo_performance:
     track_request_time: false  # Disable request time tracking
 ```
+
+### `enable_access_records`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Enable temporal access records tracking. When enabled, creates individual records for each route access with timestamp, HTTP status code, and response time in a separate `routes_data_records` table. Useful for analyzing access patterns by time of day, hour, or specific time periods.
+
+When this option is enabled, the `nowo:performance:create-table` command will automatically create the `routes_data_records` table along with the main `routes_data` table.
+
+```yaml
+nowo_performance:
+    enable_access_records: true  # Enable temporal access records
+```
+
+**Use cases:**
+- Analyzing access patterns by time of day
+- Tracking individual request details over time
+- Time-series analysis of route performance
+- Identifying peak usage times
+
+**Note:** Enabling this feature will increase database storage requirements as it creates a record for every route access (subject to sampling_rate).
 
 ### `ignore_routes`
 
@@ -268,6 +292,132 @@ nowo_performance:
 - Requires CSRF token validation
 - Respects dashboard role restrictions
 - Reviewer is automatically set from current user
+
+#### `dashboard.date_formats`
+
+**Type:** `array`  
+**Default:** See below
+
+Date format configuration for displaying dates in the dashboard.
+
+```yaml
+nowo_performance:
+    dashboard:
+        date_formats:
+            datetime: 'Y-m-d H:i:s'  # Format for date and time with seconds
+            date: 'Y-m-d H:i'        # Format for date and time without seconds
+```
+
+#### `dashboard.auto_refresh_interval`
+
+**Type:** `integer`  
+**Default:** `0` (disabled)
+
+Auto-refresh interval for the dashboard in seconds. When set to a value greater than 0, the dashboard will automatically reload data at the specified interval.
+
+```yaml
+nowo_performance:
+    dashboard:
+        auto_refresh_interval: 30  # Refresh every 30 seconds
+```
+
+**Features:**
+- Visual countdown indicator
+- Automatically pauses when window loses focus
+- Resume when window regains focus
+
+### `track_status_codes`
+
+**Type:** `array`  
+**Default:** `[200, 404, 500, 503]`
+
+HTTP status codes to track and calculate ratios for. Only the configured status codes will be tracked and displayed in the dashboard.
+
+```yaml
+nowo_performance:
+    track_status_codes: [200, 201, 400, 404, 500, 503]
+```
+
+**Note:** The bundle automatically increments the count for each status code when a response is recorded. Ratios are calculated as percentages of total responses.
+
+### `sampling_rate`
+
+**Type:** `float`  
+**Default:** `1.0`  
+**Range:** `0.0` to `1.0`
+
+Sampling rate for high-traffic routes. Reduces database load for frequently accessed routes by tracking only a percentage of requests.
+
+```yaml
+nowo_performance:
+    sampling_rate: 0.1  # Track only 10% of requests
+```
+
+**Use cases:**
+- High-traffic production environments
+- Routes with thousands of requests per minute
+- When database write performance is a concern
+
+### `query_tracking_threshold`
+
+**Type:** `integer`  
+**Default:** `0`
+
+Minimum query count to track query execution time. Queries below this threshold are counted but not timed individually.
+
+```yaml
+nowo_performance:
+    query_tracking_threshold: 5  # Only time queries if route has 5+ queries
+```
+
+### `thresholds`
+
+**Type:** `array`  
+**Default:** See below
+
+Performance thresholds for warning and critical levels. Used for visual indicators in dashboard and automatic notifications.
+
+```yaml
+nowo_performance:
+    thresholds:
+        request_time:
+            warning: 0.5    # seconds
+            critical: 1.0   # seconds
+        query_count:
+            warning: 20
+            critical: 50
+        memory_usage:
+            warning: 20.0   # MB
+            critical: 50.0  # MB
+```
+
+### `notifications`
+
+**Type:** `array`  
+**Default:** See below
+
+Performance alert notifications configuration. See [NOTIFICATIONS.md](NOTIFICATIONS.md) for complete documentation.
+
+```yaml
+nowo_performance:
+    notifications:
+        enabled: true
+        email:
+            enabled: true
+            from: 'noreply@example.com'
+            to: ['admin@example.com']
+        slack:
+            enabled: true
+            webhook_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+        teams:
+            enabled: true
+            webhook_url: 'https://outlook.office.com/webhook/YOUR/WEBHOOK/URL'
+        webhook:
+            enabled: false
+            url: ''
+            format: 'json'
+            headers: []
+```
 
 ## Environment-Specific Configuration
 

@@ -14,6 +14,7 @@ use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
+use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -45,6 +46,7 @@ class PerformanceController extends AbstractController
      */
     public function __construct(
         private readonly PerformanceMetricsService $metricsService,
+        private readonly ?PerformanceAnalysisService $analysisService = null,
         #[Autowire('%nowo_performance.dashboard.enabled%')]
         private readonly bool $enabled,
         #[Autowire('%nowo_performance.dashboard.roles%')]
@@ -73,7 +75,14 @@ class PerformanceController extends AbstractController
         #[Autowire('%nowo_performance.dashboard.date_formats.datetime%')]
         private readonly string $dateTimeFormat = 'Y-m-d H:i:s',
         #[Autowire('%nowo_performance.dashboard.date_formats.date%')]
-        private readonly string $dateFormat = 'Y-m-d H:i'
+        private readonly string $dateFormat = 'Y-m-d H:i',
+        #[Autowire('%nowo_performance.dashboard.auto_refresh_interval%')]
+        private readonly int $autoRefreshInterval = 0,
+        #[Autowire('%nowo_performance.track_status_codes%')]
+        private readonly array $trackStatusCodes = [200, 404, 500, 503],
+        private readonly ?\Nowo\PerformanceBundle\Repository\RouteDataRecordRepository $recordRepository = null,
+        #[Autowire('%nowo_performance.enable_access_records%')]
+        private readonly bool $enableAccessRecords = false,
     ) {
     }
 
@@ -260,6 +269,8 @@ class PerformanceController extends AbstractController
                     'critical' => $this->memoryUsageCritical,
                 ],
             ],
+            'autoRefreshInterval' => $this->autoRefreshInterval,
+            'trackStatusCodes' => $this->trackStatusCodes,
         ]);
     }
 
@@ -526,6 +537,19 @@ class PerformanceController extends AbstractController
         // Get routes needing attention (outliers and worst performers)
         $routesNeedingAttention = $this->getRoutesNeedingAttention($routes, $advancedStats);
 
+        // Advanced performance analysis
+        $correlations = [];
+        $efficiency = [];
+        $recommendations = [];
+        $trafficDistribution = [];
+        
+        if ($this->analysisService !== null) {
+            $correlations = $this->analysisService->analyzeCorrelations($routes);
+            $efficiency = $this->analysisService->analyzeEfficiency($routes);
+            $recommendations = $this->analysisService->generateRecommendations($routes, $advancedStats);
+            $trafficDistribution = $this->analysisService->analyzeTrafficDistribution($routes);
+        }
+
         // Get available environments
         try {
             $environments = $this->getAvailableEnvironments();
@@ -536,6 +560,10 @@ class PerformanceController extends AbstractController
         return $this->render('@NowoPerformanceBundle/Performance/statistics.html.twig', [
             'advanced_stats' => $advancedStats,
             'routes_needing_attention' => $routesNeedingAttention,
+            'correlations' => $correlations,
+            'efficiency' => $efficiency,
+            'recommendations' => $recommendations,
+            'traffic_distribution' => $trafficDistribution,
             'environment' => $env,
             'environments' => $environments,
             'template' => $this->template,
@@ -1403,5 +1431,81 @@ class PerformanceController extends AbstractController
                 ],
             ],
         ];
+    }
+
+    /**
+     * Display temporal access statistics.
+     *
+     * Shows access counts, average response times, and status code distributions by hour.
+     *
+     * @param Request $request The HTTP request
+     * @return Response The HTTP response
+     */
+    #[Route(
+        path: '/access-statistics',
+        name: 'nowo_performance.access_statistics',
+        methods: ['GET']
+    )]
+    public function accessStatistics(Request $request): Response
+    {
+        if (!$this->enabled || !$this->enableAccessRecords) {
+            throw $this->createNotFoundException('Temporal access records are disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to access temporal access statistics.');
+            }
+        }
+
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $startDateParam = $request->query->get('start_date');
+        $endDateParam = $request->query->get('end_date');
+
+        $startDate = $startDateParam ? new \DateTimeImmutable($startDateParam) : (new \DateTimeImmutable())->modify('-7 days')->setTime(0, 0, 0);
+        $endDate = $endDateParam ? new \DateTimeImmutable($endDateParam) : new \DateTimeImmutable();
+
+        $statisticsByHour = [];
+        $totalAccessCount = 0;
+
+        if ($this->recordRepository !== null) {
+            try {
+                $statisticsByHour = $this->recordRepository->getStatisticsByHour($env, $startDate, $endDate);
+                $totalAccessCount = $this->recordRepository->getTotalAccessCount($env, $startDate, $endDate);
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Error fetching hourly access statistics: ' . $e->getMessage());
+                $statisticsByHour = [];
+            }
+        } else {
+            $this->addFlash('warning', 'RouteDataRecordRepository is not available. Cannot fetch temporal access statistics.');
+        }
+
+        // Get available environments
+        try {
+            $environments = $this->getAvailableEnvironments();
+        } catch (\Exception $e) {
+            $environments = ['dev', 'test', 'prod'];
+        }
+
+        return $this->render('@NowoPerformanceBundle/Performance/access_statistics.html.twig', [
+            'statistics_by_hour' => $statisticsByHour,
+            'total_access_count' => $totalAccessCount,
+            'environment' => $env,
+            'environments' => $environments,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'template' => $this->template,
+            'dateTimeFormat' => $this->dateTimeFormat,
+            'dateFormat' => $this->dateFormat,
+        ]);
     }
 }

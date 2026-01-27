@@ -8,6 +8,10 @@ services:
     Nowo\PerformanceBundle\Repository\RouteDataRepository:
         public: true
 
+    # RouteDataRecord Repository
+    Nowo\PerformanceBundle\Repository\RouteDataRecordRepository:
+        public: true
+
     # Services (uses Autowire attributes for parameters)
     Nowo\PerformanceBundle\Service\PerformanceMetricsService:
         public: true
@@ -30,6 +34,10 @@ services:
     Nowo\PerformanceBundle\Twig\IconExtension:
         tags:
             - { name: twig.extension }
+    
+    Nowo\PerformanceBundle\Twig\ArrayExtension:
+        tags:
+            - { name: twig.extension }
 
     # Twig Components (for Symfony UX TwigComponent)
     # These components are auto-discovered by Symfony UX TwigComponent via #[AsTwigComponent] attribute
@@ -43,6 +51,10 @@ services:
 
     # Table Status Checker
     Nowo\PerformanceBundle\Service\TableStatusChecker:
+        public: true
+
+    # Performance Analysis Service
+    Nowo\PerformanceBundle\Service\PerformanceAnalysisService:
         public: true
 
     # Data Collector
@@ -59,8 +71,80 @@ services:
         tags:
             - { name: doctrine.event_subscriber }
 
-    # Event Subscriber (uses AsEventListener attributes and Autowire for parameters)
-    Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber: ~
+    # Doctrine Event Subscriber for RouteDataRecord table name
+    Nowo\PerformanceBundle\EventSubscriber\RouteDataRecordTableNameSubscriber:
+        tags:
+            - { name: doctrine.event_subscriber }
+
+    # Event Subscriber (uses getSubscribedEvents method and Autowire for parameters)
+    Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber:
+        tags:
+            - { name: kernel.event_subscriber }
+
+    # Notification Channels
+    # Uses Autowire attributes for dependency injection
+    Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel:
+        public: true
+        tags:
+            - { name: 'nowo_performance.notification_channel', alias: 'email' }
+
+    # Slack webhook channel
+    nowo_performance.notification.channel.slack:
+        class: Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel
+        arguments:
+            $httpClient: '@?http_client'
+            $webhookUrl: '%nowo_performance.notifications.slack.webhook_url%'
+            $format: 'slack'
+            $headers: []
+            $enabled: '%nowo_performance.notifications.slack.enabled%'
+        public: true
+        tags:
+            - { name: 'nowo_performance.notification_channel', alias: 'slack' }
+
+    # Teams webhook channel
+    nowo_performance.notification.channel.teams:
+        class: Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel
+        arguments:
+            $httpClient: '@?http_client'
+            $webhookUrl: '%nowo_performance.notifications.teams.webhook_url%'
+            $format: 'teams'
+            $headers: []
+            $enabled: '%nowo_performance.notifications.teams.enabled%'
+        public: true
+        tags:
+            - { name: 'nowo_performance.notification_channel', alias: 'teams' }
+
+    # Generic webhook channel
+    nowo_performance.notification.channel.webhook:
+        class: Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel
+        arguments:
+            $httpClient: '@?http_client'
+            $webhookUrl: '%nowo_performance.notifications.webhook.url%'
+            $format: '%nowo_performance.notifications.webhook.format%'
+            $headers: '%nowo_performance.notifications.webhook.headers%'
+            $enabled: '%nowo_performance.notifications.webhook.enabled%'
+        public: true
+        tags:
+            - { name: 'nowo_performance.notification_channel', alias: 'webhook' }
+
+    # Notification Service
+    Nowo\PerformanceBundle\Service\NotificationService:
+        arguments:
+            $channels: !tagged_iterator 'nowo_performance.notification_channel'
+            $enabled: '%nowo_performance.notifications.enabled%'
+        public: true
+
+    # Performance Alert Subscriber
+    Nowo\PerformanceBundle\EventSubscriber\PerformanceAlertSubscriber:
+        arguments:
+            $notificationService: '@?Nowo\PerformanceBundle\Service\NotificationService'
+            $requestTimeWarning: '%nowo_performance.thresholds.request_time.warning%'
+            $requestTimeCritical: '%nowo_performance.thresholds.request_time.critical%'
+            $queryCountWarning: '%nowo_performance.thresholds.query_count.warning%'
+            $queryCountCritical: '%nowo_performance.thresholds.query_count.critical%'
+            $memoryUsageWarning: '%nowo_performance.thresholds.memory_usage.warning%'
+            $memoryUsageCritical: '%nowo_performance.thresholds.memory_usage.critical%'
+            $enabled: '%nowo_performance.notifications.enabled%'
 
     # DBAL Query Tracking Middleware
     Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware:

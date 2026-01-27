@@ -922,7 +922,11 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     track_queries?: bool|Param, // Track database query count and execution time // Default: true
  *     track_request_time?: bool|Param, // Track request execution time // Default: true
  *     ignore_routes?: list<scalar|Param|null>,
+ *     track_status_codes?: list<int|Param>,
  *     async?: bool|Param, // Record metrics asynchronously using Symfony Messenger (requires symfony/messenger) // Default: false
+ *     sampling_rate?: float|Param, // Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking). Reduces database load for frequently accessed routes. // Default: 1.0
+ *     query_tracking_threshold?: int|Param, // Minimum query count to track query execution time. Queries below this threshold are counted but not timed individually. // Default: 0
+ *     enable_access_records?: bool|Param, // Enable temporal access records tracking. Creates individual records for each route access with timestamp, status code, and response time. Useful for analyzing access patterns by time of day. // Default: false
  *     thresholds?: array{ // Performance thresholds for warning and critical levels
  *         request_time?: array{ // Request time thresholds in seconds
  *             warning?: float|Param, // Request time threshold for warning (seconds) // Default: 0.5
@@ -948,6 +952,29 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         date_formats?: array{ // Date format configuration for displaying dates in the dashboard
  *             datetime?: scalar|Param|null, // Format for date and time (e.g., Y-m-d H:i:s) // Default: "Y-m-d H:i:s"
  *             date?: scalar|Param|null, // Format for date only without seconds (e.g., Y-m-d H:i) // Default: "Y-m-d H:i"
+ *         },
+ *         auto_refresh_interval?: int|Param, // Auto-refresh interval in seconds (0 to disable). Dashboard will automatically reload data at this interval. // Default: 0
+ *     },
+ *     notifications?: array{ // Performance alert notifications configuration
+ *         enabled?: bool|Param, // Enable or disable performance notifications // Default: false
+ *         email?: array{ // Email notification configuration
+ *             enabled?: bool|Param, // Enable email notifications (requires symfony/mailer) // Default: false
+ *             from?: scalar|Param|null, // Sender email address // Default: "noreply@example.com"
+ *             to?: list<scalar|Param|null>,
+ *         },
+ *         slack?: array{ // Slack webhook notification configuration
+ *             enabled?: bool|Param, // Enable Slack notifications (requires symfony/http-client) // Default: false
+ *             webhook_url?: scalar|Param|null, // Slack webhook URL // Default: ""
+ *         },
+ *         teams?: array{ // Microsoft Teams webhook notification configuration
+ *             enabled?: bool|Param, // Enable Teams notifications (requires symfony/http-client) // Default: false
+ *             webhook_url?: scalar|Param|null, // Teams webhook URL // Default: ""
+ *         },
+ *         webhook?: array{ // Generic webhook notification configuration
+ *             enabled?: bool|Param, // Enable generic webhook notifications (requires symfony/http-client) // Default: false
+ *             url?: scalar|Param|null, // Webhook URL // Default: ""
+ *             format?: scalar|Param|null, // Payload format: json, slack, or teams // Default: "json"
+ *             headers?: list<scalar|Param|null>,
  *         },
  *     },
  * }

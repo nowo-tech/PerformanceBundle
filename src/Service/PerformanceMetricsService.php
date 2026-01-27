@@ -7,9 +7,11 @@ namespace Nowo\PerformanceBundle\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Event\BeforeMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
+use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -24,18 +26,46 @@ use Symfony\Contracts\Service\Attribute\Required;
 class PerformanceMetricsService
 {
     /**
+     * The Doctrine registry.
+     *
+     * @var ManagerRegistry
+     */
+    private readonly ManagerRegistry $registry;
+
+    /**
+     * The connection name.
+     *
+     * @var string
+     */
+    private readonly string $connectionName;
+
+    /**
      * The entity manager for the configured connection.
      *
      * @var EntityManagerInterface
      */
-    private readonly EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager;
 
     /**
      * The repository for RouteData entities.
      *
      * @var RouteDataRepository
      */
-    private readonly RouteDataRepository $repository;
+    private RouteDataRepository $repository;
+
+    /**
+     * The repository for RouteDataRecord entities.
+     *
+     * @var RouteDataRecordRepository
+     */
+    private RouteDataRecordRepository $recordRepository;
+
+    /**
+     * Whether access records are enabled.
+     *
+     * @var bool
+     */
+    private readonly bool $enableAccessRecords;
 
     /**
      * Cache service for performance metrics (optional).
@@ -77,11 +107,17 @@ class PerformanceMetricsService
         #[Autowire('%nowo_performance.connection%')]
         string $connectionName,
         #[Autowire('%nowo_performance.async%')]
-        bool $async = false
+        bool $async = false,
+        #[Autowire('%nowo_performance.enable_access_records%')]
+        bool $enableAccessRecords = false
     ) {
+        $this->registry = $registry;
+        $this->connectionName = $connectionName;
         $this->entityManager = $registry->getManager($connectionName);
         $this->repository = $this->entityManager->getRepository(RouteData::class);
+        $this->recordRepository = $this->entityManager->getRepository(RouteDataRecord::class);
         $this->async = $async;
+        $this->enableAccessRecords = $enableAccessRecords;
     }
 
     /**
@@ -134,6 +170,9 @@ class PerformanceMetricsService
      * @param array|null $params Route parameters
      * @param int|null $memoryUsage Peak memory usage in bytes
      * @param string|null $httpMethod HTTP method (GET, POST, PUT, DELETE, etc.)
+     * @param int|null $statusCode HTTP status code (200, 404, 500, etc.)
+     * @param array<int> $trackStatusCodes List of status codes to track
+     * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
     public function recordMetrics(
         string $routeName,
@@ -143,8 +182,10 @@ class PerformanceMetricsService
         ?float $queryTime = null,
         ?array $params = null,
         ?int $memoryUsage = null,
-        ?string $httpMethod = null
-    ): void {
+        ?string $httpMethod = null,
+        ?int $statusCode = null,
+        array $trackStatusCodes = []
+    ): array {
         // Dispatch before event to allow modification of metrics
         if ($this->eventDispatcher !== null) {
             $beforeEvent = new BeforeMetricsRecordedEvent(
@@ -154,7 +195,8 @@ class PerformanceMetricsService
                 $totalQueries,
                 $queryTime,
                 $params,
-                $memoryUsage
+                $memoryUsage,
+                $httpMethod
             );
             $this->eventDispatcher->dispatch($beforeEvent);
 
@@ -164,6 +206,7 @@ class PerformanceMetricsService
             $queryTime = $beforeEvent->getQueryTime();
             $params = $beforeEvent->getParams();
             $memoryUsage = $beforeEvent->getMemoryUsage();
+            // Note: httpMethod is not modifiable via event, use original value
         }
 
         // If async mode is enabled and message bus is available, dispatch message
@@ -179,11 +222,12 @@ class PerformanceMetricsService
                 $httpMethod
             );
             $this->messageBus->dispatch($message);
-            return;
+            // In async mode, we can't know if it was new or updated until the message is processed
+            return ['is_new' => false, 'was_updated' => false];
         }
 
         // Otherwise, record synchronously
-        $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod);
+        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes);
     }
 
     /**
@@ -197,7 +241,9 @@ class PerformanceMetricsService
      * @param array|null $params Route parameters
      * @param int|null $memoryUsage Peak memory usage in bytes
      * @param string|null $httpMethod HTTP method (GET, POST, PUT, DELETE, etc.)
-     * @return void
+     * @param int|null $statusCode HTTP status code (200, 404, 500, etc.)
+     * @param array<int> $trackStatusCodes List of status codes to track
+     * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
     private function recordMetricsSync(
         string $routeName,
@@ -207,10 +253,13 @@ class PerformanceMetricsService
         ?float $queryTime = null,
         ?array $params = null,
         ?int $memoryUsage = null,
-        ?string $httpMethod = null
-    ): void {
+        ?string $httpMethod = null,
+        ?int $statusCode = null,
+        array $trackStatusCodes = []
+    ): array {
 
         $isNew = false;
+        $wasUpdated = false;
         $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
 
         if ($routeData === null) {
@@ -226,14 +275,27 @@ class PerformanceMetricsService
             $routeData->setHttpMethod($httpMethod);
             // accessCount is already initialized to 1 in the entity
 
+            // Track status code if configured
+            if ($statusCode !== null && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
+                $routeData->incrementStatusCode($statusCode);
+            }
+
             $this->entityManager->persist($routeData);
             $isNew = true;
         } else {
             // Always increment access count when route is accessed
             $routeData->incrementAccessCount();
 
+            // Track status code if configured
+            if ($statusCode !== null && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
+                $routeData->incrementStatusCode($statusCode);
+                $wasUpdated = true;
+            }
+
             // Update metrics if they are worse (higher time or more queries)
             if ($routeData->shouldUpdate($requestTime, $totalQueries)) {
+                $wasUpdated = true;
+                
                 if ($requestTime !== null && ($routeData->getRequestTime() === null || $requestTime > $routeData->getRequestTime())) {
                     $routeData->setRequestTime($requestTime);
                 }
@@ -246,30 +308,36 @@ class PerformanceMetricsService
                     $routeData->setQueryTime($queryTime);
                 }
 
-                    if ($params !== null) {
-                        $routeData->setParams($params);
-                    }
+                if ($params !== null) {
+                    $routeData->setParams($params);
+                }
 
-                    // Update memory usage if it's higher (worse)
-                    if ($memoryUsage !== null && ($routeData->getMemoryUsage() === null || $memoryUsage > $routeData->getMemoryUsage())) {
-                        $routeData->setMemoryUsage($memoryUsage);
-                    }
+                // Update memory usage if it's higher (worse)
+                if ($memoryUsage !== null && ($routeData->getMemoryUsage() === null || $memoryUsage > $routeData->getMemoryUsage())) {
+                    $routeData->setMemoryUsage($memoryUsage);
+                }
 
-                    // Update HTTP method if provided
-                    if ($httpMethod !== null) {
-                        $routeData->setHttpMethod($httpMethod);
-                    }
+                // Update HTTP method if provided
+                if ($httpMethod !== null) {
+                    $routeData->setHttpMethod($httpMethod);
                 }
             }
+        }
 
         try {
             if (\function_exists('error_log')) {
                 error_log(sprintf(
-                    '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s',
+                    '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s, entityManagerOpen=%s',
                     $routeName,
                     $env,
-                    $isNew ? 'true' : 'false'
+                    $isNew ? 'true' : 'false',
+                    $this->entityManager->isOpen() ? 'true' : 'false'
                 ));
+            }
+            
+            // Ensure EntityManager is open before flush
+            if (!$this->entityManager->isOpen()) {
+                $this->resetEntityManager();
             }
             
             // Suppress any potential output from Doctrine
@@ -291,30 +359,51 @@ class PerformanceMetricsService
                 $this->cacheService->invalidateStatistics($env);
             }
 
+            // Create access record if enabled
+            if ($this->enableAccessRecords) {
+                $accessRecord = new RouteDataRecord();
+                $accessRecord->setRouteData($routeData);
+                $accessRecord->setAccessedAt(new \DateTimeImmutable());
+                $accessRecord->setStatusCode($statusCode);
+                $accessRecord->setResponseTime($requestTime);
+                $this->entityManager->persist($accessRecord);
+                $this->entityManager->flush();
+            }
+
             // Dispatch after event
             if ($this->eventDispatcher !== null) {
                 $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew);
                 $this->eventDispatcher->dispatch($afterEvent);
             }
+            
+            return ['is_new' => $isNew, 'was_updated' => $wasUpdated];
         } catch (\Exception $e) {
             // Restore error reporting
             if (isset($errorReporting)) {
                 error_reporting($errorReporting);
             }
             
+            // Always reset EntityManager after an error (it may be closed)
+            // This ensures subsequent operations can proceed
+            $this->resetEntityManager();
+            
             // Log the error for debugging
             if (\function_exists('error_log')) {
                 error_log(sprintf(
-                    '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s',
+                    '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s, entityManagerOpen=%s',
                     $routeName,
                     $env,
-                    $e->getMessage()
+                    $e->getMessage(),
+                    $this->entityManager->isOpen() ? 'true' : 'false'
                 ));
             }
             
             // Re-throw to let the subscriber handle it
             throw $e;
         }
+        
+        // This should never be reached, but return default values if it does
+        return ['is_new' => false, 'was_updated' => false];
     }
 
     /**
@@ -361,5 +450,29 @@ class PerformanceMetricsService
     public function getRepository(): RouteDataRepository
     {
         return $this->repository;
+    }
+
+    /**
+     * Reset the EntityManager if it's closed.
+     *
+     * This method should be called after an exception to ensure
+     * the EntityManager is in a valid state for subsequent operations.
+     *
+     * @return void
+     */
+    private function resetEntityManager(): void
+    {
+        // Check if EntityManager is closed or not open
+        if (!$this->entityManager->isOpen()) {
+            // Get a new EntityManager from the registry
+            $this->entityManager = $this->registry->getManager($this->connectionName);
+            // Re-initialize repositories
+            $this->repository = $this->entityManager->getRepository(RouteData::class);
+            $this->recordRepository = $this->entityManager->getRepository(RouteDataRecord::class);
+            
+            if (\function_exists('error_log')) {
+                error_log('[PerformanceBundle] EntityManager reset after being closed');
+            }
+        }
     }
 }

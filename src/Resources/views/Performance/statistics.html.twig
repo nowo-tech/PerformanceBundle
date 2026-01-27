@@ -52,6 +52,185 @@
         </div>
     </div>
 
+    {# Performance Recommendations #}
+    {% if recommendations is defined and recommendations is not empty %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">💡 Performance Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    {% for recommendation in recommendations %}
+                        <div class="alert alert-{{ recommendation.priority == 'high' ? 'danger' : (recommendation.priority == 'medium' ? 'warning' : 'info') }} mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <strong>{{ recommendation.title }}</strong>
+                                </div>
+                            </div>
+                            <p class="mb-1 mt-2">{{ recommendation.description }}</p>
+                            <p class="mb-0"><strong>Action:</strong> {{ recommendation.action }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Correlation Analysis #}
+    {% if correlations is defined and correlations is not empty %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📊 Correlation Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Correlation coefficient ranges from -1 (perfect negative) to +1 (perfect positive). Values closer to ±1 indicate stronger relationships.</p>
+                    <div class="row">
+                        {% if correlations.request_time_vs_query_time %}
+                            <div class="col-md-6 mb-3">
+                                <h6>Request Time vs Query Time</h6>
+                                <p>
+                                    <strong>Correlation:</strong> 
+                                    <span class="badge bg-{{ correlations.request_time_vs_query_time.coefficient|abs >= 0.7 ? 'danger' : (correlations.request_time_vs_query_time.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
+                                        {{ correlations.request_time_vs_query_time.coefficient }}
+                                    </span>
+                                    <small class="text-muted">({{ correlations.request_time_vs_query_time.interpretation }})</small>
+                                </p>
+                                <p class="small text-muted">Sample size: {{ correlations.request_time_vs_query_time.sample_size }} routes</p>
+                            </div>
+                        {% endif %}
+                        {% if correlations.request_time_vs_query_count %}
+                            <div class="col-md-6 mb-3">
+                                <h6>Request Time vs Query Count</h6>
+                                <p>
+                                    <strong>Correlation:</strong> 
+                                    <span class="badge bg-{{ correlations.request_time_vs_query_count.coefficient|abs >= 0.7 ? 'danger' : (correlations.request_time_vs_query_count.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
+                                        {{ correlations.request_time_vs_query_count.coefficient }}
+                                    </span>
+                                    <small class="text-muted">({{ correlations.request_time_vs_query_count.interpretation }})</small>
+                                </p>
+                                <p class="small text-muted">Sample size: {{ correlations.request_time_vs_query_count.sample_size }} routes</p>
+                            </div>
+                        {% endif %}
+                        {% if correlations.query_time_vs_query_count %}
+                            <div class="col-md-6 mb-3">
+                                <h6>Query Time vs Query Count</h6>
+                                <p>
+                                    <strong>Correlation:</strong> 
+                                    <span class="badge bg-{{ correlations.query_time_vs_query_count.coefficient|abs >= 0.7 ? 'danger' : (correlations.query_time_vs_query_count.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
+                                        {{ correlations.query_time_vs_query_count.coefficient }}
+                                    </span>
+                                    <small class="text-muted">({{ correlations.query_time_vs_query_count.interpretation }})</small>
+                                </p>
+                                <p class="small text-muted">Sample size: {{ correlations.query_time_vs_query_count.sample_size }} routes</p>
+                            </div>
+                        {% endif %}
+                        {% if correlations.memory_vs_request_time %}
+                            <div class="col-md-6 mb-3">
+                                <h6>Memory Usage vs Request Time</h6>
+                                <p>
+                                    <strong>Correlation:</strong> 
+                                    <span class="badge bg-{{ correlations.memory_vs_request_time.coefficient|abs >= 0.7 ? 'danger' : (correlations.memory_vs_request_time.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
+                                        {{ correlations.memory_vs_request_time.coefficient }}
+                                    </span>
+                                    <small class="text-muted">({{ correlations.memory_vs_request_time.interpretation }})</small>
+                                </p>
+                                <p class="small text-muted">Sample size: {{ correlations.memory_vs_request_time.sample_size }} routes</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Efficiency Analysis #}
+    {% if efficiency is defined and efficiency is not empty %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">⚡ Efficiency Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% if efficiency.avg_query_ratio is not null %}
+                        <p><strong>Average Query Time Ratio:</strong> {{ efficiency.avg_query_ratio }}% of total request time</p>
+                    {% endif %}
+                    <div class="row">
+                        {% if efficiency.query_bottleneck_routes is not empty %}
+                            <div class="col-md-6 mb-3">
+                                <h6>🚨 Query Bottleneck Routes</h6>
+                                <p class="small text-muted">Routes where queries take up >80% of request time</p>
+                                <ul class="list-group">
+                                    {% for item in efficiency.query_bottleneck_routes|slice(0, 5) %}
+                                        <li class="list-group-item">
+                                            <code>{{ item.route.name }}</code>
+                                            <br>
+                                            <small>Query ratio: {{ item.query_ratio }}% | Request: {{ item.request_time|number_format(3) }}s | Queries: {{ item.query_count ?? 'N/A' }}</small>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        {% if efficiency.inefficient_routes is not empty %}
+                            <div class="col-md-6 mb-3">
+                                <h6>⚠️ Inefficient Routes</h6>
+                                <p class="small text-muted">Routes with high request time or query count</p>
+                                <ul class="list-group">
+                                    {% for item in efficiency.inefficient_routes|slice(0, 5) %}
+                                        <li class="list-group-item">
+                                            <code>{{ item.route.name }}</code>
+                                            <br>
+                                            <small>Request: {{ item.request_time|number_format(3) }}s | Queries: {{ item.query_count ?? 'N/A' }}</small>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Traffic Distribution #}
+    {% if traffic_distribution is defined and traffic_distribution is not empty %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">📈 Traffic Distribution</h5>
+                </div>
+                <div class="card-body">
+                    {% if traffic_distribution.traffic_concentration is not null %}
+                        <p><strong>Traffic Concentration:</strong> {{ traffic_distribution.traffic_concentration }}% of traffic goes to top 10% of routes</p>
+                    {% endif %}
+                    <p><strong>Total Accesses:</strong> {{ traffic_distribution.total_accesses|number_format }}</p>
+                    {% if traffic_distribution.hot_paths is not empty %}
+                        <h6>🔥 Hot Paths (Most Accessed Routes)</h6>
+                        <ul class="list-group mb-3">
+                            {% for item in traffic_distribution.hot_paths|slice(0, 10) %}
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <code>{{ item.route.name }}</code>
+                                    <div>
+                                        <span class="badge bg-primary">{{ item.access_count|number_format }} accesses</span>
+                                        <span class="badge bg-info">{{ item.percentage }}%</span>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {# Routes needing attention #}
     <div class="row mb-4">
         <div class="col-12">

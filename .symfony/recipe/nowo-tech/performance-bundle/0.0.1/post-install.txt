@@ -1,7 +1,8 @@
 Performance Bundle has been installed!
 
 The following files have been created:
-  - config/packages/dev/nowo_performance.yaml (configuration)
+  - config/packages/nowo_performance.yaml (main configuration)
+  - config/packages/dev/nowo_performance.yaml (dev-specific configuration)
 
 The bundle will automatically track route performance metrics in configured environments.
 

@@ -5,59 +5,93 @@ when@dev:
     nowo_performance:
         # Enable or disable performance tracking globally
         enabled: true
-        
+
         # Environments where performance tracking is enabled
+        # Only routes accessed in these environments will be tracked
         environments: ['dev', 'test']
-        
+
         # Doctrine connection name to use for storing metrics
+        # Use 'default' for the main database connection, or specify a custom connection name
         connection: 'default'
-        
+
         # Table name for storing route performance data
+        # The access records table (if enabled) will be named: {table_name}_records
         table_name: 'routes_data'
-        
+
         # Track database query count and execution time
+        # When enabled, tracks the number of database queries and total query execution time per route
         track_queries: true
-        
+
         # Track request execution time
+        # When enabled, tracks the total time taken to process each request
         track_request_time: true
+
+        # Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking)
+        # Reduces database load for frequently accessed routes by tracking only a percentage of requests
+        # Example: 0.1 = only track 10% of requests, 0.5 = track 50% of requests
+        # Use this in production environments with high traffic to reduce database write load
+        sampling_rate: 1.0
+
+        # Minimum query count to track query execution time
+        # Queries below this threshold are counted but not timed individually
+        # Set to 0 to always track query time, or higher to only time routes with many queries
+        query_tracking_threshold: 0
 
         # Record metrics asynchronously using Symfony Messenger (requires symfony/messenger)
         # When enabled, metrics are dispatched via message bus instead of direct database writes
+        # This improves response time but requires Symfony Messenger to be installed and configured
         async: false
-        
+
+        # Enable temporal access records tracking
+        # Creates individual records for each route access with timestamp, status code, and response time
+        # Useful for analyzing access patterns by time of day, hour, or specific time periods
+        # When enabled, the create-table command will automatically create routes_data_records table
+        # Note: Enabling this will increase database storage requirements
+        enable_access_records: true
+
         # List of route names to ignore (not tracked)
+        # Routes in this list will not have their performance metrics recorded
         ignore_routes:
             - '_wdt'          # Web Debug Toolbar
             - '_profiler'     # Symfony Profiler
             - '_error'        # Error pages
-        
+
+        # HTTP status codes to track and calculate ratios for
+        # Only the configured status codes will be tracked and displayed in the dashboard
+        # The bundle automatically increments the count for each status code when a response is recorded
+        track_status_codes: [200, 404, 500, 503]
+
         # Performance dashboard configuration
         dashboard:
             # Enable or disable the performance dashboard
             enabled: true
-            
+
             # Route path for the dashboard (e.g., /performance, /metrics)
+            # The full route will be: {prefix}{path}
             path: '/performance'
-            
+
             # Optional route prefix for the dashboard (e.g., /admin, /monitoring)
+            # Combined with path, the full route will be: {prefix}{path}
+            # Leave empty for no prefix
             prefix: '/demo'
-            
+
             # Required roles to access the dashboard (users must have at least one)
             # Empty array = no restrictions (default)
-            roles: []
             # Example with restrictions:
             # roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
-            
+            roles: []
+
             # CSS framework to use for the dashboard interface
             # Options: 'bootstrap' or 'tailwind'
             template: 'bootstrap'
-            
+
             # Enable individual record deletion from dashboard
-            # When enabled, a delete button appears for each record
+            # When enabled, a delete button appears for each record in the routes table
             enable_record_management: true
-            
+
             # Enable the record review system
-            # When enabled, users can mark records as reviewed and indicate improvements
+            # When enabled, users can mark records as reviewed and indicate if queries or time improved
+            # Also tracks review date and reviewer information
             enable_review_system: true
 
             # Date format configuration for displaying dates in the dashboard
@@ -67,19 +101,63 @@ when@dev:
                 # Format for date and time without seconds (e.g., Y-m-d H:i)
                 date: 'Y-m-d H:i'
 
+            # Auto-refresh interval in seconds (0 = disabled)
+            # Dashboard will automatically reload data at this interval
+            # Useful for monitoring dashboards that need real-time updates
+            auto_refresh_interval: 0
+
         # Performance thresholds for warning and critical levels
+        # Used for visual indicators in dashboard (color coding) and automatic notifications
         thresholds:
             # Request time thresholds in seconds
             request_time:
                 warning: 0.5    # Request time threshold for warning (seconds)
                 critical: 1.0   # Request time threshold for critical (seconds)
-            
+
             # Query count thresholds
             query_count:
                 warning: 20    # Query count threshold for warning
-                critical: 50    # Query count threshold for critical
-            
+                critical: 50   # Query count threshold for critical
+
             # Memory usage thresholds in MB
             memory_usage:
                 warning: 20.0  # Memory usage threshold for warning (MB)
                 critical: 50.0 # Memory usage threshold for critical (MB)
+
+        # Performance alert notifications
+        # Configure notifications to be sent when performance thresholds are exceeded
+        # See docs/NOTIFICATIONS.md for detailed configuration and setup instructions
+        notifications:
+            # Enable or disable performance notifications globally
+            # When false, no notifications will be sent regardless of individual channel settings
+            enabled: false
+
+            # Email notification configuration (requires symfony/mailer)
+            email:
+                enabled: false
+                # Sender email address
+                from: 'noreply@example.com'
+                # Recipient email addresses (array of email strings)
+                to: []
+
+            # Slack webhook notification configuration (requires symfony/http-client)
+            slack:
+                enabled: false
+                # Slack webhook URL (get from Slack app settings)
+                webhook_url: ''
+
+            # Microsoft Teams webhook notification configuration (requires symfony/http-client)
+            teams:
+                enabled: false
+                # Teams webhook URL (get from Teams connector settings)
+                webhook_url: ''
+
+            # Generic webhook notification configuration (requires symfony/http-client)
+            webhook:
+                enabled: false
+                # Webhook URL endpoint
+                url: ''
+                # Payload format: 'json', 'slack', or 'teams'
+                format: 'json'
+                # Additional HTTP headers (key-value pairs)
+                headers: []

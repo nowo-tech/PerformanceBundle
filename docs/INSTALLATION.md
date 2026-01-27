@@ -7,6 +7,8 @@
 - Doctrine ORM >= 2.13 || >= 3.0
 - Doctrine Bundle >= 2.8 || >= 3.0 (3.0 required for Symfony 8)
 
+> 📖 **For detailed information about compatibility with different Doctrine and DBAL versions, see [COMPATIBILITY.md](COMPATIBILITY.md)**
+
 ## Step 1: Install the Bundle
 
 ```bash
@@ -55,11 +57,25 @@ This command will:
 - Check if the table already exists
 - Create the table with all necessary columns and indexes
 - Show you exactly what SQL is being executed
+- Automatically configure AUTO_INCREMENT for the `id` column
 
-If the table already exists, you can force recreation (WARNING: This will delete all data):
+If the table already exists, you have two options:
+
+**Option 1: Update existing table (Recommended - preserves data)**
+```bash
+php bin/console nowo:performance:create-table --update
+```
+This will:
+- Add missing columns without losing data
+- Fix AUTO_INCREMENT if missing (handles foreign keys automatically)
+- Add missing indexes
+
+**Option 2: Force recreation (WARNING: This will delete all data)**
 ```bash
 php bin/console nowo:performance:create-table --force
 ```
+
+> **Note**: If you encounter the error "Field 'id' doesn't have a default value", run the command with `--update` to fix it automatically.
 
 ### Option B: Using Doctrine Schema Update
 

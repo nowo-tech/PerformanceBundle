@@ -2,7 +2,276 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
-## Upgrading to 0.0.3 (Unreleased)
+## Upgrading to 0.0.2 (Unreleased)
+
+### New Features Overview
+
+This version adds HTTP status code tracking, performance alert notifications, sampling for high-traffic routes, configurable query tracking threshold, auto-refresh dashboard, and comprehensive test coverage improvements.
+
+### Database Schema Changes
+
+**IMPORTANT**: You need to update your database schema to include the new `status_codes` field.
+
+#### New Field Added
+
+- `status_codes` (JSON, nullable) - HTTP status codes counts (e.g., {'200': 100, '404': 5, '500': 2})
+
+#### Migration Steps
+
+**Option 1: Using the Bundle Command (Recommended)**
+
+```bash
+# Add missing columns without losing data
+# Also fixes AUTO_INCREMENT if missing (handles foreign keys automatically)
+php bin/console nowo:performance:create-table --update
+```
+
+**Note**: This command also automatically fixes the `id` column AUTO_INCREMENT if it's missing, even if there are foreign key constraints. The command temporarily drops and restores foreign keys during the fix.
+
+**Option 2: Using Doctrine Migrations (Recommended for Production)**
+
+```bash
+# Generate migration
+php bin/console doctrine:migrations:diff
+
+# Review the migration file
+# Then apply it
+php bin/console doctrine:migrations:migrate
+```
+
+**Option 3: Manual SQL**
+
+```sql
+ALTER TABLE routes_data 
+  ADD COLUMN status_codes JSON NULL;
+```
+
+### New Configuration Options
+
+#### HTTP Status Code Tracking
+
+Configure which HTTP status codes to track and calculate ratios for:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    # Status codes to track (default: 200, 404, 500, 503)
+    track_status_codes: [200, 404, 500, 503]
+```
+
+**Use cases:**
+- Monitor success rates (200 vs errors)
+- Track error rates (404, 500, 503)
+- Identify problematic routes
+
+**Example configuration:**
+```yaml
+nowo_performance:
+    track_status_codes: [200, 201, 400, 404, 500, 503]
+```
+
+#### Performance Notifications
+
+Enable automatic notifications when performance thresholds are exceeded:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    notifications:
+        enabled: true
+        email:
+            enabled: true
+            from: 'noreply@example.com'
+            to: ['admin@example.com']
+        slack:
+            enabled: true
+            webhook_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+```
+
+**See [NOTIFICATIONS.md](NOTIFICATIONS.md) for complete documentation.**
+
+#### Sampling Rate
+
+Reduce database load for frequently accessed routes by tracking only a percentage of requests:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    # Sampling rate: 0.0 to 1.0 (where 1.0 = 100% tracking)
+    # Example: 0.1 = only track 10% of requests
+    sampling_rate: 1.0  # Default: 1.0 (track all requests)
+```
+
+**Use cases:**
+- High-traffic production environments
+- Routes with thousands of requests per minute
+- When database write performance is a concern
+
+**Example configuration for production:**
+```yaml
+nowo_performance:
+    sampling_rate: 0.1  # Track only 10% of requests
+```
+
+#### Query Tracking Threshold
+
+Configure minimum query count to track query execution time:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    # Minimum query count to track query execution time
+    # Queries below this threshold are counted but not timed individually
+    query_tracking_threshold: 0  # Default: 0 (track all queries)
+```
+
+**Use cases:**
+- Reduce overhead for routes with very few queries
+- Focus timing on routes with significant query activity
+
+**Example configuration:**
+```yaml
+nowo_performance:
+    query_tracking_threshold: 5  # Only time queries if route has 5+ queries
+```
+
+#### Auto-Refresh Dashboard
+
+Enable automatic dashboard refresh with visual countdown:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    dashboard:
+        # Auto-refresh interval in seconds (0 = disabled)
+        auto_refresh_interval: 30  # Default: 0 (disabled)
+```
+
+**Features:**
+- Visual countdown indicator
+- Automatically pauses when window loses focus
+- Improves real-time monitoring experience
+
+**Example configuration:**
+```yaml
+nowo_performance:
+    dashboard:
+        auto_refresh_interval: 30  # Refresh every 30 seconds
+```
+
+### Migration Steps
+
+1. **Update database schema** (if upgrading from 0.0.1):
+   ```bash
+   php bin/console nowo:performance:create-table --update
+   ```
+
+2. **Update configuration** (optional):
+
+2. **Update configuration** (optional):
+   ```yaml
+   # config/packages/nowo_performance.yaml
+   nowo_performance:
+       track_status_codes: [200, 404, 500, 503]
+       sampling_rate: 1.0
+       query_tracking_threshold: 0
+       dashboard:
+           auto_refresh_interval: 0
+       notifications:
+           enabled: false  # Enable if you want notifications
+   ```
+
+3. **Clear cache**:
+   ```bash
+   php bin/console cache:clear
+   ```
+
+### Breaking Changes
+
+- **None** - All new features are backward compatible
+
+### Testing Your Upgrade
+
+1. **Verify database schema**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   # Should show status_codes column exists
+   ```
+
+2. **Verify configuration**:
+   ```bash
+   php bin/console debug:container --parameter=nowo_performance.track_status_codes
+   php bin/console debug:container --parameter=nowo_performance.sampling_rate
+   php bin/console debug:container --parameter=nowo_performance.query_tracking_threshold
+   php bin/console debug:container --parameter=nowo_performance.dashboard.auto_refresh_interval
+   ```
+
+3. **Test status code tracking**:
+   - Make requests to routes with different status codes (200, 404, 500)
+   - Check dashboard to see status code ratios displayed
+   - Verify ratios are calculated correctly
+
+4. **Test notifications** (if enabled):
+   - Set low thresholds temporarily
+   - Make a request that exceeds thresholds
+   - Verify notifications are sent
+
+5. **Test sampling**:
+   - Set `sampling_rate: 0.5` (track 50% of requests)
+   - Make multiple requests to the same route
+   - Verify that approximately 50% are recorded
+
+6. **Test auto-refresh**:
+   - Set `auto_refresh_interval: 30`
+   - Open dashboard and verify countdown appears
+   - Verify dashboard refreshes after 30 seconds
+
+### Troubleshooting
+
+**Issue: Error "Field 'id' doesn't have a default value"**
+
+- **Cause**: The `id` column in the `routes_data` table is missing AUTO_INCREMENT
+- **Solution**: Run the update command to fix it automatically:
+  ```bash
+  php bin/console nowo:performance:create-table --update
+  ```
+  This command will:
+  - Detect missing AUTO_INCREMENT on the `id` column
+  - Temporarily drop foreign keys that reference the `id` column
+  - Add AUTO_INCREMENT to the `id` column
+  - Restore all foreign keys with their original rules
+- **Note**: If you have foreign keys referencing the `id` column (e.g., from `routes_data_records` table), the command handles them automatically
+
+**Issue: Status codes not being tracked**
+
+- **Solution**: Verify the column exists and configuration is correct:
+  ```bash
+  php bin/console nowo:performance:create-table --update
+  php bin/console debug:container --parameter=nowo_performance.track_status_codes
+  ```
+
+**Issue: Notifications not working**
+
+- **Solution**: Verify configuration and dependencies:
+  ```bash
+  php bin/console debug:container --parameter=nowo_performance.notifications.enabled
+  # For email: composer require symfony/mailer
+  # For webhooks: composer require symfony/http-client
+  ```
+
+**Issue: Sampling not working**
+
+- **Solution**: Clear cache and verify configuration is loaded:
+  ```bash
+  php bin/console cache:clear
+  php bin/console debug:container --parameter=nowo_performance.sampling_rate
+  ```
+
+**Issue: Auto-refresh not working**
+
+- **Solution**: Verify JavaScript is enabled and check browser console for errors
+
+## Upgrading to 0.0.1 (2025-01-26)
 
 ### New Features Overview
 
@@ -198,152 +467,11 @@ composer require symfony/ux-twig-component
 
 - **Solution**: Run `php bin/console nowo:performance:diagnose` to check configuration
 
-## Upgrading to 0.0.2 (Unreleased)
-
-### New Feature: Improved Query Tracking with QueryTrackingMiddleware
-
-The bundle now includes a custom DBAL middleware (`QueryTrackingMiddleware`) for more reliable query tracking, especially with DBAL 3.x compatibility.
-
-#### What Changed?
-
-- Added `QueryTrackingMiddleware` for DBAL 3.x compatibility
-- Enhanced query metrics collection with multiple fallback strategies
-- Improved reliability of query tracking across different Symfony/Doctrine versions
-
-#### Migration Steps
-
-**No action required** - This is a backward-compatible improvement. The bundle will automatically use the new middleware if available, or fall back to previous methods.
-
-**Optional: Manual Middleware Registration**
-
-If you want to explicitly register the middleware in your Doctrine configuration:
-
-```yaml
-# config/packages/doctrine.yaml
-doctrine:
-    dbal:
-        connections:
-            default:
-                middlewares:
-                    - Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware
-```
-
-However, this is **not required** - the bundle will work without it using fallback methods.
-
-### New Feature: Role-Based Access Control for Dashboard
-
-The performance dashboard now supports role-based access control. This is a **non-breaking change** - existing installations will continue to work without modification.
-
-#### What Changed?
-
-- Added `roles` configuration option to the dashboard configuration
-- The dashboard now checks user roles before allowing access
-- If no roles are configured (default), access remains unrestricted
-
-#### Migration Steps
-
-**Option 1: Keep unrestricted access (no changes needed)**
-
-If you want to keep the dashboard accessible to everyone, no changes are required. The default configuration (`roles: []`) allows unrestricted access.
-
-**Option 2: Add role restrictions**
-
-To restrict dashboard access to specific roles, update your configuration:
-
-```yaml
-# config/packages/nowo_performance.yaml
-nowo_performance:
-    # ... existing configuration ...
-    dashboard:
-        enabled: true
-        path: '/performance'
-        prefix: ''
-        roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']  # Add this line
-```
-
-#### Configuration Examples
-
-**Example 1: Restrict to administrators only**
-
-```yaml
-nowo_performance:
-    dashboard:
-        roles: ['ROLE_ADMIN']
-```
-
-**Example 2: Allow multiple roles**
-
-```yaml
-nowo_performance:
-    dashboard:
-        roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER', 'ROLE_MONITORING']
-```
-
-Users with **any** of the configured roles will have access.
-
-**Example 3: Keep unrestricted access**
-
-```yaml
-nowo_performance:
-    dashboard:
-        roles: []  # Empty array = no restrictions
-```
-
-Or simply omit the `roles` key (defaults to empty array).
-
-#### Breaking Changes
-
-- **None** - This is a backward-compatible addition
-
-#### Testing Your Upgrade
-
-1. **Verify unrestricted access still works** (if you didn't add roles):
-   ```bash
-   # Access the dashboard without authentication
-   curl http://localhost:8000/performance
-   ```
-
-2. **Test role-based access** (if you added roles):
-   ```bash
-   # As a user with ROLE_ADMIN
-   curl -u admin:password http://localhost:8000/performance
-   
-   # As a user without required roles (should return 403)
-   curl -u user:password http://localhost:8000/performance
-   ```
-
-3. **Check configuration**:
-   ```bash
-   php bin/console debug:container --parameter=nowo_performance.dashboard.roles
-   ```
-
-#### Troubleshooting
-
-**Issue: Dashboard returns 403 Forbidden**
-
-- **Cause**: You have configured roles but the current user doesn't have any of them
-- **Solution**: 
-  - Add the required role to your user
-  - Or remove/empty the `roles` configuration to allow unrestricted access
-
-**Issue: Dashboard still accessible without authentication**
-
-- **Cause**: You have `roles: []` or didn't configure roles
-- **Solution**: This is expected behavior. To restrict access, configure specific roles
-
-**Issue: Configuration not recognized**
-
-- **Cause**: Cache not cleared
-- **Solution**: Clear Symfony cache:
-  ```bash
-  php bin/console cache:clear
-  ```
-
-## Upgrading to 0.0.1
+## Upgrading to 0.0.1 (2025-01-26)
 
 ### Initial Release
 
-This is the first release of the Performance Bundle. No upgrade steps needed.
+This is the first stable release of the Performance Bundle. No upgrade steps needed if you're installing for the first time.
 
 #### Installation
 
@@ -364,6 +492,10 @@ This initial release includes:
 - CSV and JSON export
 - Record management and review system (optional)
 - Role-based access control
+- Advanced Performance Statistics page
+- Sampling for high-traffic routes
+- Configurable query tracking threshold
+- Auto-refresh dashboard
 - Symfony 6.1+, 7.x, and 8.x compatibility
 
 #### Database Setup

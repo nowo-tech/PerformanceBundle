@@ -18,6 +18,9 @@
                                 <tr>
                                     <th>Route Name</th>
                                     <th>HTTP Method</th>
+                                    {% if trackStatusCodes is defined and trackStatusCodes is not empty %}
+                                        <th>{{ 'routes_table.status_codes'|trans({}, 'nowo_performance') }}</th>
+                                    {% endif %}
                                     <th>Environment</th>
                                     <th>Request Time</th>
                                     <th>Query Time</th>
@@ -56,6 +59,61 @@
                                                 <span class="text-muted">N/A</span>
                                             {% endif %}
                                         </td>
+                                        {% if trackStatusCodes is defined and trackStatusCodes is not empty %}
+                                            <td>
+                                                {% if route.getStatusCodes() is not empty %}
+                                                    {% set totalResponses = route.getTotalResponses() %}
+                                                    {% set errorCodes = [] %}
+                                                    {% for code in trackStatusCodes %}
+                                                        {% set count = route.getStatusCodeCount(code) %}
+                                                        {% if count > 0 and code >= 400 %}
+                                                            {% set ratio = route.getStatusCodeRatio(code) %}
+                                                            {% set errorCodes = errorCodes|merge([{'code': code, 'count': count, 'ratio': ratio}]) %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    
+                                                    {# Calcular ratio total de errores #}
+                                                    {% set totalErrorRatio = 0 %}
+                                                    {% for error in errorCodes %}
+                                                        {% set totalErrorRatio = totalErrorRatio + error.ratio %}
+                                                    {% endfor %}
+                                                    
+                                                    {# Mostrar ratio de errores destacado si es alto #}
+                                                    {% if totalErrorRatio > 10 %}
+                                                        <div class="mb-1">
+                                                            <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Error Rate: {{ totalErrorRatio|number_format(1) }}% ({{ errorCodes|map(e => e.count)|sum }} errors out of {{ totalResponses }} total)">
+                                                                ⚠️ Errors: {{ totalErrorRatio|number_format(1) }}%
+                                                            </span>
+                                                        </div>
+                                                    {% endif %}
+                                                    
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        {% for code in trackStatusCodes %}
+                                                            {% set count = route.getStatusCodeCount(code) %}
+                                                            {% if count > 0 %}
+                                                                {% set ratio = route.getStatusCodeRatio(code) %}
+                                                                {% set badgeClass = 'bg-secondary' %}
+                                                                {% if code >= 200 and code < 300 %}
+                                                                    {% set badgeClass = 'bg-success' %}
+                                                                {% elseif code >= 400 and code < 500 %}
+                                                                    {% set badgeClass = 'bg-warning text-dark' %}
+                                                                {% elseif code >= 500 and code < 600 %}
+                                                                    {% set badgeClass = 'bg-danger' %}
+                                                                {% endif %}
+                                                                <span class="badge {{ badgeClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ count }} de {{ totalResponses }} ({{ ratio|number_format(2) }}%)">
+                                                                    {{ code }}: {{ ratio|number_format(1) }}%
+                                                                </span>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% if totalResponses > 0 %}
+                                                        <small class="text-muted d-block mt-1">Total: {{ totalResponses }} responses</small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
                                         <td>
                                             <span class="badge bg-secondary">{{ route.env ?? 'N/A' }}</span>
                                         </td>

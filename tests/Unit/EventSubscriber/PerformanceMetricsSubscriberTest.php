@@ -433,4 +433,77 @@ final class PerformanceMetricsSubscriberTest extends TestCase
         $terminateEvent = new TerminateEvent($this->kernel, $request, new \Symfony\Component\HttpFoundation\Response());
         $this->subscriber->onKernelTerminate($terminateEvent);
     }
+
+    public function testOnKernelTerminateWithSamplingRateSkipsRecording(): void
+    {
+        // Create subscriber with sampling rate of 0.0 (never record)
+        $subscriber = new PerformanceMetricsSubscriber(
+            $this->metricsService,
+            $this->registry,
+            'default',
+            $this->dataCollector,
+            true,
+            ['dev', 'test'],
+            ['_wdt', '_profiler'],
+            true,
+            true,
+            false,
+            0.0 // sampling rate = 0.0 means never record
+        );
+
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', 'app_home');
+        $requestEvent = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        
+        $subscriber->onKernelRequest($requestEvent);
+
+        $this->dataCollector
+            ->expects($this->once())
+            ->method('setSavingToDatabase')
+            ->with(false, $this->stringContains('Sampled out'));
+
+        $this->metricsService
+            ->expects($this->never())
+            ->method('recordMetrics');
+
+        $terminateEvent = new TerminateEvent($this->kernel, $request, new \Symfony\Component\HttpFoundation\Response());
+        $subscriber->onKernelTerminate($terminateEvent);
+    }
+
+    public function testOnKernelTerminateWithSamplingRateOneRecordsAll(): void
+    {
+        // Create subscriber with sampling rate of 1.0 (always record)
+        $subscriber = new PerformanceMetricsSubscriber(
+            $this->metricsService,
+            $this->registry,
+            'default',
+            $this->dataCollector,
+            true,
+            ['dev', 'test'],
+            ['_wdt', '_profiler'],
+            true,
+            true,
+            false,
+            1.0 // sampling rate = 1.0 means always record
+        );
+
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', 'app_home');
+        $requestEvent = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        
+        $subscriber->onKernelRequest($requestEvent);
+
+        $this->dataCollector
+            ->method('setSavingToDatabase')
+            ->with($this->anything(), $this->anything());
+
+        $this->metricsService
+            ->expects($this->once())
+            ->method('recordMetrics');
+
+        $terminateEvent = new TerminateEvent($this->kernel, $request, new \Symfony\Component\HttpFoundation\Response());
+        $subscriber->onKernelTerminate($terminateEvent);
+    }
 }

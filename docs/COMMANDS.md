@@ -101,6 +101,7 @@ php bin/console nowo:performance:create-table [options]
 ### Options
 
 - `--force, -f` - Force table creation even if it already exists (WARNING: This will delete all data)
+- `--update, -u` - Add missing columns to existing table without losing data (safe, preserves data)
 - `--connection` - The Doctrine connection name to use (default: `default`)
 
 ### Description
@@ -109,6 +110,8 @@ This command creates the `routes_data` table with all necessary columns and inde
 - Initial setup
 - Recreating the table after schema changes
 - Setting up the table in new environments
+- **Updating existing tables** - Adding missing columns without losing data
+- **Fixing AUTO_INCREMENT** - Automatically fixes missing AUTO_INCREMENT on the `id` column, even with foreign key constraints
 
 ### Examples
 
@@ -119,18 +122,61 @@ php bin/console nowo:performance:create-table
 # Force recreation (WARNING: Deletes all data)
 php bin/console nowo:performance:create-table --force
 
+# Update existing table (add missing columns, fix AUTO_INCREMENT)
+php bin/console nowo:performance:create-table --update
+
 # Use a different connection
 php bin/console nowo:performance:create-table --connection=performance
 ```
+
+### Features
+
+#### Automatic AUTO_INCREMENT Fix
+
+If the `id` column is missing AUTO_INCREMENT (common issue causing "Field 'id' doesn't have a default value" errors), the command will:
+
+1. **Detect the issue** - Automatically checks if AUTO_INCREMENT is missing
+2. **Handle foreign keys** - Temporarily drops foreign keys that reference the `id` column
+3. **Fix the column** - Adds AUTO_INCREMENT to the `id` column
+4. **Restore foreign keys** - Restores all foreign keys with their original rules (UPDATE/DELETE CASCADE, etc.)
+
+This works seamlessly even if you have foreign keys from other tables (e.g., `routes_data_records`) referencing the `id` column.
+
+#### Column Updates
+
+The `--update` option:
+- Adds missing columns without losing existing data
+- Updates column definitions if they differ (nullable, type, defaults)
+- Adds missing indexes
+- Preserves all existing data
 
 ### Output
 
 The command shows:
 - Table name and connection being used
 - SQL statements being executed
+- Foreign key operations (if fixing AUTO_INCREMENT)
 - Success message when complete
 
-If the table already exists and `--force` is not used, it will show a warning and suggest using `--force` or Doctrine migrations.
+If the table already exists and neither `--force` nor `--update` is used, it will show a warning and suggest using `--update` or `--force` or Doctrine migrations.
+
+### Common Issues
+
+**Error: "Field 'id' doesn't have a default value"**
+
+This happens when the `id` column is missing AUTO_INCREMENT. Fix it with:
+```bash
+php bin/console nowo:performance:create-table --update
+```
+
+**Error: "Cannot change column 'id': used in a foreign key constraint"**
+
+The command now handles this automatically. If you see this error, make sure you're using the latest version of the bundle, then run:
+```bash
+php bin/console nowo:performance:create-table --update
+```
+
+The command will automatically drop and restore foreign keys during the fix.
 
 ## nowo:performance:diagnose
 

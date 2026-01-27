@@ -1,0 +1,84 @@
+{#
+  Email template for performance alerts.
+
+  Available variables:
+    - alert: PerformanceAlert object
+    - routeData: RouteData entity
+    - severityColor: Color code for severity (e.g., '#dc3545' for critical, '#ffc107' for warning)
+    - severityLabel: Human-readable severity label (e.g., 'Critical', 'Warning')
+#}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .alert-box { border-left: 4px solid {{ severityColor }}; padding: 15px; margin: 20px 0; background-color: #f8f9fa; }
+        .metric { margin: 10px 0; }
+        .label { font-weight: bold; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="alert-box">
+        <h2 style="color: {{ severityColor }}; margin-top: 0;">{{ severityLabel }} Performance Alert</h2>
+        <p><strong>Message:</strong> {{ alert.message }}</p>
+    </div>
+
+    <h3>Route Information</h3>
+    <table>
+        <tr><th>Property</th><th>Value</th></tr>
+        <tr><td>Route Name</td><td><code>{{ routeData.name ?? 'N/A' }}</code></td></tr>
+        <tr><td>Environment</td><td>{{ routeData.env ?? 'N/A' }}</td></tr>
+        <tr><td>HTTP Method</td><td>{{ routeData.httpMethod ?? 'N/A' }}</td></tr>
+        <tr><td>Request Time</td><td>
+            {% if routeData.requestTime is not null %}
+                {{ routeData.requestTime|number_format(4) }}s
+            {% else %}
+                N/A
+            {% endif %}
+        </td></tr>
+        <tr><td>Query Count</td><td>{{ routeData.totalQueries ?? 'N/A' }}</td></tr>
+        <tr><td>Query Time</td><td>
+            {% if routeData.queryTime is not null %}
+                {{ routeData.queryTime|number_format(4) }}s
+            {% else %}
+                N/A
+            {% endif %}
+        </td></tr>
+        <tr><td>Memory Usage</td><td>
+            {% if routeData.memoryUsage is not null %}
+                {{ (routeData.memoryUsage / 1024 / 1024)|number_format(2) }} MB
+            {% else %}
+                N/A
+            {% endif %}
+        </td></tr>
+        <tr><td>Access Count</td><td>{{ routeData.accessCount ?? 'N/A' }}</td></tr>
+        <tr><td>Last Accessed</td><td>
+            {% if routeData.lastAccessedAt is not null %}
+                {{ routeData.lastAccessedAt|date('Y-m-d H:i:s') }}
+            {% else %}
+                N/A
+            {% endif %}
+        </td></tr>
+    </table>
+
+    <h3>Alert Details</h3>
+    <table>
+        <tr><th>Property</th><th>Value</th></tr>
+        <tr><td>Type</td><td>{{ alert.type }}</td></tr>
+        <tr><td>Severity</td><td>{{ severityLabel }}</td></tr>
+        {% if alert.context is not empty %}
+            {% for key, value in alert.context %}
+                <tr><td>{{ key|replace({'_': ' '})|title }}</td><td>{{ value }}</td></tr>
+            {% endfor %}
+        {% endif %}
+    </table>
+
+    <p style="margin-top: 30px; color: #666; font-size: 12px;">
+        This is an automated alert from the Performance Bundle.
+    </p>
+</body>
+</html>

@@ -33,7 +33,7 @@ class RouteData
      * @var int|null
      */
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
@@ -174,6 +174,14 @@ class RouteData
     private ?string $reviewedBy = null;
 
     /**
+     * HTTP status codes counts (e.g., ['200' => 100, '404' => 5, '500' => 2]).
+     *
+     * @var array<int, int>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $statusCodes = null;
+
+    /**
      * Constructor.
      *
      * Initializes creation and update timestamps.
@@ -183,6 +191,7 @@ class RouteData
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
         $this->lastAccessedAt = new \DateTimeImmutable();
+        $this->statusCodes = [];
     }
 
     /**
@@ -610,6 +619,36 @@ class RouteData
     }
 
     /**
+     * Mark this route as reviewed with optional improvement information.
+     *
+     * @param bool|null $queriesImproved Whether queries improved
+     * @param bool|null $timeImproved Whether time improved
+     * @param string|null $reviewedBy The reviewer username
+     * @return self
+     */
+    public function markAsReviewed(?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null): self
+    {
+        $this->reviewed = true;
+        $this->reviewedAt = new \DateTimeImmutable();
+        
+        if ($queriesImproved !== null) {
+            $this->queriesImproved = $queriesImproved;
+        }
+        
+        if ($timeImproved !== null) {
+            $this->timeImproved = $timeImproved;
+        }
+        
+        if ($reviewedBy !== null) {
+            $this->reviewedBy = $reviewedBy;
+        }
+        
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /**
      * Get the user who reviewed this route.
      *
      * @return string|null The reviewer identifier
@@ -668,5 +707,148 @@ class RouteData
         }
         
         return implode(' ', $parts);
+    }
+
+    /**
+     * Get HTTP status codes counts.
+     *
+     * @return array<int, int>|null Status codes counts (e.g., [200 => 100, 404 => 5])
+     */
+    public function getStatusCodes(): ?array
+    {
+        return $this->statusCodes;
+    }
+
+    /**
+     * Set HTTP status codes counts.
+     *
+     * @param array<int, int>|null $statusCodes Status codes counts
+     * @return self
+     */
+    public function setStatusCodes(?array $statusCodes): self
+    {
+        $this->statusCodes = $statusCodes;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /**
+     * Increment count for a specific HTTP status code.
+     *
+     * @param int $statusCode The HTTP status code
+     * @return self
+     */
+    public function incrementStatusCode(int $statusCode): self
+    {
+        if ($this->statusCodes === null) {
+            $this->statusCodes = [];
+        }
+
+        if (!isset($this->statusCodes[$statusCode])) {
+            $this->statusCodes[$statusCode] = 0;
+        }
+
+        $this->statusCodes[$statusCode]++;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /**
+     * Get the count for a specific HTTP status code.
+     *
+     * @param int $statusCode The HTTP status code
+     * @return int The count for the status code (0 if not found)
+     */
+    public function getStatusCodeCount(int $statusCode): int
+    {
+        return $this->statusCodes[$statusCode] ?? 0;
+    }
+
+    /**
+     * Get the ratio (percentage) for a specific HTTP status code.
+     *
+     * @param int $statusCode The HTTP status code
+     * @return float The ratio as a percentage (0.0 to 100.0)
+     */
+    public function getStatusCodeRatio(int $statusCode): float
+    {
+        if ($this->statusCodes === null || empty($this->statusCodes)) {
+            return 0.0;
+        }
+
+        $total = array_sum($this->statusCodes);
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        $count = $this->getStatusCodeCount($statusCode);
+        return ($count / $total) * 100.0;
+    }
+
+    /**
+     * Get total responses tracked (sum of all status code counts).
+     *
+     * @return int Total number of responses
+     */
+    public function getTotalResponses(): int
+    {
+        if ($this->statusCodes === null || empty($this->statusCodes)) {
+            return 0;
+        }
+
+        return array_sum($this->statusCodes);
+    }
+
+    /**
+     * Access records for temporal analysis.
+     *
+     * @var \Doctrine\Common\Collections\Collection<int, RouteDataRecord>
+     */
+    #[ORM\OneToMany(targetEntity: RouteDataRecord::class, mappedBy: 'routeData', cascade: ['remove'])]
+    private \Doctrine\Common\Collections\Collection $accessRecords;
+
+    /**
+     * Get access records.
+     *
+     * @return \Doctrine\Common\Collections\Collection<int, RouteDataRecord> Access records
+     */
+    public function getAccessRecords(): \Doctrine\Common\Collections\Collection
+    {
+        return $this->accessRecords;
+    }
+
+    /**
+     * Add an access record.
+     *
+     * @param RouteDataRecord $accessRecord The access record
+     * @return self
+     */
+    public function addAccessRecord(RouteDataRecord $accessRecord): self
+    {
+        if (!$this->accessRecords->contains($accessRecord)) {
+            $this->accessRecords->add($accessRecord);
+            $accessRecord->setRouteData($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove an access record.
+     *
+     * @param RouteDataRecord $accessRecord The access record
+     * @return self
+     */
+    public function removeAccessRecord(RouteDataRecord $accessRecord): self
+    {
+        if ($this->accessRecords->removeElement($accessRecord)) {
+            if ($accessRecord->getRouteData() === $this) {
+                $accessRecord->setRouteData(null);
+            }
+        }
+
+        return $this;
     }
 }

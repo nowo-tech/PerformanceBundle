@@ -8,22 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- None
 
-### Changed
-- None
+## [0.0.2] - 2025-01-27
 
-### Deprecated
-- None
-
-### Removed
-- None
+### Added
+- **Comprehensive test coverage for CreateTableCommand** - Added 14+ new tests
+  - Tests for AUTO_INCREMENT detection and fixing
+  - Tests for foreign key handling during AUTO_INCREMENT fixes
+  - Tests for column type, length, and default value differences
+  - Tests for boolean and numeric default value comparison
+  - Tests for nullable differences detection
+  - Tests for missing indexes addition
+  - Tests for platform compatibility (MySQL vs PostgreSQL)
+  - Tests for error handling when restoring foreign keys
+  - Total: 20+ tests covering all edge cases
 
 ### Fixed
-- None
-
-### Security
-- None
+- **AUTO_INCREMENT for id column** - Fixed issue where `id` column was not configured as AUTO_INCREMENT in MySQL/MariaDB
+  - Command `nowo:performance:create-table --update` now automatically detects and fixes missing AUTO_INCREMENT
+  - Handles foreign key constraints by temporarily dropping and restoring them during column modification
+  - Improved regex patterns for adding AUTO_INCREMENT when creating tables via SchemaTool
+  - Enhanced column definition generation to include AUTO_INCREMENT for identifier columns
+  - Detects autoincrement status from entity metadata (GeneratedValue strategy)
+  - Fixes "Field 'id' doesn't have a default value" errors when inserting records
+  - Query INFORMATION_SCHEMA correctly using JOIN between KEY_COLUMN_USAGE and REFERENTIAL_CONSTRAINTS
+  - Properly restores foreign keys with original UPDATE_RULE and DELETE_RULE after fixing AUTO_INCREMENT
 
 ## [0.0.1] - 2025-01-26
 
@@ -158,6 +167,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All UI elements are translatable
   - Translation keys for dashboard, filters, statistics, and messages
   - Demo applications configured with translation support
+- **Comprehensive test suite** - Extensive test coverage for all components
+  - Unit tests for all commands (CreateTableCommand, CheckDependenciesCommand, DiagnoseCommand, SetRouteMetricsCommand)
+  - Unit tests for all forms (PerformanceFiltersType, ReviewRouteDataType)
+  - Unit tests for all events (BeforeMetricsRecordedEvent, AfterMetricsRecordedEvent, BeforeRecordDeletedEvent, etc.)
+  - Unit tests for Twig components (RoutesTableComponent, FiltersComponent, StatisticsComponent, ChartsComponent)
+  - Unit tests for Twig extensions (IconExtension)
+  - Unit tests for DBAL components (QueryTrackingMiddlewareRegistry)
+  - Unit tests for repository methods (findByRouteAndEnv, markAsReviewed, deleteById, findAllForStatistics, deleteAll)
+  - Unit tests for entity methods (markAsReviewed, __toString)
+  - Unit tests for sampling functionality in PerformanceMetricsSubscriber
+  - Total: 37 test files, 150+ individual tests
 
 ### Changed
 - **Improved query metrics collection** - Enhanced `getQueryMetrics()` method with multiple strategies:
@@ -194,6 +214,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `getRankingByRequestTime()` and `getRankingByQueryCount()` now accept RouteData entity directly
   - Reduced duplicate `findByRouteAndEnv()` calls
   - Improved dashboard performance by reusing fetched data for statistics
+- **Test coverage improvements** - Significantly expanded test suite
+  - Added tests for all commands, forms, events, and Twig components
+  - Improved coverage for repository methods and entity methods
+  - Added tests for sampling and auto-refresh functionality
+  - Total test count increased from 19 to 37 test files
 
 ### Fixed
 - **Query tracking compatibility** - Fixed query tracking to work correctly with DBAL 3.x by implementing a custom middleware instead of relying on deprecated `SQLLogger`
@@ -216,6 +241,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Route import** - Fixed route import path to use correct bundle alias `@NowoPerformanceBundle`
 - **Twig syntax errors** - Fixed duplicate and missing Twig tags in RoutesTable component
 - **Deprecation warnings** - Fixed `Doctrine\DBAL\Schema\AbstractAsset::getName` deprecation warning
+- **Bundle class duplication** - Removed duplicate `PerformanceBundle.php` file that caused duplicate bundle registration
+- **Symfony Flex recipe** - Fixed recipe to create configuration file automatically on installation
+- **Entity method missing** - Added missing `markAsReviewed()` method to `RouteData` entity
 
 ### Security
 - **Dashboard access control** - The performance dashboard supports role-based access control to restrict access to authorized users only

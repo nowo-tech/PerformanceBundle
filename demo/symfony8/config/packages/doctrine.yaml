@@ -12,8 +12,8 @@ doctrine:
                 prefix: 'App\Entity'
                 alias: App
             NowoPerformanceBundle:
-                is_bundle: false
-                type: attribute
-                dir: '/bundles/src/Entity'
-                prefix: 'Nowo\PerformanceBundle\Entity'
-                alias: NowoPerformanceBundle
+                is_bundle: true
+                #type: attribute
+                #dir: '/bundles/src/Entity'
+                #prefix: 'Nowo\PerformanceBundle\Entity'
+                #alias: NowoPerformanceBundle

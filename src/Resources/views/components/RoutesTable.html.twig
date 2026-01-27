@@ -22,6 +22,9 @@
                                     <tr>
                                         <th>{{ 'routes_table.route_name'|trans({}, 'nowo_performance') }}</th>
                                         <th>{{ 'routes_table.http_method'|trans({}, 'nowo_performance') }}</th>
+                                        {% if trackStatusCodes is defined and trackStatusCodes is not empty %}
+                                            <th>{{ 'routes_table.status_codes'|trans({}, 'nowo_performance') }}</th>
+                                        {% endif %}
                                         <th>{{ 'routes_table.environment'|trans({}, 'nowo_performance') }}</th>
                                         <th>{{ 'routes_table.request_time'|trans({}, 'nowo_performance') }}</th>
                                         <th>{{ 'routes_table.query_time'|trans({}, 'nowo_performance') }}</th>
@@ -58,6 +61,66 @@
                                                     <span class="text-muted">N/A</span>
                                                 {% endif %}
                                             </td>
+                                            {% if trackStatusCodes is defined and trackStatusCodes is not empty %}
+                                                <td>
+                                                    {% if route.getStatusCodes() is not empty %}
+                                                        {% set totalResponses = route.getTotalResponses() %}
+                                                        {% set errorCodes = [] %}
+                                                        {% set successCodes = [] %}
+                                                        {% for code in trackStatusCodes %}
+                                                            {% set count = route.getStatusCodeCount(code) %}
+                                                            {% if count > 0 %}
+                                                                {% set ratio = route.getStatusCodeRatio(code) %}
+                                                                {% if code >= 400 %}
+                                                                    {% set errorCodes = errorCodes|merge([{'code': code, 'count': count, 'ratio': ratio}]) %}
+                                                                {% else %}
+                                                                    {% set successCodes = successCodes|merge([{'code': code, 'count': count, 'ratio': ratio}]) %}
+                                                                {% endif %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        
+                                                        {# Calcular ratio total de errores #}
+                                                        {% set totalErrorRatio = 0 %}
+                                                        {% for error in errorCodes %}
+                                                            {% set totalErrorRatio = totalErrorRatio + error.ratio %}
+                                                        {% endfor %}
+                                                        
+                                                        {# Mostrar ratio de errores destacado si es alto #}
+                                                        {% if totalErrorRatio > 10 %}
+                                                            <div class="mb-1">
+                                                                <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Error Rate: {{ totalErrorRatio|number_format(1) }}% ({{ errorCodes|map(e => e.count)|sum }} errors out of {{ totalResponses }} total)">
+                                                                    ⚠️ Errors: {{ totalErrorRatio|number_format(1) }}%
+                                                                </span>
+                                                            </div>
+                                                        {% endif %}
+                                                        
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% for code in trackStatusCodes %}
+                                                                {% set count = route.getStatusCodeCount(code) %}
+                                                                {% if count > 0 %}
+                                                                    {% set ratio = route.getStatusCodeRatio(code) %}
+                                                                    {% set badgeClass = 'bg-secondary' %}
+                                                                    {% if code >= 200 and code < 300 %}
+                                                                        {% set badgeClass = 'bg-success' %}
+                                                                    {% elseif code >= 400 and code < 500 %}
+                                                                        {% set badgeClass = 'bg-warning text-dark' %}
+                                                                    {% elseif code >= 500 and code < 600 %}
+                                                                        {% set badgeClass = 'bg-danger' %}
+                                                                    {% endif %}
+                                                                    <span class="badge {{ badgeClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ count }} de {{ totalResponses }} ({{ ratio|number_format(2) }}%)">
+                                                                        {{ code }}: {{ ratio|number_format(1) }}%
+                                                                    </span>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                        {% if totalResponses > 0 %}
+                                                            <small class="text-muted d-block mt-1">Total: {{ totalResponses }} responses</small>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endif %}
                                             <td><span class="badge bg-secondary">{{ route.env ?? 'N/A' }}</span></td>
                                             <td>
                                                 {% if route.requestTime %}
@@ -239,6 +302,9 @@
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.route_name'|trans({}, 'nowo_performance') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.http_method'|trans({}, 'nowo_performance') }}</th>
+                                {% if trackStatusCodes is defined and trackStatusCodes is not empty %}
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.status_codes'|trans({}, 'nowo_performance') }}</th>
+                                {% endif %}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.environment'|trans({}, 'nowo_performance') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.request_time'|trans({}, 'nowo_performance') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.query_time'|trans({}, 'nowo_performance') }}</th>
@@ -259,6 +325,81 @@
                             {% for route in routes %}
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap"><code class="text-sm text-gray-900">{{ route.name ?? 'N/A' }}</code></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if route.httpMethod %}
+                                            {% set methodColors = {
+                                                'GET': 'bg-blue-100 text-blue-800',
+                                                'POST': 'bg-green-100 text-green-800',
+                                                'PUT': 'bg-yellow-100 text-yellow-800',
+                                                'PATCH': 'bg-indigo-100 text-indigo-800',
+                                                'DELETE': 'bg-red-100 text-red-800',
+                                                'OPTIONS': 'bg-gray-100 text-gray-800',
+                                                'HEAD': 'bg-gray-200 text-gray-900'
+                                            } %}
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full {{ methodColors[route.httpMethod]|default('bg-gray-100 text-gray-800') }}">
+                                                {{ route.httpMethod }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-gray-400">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    {% if trackStatusCodes is defined and trackStatusCodes is not empty %}
+                                        <td class="px-6 py-4">
+                                            {% if route.getStatusCodes() is not empty %}
+                                                {% set totalResponses = route.getTotalResponses() %}
+                                                {% set errorCodes = [] %}
+                                                {% for code in trackStatusCodes %}
+                                                    {% set count = route.getStatusCodeCount(code) %}
+                                                    {% if count > 0 and code >= 400 %}
+                                                        {% set ratio = route.getStatusCodeRatio(code) %}
+                                                        {% set errorCodes = errorCodes|merge([{'code': code, 'count': count, 'ratio': ratio}]) %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                
+                                                {# Calcular ratio total de errores #}
+                                                {% set totalErrorRatio = 0 %}
+                                                {% for error in errorCodes %}
+                                                    {% set totalErrorRatio = totalErrorRatio + error.ratio %}
+                                                {% endfor %}
+                                                
+                                                {# Mostrar ratio de errores destacado si es alto #}
+                                                {% if totalErrorRatio > 10 %}
+                                                    <div class="mb-2">
+                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300" title="Error Rate: {{ totalErrorRatio|number_format(1) }}% ({{ errorCodes|map(e => e.count)|sum }} errors out of {{ totalResponses }} total)">
+                                                            ⚠️ Errors: {{ totalErrorRatio|number_format(1) }}%
+                                                        </span>
+                                                    </div>
+                                                {% endif %}
+                                                
+                                                <div class="flex flex-wrap gap-1">
+                                                    {% for code in trackStatusCodes %}
+                                                        {% set count = route.getStatusCodeCount(code) %}
+                                                        {% if count > 0 %}
+                                                            {% set ratio = route.getStatusCodeRatio(code) %}
+                                                            {% set statusColors = {
+                                                                200: 'bg-green-100 text-green-800',
+                                                                201: 'bg-green-100 text-green-800',
+                                                                400: 'bg-yellow-100 text-yellow-800',
+                                                                401: 'bg-yellow-100 text-yellow-800',
+                                                                403: 'bg-yellow-100 text-yellow-800',
+                                                                404: 'bg-red-100 text-red-800',
+                                                                500: 'bg-red-100 text-red-800',
+                                                                503: 'bg-red-100 text-red-800'
+                                                            } %}
+                                                            <span class="px-2 py-1 text-xs font-semibold rounded-full {{ statusColors[code]|default('bg-gray-100 text-gray-800') }}" title="{{ count }} de {{ totalResponses }} ({{ ratio|number_format(2) }}%)">
+                                                                {{ code }}: {{ ratio|number_format(1) }}%
+                                                            </span>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                {% if totalResponses > 0 %}
+                                                    <div class="mt-1 text-xs text-gray-500">Total: {{ totalResponses }} responses</div>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-gray-400">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ route.env ?? 'N/A' }}</span>
                                     </td>

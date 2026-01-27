@@ -364,6 +364,80 @@ class YourService
 }
 ```
 
+## HTTP Status Code Tracking
+
+The bundle automatically tracks HTTP status codes for each route and calculates ratios.
+
+### Configuration
+
+Configure which status codes to track:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    track_status_codes: [200, 404, 500, 503]
+```
+
+### Accessing Status Code Data
+
+```php
+use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+
+$routeData = $metricsService->getRouteData('app_home', 'dev');
+
+if ($routeData) {
+    // Get status codes counts
+    $statusCodes = $routeData->getStatusCodes(); // ['200' => 100, '404' => 5, '500' => 2]
+    
+    // Get count for specific status code
+    $count200 = $routeData->getStatusCodeCount(200); // 100
+    
+    // Get ratio (percentage) for specific status code
+    $ratio200 = $routeData->getStatusCodeRatio(200); // 93.46 (percentage)
+    
+    // Get total responses tracked
+    $total = $routeData->getTotalResponses(); // 107
+}
+```
+
+### Dashboard Display
+
+Status codes are displayed in the dashboard with:
+- Color-coded badges (green for 200, red for errors)
+- Percentage ratios (e.g., "200: 95.5%")
+- Tooltips with absolute counts (e.g., "100 de 105 (95.5%)")
+
+## Performance Notifications
+
+The bundle can send automatic notifications when performance thresholds are exceeded.
+
+### Configuration
+
+See [NOTIFICATIONS.md](NOTIFICATIONS.md) for complete documentation.
+
+**Quick example:**
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    notifications:
+        enabled: true
+        email:
+            enabled: true
+            from: 'noreply@example.com'
+            to: ['admin@example.com']
+        slack:
+            enabled: true
+            webhook_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+```
+
+### How It Works
+
+Notifications are automatically sent when:
+- Request time exceeds warning/critical thresholds
+- Query count exceeds warning/critical thresholds
+- Memory usage exceeds warning/critical thresholds
+
 ## Best Practices
 
 1. **Enable only in dev/test** - Don't track in production unless needed
@@ -371,6 +445,8 @@ class YourService
 3. **Monitor worst routes** - Regularly check worst performing routes
 4. **Set baseline metrics** - Use the command to set baseline metrics for important routes
 5. **Review periodically** - Review metrics to identify performance issues
+6. **Configure status code tracking** - Track relevant HTTP status codes for your application
+7. **Set up notifications** - Configure email/Slack/Teams alerts for production environments
 
 ## Examples
 

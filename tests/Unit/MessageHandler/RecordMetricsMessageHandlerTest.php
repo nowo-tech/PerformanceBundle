@@ -1,0 +1,81 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Nowo\PerformanceBundle\Tests\Unit\MessageHandler;
+
+use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
+use Nowo\PerformanceBundle\MessageHandler\RecordMetricsMessageHandler;
+use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
+
+final class RecordMetricsMessageHandlerTest extends TestCase
+{
+    private PerformanceMetricsService|MockObject $metricsService;
+
+    protected function setUp(): void
+    {
+        $this->metricsService = $this->createMock(PerformanceMetricsService::class);
+    }
+
+    public function testInvokeCallsRecordMetricsWithAllParameters(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            ['id' => 123],
+            1048576,
+            'GET'
+        );
+
+        $this->metricsService->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'app_home',
+                'dev',
+                0.5,
+                10,
+                0.2,
+                ['id' => 123],
+                1048576,
+                'GET'
+            );
+
+        $handler = new RecordMetricsMessageHandler($this->metricsService);
+        $handler($message);
+    }
+
+    public function testInvokeHandlesNullValues(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
+
+        $this->metricsService->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'app_home',
+                'dev',
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            );
+
+        $handler = new RecordMetricsMessageHandler($this->metricsService);
+        $handler($message);
+    }
+}

@@ -357,4 +357,71 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertNull($collector->getAccessCount());
         $this->assertNull($collector->getRankingByRequestTime());
     }
+
+    public function testSetRecordOperationWithNewRecord(): void
+    {
+        $this->collector->setRecordOperation(true, false);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertTrue($this->collector->wasRecordNew());
+        $this->assertFalse($this->collector->wasRecordUpdated());
+        $this->assertSame('New record created', $this->collector->getRecordOperationStatus());
+    }
+
+    public function testSetRecordOperationWithUpdatedRecord(): void
+    {
+        $this->collector->setRecordOperation(false, true);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertFalse($this->collector->wasRecordNew());
+        $this->assertTrue($this->collector->wasRecordUpdated());
+        $this->assertSame('Existing record updated', $this->collector->getRecordOperationStatus());
+    }
+
+    public function testSetRecordOperationWithNoChanges(): void
+    {
+        $this->collector->setRecordOperation(false, false);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertFalse($this->collector->wasRecordNew());
+        $this->assertFalse($this->collector->wasRecordUpdated());
+        $this->assertSame('No changes (metrics not worse than existing)', $this->collector->getRecordOperationStatus());
+    }
+
+    public function testGetRecordOperationStatusWhenNotSet(): void
+    {
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertNull($this->collector->wasRecordNew());
+        $this->assertNull($this->collector->wasRecordUpdated());
+        $this->assertSame('Unknown', $this->collector->getRecordOperationStatus());
+    }
+
+    public function testResetClearsRecordOperation(): void
+    {
+        $this->collector->setRecordOperation(true, false);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertTrue($this->collector->wasRecordNew());
+
+        $this->collector->reset();
+        $this->collector->collect($request, $response);
+
+        $this->assertNull($this->collector->wasRecordNew());
+        $this->assertNull($this->collector->wasRecordUpdated());
+    }
 }

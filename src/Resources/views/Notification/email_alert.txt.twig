@@ -1,0 +1,37 @@
+{#
+  Plain text email template for performance alerts.
+
+  Available variables:
+    - alert: PerformanceAlert object
+    - routeData: RouteData entity
+    - severityLabel: Human-readable severity label (e.g., 'Critical', 'Warning')
+#}
+{{ severityLabel }} Performance Alert
+=====================================
+
+Message: {{ alert.message }}
+
+Route Information:
+------------------
+Route Name: {{ routeData.name ?? 'N/A' }}
+Environment: {{ routeData.env ?? 'N/A' }}
+HTTP Method: {{ routeData.httpMethod ?? 'N/A' }}
+Request Time: {% if routeData.requestTime is not null %}{{ routeData.requestTime|number_format(4) }}s{% else %}N/A{% endif %}
+Query Count: {{ routeData.totalQueries ?? 'N/A' }}
+Query Time: {% if routeData.queryTime is not null %}{{ routeData.queryTime|number_format(4) }}s{% else %}N/A{% endif %}
+Memory Usage: {% if routeData.memoryUsage is not null %}{{ (routeData.memoryUsage / 1024 / 1024)|number_format(2) }} MB{% else %}N/A{% endif %}
+Access Count: {{ routeData.accessCount ?? 'N/A' }}
+Last Accessed: {% if routeData.lastAccessedAt is not null %}{{ routeData.lastAccessedAt|date('Y-m-d H:i:s') }}{% else %}N/A{% endif %}
+
+Alert Details:
+--------------
+Type: {{ alert.type }}
+Severity: {{ severityLabel }}
+{% if alert.context is not empty %}
+{% for key, value in alert.context %}
+{{ key|replace({'_': ' '})|title }}: {{ value }}
+{% endfor %}
+{% endif %}
+
+---
+This is an automated alert from the Performance Bundle.
