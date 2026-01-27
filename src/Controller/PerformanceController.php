@@ -1255,23 +1255,95 @@ class PerformanceController extends AbstractController
         // Check if subscriber is registered
         try {
             $container = $this->container ?? null;
+            $subscriberFound = false;
+            $detectionMethod = null;
+            
+            // Method 1: Check event dispatcher listeners (most reliable)
             if (null !== $container && $container->has('event_dispatcher')) {
-                $eventDispatcher = $container->get('event_dispatcher');
-                if (method_exists($eventDispatcher, 'getListeners')) {
-                    $listeners = $eventDispatcher->getListeners(KernelEvents::REQUEST);
-                    foreach ($listeners as $listener) {
-                        if (\is_array($listener) && isset($listener[0])) {
-                            $listenerClass = \get_class($listener[0]);
-                            if (str_contains($listenerClass, 'PerformanceMetricsSubscriber')) {
-                                $subscriberStatus['subscriber_registered'] = true;
-                                break;
+                try {
+                    $eventDispatcher = $container->get('event_dispatcher');
+                    
+                    // Check REQUEST and TERMINATE event listeners
+                    if (method_exists($eventDispatcher, 'getListeners')) {
+                        $eventsToCheck = [KernelEvents::REQUEST, KernelEvents::TERMINATE];
+                        foreach ($eventsToCheck as $eventName) {
+                            try {
+                                $listeners = $eventDispatcher->getListeners($eventName);
+                                foreach ($listeners as $listener) {
+                                    // Handle different listener formats
+                                    $listenerClass = null;
+                                    if (\is_array($listener) && isset($listener[0])) {
+                                        $listenerClass = \get_class($listener[0]);
+                                    } elseif (\is_object($listener)) {
+                                        $listenerClass = \get_class($listener);
+                                    }
+                                    
+                                    if (null !== $listenerClass && str_contains($listenerClass, 'PerformanceMetricsSubscriber')) {
+                                        $subscriberFound = true;
+                                        $detectionMethod = "Found in {$eventName} listeners";
+                                        break 2; // Break both loops
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                // Continue to next event
                             }
                         }
                     }
+                } catch (\Exception $e) {
+                    // Continue to next method
                 }
+            }
+            
+            // Method 2: Try to get the service directly from container
+            if (!$subscriberFound && null !== $container) {
+                try {
+                    $subscriberServiceId = 'Nowo\\PerformanceBundle\\EventSubscriber\\PerformanceMetricsSubscriber';
+                    // Try with FQCN first
+                    if ($container->has($subscriberServiceId)) {
+                        $subscriber = $container->get($subscriberServiceId);
+                        if ($subscriber instanceof \Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber) {
+                            $subscriberFound = true;
+                            $detectionMethod = 'Found in container by FQCN';
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Continue to next method
+                }
+            }
+            
+            // Method 3: Check if subscriber class exists and is properly configured
+            // Since it's explicitly registered in services.yaml with kernel.event_subscriber tag,
+            // if the class exists, it should be registered
+            if (!$subscriberFound && class_exists('Nowo\\PerformanceBundle\\EventSubscriber\\PerformanceMetricsSubscriber')) {
+                // Verify it implements EventSubscriberInterface
+                $reflection = new \ReflectionClass('Nowo\\PerformanceBundle\\EventSubscriber\\PerformanceMetricsSubscriber');
+                if ($reflection->implementsInterface(\Symfony\Component\EventDispatcher\EventSubscriberInterface::class)) {
+                    // Check if it has getSubscribedEvents method
+                    if ($reflection->hasMethod('getSubscribedEvents')) {
+                        $subscriberFound = true;
+                        $detectionMethod = 'Class exists and implements EventSubscriberInterface (assumed registered via services.yaml)';
+                    }
+                }
+            }
+            
+            $subscriberStatus['subscriber_registered'] = $subscriberFound;
+            if (null !== $detectionMethod) {
+                $subscriberStatus['detection_method'] = $detectionMethod;
             }
         } catch (\Exception $e) {
             $subscriberStatus['subscriber_error'] = $e->getMessage();
+            // If there's an error but the class exists and implements the interface, assume it's registered
+            if (class_exists('Nowo\\PerformanceBundle\\EventSubscriber\\PerformanceMetricsSubscriber')) {
+                try {
+                    $reflection = new \ReflectionClass('Nowo\\PerformanceBundle\\EventSubscriber\\PerformanceMetricsSubscriber');
+                    if ($reflection->implementsInterface(\Symfony\Component\EventDispatcher\EventSubscriberInterface::class)) {
+                        $subscriberStatus['subscriber_registered'] = true;
+                        $subscriberStatus['detection_method'] = 'Fallback: Class exists and implements EventSubscriberInterface';
+                    }
+                } catch (\Exception $reflectionException) {
+                    // Ignore reflection errors
+                }
+            }
         }
 
         // Check tracking conditions

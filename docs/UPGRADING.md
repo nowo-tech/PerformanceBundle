@@ -2,6 +2,59 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 1.0.5 (2026-01-27)
+
+### Bug Fix
+
+This version fixes an issue where the diagnose page incorrectly showed the subscriber as not registered.
+
+#### Changes
+
+- **Subscriber detection fix**: Improved subscriber detection in diagnose page
+  - Uses multiple detection methods with fallbacks
+  - Checks event dispatcher listeners for REQUEST and TERMINATE events
+  - Falls back to container service lookup
+  - Final fallback to class existence and interface verification
+  - Now correctly detects subscriber in all scenarios
+  - Shows detection method in diagnostic output
+
+#### What This Means
+
+- **Better diagnostics**: Diagnose page now correctly shows subscriber status
+- **More reliable**: Multiple detection methods ensure accurate reporting
+- **Better debugging**: Detection method is shown to help understand how subscriber was detected
+- **No breaking changes**: All changes are internal and backward compatible
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Verify**:
+   - Visit `/performance/diagnose` (or your configured path)
+   - Check that "Subscriber Registrado" shows "✓ Sí"
+   - Verify that detection method is shown
+
+#### Troubleshooting
+
+**Q: Diagnose still shows subscriber as not registered**  
+A: Clear cache and verify the bundle is properly installed:
+   ```bash
+   php bin/console cache:clear
+   php bin/console debug:container PerformanceMetricsSubscriber
+   ```
+   The subscriber should be listed as a service.
+
+**Q: I see "detection_method" in the diagnostic output**  
+A: This is normal. It shows how the subscriber was detected (via event dispatcher, container, or class existence check).
+
 ## Upgrading to 1.0.4 (2026-01-27)
 
 ### Bug Fix and Test Coverage

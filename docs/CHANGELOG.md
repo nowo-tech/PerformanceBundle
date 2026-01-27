@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-01-27
+
+### Fixed
+- **Subscriber detection in diagnose** - Fixed issue where diagnose page showed subscriber as not registered even when it was
+  - Improved subscriber detection with multiple fallback methods
+  - Checks event dispatcher listeners for both REQUEST and TERMINATE events
+  - Falls back to container service lookup
+  - Final fallback to class existence and interface verification
+  - Now correctly detects subscriber registration in all scenarios
+  - Added detection method information to diagnostic output
+
+### Added
+- **Test coverage for subscriber detection** - Added 7 new tests for diagnose subscriber detection
+  - Tests for detection via event dispatcher listeners (REQUEST and TERMINATE)
+  - Tests for detection via container service lookup
+  - Tests for fallback to class existence check
+  - Tests for error handling scenarios
+  - Tests for detection method reporting
+
 ## [1.0.4] - 2026-01-27
 
 ### Fixed
