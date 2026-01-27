@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-01-27
+
+### Fixed
+- **Environment filter empty when no data** - Fixed issue where environment filter dropdown was empty when no data was recorded yet
+  - `getAvailableEnvironments()` now uses `allowedEnvironments` from configuration as fallback when database is empty
+  - Falls back to current environment if `allowedEnvironments` is empty
+  - Final fallback to default environments (`['dev', 'test', 'prod']`) if all else fails
+  - Ensures filter always has options even when no performance data has been recorded
+  - Fixes issue where users couldn't select an environment in the dashboard filter
+
+### Added
+- **Comprehensive test coverage** - Added 41 new tests for improved reliability
+  - 13 tests for `getAvailableEnvironments()` method covering cache, database, and fallback scenarios
+  - 16 tests for export functionality (CSV and JSON) covering disabled states, access control, empty data, and exceptions
+  - 12 tests for `buildFiltersFromRequest()` method covering all filter types and edge cases
+  - Improves code quality and ensures edge cases are properly handled
+
 ## [1.0.3] - 2026-01-27
 
 ### Fixed

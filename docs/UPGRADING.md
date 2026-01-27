@@ -2,6 +2,56 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 1.0.4 (2026-01-27)
+
+### Bug Fix and Test Coverage
+
+This version fixes an issue where the environment filter was empty when no data was recorded, and adds comprehensive test coverage.
+
+#### Changes
+
+- **Environment filter fix**: Fixed issue where environment filter dropdown was empty when no data was recorded
+  - Filter now uses `allowedEnvironments` from configuration as fallback
+  - Ensures filter always has options even when database is empty
+  - Falls back gracefully through multiple levels (database → allowedEnvironments → current env → defaults)
+- **Test coverage**: Added 41 new tests for improved reliability
+  - Tests for `getAvailableEnvironments()` method
+  - Tests for export functionality (CSV/JSON)
+  - Tests for filter building from request parameters
+
+#### What This Means
+
+- **Better UX**: Environment filter now always shows options, even when no data is recorded
+- **Improved reliability**: Comprehensive test coverage ensures edge cases are handled
+- **No breaking changes**: All changes are backward compatible
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **No configuration changes required**: The fix is automatic and uses your existing `allowedEnvironments` configuration
+
+#### Troubleshooting
+
+**Q: Environment filter is still empty**  
+A: Make sure you have `allowedEnvironments` configured in your `nowo_performance.yaml`:
+   ```yaml
+   nowo_performance:
+       environments: ['dev', 'test', 'prod', 'stage']
+   ```
+   The filter will use these environments as fallback when no data is recorded.
+
+**Q: I want to see only environments that have data**  
+A: This is the default behavior when data exists. The fallback to `allowedEnvironments` only occurs when the database is empty.
+
 ## Upgrading to 1.0.3 (2026-01-27)
 
 ### Bug Fix

@@ -404,6 +404,79 @@
             </div>
         </div>
 
+        {# Subscriber Status #}
+        {% if diagnostic.subscriber_status is defined %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">⚙️ Estado del Subscriber</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm mb-3">
+                            <tbody>
+                                <tr>
+                                    <th>Subscriber Registrado</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.subscriber_status.subscriber_registered ? 'status-ok' : 'status-error' }}">
+                                            {{ diagnostic.subscriber_status.subscriber_registered ? '✓ Sí' : '✗ No' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Clase del Subscriber</th>
+                                    <td><code>{{ diagnostic.subscriber_status.subscriber_class }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Todas las Condiciones Cumplidas</th>
+                                    <td>
+                                        <span class="status-badge {{ diagnostic.subscriber_status.all_conditions_met ? 'status-ok' : 'status-error' }}">
+                                            {{ diagnostic.subscriber_status.all_conditions_met ? '✓ Sí' : '✗ No' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        {% if diagnostic.subscriber_status.tracking_conditions|length > 0 %}
+                        <h6 class="mt-3 mb-2">Condiciones de Tracking</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Condición</th>
+                                        <th>Estado</th>
+                                        <th>Detalles</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for condition in diagnostic.subscriber_status.tracking_conditions %}
+                                    <tr>
+                                        <td>{{ condition.condition }}</td>
+                                        <td>
+                                            <span class="status-badge {{ condition.status ? 'status-ok' : (condition.required ? 'status-error' : 'status-warning') }}">
+                                                {{ condition.status ? '✓' : (condition.required ? '✗' : '⚠') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if condition.details is defined %}
+                                                <small class="text-muted">{{ condition.details }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {# Route Tracking #}
         <div class="row mb-4">
             <div class="col-12">

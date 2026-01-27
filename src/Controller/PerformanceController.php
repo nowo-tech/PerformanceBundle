@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -726,6 +727,29 @@ class PerformanceController extends AbstractController
         try {
             $environments = $this->metricsService->getRepository()->getDistinctEnvironments();
 
+            // If no environments found in database, use configured allowed environments
+            // This ensures the filter always has options even when no data is recorded yet
+            if (empty($environments) && !empty($this->allowedEnvironments)) {
+                $environments = $this->allowedEnvironments;
+            }
+
+            // If still empty, add current environment as fallback
+            if (empty($environments)) {
+                try {
+                    $currentEnv = $this->getParameter('kernel.environment');
+                    if (null !== $currentEnv) {
+                        $environments = [$currentEnv];
+                    }
+                } catch (\Exception $e) {
+                    // Ignore if parameter is not available
+                }
+            }
+
+            // Final fallback to default environments
+            if (empty($environments)) {
+                $environments = ['dev', 'test', 'prod'];
+            }
+
             // Cache the result
             if (null !== $this->cacheService) {
                 $this->cacheService->cacheEnvironments($environments);
@@ -733,8 +757,8 @@ class PerformanceController extends AbstractController
 
             return $environments;
         } catch (\Exception $e) {
-            // Fallback to default environments if repository query fails
-            $default = ['dev', 'test', 'prod'];
+            // Fallback to configured allowed environments if repository query fails
+            $default = !empty($this->allowedEnvironments) ? $this->allowedEnvironments : ['dev', 'test', 'prod'];
 
             // Cache the fallback
             if (null !== $this->cacheService) {
@@ -1218,7 +1242,97 @@ class PerformanceController extends AbstractController
 
         $diagnostic['route_tracking'] = $routeTracking;
 
-        // 7. Potential Issues Summary
+        // 7. Subscriber Status Check
+        $subscriberStatus = [
+            'subscriber_registered' => false,
+            'subscriber_class' => 'Nowo\\PerformanceBundle\\EventSubscriber\\PerformanceMetricsSubscriber',
+            'data_collector_enabled' => false,
+            'data_collector_disabled_reason' => null,
+            'last_route_tracked' => null,
+            'tracking_conditions' => [],
+        ];
+
+        // Check if subscriber is registered
+        try {
+            $container = $this->container ?? null;
+            if (null !== $container && $container->has('event_dispatcher')) {
+                $eventDispatcher = $container->get('event_dispatcher');
+                if (method_exists($eventDispatcher, 'getListeners')) {
+                    $listeners = $eventDispatcher->getListeners(KernelEvents::REQUEST);
+                    foreach ($listeners as $listener) {
+                        if (\is_array($listener) && isset($listener[0])) {
+                            $listenerClass = \get_class($listener[0]);
+                            if (str_contains($listenerClass, 'PerformanceMetricsSubscriber')) {
+                                $subscriberStatus['subscriber_registered'] = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            $subscriberStatus['subscriber_error'] = $e->getMessage();
+        }
+
+        // Check tracking conditions
+        $trackingConditions = [];
+        $trackingConditions[] = [
+            'condition' => 'Bundle habilitado',
+            'status' => $this->bundleEnabled,
+            'required' => true,
+        ];
+        $trackingConditions[] = [
+            'condition' => 'Entorno permitido',
+            'status' => $diagnostic['environment']['is_allowed'],
+            'required' => true,
+            'details' => \sprintf('Entorno actual: %s, Permitidos: %s', $currentEnv, implode(', ', $this->allowedEnvironments)),
+        ];
+        $trackingConditions[] = [
+            'condition' => 'Al menos un tracking habilitado',
+            'status' => $this->trackQueries || $this->trackRequestTime,
+            'required' => true,
+            'details' => \sprintf('track_queries: %s, track_request_time: %s', $this->trackQueries ? 'Sí' : 'No', $this->trackRequestTime ? 'Sí' : 'No'),
+        ];
+        $trackingConditions[] = [
+            'condition' => 'Ruta no ignorada',
+            'status' => !$routeTracking['current_route_ignored'],
+            'required' => true,
+            'details' => $routeTracking['current_route_ignored'] 
+                ? \sprintf('La ruta "%s" está en la lista de ignoradas', $routeTracking['current_route'])
+                : \sprintf('La ruta "%s" no está en la lista de ignoradas', $routeTracking['current_route'] ?? 'null'),
+        ];
+        $trackingConditions[] = [
+            'condition' => 'Tabla principal existe',
+            'status' => $tableStatus['main_table_exists'],
+            'required' => true,
+        ];
+        $trackingConditions[] = [
+            'condition' => 'Conexión a base de datos',
+            'status' => $diagnostic['database_connection']['connected'],
+            'required' => true,
+        ];
+        $trackingConditions[] = [
+            'condition' => 'Sampling rate',
+            'status' => $this->samplingRate > 0,
+            'required' => true,
+            'details' => $this->samplingRate < 1.0 
+                ? \sprintf('Sampling rate: %.1f%% (solo se registrará el %.1f%% de las peticiones)', $this->samplingRate * 100, $this->samplingRate * 100)
+                : 'Sampling rate: 100% (todas las peticiones se registrarán)',
+        ];
+
+        $subscriberStatus['tracking_conditions'] = $trackingConditions;
+        $allConditionsMet = true;
+        foreach ($trackingConditions as $condition) {
+            if ($condition['required'] && !$condition['status']) {
+                $allConditionsMet = false;
+                break;
+            }
+        }
+        $subscriberStatus['all_conditions_met'] = $allConditionsMet;
+
+        $diagnostic['subscriber_status'] = $subscriberStatus;
+
+        // 8. Potential Issues Summary
         $issues = [];
         $warnings = [];
         $suggestions = [];
@@ -1248,6 +1362,35 @@ class PerformanceController extends AbstractController
 
         if (!$dataStatus['has_data']) {
             $warnings[] = 'No hay datos registrados todavía. Asegúrate de que el bundle esté habilitado y que las rutas no estén en la lista de ignoradas.';
+            
+            // Add specific suggestions based on tracking conditions
+            $failedConditions = [];
+            foreach ($subscriberStatus['tracking_conditions'] as $condition) {
+                if ($condition['required'] && !$condition['status']) {
+                    $failedConditions[] = $condition['condition'];
+                }
+            }
+            
+            if (!empty($failedConditions)) {
+                $suggestions[] = 'Condiciones de tracking no cumplidas: '.implode(', ', $failedConditions);
+            }
+            
+            if (!$subscriberStatus['subscriber_registered']) {
+                $suggestions[] = 'El subscriber PerformanceMetricsSubscriber no está registrado. Verifica que el bundle esté correctamente instalado y que el cache de Symfony esté limpio (php bin/console cache:clear).';
+            }
+            
+            if ($this->samplingRate < 1.0) {
+                $suggestions[] = \sprintf('El sampling rate está en %.1f%%. Si no hay tráfico suficiente, es posible que ninguna petición haya sido muestreada. Considera aumentar el sampling rate o generar más tráfico.', $this->samplingRate * 100);
+            }
+            
+            if (!$this->trackQueries && !$this->trackRequestTime) {
+                $suggestions[] = 'Habilita al menos uno de los siguientes: track_queries o track_request_time en la configuración.';
+            }
+            
+            // Check if there are routes that should be tracked
+            $suggestions[] = 'Verifica que estés accediendo a rutas que no estén en la lista de ignoradas. Las rutas de assets, profiler y error están ignoradas por defecto.';
+            $suggestions[] = 'Revisa los logs de la aplicación para ver si hay mensajes de "[PerformanceBundle]" que indiquen por qué no se está registrando.';
+            $suggestions[] = 'Prueba acceder a una ruta de tu aplicación (no del bundle) y verifica si se registra. Las rutas del bundle mismo pueden estar siendo ignoradas.';
         } elseif (!$dataStatus['recent_activity']) {
             $warnings[] = 'No hay actividad reciente (última actualización hace más de 24 horas). Verifica que el tracking esté funcionando.';
         }
