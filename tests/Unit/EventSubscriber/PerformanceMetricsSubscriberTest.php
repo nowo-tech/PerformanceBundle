@@ -533,8 +533,12 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             ['_wdt', '_profiler'],
             true,
             true,
-            false,
-            0.0 // sampling rate = 0.0 means never record
+            false, // trackSubRequests
+            false, // async
+            0.0,   // sampling rate = 0.0 means never record
+            [200, 404, 500, 503], // trackStatusCodes
+            null,  // requestStack
+            null   // kernel
         );
 
         $request = Request::create('/');
