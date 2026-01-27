@@ -12,25 +12,60 @@ The bundle is compatible with the following versions:
 
 ### Compatibility Matrix
 
-| Symfony | Doctrine ORM | Doctrine DBAL | DoctrineBundle | Support |
-|---------|--------------|---------------|----------------|---------|
-| 6.1+    | 2.13+        | 2.x           | 2.8+           | ✅      |
-| 6.1+    | 2.13+        | 2.x           | 3.0+           | ✅      |
-| 7.0+    | 2.13+        | 2.x           | 2.8+           | ✅      |
-| 7.0+    | 3.0+         | 3.x           | 3.0+           | ✅      |
-| 8.0+    | 3.0+         | 3.x           | 3.0+           | ✅      |
+| Symfony | Doctrine ORM | Doctrine DBAL | DoctrineBundle | Support | Notes |
+|---------|--------------|---------------|----------------|---------|-------|
+| 6.1+    | 2.13+        | 2.x           | 2.8+           | ✅      | Uses reflection-based middleware |
+| 6.1+    | 2.13+        | 2.x           | 2.17.1         | ✅      | Tested - no YAML config needed |
+| 6.1+    | 2.13+        | 2.x           | 3.0+           | ✅      | Uses reflection-based middleware |
+| 7.0+    | 2.13+        | 2.x           | 2.8+           | ✅      | Uses reflection-based middleware |
+| 7.0+    | 2.13+        | 2.x           | 2.17.1         | ✅      | Tested - no YAML config needed |
+| 7.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | Uses reflection-based middleware |
+| 8.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | Uses reflection-based middleware |
 
-> **Note**: DoctrineBundle 3.0 is required for Symfony 8.0+.
+> **Note**: 
+> - DoctrineBundle 3.0 is required for Symfony 8.0+.
+> - **All versions** use reflection-based middleware application (no YAML configuration required).
+> - DoctrineBundle 2.17.1 has been tested and confirmed to work with the bundle.
 
 ## Important Changes Between Versions
 
 ### 1. DoctrineBundle: Middleware Registration
 
+#### Universal Approach (All Versions)
+
+**The bundle uses a universal reflection-based approach that works across ALL DoctrineBundle versions (2.x and 3.x).**
+
+**Why?** YAML middleware configuration is **NOT reliably available** across DoctrineBundle versions:
+- Some DoctrineBundle 2.x versions (like 2.17.1) **do NOT support** `middlewares` in YAML configuration
+- Some DoctrineBundle 2.x versions (like 2.10.0+) claim to support `yamlMiddleware`, but it's not recognized in all environments
+- DoctrineBundle 3.x **completely removed** YAML middleware configuration support
+
+**Solution**: The bundle uses `QueryTrackingConnectionSubscriber` which applies middleware via reflection at runtime, avoiding all YAML configuration issues.
+
 #### DoctrineBundle 2.x (< 3.0)
 
-**Supported versions**: 2.8.0 - 2.17.1+
+**Supported versions**: 2.8.0 - 2.17.1+ (all versions)
 
-**Important**: YAML middleware configuration (`middlewares` or `yamlMiddleware`) is **NOT reliably available** across all DoctrineBundle 2.x versions. Some versions (like 2.17.1) do not support these options, causing "Unrecognized option" errors.
+**Tested versions**:
+- ✅ 2.17.1 - **Does NOT support** `middlewares` or `yamlMiddleware` in YAML (causes "Unrecognized option" error)
+- ✅ 2.8.0 - 2.16.x - Some versions may support `middlewares`, but it's not reliable
+
+**YAML Configuration Issues**:
+```yaml
+# ❌ This will FAIL in DoctrineBundle 2.17.1:
+doctrine:
+    dbal:
+        connections:
+            default:
+                middlewares: []  # Error: Unrecognized option "middlewares"
+                yamlMiddleware: []  # Error: Unrecognized option "yamlMiddleware"
+```
+
+**Error message you'll see**:
+```
+Unrecognized option "middlewares" under "doctrine.dbal.connections.default".
+Available options are: "MultipleActiveResultSets", "application_name", ...
+```
 
 #### DoctrineBundle 3.x
 
@@ -46,11 +81,35 @@ The bundle uses a **universal approach** that works across all DoctrineBundle ve
 
 1. **All versions (2.x and 3.x)**: Uses `QueryTrackingConnectionSubscriber` which applies middleware via reflection at runtime
 2. **No YAML configuration required**: Avoids compatibility issues with YAML middleware options
-3. **Runtime application**: Middleware is applied when the connection is first accessed
+3. **Runtime application**: Middleware is applied when the connection is first accessed (on `KernelEvents::REQUEST`)
+4. **Event Subscriber**: Uses Symfony's event system with `#[AsEventListener]` attribute
+5. **Reflection-based**: Uses PHP reflection to wrap the DBAL driver with the middleware
+
+**How it works**:
+1. `QueryTrackingConnectionSubscriber` listens to `KernelEvents::REQUEST` event
+2. On each request, it attempts to apply middleware to the Doctrine connection
+3. Uses `QueryTrackingMiddlewareRegistry::applyMiddleware()` which:
+   - Gets the connection from the ManagerRegistry
+   - Uses reflection to access the private `driver` property
+   - Wraps the driver with `QueryTrackingMiddleware`
+   - Handles errors gracefully (retries on subsequent requests if connection isn't ready)
 
 **Relevant code**:
-- `QueryTrackingConnectionSubscriber` - Applies middleware via reflection for all versions
+- `QueryTrackingConnectionSubscriber` - Event subscriber that applies middleware via reflection
+  - Implements `EventSubscriberInterface` with `getSubscribedEvents()` method
+  - Uses `#[AsEventListener]` attribute for event registration
+  - Applies middleware on `KernelEvents::REQUEST` with priority 4096
 - `QueryTrackingMiddlewareRegistry::applyMiddleware()` - Handles the reflection-based middleware application
+  - Tries multiple property names (`driver`, `_driver`, `wrappedConnection`, `_conn`)
+  - Handles both DBAL 2.x and 3.x connection structures
+  - Gracefully handles errors and connection timing issues
+
+**Benefits of this approach**:
+- ✅ Works with **ALL** DoctrineBundle versions (2.8.0+ and 3.0.0+)
+- ✅ No YAML configuration required
+- ✅ No compatibility issues
+- ✅ Automatic retry if connection isn't ready on first request
+- ✅ No breaking changes when upgrading DoctrineBundle
 
 ### 2. DBAL: Schema Manager
 
@@ -271,10 +330,13 @@ The bundle automatically detects installed versions:
 // DoctrineBundle version detection
 $version = QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
 
-// Feature verification
-$supportsYamlMiddleware = QueryTrackingMiddlewareRegistry::supportsYamlMiddleware();
-$supportsYamlMiddlewareConfig = QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig();
+// Feature verification (NOTE: These methods now always return false)
+// The bundle uses reflection-based middleware application for all versions
+$supportsYamlMiddleware = QueryTrackingMiddlewareRegistry::supportsYamlMiddleware(); // Always returns false
+$supportsYamlMiddlewareConfig = QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig(); // Always returns false
 ```
+
+**Important**: As of bundle version 0.0.5, these methods always return `false` because the bundle no longer uses YAML middleware configuration. Instead, it uses reflection-based middleware application via `QueryTrackingConnectionSubscriber` for all DoctrineBundle versions.
 
 **Detection methods**:
 1. `Composer\InstalledVersions::getVersion()` - Preferred method
@@ -334,6 +396,60 @@ $originalDriver = $driverProperty->getValue($connection);
 - `QueryTrackingConnectionSubscriber`
 
 ## Diagnostic Commands
+
+## Troubleshooting
+
+### Common Issues
+
+#### Issue: "Unrecognized option 'middlewares'" error
+
+**Symptoms**:
+```
+Unrecognized option "middlewares" under "doctrine.dbal.connections.default"
+```
+
+**Cause**: Your DoctrineBundle version (like 2.17.1) does not support YAML middleware configuration.
+
+**Solution**: Update to bundle version 0.0.5 or higher, which uses reflection-based middleware application instead of YAML configuration.
+
+**Verification**:
+```bash
+composer show nowo-tech/performance-bundle
+# Should show version 0.0.5 or higher
+
+php bin/console nowo:performance:diagnose
+# Should show "Registration Method: Event Subscriber (Reflection)"
+```
+
+#### Issue: "Unrecognized option 'yamlMiddleware'" error
+
+**Symptoms**:
+```
+Unrecognized option "yamlMiddleware" under "doctrine.dbal.connections.default"
+```
+
+**Cause**: Your DoctrineBundle version does not support `yamlMiddleware` option.
+
+**Solution**: Same as above - update to bundle version 0.0.5 or higher.
+
+#### Issue: Middleware not being applied
+
+**Symptoms**: Query tracking is not working, query count is always 0.
+
+**Diagnosis**:
+```bash
+php bin/console nowo:performance:diagnose
+```
+
+**Possible causes**:
+1. Bundle is disabled (`nowo_performance.enabled: false`)
+2. Query tracking is disabled (`nowo_performance.track_queries: false`)
+3. Current environment is not in the tracked environments list
+4. Connection name mismatch
+
+**Solution**: Check the diagnose command output and verify your configuration.
+
+### Diagnostic Commands
 
 The bundle includes a command to diagnose Doctrine configuration:
 
