@@ -1257,12 +1257,12 @@ class PerformanceController extends AbstractController
             $container = $this->container ?? null;
             $subscriberFound = false;
             $detectionMethod = null;
-            
+
             // Method 1: Check event dispatcher listeners (most reliable)
             if (null !== $container && $container->has('event_dispatcher')) {
                 try {
                     $eventDispatcher = $container->get('event_dispatcher');
-                    
+
                     // Check REQUEST and TERMINATE event listeners
                     if (method_exists($eventDispatcher, 'getListeners')) {
                         $eventsToCheck = [KernelEvents::REQUEST, KernelEvents::TERMINATE];
@@ -1275,9 +1275,9 @@ class PerformanceController extends AbstractController
                                     if (\is_array($listener) && isset($listener[0])) {
                                         $listenerClass = \get_class($listener[0]);
                                     } elseif (\is_object($listener)) {
-                                        $listenerClass = \get_class($listener);
+                                        $listenerClass = $listener::class;
                                     }
-                                    
+
                                     if (null !== $listenerClass && str_contains($listenerClass, 'PerformanceMetricsSubscriber')) {
                                         $subscriberFound = true;
                                         $detectionMethod = "Found in {$eventName} listeners";
@@ -1293,7 +1293,7 @@ class PerformanceController extends AbstractController
                     // Continue to next method
                 }
             }
-            
+
             // Method 2: Try to get the service directly from container
             if (!$subscriberFound && null !== $container) {
                 try {
@@ -1310,7 +1310,7 @@ class PerformanceController extends AbstractController
                     // Continue to next method
                 }
             }
-            
+
             // Method 3: Check if subscriber class exists and is properly configured
             // Since it's explicitly registered in services.yaml with kernel.event_subscriber tag,
             // if the class exists, it should be registered
@@ -1325,7 +1325,7 @@ class PerformanceController extends AbstractController
                     }
                 }
             }
-            
+
             $subscriberStatus['subscriber_registered'] = $subscriberFound;
             if (null !== $detectionMethod) {
                 $subscriberStatus['detection_method'] = $detectionMethod;
