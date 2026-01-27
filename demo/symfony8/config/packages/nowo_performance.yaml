@@ -26,6 +26,11 @@ when@dev:
         # When enabled, tracks the total time taken to process each request
         track_request_time: true
 
+        # Track sub-requests in addition to main requests
+        # When enabled, performance metrics will be collected for both main requests and sub-requests
+        # (e.g., ESI, fragments, includes). Default: false (only main requests are tracked)
+        track_sub_requests: false
+
         # Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking)
         # Reduces database load for frequently accessed routes by tracking only a percentage of requests
         # Example: 0.1 = only track 10% of requests, 0.5 = track 50% of requests

@@ -21,6 +21,11 @@ nowo_performance:
     # Track request execution time
     track_request_time: true
 
+    # Track sub-requests in addition to main requests
+    # When enabled, performance metrics will be collected for both main requests and sub-requests
+    # (e.g., ESI, fragments, includes). Default: false (only main requests are tracked)
+    track_sub_requests: false
+
     # Record metrics asynchronously using Symfony Messenger (requires symfony/messenger)
     # When enabled, metrics are dispatched via message bus instead of direct database writes
     async: false
