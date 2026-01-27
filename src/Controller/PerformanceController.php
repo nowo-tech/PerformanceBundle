@@ -220,9 +220,11 @@ class PerformanceController extends AbstractController
         // Check dependencies
         $useComponents = false;
         $missingDependencies = [];
+        $dependencyStatus = [];
         if (null !== $this->dependencyChecker) {
             $useComponents = $this->dependencyChecker->isTwigComponentAvailable();
             $missingDependencies = $this->dependencyChecker->getMissingDependencies();
+            $dependencyStatus = $this->dependencyChecker->getDependencyStatus();
         }
 
         // Create review forms for each route if review system is enabled
@@ -252,6 +254,7 @@ class PerformanceController extends AbstractController
             'reviewForms' => $reviewForms,
             'useComponents' => $useComponents,
             'missingDependencies' => $missingDependencies,
+            'dependencyStatus' => $dependencyStatus,
             'enableRecordManagement' => $this->enableRecordManagement,
             'dateTimeFormat' => $this->dateTimeFormat,
             'dateFormat' => $this->dateFormat,

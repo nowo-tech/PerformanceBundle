@@ -53,9 +53,42 @@ class DependencyChecker
     }
 
     /**
+     * Check if Symfony Messenger is available.
+     *
+     * @return bool True if available, false otherwise
+     */
+    public function isMessengerAvailable(): bool
+    {
+        return interface_exists(\Symfony\Component\Messenger\MessageBusInterface::class)
+            || class_exists(\Symfony\Component\Messenger\MessageBusInterface::class);
+    }
+
+    /**
+     * Check if Symfony Mailer is available.
+     *
+     * @return bool True if available, false otherwise
+     */
+    public function isMailerAvailable(): bool
+    {
+        return interface_exists(\Symfony\Component\Mailer\MailerInterface::class)
+            || class_exists(\Symfony\Component\Mailer\MailerInterface::class);
+    }
+
+    /**
+     * Check if Symfony HttpClient is available.
+     *
+     * @return bool True if available, false otherwise
+     */
+    public function isHttpClientAvailable(): bool
+    {
+        return interface_exists(\Symfony\Contracts\HttpClient\HttpClientInterface::class)
+            || class_exists(\Symfony\Contracts\HttpClient\HttpClientInterface::class);
+    }
+
+    /**
      * Get information about missing dependencies.
      *
-     * @return array<string, array{required: bool, package: string, message: string, install_command: string}> Missing dependencies info
+     * @return array<string, array{required: bool, package: string, message: string, install_command: string, feature: string}> Missing dependencies info
      */
     public function getMissingDependencies(): array
     {
@@ -81,13 +114,43 @@ class DependencyChecker
             ];
         }
 
+        if (!$this->isMessengerAvailable()) {
+            $missing['messenger'] = [
+                'required' => false,
+                'package' => 'symfony/messenger',
+                'message' => 'Symfony Messenger is not installed. Async metrics recording is not available.',
+                'install_command' => 'composer require symfony/messenger',
+                'feature' => 'Async metrics recording',
+            ];
+        }
+
+        if (!$this->isMailerAvailable()) {
+            $missing['mailer'] = [
+                'required' => false,
+                'package' => 'symfony/mailer',
+                'message' => 'Symfony Mailer is not installed. Email notifications are not available.',
+                'install_command' => 'composer require symfony/mailer',
+                'feature' => 'Email notifications',
+            ];
+        }
+
+        if (!$this->isHttpClientAvailable()) {
+            $missing['http_client'] = [
+                'required' => false,
+                'package' => 'symfony/http-client',
+                'message' => 'Symfony HttpClient is not installed. Slack, Teams, and webhook notifications are not available.',
+                'install_command' => 'composer require symfony/http-client',
+                'feature' => 'Slack, Teams, and webhook notifications',
+            ];
+        }
+
         return $missing;
     }
 
     /**
      * Check if a specific feature is available.
      *
-     * @param string $feature Feature name (e.g., 'twig_component')
+     * @param string $feature Feature name (e.g., 'twig_component', 'messenger', 'mailer', 'http_client')
      *
      * @return bool True if feature is available
      */
@@ -96,6 +159,9 @@ class DependencyChecker
         return match ($feature) {
             'twig_component' => $this->isTwigComponentAvailable(),
             'icons' => $this->isIconsAvailable(),
+            'messenger' => $this->isMessengerAvailable(),
+            'mailer' => $this->isMailerAvailable(),
+            'http_client' => $this->isHttpClientAvailable(),
             default => true,
         };
     }
@@ -116,6 +182,21 @@ class DependencyChecker
             'icons' => [
                 'available' => $this->isIconsAvailable(),
                 'package' => 'symfony/ux-icons',
+                'required' => false,
+            ],
+            'messenger' => [
+                'available' => $this->isMessengerAvailable(),
+                'package' => 'symfony/messenger',
+                'required' => false,
+            ],
+            'mailer' => [
+                'available' => $this->isMailerAvailable(),
+                'package' => 'symfony/mailer',
+                'required' => false,
+            ],
+            'http_client' => [
+                'available' => $this->isHttpClientAvailable(),
+                'package' => 'symfony/http-client',
                 'required' => false,
             ],
         ];
