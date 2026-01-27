@@ -1006,6 +1006,40 @@ final class CreateTableCommand extends Command
     }
 
     /**
+     * Get asset name from AbstractAsset object (compatible with DBAL 2.x and 3.x).
+     *
+     * @param \Doctrine\DBAL\Schema\AbstractAsset $asset The asset object (Column, Index, etc.)
+     * @param \Doctrine\DBAL\Connection           $connection The database connection
+     *
+     * @return string The asset name
+     */
+    private function getAssetName(\Doctrine\DBAL\Schema\AbstractAsset $asset, \Doctrine\DBAL\Connection $connection): string
+    {
+        // Try getQuotedName() for DBAL 3.x compatibility
+        if (method_exists($asset, 'getQuotedName')) {
+            return $asset->getQuotedName($connection->getDatabasePlatform());
+        }
+
+        // Fallback to getName() for DBAL 2.x
+        if (method_exists($asset, 'getName')) {
+            $name = $asset->getName();
+            // getName() might return a Name object in DBAL 3.x, convert to string
+            return \is_string($name) ? $name : (string) $name;
+        }
+
+        // Last resort: try reflection to get name
+        try {
+            $reflection = new \ReflectionClass($asset);
+            $nameProperty = $reflection->getProperty('name');
+            $nameProperty->setAccessible(true);
+            $name = $nameProperty->getValue($asset);
+            return \is_string($name) ? $name : (string) $name;
+        } catch (\Exception $e) {
+            return '';
+        }
+    }
+
+    /**
      * Get SQL type string for a column.
      *
      * @param array<string, mixed>                      $columnInfo Column information
@@ -1114,7 +1148,8 @@ final class CreateTableCommand extends Command
 
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
-            $existingIndexes[strtolower($index->getName())] = $index;
+            $indexName = $this->getAssetName($index, $connection);
+            $existingIndexes[strtolower($indexName)] = $index;
         }
 
         $indexesToAdd = [];
