@@ -348,7 +348,8 @@ final class CreateTableCommand extends Command
                         $table = $schemaManager->introspectTable($actualTableName);
                         $existingColumnsMap = [];
                         foreach ($table->getColumns() as $column) {
-                            $existingColumnsMap[strtolower($column->getName())] = $column;
+                            $columnName = $this->getColumnName($column, $connection);
+                            $existingColumnsMap[strtolower($columnName)] = $column;
                         }
                     }
                 } catch (\Exception $e) {
@@ -985,11 +986,21 @@ final class CreateTableCommand extends Command
 
         // Fallback to getName() for DBAL 2.x
         if (method_exists($column, 'getName')) {
-            return $column->getName();
+            $name = $column->getName();
+            // getName() might return a Name object in DBAL 3.x, convert to string
+            return \is_string($name) ? $name : (string) $name;
         }
 
-        // Last resort: try to access name property directly
-        return $column->name ?? '';
+        // Last resort: try reflection to get name
+        try {
+            $reflection = new \ReflectionClass($column);
+            $nameProperty = $reflection->getProperty('name');
+            $nameProperty->setAccessible(true);
+            $name = $nameProperty->getValue($column);
+            return \is_string($name) ? $name : (string) $name;
+        } catch (\Exception $e) {
+            return '';
+        }
     }
 
     /**
