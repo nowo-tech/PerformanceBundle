@@ -133,8 +133,15 @@ class TableStatusChecker
             // Get existing columns from database
             $table = $schemaManager->introspectTable($actualTableName);
             $existingColumns = [];
+            $connection = $this->registry->getConnection($this->connectionName);
             foreach ($table->getColumns() as $column) {
-                $existingColumns[strtolower($column->getName())] = true;
+                // Use getQuotedName() for DBAL 3.x compatibility, fallback to getName() for DBAL 2.x
+                $columnName = method_exists($column, 'getQuotedName') 
+                    ? $column->getQuotedName($connection->getDatabasePlatform())
+                    : (method_exists($column, 'getName') ? $column->getName() : '');
+                // Convert Name object to string if needed
+                $columnName = \is_string($columnName) ? $columnName : (string) $columnName;
+                $existingColumns[strtolower($columnName)] = true;
             }
 
             // Get expected columns from entity metadata

@@ -334,6 +334,9 @@ class PerformanceDataCollector extends DataCollector
         $this->recordWasUpdated = null;
         $this->configuredEnvironments = null;
         $this->currentEnvironment = null;
+        $this->disabledReason = null;
+        // Note: We don't reset $this->enabled here because it's set per-request in onKernelRequest
+        // Resetting it would cause issues if reset() is called before onKernelRequest
     }
 
     public function getName(): string
