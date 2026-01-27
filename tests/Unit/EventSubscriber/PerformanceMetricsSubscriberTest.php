@@ -231,7 +231,13 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             ['dev'],
             [],
             true,
-            false // track_request_time = false
+            false, // track_request_time = false
+            false, // trackSubRequests
+            false, // async
+            1.0,   // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            null,  // requestStack
+            null   // kernel
         );
 
         $request = Request::create('/');
@@ -257,7 +263,13 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             ['dev'],
             [],
             false, // track_queries = false
-            true
+            true,  // trackRequestTime
+            false, // trackSubRequests
+            false, // async
+            1.0,   // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            null,  // requestStack
+            null   // kernel
         );
 
         $request = Request::create('/');
@@ -281,7 +293,13 @@ final class PerformanceMetricsSubscriberTest extends TestCase
             ['dev'],
             [],
             true,
-            true
+            true,
+            false, // trackSubRequests
+            false, // async
+            1.0,   // samplingRate
+            [200, 404, 500, 503], // trackStatusCodes
+            null,  // requestStack
+            null   // kernel
         );
 
         $request = Request::create('/');
