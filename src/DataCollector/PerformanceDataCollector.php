@@ -238,7 +238,7 @@ class PerformanceDataCollector extends DataCollector
     {
         $this->recordWasNew = $isNew;
         $this->recordWasUpdated = $wasUpdated;
-        
+
         // Also update the data array if it has been initialized (collect() has been called)
         // This ensures the information is available even if setRecordOperation() is called after collect()
         if (isset($this->data) && \is_array($this->data)) {
@@ -314,7 +314,7 @@ class PerformanceDataCollector extends DataCollector
                 $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
                 if (null !== $routeData) {
                     $accessCount = $routeData->getAccessCount();
-                    
+
                     // Only execute ranking queries if enabled
                     if ($enableRankingQueries) {
                         // Pass the RouteData entity directly to avoid duplicate queries
@@ -599,6 +599,7 @@ class PerformanceDataCollector extends DataCollector
         if (null !== $this->recordWasNew) {
             return $this->recordWasNew;
         }
+
         // Fallback to data array (set during collect())
         return $this->data['record_was_new'] ?? null;
     }
@@ -616,6 +617,7 @@ class PerformanceDataCollector extends DataCollector
         if (null !== $this->recordWasUpdated) {
             return $this->recordWasUpdated;
         }
+
         // Fallback to data array (set during collect())
         return $this->data['record_was_updated'] ?? null;
     }

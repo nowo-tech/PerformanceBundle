@@ -174,7 +174,7 @@ class PerformanceController extends AbstractController
         ]);
 
         $form->handleRequest($request);
-        
+
         // Get form data before creating view to ensure form is fully processed
         $formData = $form->getData();
 
@@ -282,7 +282,7 @@ class PerformanceController extends AbstractController
         ]);
         $formForView->handleRequest($request);
         $formView = $formForView->createView();
-        
+
         return $this->render('@NowoPerformanceBundle/Performance/index.html.twig', [
             'routes' => $routes,
             'stats' => $stats,
@@ -1187,7 +1187,7 @@ class PerformanceController extends AbstractController
                     if (null !== $dataStatus['last_record_date']) {
                         $now = new \DateTimeImmutable();
                         $diff = $now->diff($dataStatus['last_record_date']);
-                        $dataStatus['recent_activity'] = $diff->days === 0 && $diff->h < 24;
+                        $dataStatus['recent_activity'] = 0 === $diff->days && $diff->h < 24;
                     }
                 }
 
@@ -1261,7 +1261,7 @@ class PerformanceController extends AbstractController
         }
 
         if (\count($this->ignoreRoutes) > 10) {
-            $warnings[] = 'Hay muchas rutas ignoradas ('.count($this->ignoreRoutes).'). Esto puede estar limitando el tracking.';
+            $warnings[] = 'Hay muchas rutas ignoradas ('.\count($this->ignoreRoutes).'). Esto puede estar limitando el tracking.';
         }
 
         $diagnostic['issues'] = $issues;
@@ -1849,6 +1849,7 @@ class PerformanceController extends AbstractController
                 try {
                     /** @var callable $getName */
                     $getName = [$driver, 'getName'];
+
                     return (string) $getName();
                 } catch (\Exception $e) {
                     // Continue to next method
@@ -1869,6 +1870,7 @@ class PerformanceController extends AbstractController
                     if ($wrappedDriver instanceof \Doctrine\DBAL\Driver && method_exists($wrappedDriver, 'getName')) {
                         /** @var callable $getName */
                         $getName = [$wrappedDriver, 'getName'];
+
                         return (string) $getName();
                     }
                 } catch (\Exception $e) {
