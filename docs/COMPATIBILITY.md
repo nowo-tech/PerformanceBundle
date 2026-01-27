@@ -28,22 +28,9 @@ The bundle is compatible with the following versions:
 
 #### DoctrineBundle 2.x (< 3.0)
 
-**Supported versions**: 2.8.0 - 2.15.x
+**Supported versions**: 2.8.0 - 2.17.1+
 
-**Features**:
-- Supports middleware configuration in YAML using `middlewares` (since 2.0)
-- Note: `yamlMiddleware` is not used due to compatibility issues across versions
-
-**YAML Configuration**:
-```yaml
-doctrine:
-    dbal:
-        connections:
-            default:
-                # Use middlewares (2.0+) - more widely supported
-                middlewares:
-                    - Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware
-```
+**Important**: YAML middleware configuration (`middlewares` or `yamlMiddleware`) is **NOT reliably available** across all DoctrineBundle 2.x versions. Some versions (like 2.17.1) do not support these options, causing "Unrecognized option" errors.
 
 #### DoctrineBundle 3.x
 
@@ -55,14 +42,15 @@ doctrine:
 - ✅ Requires manual middleware application using reflection
 
 **How the bundle handles it**:
-The bundle automatically detects the DoctrineBundle version and applies the middleware using the appropriate method:
+The bundle uses a **universal approach** that works across all DoctrineBundle versions:
 
-1. **DoctrineBundle 2.x (all versions)**: Uses `middlewares` (more widely supported and reliable)
-2. **DoctrineBundle 3.x**: Uses `QueryTrackingConnectionSubscriber` which applies middleware via reflection
+1. **All versions (2.x and 3.x)**: Uses `QueryTrackingConnectionSubscriber` which applies middleware via reflection at runtime
+2. **No YAML configuration required**: Avoids compatibility issues with YAML middleware options
+3. **Runtime application**: Middleware is applied when the connection is first accessed
 
 **Relevant code**:
-- `QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()` - Detects if `middlewares` is available
-- `QueryTrackingConnectionSubscriber` - Applies middleware in DoctrineBundle 3.x
+- `QueryTrackingConnectionSubscriber` - Applies middleware via reflection for all versions
+- `QueryTrackingMiddlewareRegistry::applyMiddleware()` - Handles the reflection-based middleware application
 
 ### 2. DBAL: Schema Manager
 

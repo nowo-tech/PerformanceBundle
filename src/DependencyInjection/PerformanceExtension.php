@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DependencyInjection;
 
-use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
-use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -140,83 +138,10 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
             ]);
         }
 
-        // Register QueryTrackingMiddleware via YAML if DoctrineBundle version supports it
-        // DoctrineBundle 2.x supports 'middlewares' in YAML, 3.x does not
-        if ($container->hasExtension('doctrine')) {
-            // Get configuration to check if tracking is enabled
-            $configs = $container->getExtensionConfig($this->getAlias());
-            $enabled = true;
-            $trackQueries = true;
-            $connectionName = 'default';
-
-            foreach ($configs as $config) {
-                if (isset($config['enabled'])) {
-                    $enabled = $config['enabled'];
-                }
-                if (isset($config['track_queries'])) {
-                    $trackQueries = $config['track_queries'];
-                }
-                if (isset($config['connection'])) {
-                    $connectionName = $config['connection'];
-                }
-            }
-
-            // Only register middleware if tracking is enabled
-            if ($enabled && $trackQueries) {
-                // Check existing Doctrine config to avoid overwriting
-                $existingConfigs = $container->getExtensionConfig('doctrine');
-                $hasMiddleware = false;
-                $hasYamlMiddleware = false;
-
-                // Check if middleware is already registered via 'middlewares' or 'yamlMiddleware'
-                foreach ($existingConfigs as $config) {
-                    if (isset($config['dbal']['connections'][$connectionName])) {
-                        $connectionConfig = $config['dbal']['connections'][$connectionName];
-
-                        // Check for 'middlewares' (DoctrineBundle 2.x)
-                        if (isset($connectionConfig['middlewares'])) {
-                            $middlewares = $connectionConfig['middlewares'];
-                            if (\is_array($middlewares) && \in_array(QueryTrackingMiddleware::class, $middlewares, true)) {
-                                $hasMiddleware = true;
-                                break;
-                            }
-                        }
-
-                        // Check for 'yamlMiddleware' (DoctrineBundle 2.10.0+)
-                        if (isset($connectionConfig['yamlMiddleware'])) {
-                            $yamlMiddlewares = $connectionConfig['yamlMiddleware'];
-                            if (\is_array($yamlMiddlewares) && \in_array(QueryTrackingMiddleware::class, $yamlMiddlewares, true)) {
-                                $hasYamlMiddleware = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                // Only prepend if not already registered
-                if (!$hasMiddleware && !$hasYamlMiddleware) {
-                    // Use 'middlewares' for DoctrineBundle 2.x (more widely supported than yamlMiddleware)
-                    // For DoctrineBundle 3.x, middleware is applied via QueryTrackingConnectionSubscriber
-                    if (QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig()) {
-                        $doctrineConfig = [
-                            'dbal' => [
-                                'connections' => [
-                                    $connectionName => [
-                                        'middlewares' => [
-                                            QueryTrackingMiddleware::class,
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ];
-                        $container->prependExtensionConfig('doctrine', $doctrineConfig);
-                    }
-                    // For DoctrineBundle 3.x, middleware is applied via QueryTrackingConnectionSubscriber
-                    // which uses reflection to wrap the driver after connection creation
-                }
-            }
-            // For DoctrineBundle 3.x, middleware is applied via QueryTrackingConnectionSubscriber
-            // which uses reflection to wrap the driver after connection creation
-        }
+        // Middleware registration is handled via QueryTrackingConnectionSubscriber
+        // which uses reflection to apply middleware at runtime.
+        // This approach works across all DoctrineBundle versions (2.x and 3.x)
+        // and avoids configuration issues with YAML middleware options that may
+        // not be available in all versions.
     }
 }

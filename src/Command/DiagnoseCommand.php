@@ -125,21 +125,17 @@ final class DiagnoseCommand extends Command
 
         // Detect DoctrineBundle version and method used
         $doctrineVersion = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
-        $supportsYaml = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig();
         $method = 'Event Subscriber (Reflection)';
-        if ($supportsYaml) {
-            $method = 'YAML Configuration (middlewares)';
-        }
 
         $io->text([
             'DoctrineBundle Version: '.($doctrineVersion ?? 'Unknown'),
             'Registration Method: '.$method,
-            'Supports middlewares: '.($supportsYaml ? 'Yes (2.x)' : 'No'),
             '',
-            'The bundle automatically detects the DoctrineBundle version and uses the appropriate method:',
+            'The bundle uses Event Subscriber with reflection to apply middleware:',
             '',
-            '• DoctrineBundle 2.x: Registers middleware via YAML configuration (middlewares)',
-            '• DoctrineBundle 3.x: Applies middleware via Event Subscriber using reflection',
+            '• Works across all DoctrineBundle versions (2.x and 3.x)',
+            '• No YAML configuration required (avoids compatibility issues)',
+            '• Applies middleware at runtime using reflection',
             '',
             'If queries are not being tracked, check:',
             '1. That track_queries is enabled (currently: '.($trackQueries ? '✓' : '✗').')',

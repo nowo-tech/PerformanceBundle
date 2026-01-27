@@ -291,19 +291,20 @@ class QueryTrackingMiddlewareRegistry
     /**
      * Check if DoctrineBundle version supports YAML middleware configuration.
      *
+     * NOTE: This method now returns false by default because YAML middleware
+     * configuration is not reliably available across all DoctrineBundle versions.
+     * We use reflection-based middleware application instead, which works
+     * consistently across all versions.
+     *
      * @return bool True if YAML configuration is supported
      */
     public static function supportsYamlMiddlewareConfig(): bool
     {
-        $version = self::detectDoctrineBundleVersion();
-
-        if (null === $version) {
-            return false;
-        }
-
-        // DoctrineBundle 2.x supports middlewares in YAML
-        // DoctrineBundle 3.x does not support it
-        return version_compare($version, '3.0.0', '<');
+        // Disabled: YAML middleware configuration is not reliably available
+        // across all DoctrineBundle versions, even within the same major version.
+        // We use reflection-based middleware application via QueryTrackingConnectionSubscriber
+        // which works consistently across all versions (2.x and 3.x).
+        return false;
     }
 
     /**

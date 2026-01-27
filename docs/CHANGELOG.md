@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.0.5] - 2025-01-27
+
+### Fixed
+- **DoctrineBundle middleware configuration** - Removed YAML middleware configuration completely
+  - YAML middleware options (`middlewares` and `yamlMiddleware`) are not reliably available across all DoctrineBundle versions
+  - Some versions (like 2.17.1) do not support these options, causing "Unrecognized option" errors
+  - Changed to use only reflection-based middleware application via `QueryTrackingConnectionSubscriber`
+  - This approach works consistently across all DoctrineBundle versions (2.x and 3.x)
+  - No YAML configuration required, avoiding compatibility issues
+  - Updated documentation to reflect this change
+
 ## [0.0.4] - 2025-01-27
 
 ### Fixed

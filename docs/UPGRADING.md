@@ -2,6 +2,63 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 0.0.5 (2025-01-27)
+
+### Compatibility Fix
+
+This version removes YAML middleware configuration completely to fix compatibility issues across all DoctrineBundle versions.
+
+#### Changes
+
+- **DoctrineBundle middleware configuration**: Removed YAML middleware configuration (`middlewares` and `yamlMiddleware`)
+- YAML middleware options are not reliably available across all DoctrineBundle versions
+- Some versions (like 2.17.1) do not support these options, causing "Unrecognized option" errors
+- Changed to use only reflection-based middleware application via `QueryTrackingConnectionSubscriber`
+- This approach works consistently across all DoctrineBundle versions (2.x and 3.x)
+
+#### What This Means
+
+- **No configuration changes required**: The bundle automatically uses reflection-based middleware application
+- **No database changes required**: This is a code-only fix
+- **Fixes installation errors**: Resolves "Unrecognized option 'middlewares'" errors when installing the bundle
+- **Works across all versions**: No more compatibility issues with different DoctrineBundle versions
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Clear cache**:
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Verify installation**:
+   ```bash
+   php bin/console nowo:performance:diagnose
+   ```
+
+#### Troubleshooting
+
+**Issue: Still seeing "Unrecognized option 'middlewares'" error**
+
+- **Solution**: Clear Symfony cache and verify the bundle version:
+  ```bash
+  php bin/console cache:clear
+  composer show nowo-tech/performance-bundle
+  ```
+  Make sure you're using version 0.0.5 or higher.
+
+**Issue: Middleware not being registered**
+
+- **Solution**: Run the diagnose command to check middleware registration:
+  ```bash
+  php bin/console nowo:performance:diagnose
+  ```
+  The command will show that middleware is applied via Event Subscriber (Reflection).
+
 ## Upgrading to 0.0.4 (2025-01-27)
 
 ### Bug Fix

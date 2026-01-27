@@ -81,6 +81,12 @@ services:
         tags:
             - { name: kernel.event_subscriber }
 
+    # Query Tracking Connection Subscriber (applies middleware via reflection)
+    # Uses #[AsEventListener] attribute for auto-registration, but explicit registration ensures it works
+    Nowo\PerformanceBundle\EventSubscriber\QueryTrackingConnectionSubscriber:
+        tags:
+            - { name: kernel.event_subscriber }
+
     # Notification Channels
     # Uses Autowire attributes for dependency injection
     Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel:
