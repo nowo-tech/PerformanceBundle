@@ -287,7 +287,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // Check collector state before logging
         $collectorEnabled = $this->dataCollector->isEnabled();
         $disabledReason = $this->dataCollector->getDisabledReason();
-        
+
         LogHelper::logf(
             '[PerformanceBundle] onKernelTerminate: START - enabled=%s, collectorEnabled=%s, route=%s, disabledReason=%s',
             $this->enableLogging,
@@ -310,18 +310,18 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         if (!$this->dataCollector->isEnabled()) {
             // Log why collector is disabled (for debugging)
             $disabledReason = $this->dataCollector->getDisabledReason();
-            
+
             // Use reflection to check the actual property value vs what isEnabled() returns
             $reflection = new \ReflectionClass($this->dataCollector);
             $enabledProperty = $reflection->getProperty('enabled');
             $enabledProperty->setAccessible(true);
             $enabledPropertyValue = $enabledProperty->getValue($this->dataCollector);
-            
+
             $dataProperty = $reflection->getProperty('data');
             $dataProperty->setAccessible(true);
             $dataArray = $dataProperty->getValue($this->dataCollector);
             $dataArrayEnabled = $dataArray['enabled'] ?? null;
-            
+
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: dataCollector not enabled, skipping. Reason: %s, route=%s, enabledProperty=%s, dataArrayEnabled=%s, isEnabled()=%s',
                 $this->enableLogging,
@@ -491,7 +491,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 null !== $queryCount ? (string) $queryCount : 'null',
                 null !== $queryTime ? (string) $queryTime : 'null',
                 null !== $memoryUsage ? (string) $memoryUsage : 'null',
-                (string) ($this->samplingRate * 100) . '%'
+                (string) ($this->samplingRate * 100).'%'
             );
 
             $result = $this->metricsService->recordMetrics(

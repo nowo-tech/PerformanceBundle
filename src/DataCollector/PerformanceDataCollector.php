@@ -421,7 +421,7 @@ class PerformanceDataCollector extends DataCollector
         if (isset($this->enabled)) {
             return $this->enabled;
         }
-        
+
         // Fallback to data array (for when profiler is enabled and collect() has been called)
         return $this->data['enabled'] ?? false;
     }
