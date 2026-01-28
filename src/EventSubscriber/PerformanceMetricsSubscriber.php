@@ -781,7 +781,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             if ($routeName === $ignored) {
                 return true;
             }
-            if (str_starts_with($routeName, $ignored . '_')) {
+            if (str_starts_with($routeName, $ignored.'_')) {
                 return true;
             }
         }
@@ -796,7 +796,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                     continue;
                 }
                 $ig = strtolower($ignored);
-                if ($ig === '_wdt' || str_starts_with($ig, '_wdt') || $ig === '_profiler' || str_starts_with($ig, '_profiler') || str_starts_with($ig, 'web_profiler')) {
+                if ('_wdt' === $ig || str_starts_with($ig, '_wdt') || '_profiler' === $ig || str_starts_with($ig, '_profiler') || str_starts_with($ig, 'web_profiler')) {
                     return true;
                 }
                 if (str_contains($ignored, '*') && fnmatch($ignored, $routeName, \FNM_NOESCAPE)) {

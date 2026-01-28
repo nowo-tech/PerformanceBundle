@@ -76,7 +76,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build the webhook payload based on format.
      *
-     * @param PerformanceAlert                     $alert   The alert
+     * @param PerformanceAlert                    $alert   The alert
      * @param RouteData|AfterMetricsRecordedEvent $context Route or event
      *
      * @return array<string, mixed> Payload array
@@ -93,7 +93,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build JSON payload (generic format).
      *
-     * @param PerformanceAlert                     $alert   The alert
+     * @param PerformanceAlert                    $alert   The alert
      * @param RouteData|AfterMetricsRecordedEvent $context Route or event
      *
      * @return array<string, mixed>
@@ -130,7 +130,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build Slack webhook payload.
      *
-     * @param PerformanceAlert                     $alert   The alert
+     * @param PerformanceAlert                    $alert   The alert
      * @param RouteData|AfterMetricsRecordedEvent $context Route or event
      *
      * @return array<string, mixed>
@@ -192,7 +192,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     /**
      * Build Microsoft Teams webhook payload.
      *
-     * @param PerformanceAlert                     $alert   The alert
+     * @param PerformanceAlert                    $alert   The alert
      * @param RouteData|AfterMetricsRecordedEvent $context Route or event
      *
      * @return array<string, mixed>

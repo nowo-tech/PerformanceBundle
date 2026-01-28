@@ -289,8 +289,8 @@ HELP
     /**
      * Update the table schema by adding missing columns, updating existing ones, and optionally dropping obsolete columns.
      *
-     * @param EntityManagerInterface $entityManager  The entity manager
-     * @param SymfonyStyle           $io             The Symfony style output
+     * @param EntityManagerInterface $entityManager The entity manager
+     * @param SymfonyStyle           $io            The Symfony style output
      * @param bool                   $dropObsolete  Whether to drop columns that exist in DB but not in entity
      */
     private function updateTableSchema(EntityManagerInterface $entityManager, SymfonyStyle $io, bool $dropObsolete = false): void
@@ -830,8 +830,8 @@ HELP
      * Update the access records table schema by adding missing columns, updating existing ones, and optionally dropping obsolete columns.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io           The Symfony style output
-     * @param bool                   $dropObsolete Whether to drop columns that exist in DB but not in entity
+     * @param SymfonyStyle           $io            The Symfony style output
+     * @param bool                   $dropObsolete  Whether to drop columns that exist in DB but not in entity
      */
     private function updateRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io, bool $dropObsolete = false): void
     {
@@ -1035,9 +1035,9 @@ HELP
     /**
      * Add missing indexes to the access records table.
      *
-     * @param EntityManagerInterface      $entityManager The entity manager
-     * @param SymfonyStyle                $io            The Symfony style output
-     * @param \Doctrine\DBAL\Schema\Table $table         The table schema
+     * @param EntityManagerInterface      $entityManager   The entity manager
+     * @param SymfonyStyle                $io              The Symfony style output
+     * @param \Doctrine\DBAL\Schema\Table $table           The table schema
      * @param string                      $actualTableName The table name
      */
     private function addMissingIndexesRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io, \Doctrine\DBAL\Schema\Table $table, string $actualTableName): void

@@ -87,7 +87,7 @@ final class EmailNotificationChannel implements NotificationChannelInterface
     /**
      * Build the email body HTML.
      *
-     * @param PerformanceAlert                     $alert   The alert
+     * @param PerformanceAlert                    $alert   The alert
      * @param RouteData|AfterMetricsRecordedEvent $context Route or event (event has just-recorded metrics)
      *
      * @return string HTML email body

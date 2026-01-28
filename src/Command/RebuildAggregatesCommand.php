@@ -33,9 +33,9 @@ final class RebuildAggregatesCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param EntityManagerInterface     $entityManager       Doctrine entity manager
-     * @param RouteDataRepository        $routeDataRepository Repository for RouteData
-     * @param RouteDataRecordRepository  $recordRepository    Repository for RouteDataRecord
+     * @param EntityManagerInterface    $entityManager       Doctrine entity manager
+     * @param RouteDataRepository       $routeDataRepository Repository for RouteData
+     * @param RouteDataRecordRepository $recordRepository    Repository for RouteDataRecord
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -159,4 +159,3 @@ final class RebuildAggregatesCommand extends Command
         }
     }
 }
-

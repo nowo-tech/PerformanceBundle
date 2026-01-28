@@ -20,8 +20,8 @@ interface NotificationChannelInterface
     /**
      * Send a performance alert notification.
      *
-     * @param PerformanceAlert                $alert     The performance alert
-     * @param RouteData|AfterMetricsRecordedEvent $context   The route data or event (event carries just-recorded metrics)
+     * @param PerformanceAlert                    $alert   The performance alert
+     * @param RouteData|AfterMetricsRecordedEvent $context The route data or event (event carries just-recorded metrics)
      *
      * @return bool True if notification was sent successfully, false otherwise
      */

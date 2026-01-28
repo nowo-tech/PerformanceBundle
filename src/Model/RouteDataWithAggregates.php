@@ -130,12 +130,14 @@ final class RouteDataWithAggregates
     public function getStatusCodes(): ?array
     {
         $codes = $this->aggregates['status_codes'] ?? [];
+
         return empty($codes) ? null : $codes;
     }
 
     public function getStatusCodeCount(int $statusCode): int
     {
         $codes = $this->aggregates['status_codes'] ?? [];
+
         return $codes[$statusCode] ?? 0;
     }
 
@@ -149,12 +151,14 @@ final class RouteDataWithAggregates
         if (0 === $total) {
             return 0.0;
         }
+
         return (($codes[$statusCode] ?? 0) / $total) * 100.0;
     }
 
     public function getTotalResponses(): int
     {
         $codes = $this->aggregates['status_codes'] ?? [];
+
         return empty($codes) ? 0 : (int) array_sum($codes);
     }
 

@@ -255,8 +255,8 @@ HELP
      * Update the table schema by adding missing columns, updating existing ones, and optionally dropping obsolete columns.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io           The Symfony style output
-     * @param bool                   $dropObsolete Whether to drop columns that exist in DB but not in entity
+     * @param SymfonyStyle           $io            The Symfony style output
+     * @param bool                   $dropObsolete  Whether to drop columns that exist in DB but not in entity
      */
     private function updateTableSchema(EntityManagerInterface $entityManager, SymfonyStyle $io, bool $dropObsolete = false): void
     {
