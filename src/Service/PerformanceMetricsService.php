@@ -9,6 +9,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Event\BeforeMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
@@ -22,7 +23,7 @@ use Symfony\Contracts\Service\Attribute\Required;
  * Service for managing route performance metrics.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class PerformanceMetricsService
 {
@@ -84,7 +85,7 @@ class PerformanceMetricsService
     private readonly bool $enableLogging;
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param ManagerRegistry $registry       The Doctrine registry
      * @param string          $connectionName The name of the Doctrine connection to use
@@ -279,95 +280,25 @@ class PerformanceMetricsService
                 $routeName,
                 $env
             );
-            // Create new record (accessCount defaults to 1)
+            // Create new RouteData (identity + lastAccessedAt only; metrics live in RouteDataRecord)
             $routeData = new RouteData();
             $routeData->setName($routeName);
             $routeData->setEnv($env);
-            $routeData->setRequestTime($requestTime);
-            $routeData->setTotalQueries($totalQueries);
-            $routeData->setQueryTime($queryTime);
-            $routeData->setParams($params);
-            $routeData->setMemoryUsage($memoryUsage);
             $routeData->setHttpMethod($httpMethod);
-            // accessCount is already initialized to 1 in the entity
-
-            // Track status code if configured
-            if (null !== $statusCode && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
-                $routeData->incrementStatusCode($statusCode);
-            }
+            $routeData->setParams($params);
+            $routeData->setLastAccessedAt(new \DateTimeImmutable());
 
             $this->entityManager->persist($routeData);
             $isNew = true;
         } else {
             LogHelper::logf(
-                '[PerformanceBundle] recordMetricsSync: Existing record found - route=%s, env=%s, currentAccessCount=%s',
+                '[PerformanceBundle] recordMetricsSync: Existing record found - route=%s, env=%s',
                 $this->enableLogging,
                 $routeName,
-                $env,
-                (string) $routeData->getAccessCount()
+                $env
             );
-            
-            // Always increment access count when route is accessed
-            $routeData->incrementAccessCount();
-            // Incrementing access count always updates the record (last_accessed_at changes)
+            $routeData->setLastAccessedAt(new \DateTimeImmutable());
             $wasUpdated = true;
-            
-            LogHelper::logf(
-                '[PerformanceBundle] recordMetricsSync: Access count incremented - newAccessCount=%s',
-                $this->enableLogging,
-                (string) $routeData->getAccessCount()
-            );
-
-            // Track status code if configured
-            if (null !== $statusCode && !empty($trackStatusCodes) && \in_array($statusCode, $trackStatusCodes, true)) {
-                $routeData->incrementStatusCode($statusCode);
-                // Status code increment also updates the record
-            }
-
-            // Update metrics if they are worse (higher time or more queries)
-            $shouldUpdate = $routeData->shouldUpdate($requestTime, $totalQueries);
-            LogHelper::logf(
-                '[PerformanceBundle] recordMetricsSync: shouldUpdate check - result=%s, requestTime=%s (current=%s), totalQueries=%s (current=%s)',
-                $this->enableLogging,
-                $shouldUpdate ? 'true' : 'false',
-                null !== $requestTime ? (string) $requestTime : 'null',
-                null !== $routeData->getRequestTime() ? (string) $routeData->getRequestTime() : 'null',
-                null !== $totalQueries ? (string) $totalQueries : 'null',
-                null !== $routeData->getTotalQueries() ? (string) $routeData->getTotalQueries() : 'null'
-            );
-            
-            if ($shouldUpdate) {
-                // Metrics update also updates the record
-                LogHelper::log('[PerformanceBundle] recordMetricsSync: Updating metrics', $this->enableLogging);
-
-                if (null !== $requestTime && (null === $routeData->getRequestTime() || $requestTime > $routeData->getRequestTime())) {
-                    $routeData->setRequestTime($requestTime);
-                }
-
-                if (null !== $totalQueries && (null === $routeData->getTotalQueries() || $totalQueries > $routeData->getTotalQueries())) {
-                    $routeData->setTotalQueries($totalQueries);
-                }
-
-                if (null !== $queryTime) {
-                    $routeData->setQueryTime($queryTime);
-                }
-
-                if (null !== $params) {
-                    $routeData->setParams($params);
-                }
-
-                // Update memory usage if it's higher (worse)
-                if (null !== $memoryUsage && (null === $routeData->getMemoryUsage() || $memoryUsage > $routeData->getMemoryUsage())) {
-                    $routeData->setMemoryUsage($memoryUsage);
-                }
-
-                // Update HTTP method if provided
-                if (null !== $httpMethod) {
-                    $routeData->setHttpMethod($httpMethod);
-                }
-            } else {
-                LogHelper::log('[PerformanceBundle] recordMetricsSync: Metrics not updated (not worse than existing)', $this->enableLogging);
-            }
         }
 
         try {
@@ -409,14 +340,24 @@ class PerformanceMetricsService
                 $accessRecord->setRouteData($routeData);
                 $accessRecord->setAccessedAt(new \DateTimeImmutable());
                 $accessRecord->setStatusCode($statusCode);
+
+                // responseTime in RouteDataRecord is the per-request duration,
+                // while RouteData::requestTime is an aggregate/representative value.
+                // We store the raw per-request time here for temporal analysis.
                 $accessRecord->setResponseTime($requestTime);
+                $accessRecord->setTotalQueries($totalQueries);
+                $accessRecord->setQueryTime($queryTime);
+                $accessRecord->setMemoryUsage($memoryUsage);
+
                 $this->entityManager->persist($accessRecord);
+
+                $err = error_reporting(0);
                 $this->entityManager->flush();
+                error_reporting($err);
             }
 
-            // Dispatch after event
             if (null !== $this->eventDispatcher) {
-                $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew);
+                $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew, $requestTime, $totalQueries, $memoryUsage);
                 $this->eventDispatcher->dispatch($afterEvent);
             }
 
@@ -491,6 +432,116 @@ class PerformanceMetricsService
     }
 
     /**
+     * Get routes for an environment with aggregates from RouteDataRecord (for dashboard/listings).
+     *
+     * Returns RouteDataWithAggregates[] sorted by request_time descending (worst first).
+     *
+     * @return RouteDataWithAggregates[]
+     */
+    public function getRoutesWithAggregates(string $env): array
+    {
+        $routes = $this->repository->findByEnvironment($env);
+        if (empty($routes)) {
+            return [];
+        }
+        $ids = array_map(fn (RouteData $r) => $r->getId(), array_filter($routes, fn (RouteData $r) => null !== $r->getId()));
+        if (empty($ids)) {
+            return [];
+        }
+        $aggregates = $this->recordRepository->getAggregatesForRouteDataIds($ids);
+        $withAggregates = [];
+        foreach ($routes as $route) {
+            $id = $route->getId();
+            if (null === $id) {
+                continue;
+            }
+            $agg = $aggregates[$id] ?? [
+                'request_time' => null,
+                'total_queries' => null,
+                'query_time' => null,
+                'memory_usage' => null,
+                'access_count' => 0,
+                'status_codes' => [],
+            ];
+            $withAggregates[] = new RouteDataWithAggregates($route, $agg);
+        }
+        usort($withAggregates, function (RouteDataWithAggregates $a, RouteDataWithAggregates $b): int {
+            $at = $a->getRequestTime() ?? 0.0;
+            $bt = $b->getRequestTime() ?? 0.0;
+            return $bt <=> $at;
+        });
+        return $withAggregates;
+    }
+
+    /**
+     * Get routes with aggregates and optional filters/sort (for dashboard, export).
+     *
+     * Metric sort (requestTime, totalQueries, etc.) is applied in PHP from aggregates.
+     *
+     * @param array<string, mixed> $filters Filters (route_names, route_name_pattern, date_from, date_to)
+     *
+     * @return RouteDataWithAggregates[]
+     */
+    public function getRoutesWithAggregatesFiltered(
+        string $env,
+        array $filters = [],
+        string $sortBy = 'requestTime',
+        string $order = 'DESC',
+        ?int $limit = null,
+    ): array {
+        $entitySortFields = ['name', 'createdAt', 'lastAccessedAt'];
+        $sortByEntity = \in_array($sortBy, $entitySortFields, true) ? $sortBy : 'lastAccessedAt';
+        $routes = $this->repository->findWithFilters($env, $filters, $sortByEntity, $order, $limit);
+        if (empty($routes)) {
+            return [];
+        }
+        $ids = array_map(fn (RouteData $r) => $r->getId(), array_filter($routes, fn (RouteData $r) => null !== $r->getId()));
+        if (empty($ids)) {
+            return [];
+        }
+        $aggregates = $this->recordRepository->getAggregatesForRouteDataIds($ids);
+        $withAggregates = [];
+        foreach ($routes as $route) {
+            $id = $route->getId();
+            if (null === $id) {
+                continue;
+            }
+            $agg = $aggregates[$id] ?? [
+                'request_time' => null,
+                'total_queries' => null,
+                'query_time' => null,
+                'memory_usage' => null,
+                'access_count' => 0,
+                'status_codes' => [],
+            ];
+            $withAggregates[] = new RouteDataWithAggregates($route, $agg);
+        }
+        if (!\in_array($sortBy, $entitySortFields, true)) {
+            $desc = 'DESC' === strtoupper($order);
+            usort($withAggregates, function (RouteDataWithAggregates $a, RouteDataWithAggregates $b) use ($sortBy, $desc): int {
+                $av = match ($sortBy) {
+                    'requestTime' => $a->getRequestTime() ?? 0.0,
+                    'totalQueries' => $a->getTotalQueries() ?? 0,
+                    'queryTime' => $a->getQueryTime() ?? 0.0,
+                    'accessCount' => $a->getAccessCount(),
+                    'memoryUsage' => $a->getMemoryUsage() ?? 0,
+                    default => 0,
+                };
+                $bv = match ($sortBy) {
+                    'requestTime' => $b->getRequestTime() ?? 0.0,
+                    'totalQueries' => $b->getTotalQueries() ?? 0,
+                    'queryTime' => $b->getQueryTime() ?? 0.0,
+                    'accessCount' => $b->getAccessCount(),
+                    'memoryUsage' => $b->getMemoryUsage() ?? 0,
+                    default => 0,
+                };
+                return $desc ? (int) ($bv <=> $av) : (int) ($av <=> $bv);
+            });
+        }
+        return $withAggregates;
+    }
+
+    /**
      * Get worst performing routes for an environment.
      *
      * Returns routes ordered by request time descending (worst first).
@@ -523,11 +574,9 @@ class PerformanceMetricsService
      */
     private function resetEntityManager(): void
     {
-        // Check if EntityManager is closed or not open
         if (!$this->entityManager->isOpen()) {
-            // Get a new EntityManager from the registry
+            $this->registry->resetManager($this->connectionName);
             $this->entityManager = $this->registry->getManager($this->connectionName);
-            // Re-initialize repositories
             $this->repository = $this->entityManager->getRepository(RouteData::class);
             $this->recordRepository = $this->entityManager->getRepository(RouteDataRecord::class);
 

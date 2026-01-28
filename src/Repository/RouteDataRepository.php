@@ -16,12 +16,12 @@ use Nowo\PerformanceBundle\Entity\RouteData;
  * @extends ServiceEntityRepository<RouteData>
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class RouteDataRepository extends ServiceEntityRepository
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param ManagerRegistry $registry The Doctrine registry
      */
@@ -52,7 +52,7 @@ class RouteDataRepository extends ServiceEntityRepository
     /**
      * Find all routes for a given environment.
      *
-     * Results are ordered by request time descending (worst performing first).
+     * Ordered by last accessed descending. For metrics use getRoutesWithAggregates (from records).
      *
      * @param string $env The environment (dev, test, prod)
      *
@@ -63,7 +63,7 @@ class RouteDataRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('r')
             ->where('r.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.requestTime', 'DESC')
+            ->orderBy('r.lastAccessedAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
@@ -71,19 +71,19 @@ class RouteDataRepository extends ServiceEntityRepository
     /**
      * Find routes with worst performance for a given environment.
      *
-     * Returns the routes with the highest request times, ordered descending.
+     * Ordered by last accessed; for performance ranking use aggregates (RouteDataRecord).
      *
      * @param string $env   The environment (dev, test, prod)
      * @param int    $limit Maximum number of results to return (default: 10)
      *
-     * @return RouteData[] Array of route data entities ordered by worst performance
+     * @return RouteData[] Array of route data entities
      */
     public function findWorstPerforming(string $env, int $limit = 10): array
     {
         return $this->createQueryBuilder('r')
             ->where('r.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.requestTime', 'DESC')
+            ->orderBy('r.lastAccessedAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -150,36 +150,7 @@ class RouteDataRepository extends ServiceEntityRepository
                 ->setParameter('route_pattern', '%'.$filters['route_name_pattern'].'%');
         }
 
-        // Filter by request time range
-        if (isset($filters['min_request_time']) && is_numeric($filters['min_request_time'])) {
-            $qb->andWhere('r.requestTime >= :min_request_time')
-                ->setParameter('min_request_time', (float) $filters['min_request_time']);
-        }
-        if (isset($filters['max_request_time']) && is_numeric($filters['max_request_time'])) {
-            $qb->andWhere('r.requestTime <= :max_request_time')
-                ->setParameter('max_request_time', (float) $filters['max_request_time']);
-        }
-
-        // Filter by query count range
-        if (isset($filters['min_query_count']) && is_numeric($filters['min_query_count'])) {
-            $qb->andWhere('r.totalQueries >= :min_query_count')
-                ->setParameter('min_query_count', (int) $filters['min_query_count']);
-        }
-        if (isset($filters['max_query_count']) && is_numeric($filters['max_query_count'])) {
-            $qb->andWhere('r.totalQueries <= :max_query_count')
-                ->setParameter('max_query_count', (int) $filters['max_query_count']);
-        }
-
-        // Filter by query time range
-        if (isset($filters['min_query_time']) && is_numeric($filters['min_query_time'])) {
-            $qb->andWhere('r.queryTime >= :min_query_time')
-                ->setParameter('min_query_time', (float) $filters['min_query_time']);
-        }
-        if (isset($filters['max_query_time']) && is_numeric($filters['max_query_time'])) {
-            $qb->andWhere('r.queryTime <= :max_query_time')
-                ->setParameter('max_query_time', (float) $filters['max_query_time']);
-        }
-
+        // Metric filters (request_time, total_queries, query_time) are applied via aggregates in PHP; only entity fields here
         // Filter by date range
         if (isset($filters['date_from']) && $filters['date_from'] instanceof \DateTimeImmutable) {
             $qb->andWhere('r.createdAt >= :date_from')
@@ -190,9 +161,9 @@ class RouteDataRepository extends ServiceEntityRepository
                 ->setParameter('date_to', $filters['date_to']);
         }
 
-        // Validate and set sort field
-        $allowedSortFields = ['name', 'requestTime', 'queryTime', 'totalQueries', 'accessCount', 'createdAt', 'updatedAt'];
-        $sortField = \in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'requestTime';
+        // Sort only by entity fields (metrics come from aggregates; use getRoutesWithAggregates for metric sort)
+        $allowedSortFields = ['name', 'createdAt', 'lastAccessedAt'];
+        $sortField = \in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'lastAccessedAt';
         $sortOrder = 'ASC' === strtoupper($order) ? 'ASC' : 'DESC';
 
         $qb->orderBy('r.'.$sortField, $sortOrder);
@@ -249,79 +220,26 @@ class RouteDataRepository extends ServiceEntityRepository
     /**
      * Get the ranking position of a route by request time.
      *
-     * Returns the position (1-based) of the route when ordered by request time descending.
-     * Lower position = worse performance (slower).
+     * Metrics are now in RouteDataRecord; ranking must be computed from aggregates.
+     * Use PerformanceMetricsService or RouteDataRecordRepository for ranking by request time.
      *
-     * @param string|RouteData $routeNameOrData The route name or RouteData entity
-     * @param string           $env             The environment (only needed if first param is route name)
-     *
-     * @return int|null The ranking position (1-based) or null if route not found
+     * @return int|null Null (ranking from records not implemented here)
      */
     public function getRankingByRequestTime(string|RouteData $routeNameOrData, string $env = ''): ?int
     {
-        $routeData = $routeNameOrData instanceof RouteData
-            ? $routeNameOrData
-            : $this->findByRouteAndEnv($routeNameOrData, $env);
-
-        if (null === $routeData || null === $routeData->getRequestTime()) {
-            return null;
-        }
-
-        $requestTime = $routeData->getRequestTime();
-        $env = $routeData->getEnv() ?? $env;
-
-        // Count how many routes have higher (worse) request time
-        $count = $this->createQueryBuilder('r')
-            ->select('COUNT(r.id)')
-            ->where('r.env = :env')
-            ->andWhere('r.requestTime IS NOT NULL')
-            ->andWhere('r.requestTime > :requestTime')
-            ->setParameter('env', $env)
-            ->setParameter('requestTime', $requestTime)
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        // Position is count + 1 (1-based)
-        return (int) $count + 1;
+        return null;
     }
 
     /**
      * Get the ranking position of a route by query count.
      *
-     * Returns the position (1-based) of the route when ordered by total queries descending.
-     * Lower position = worse performance (more queries).
+     * Metrics are now in RouteDataRecord; ranking must be computed from aggregates.
      *
-     * @param string|RouteData $routeNameOrData The route name or RouteData entity
-     * @param string           $env             The environment (only needed if first param is route name)
-     *
-     * @return int|null The ranking position (1-based) or null if route not found
+     * @return int|null Null (ranking from records not implemented here)
      */
     public function getRankingByQueryCount(string|RouteData $routeNameOrData, string $env = ''): ?int
     {
-        $routeData = $routeNameOrData instanceof RouteData
-            ? $routeNameOrData
-            : $this->findByRouteAndEnv($routeNameOrData, $env);
-
-        if (null === $routeData || null === $routeData->getTotalQueries()) {
-            return null;
-        }
-
-        $totalQueries = $routeData->getTotalQueries();
-        $env = $routeData->getEnv() ?? $env;
-
-        // Count how many routes have higher (worse) query count
-        $count = $this->createQueryBuilder('r')
-            ->select('COUNT(r.id)')
-            ->where('r.env = :env')
-            ->andWhere('r.totalQueries IS NOT NULL')
-            ->andWhere('r.totalQueries > :totalQueries')
-            ->setParameter('env', $env)
-            ->setParameter('totalQueries', $totalQueries)
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        // Position is count + 1 (1-based)
-        return (int) $count + 1;
+        return null;
     }
 
     /**

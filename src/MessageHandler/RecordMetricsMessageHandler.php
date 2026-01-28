@@ -19,13 +19,13 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * and saves the metrics to the database.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsMessageHandler]
 final class RecordMetricsMessageHandler
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param PerformanceMetricsService $metricsService The metrics service
      */

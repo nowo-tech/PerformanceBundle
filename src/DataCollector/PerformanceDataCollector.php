@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DataCollector;
 
+use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
@@ -17,7 +18,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * Collects performance metrics and displays them in the Web Profiler toolbar.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class PerformanceDataCollector extends DataCollector
 {
@@ -55,6 +56,11 @@ class PerformanceDataCollector extends DataCollector
      * Route data repository (optional, for ranking information).
      */
     private ?RouteDataRepository $repository = null;
+
+    /**
+     * Route data record repository (optional, for access count from records).
+     */
+    private ?RouteDataRecordRepository $recordRepository = null;
 
     /**
      * Kernel interface (optional, for environment detection).
@@ -97,23 +103,26 @@ class PerformanceDataCollector extends DataCollector
     private ?string $disabledReason = null;
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
-     * @param RouteDataRepository|null $repository         The route data repository (optional)
-     * @param KernelInterface|null     $kernel             The kernel interface (optional)
-     * @param TableStatusChecker|null  $tableStatusChecker The table status checker (optional)
-     * @param DependencyChecker|null   $dependencyChecker  The dependency checker (optional)
+     * @param RouteDataRepository|null         $repository         The route data repository (optional)
+     * @param KernelInterface|null            $kernel             The kernel interface (optional)
+     * @param TableStatusChecker|null         $tableStatusChecker The table status checker (optional)
+     * @param DependencyChecker|null          $dependencyChecker  The dependency checker (optional)
+     * @param RouteDataRecordRepository|null  $recordRepository   The route data record repository (optional)
      */
     public function __construct(
         ?RouteDataRepository $repository = null,
         ?KernelInterface $kernel = null,
         ?TableStatusChecker $tableStatusChecker = null,
         ?DependencyChecker $dependencyChecker = null,
+        ?RouteDataRecordRepository $recordRepository = null,
     ) {
         $this->repository = $repository;
         $this->kernel = $kernel;
         $this->tableStatusChecker = $tableStatusChecker;
         $this->dependencyChecker = $dependencyChecker;
+        $this->recordRepository = $recordRepository;
     }
 
     /**
@@ -313,7 +322,9 @@ class PerformanceDataCollector extends DataCollector
             try {
                 $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
                 if (null !== $routeData) {
-                    $accessCount = $routeData->getAccessCount();
+                    $accessCount = null !== $this->recordRepository
+                        ? $this->recordRepository->countByRouteData($routeData)
+                        : null;
 
                     // Only execute ranking queries if enabled
                     if ($enableRankingQueries) {
@@ -372,13 +383,14 @@ class PerformanceDataCollector extends DataCollector
         $this->queryTime = null;
         $this->routeName = null;
         $this->async = false;
+        $this->enabled = false;
         $this->recordWasNew = null;
         $this->recordWasUpdated = null;
         $this->configuredEnvironments = null;
         $this->currentEnvironment = null;
         $this->disabledReason = null;
-        // Note: We don't reset $this->enabled here because it's set per-request in onKernelRequest
-        // Resetting it would cause issues if reset() is called before onKernelRequest
+        // enabled is set per-request in onKernelRequest; reset to false so toolbar/profiler
+        // sub-requests don't show stale "enabled" from the previous (page) request
     }
 
     /**
@@ -612,6 +624,16 @@ class PerformanceDataCollector extends DataCollector
     }
 
     /**
+     * Alias for wasRecordNew() for Twig property access (collector.wasRecordNew).
+     *
+     * @return bool|null True if new record was created, false otherwise, null if unknown
+     */
+    public function getWasRecordNew(): ?bool
+    {
+        return $this->wasRecordNew();
+    }
+
+    /**
      * Check if an existing record was updated.
      *
      * @return bool|null True if existing record was updated, false if new record was created, null if unknown
@@ -627,6 +649,16 @@ class PerformanceDataCollector extends DataCollector
 
         // Fallback to data array (set during collect())
         return $this->data['record_was_updated'] ?? null;
+    }
+
+    /**
+     * Alias for wasRecordUpdated() for Twig property access (collector.wasRecordUpdated).
+     *
+     * @return bool|null True if existing record was updated, false otherwise, null if unknown
+     */
+    public function getWasRecordUpdated(): ?bool
+    {
+        return $this->wasRecordUpdated();
     }
 
     /**
@@ -657,6 +689,26 @@ class PerformanceDataCollector extends DataCollector
     public function getDisabledReason(): ?string
     {
         return $this->data['disabled_reason'] ?? null;
+    }
+
+    /**
+     * Get list of missing optional dependencies.
+     *
+     * @return array<int, array{package: string, feature: string, message: string, install_command: string}>
+     */
+    public function getMissingDependencies(): array
+    {
+        return $this->data['missing_dependencies'] ?? [];
+    }
+
+    /**
+     * Get status of optional dependencies (e.g. messenger, form).
+     *
+     * @return array<string, array{available: bool, package: string}>
+     */
+    public function getDependencyStatus(): array
+    {
+        return $this->data['dependency_status'] ?? [];
     }
 
     /**

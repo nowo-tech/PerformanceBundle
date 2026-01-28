@@ -1,19 +1,19 @@
-# Sistema de Notificaciones
+# Notification System
 
-El bundle incluye un sistema completo de notificaciones para alertas de performance que soporta múltiples canales.
+The bundle includes a full notification system for performance alerts, supporting multiple channels.
 
-## Canales Disponibles
+## Available Channels
 
 ### 📧 Email
 
-Envía alertas por correo electrónico usando Symfony Mailer.
+Sends alerts by email using Symfony Mailer.
 
-**Requisitos:**
+**Requirements:**
 ```bash
 composer require symfony/mailer
 ```
 
-**Configuración:**
+**Configuration:**
 ```yaml
 nowo_performance:
     notifications:
@@ -28,14 +28,14 @@ nowo_performance:
 
 ### 💬 Slack
 
-Envía alertas a Slack usando webhooks.
+Sends alerts to Slack via webhooks.
 
-**Requisitos:**
+**Requirements:**
 ```bash
 composer require symfony/http-client
 ```
 
-**Configuración:**
+**Configuration:**
 ```yaml
 nowo_performance:
     notifications:
@@ -45,23 +45,23 @@ nowo_performance:
             webhook_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
 ```
 
-**Obtener Webhook URL:**
-1. Ve a https://api.slack.com/apps
-2. Crea una nueva app o selecciona una existente
-3. Ve a "Incoming Webhooks"
-4. Activa "Incoming Webhooks"
-5. Crea un nuevo webhook y copia la URL
+**Getting the Webhook URL:**
+1. Go to https://api.slack.com/apps
+2. Create a new app or select an existing one
+3. Go to "Incoming Webhooks"
+4. Enable "Incoming Webhooks"
+5. Create a new webhook and copy the URL
 
 ### 👥 Microsoft Teams
 
-Envía alertas a Microsoft Teams usando webhooks.
+Sends alerts to Microsoft Teams via webhooks.
 
-**Requisitos:**
+**Requirements:**
 ```bash
 composer require symfony/http-client
 ```
 
-**Configuración:**
+**Configuration:**
 ```yaml
 nowo_performance:
     notifications:
@@ -71,22 +71,22 @@ nowo_performance:
             webhook_url: 'https://outlook.office.com/webhook/YOUR/WEBHOOK/URL'
 ```
 
-**Obtener Webhook URL:**
-1. En Teams, ve al canal donde quieres recibir notificaciones
-2. Click en "..." → "Conectores"
-3. Busca "Webhook entrante"
-4. Configura y copia la URL
+**Getting the Webhook URL:**
+1. In Teams, go to the channel where you want to receive notifications
+2. Click "..." → "Connectors"
+3. Search for "Incoming Webhook"
+4. Configure and copy the URL
 
-### 🔗 Webhooks Genéricos
+### 🔗 Generic Webhooks
 
-Envía alertas a cualquier webhook personalizado.
+Sends alerts to any custom webhook.
 
-**Requisitos:**
+**Requirements:**
 ```bash
 composer require symfony/http-client
 ```
 
-**Configuración:**
+**Configuration:**
 ```yaml
 nowo_performance:
     notifications:
@@ -94,20 +94,20 @@ nowo_performance:
         webhook:
             enabled: true
             url: 'https://your-custom-service.com/webhook'
-            format: 'json'  # json, slack, o teams
+            format: 'json'  # json, slack, or teams
             headers:
                 'X-API-Key': 'your-api-key'
                 'Authorization': 'Bearer your-token'
 ```
 
-## Configuración Completa
+## Full Configuration
 
 ```yaml
 nowo_performance:
-    # ... otras configuraciones ...
+    # ... other configuration ...
     
     notifications:
-        enabled: true  # Habilita/deshabilita todas las notificaciones
+        enabled: true  # Enable/disable all notifications
         
         email:
             enabled: true
@@ -130,21 +130,21 @@ nowo_performance:
             headers: []
 ```
 
-## Cómo Funciona
+## How It Works
 
-Las notificaciones se envían automáticamente cuando:
+Notifications are sent automatically when:
 
-1. **Request Time** excede los thresholds configurados
-2. **Query Count** excede los thresholds configurados
-3. **Memory Usage** excede los thresholds configurados
+1. **Request Time** exceeds the configured thresholds
+2. **Query Count** exceeds the configured thresholds
+3. **Memory Usage** exceeds the configured thresholds
 
-Los thresholds se configuran en:
+Thresholds are configured in:
 ```yaml
 nowo_performance:
     thresholds:
         request_time:
-            warning: 0.5   # segundos
-            critical: 1.0  # segundos
+            warning: 0.5   # seconds
+            critical: 1.0  # seconds
         query_count:
             warning: 20
             critical: 50
@@ -153,9 +153,9 @@ nowo_performance:
             critical: 50.0 # MB
 ```
 
-## Crear Canales Personalizados
+## Creating Custom Channels
 
-Puedes crear tus propios canales de notificación implementando la interfaz `NotificationChannelInterface`:
+You can create your own notification channels by implementing the `NotificationChannelInterface`:
 
 ```php
 <?php
@@ -168,7 +168,7 @@ class CustomNotificationChannel implements NotificationChannelInterface
 {
     public function send(PerformanceAlert $alert, RouteData $routeData): bool
     {
-        // Tu lógica de envío aquí
+        // Your sending logic here
         return true;
     }
 
@@ -184,7 +184,7 @@ class CustomNotificationChannel implements NotificationChannelInterface
 }
 ```
 
-Registra tu canal en `services.yaml`:
+Register your channel in `services.yaml`:
 
 ```yaml
 services:
@@ -193,21 +193,21 @@ services:
             - { name: 'nowo_performance.notification_channel', alias: 'custom' }
 ```
 
-## Personalización de Templates de Email
+## Email Template Customization
 
-Los emails se renderizan usando templates Twig que puedes personalizar.
+Emails are rendered using Twig templates that you can customize.
 
-### Templates por Defecto
+### Default Templates
 
-El bundle incluye dos templates:
-- `@NowoPerformanceBundle/Notification/email_alert.html.twig` - Versión HTML
-- `@NowoPerformanceBundle/Notification/email_alert.txt.twig` - Versión texto plano
+The bundle includes two templates:
+- `@NowoPerformanceBundle/Notification/email_alert.html.twig` — HTML version
+- `@NowoPerformanceBundle/Notification/email_alert.txt.twig` — Plain text version
 
-### Personalizar Templates
+### Customizing Templates
 
-Puedes sobrescribir los templates creando tus propias versiones:
+You can override the templates by creating your own versions:
 
-**1. Crea el template en tu proyecto:**
+**1. Create the template in your project:**
 
 ```
 templates/
@@ -218,18 +218,18 @@ templates/
         email_alert.txt.twig
 ```
 
-**2. Variables disponibles en los templates:**
+**2. Variables available in the templates:**
 
-- `alert` - Objeto `PerformanceAlert` con:
-  - `alert.message` - Mensaje del alerta
-  - `alert.type` - Tipo de alerta (request_time, query_count, etc.)
-  - `alert.severity` - Severidad (warning, critical)
-  - `alert.context` - Array con contexto adicional
-- `routeData` - Entidad `RouteData` con todas las propiedades
-- `severityColor` - Color HTML para la severidad (#dc3545 para critical, #ffc107 para warning)
-- `severityLabel` - Etiqueta de severidad (Critical, Warning)
+- `alert` — `PerformanceAlert` object with:
+  - `alert.message` — Alert message
+  - `alert.type` — Alert type (request_time, query_count, etc.)
+  - `alert.severity` — Severity (warning, critical)
+  - `alert.context` — Array with additional context
+- `routeData` — `RouteData` entity with all properties
+- `severityColor` — HTML color for severity (#dc3545 for critical, #ffc107 for warning)
+- `severityLabel` — Severity label (Critical, Warning)
 
-**3. Ejemplo de template personalizado:**
+**3. Example custom template:**
 
 ```twig
 {# templates/bundles/NowoPerformanceBundle/Notification/email_alert.html.twig #}
@@ -238,7 +238,7 @@ templates/
 <head>
     <meta charset="UTF-8">
     <style>
-        /* Tus estilos personalizados */
+        /* Your custom styles */
     </style>
 </head>
 <body>
@@ -247,41 +247,41 @@ templates/
     
     <h2>Route: {{ routeData.name }}</h2>
     <p>Request Time: {{ routeData.requestTime|number_format(4) }}s</p>
-    {# ... más contenido personalizado ... #}
+    {# ... more custom content ... #}
 </body>
 </html>
 ```
 
-**Nota:** Si Twig no está disponible, el bundle usa un fallback simple con HTML básico.
+**Note:** If Twig is not available, the bundle uses a simple fallback with basic HTML.
 
-## Formato de Alertas
+## Alert Formats
 
 ### Email
 
-Los emails incluyen:
-- Título con severidad (Warning/Critical)
-- Información completa de la ruta
-- Tabla con todas las métricas
-- Contexto del alerta
-- Templates personalizables usando Twig
+Emails include:
+- Title with severity (Warning/Critical)
+- Full route information
+- Table with all metrics
+- Alert context
+- Customizable templates using Twig
 
 ### Slack
 
-Formato de mensaje Slack con:
-- Color según severidad (amarillo para warning, rojo para critical)
-- Campos con información de la ruta
+Slack message format with:
+- Color by severity (yellow for warning, red for critical)
+- Fields with route information
 - Timestamp
 
 ### Teams
 
-Formato MessageCard de Teams con:
-- Color según severidad
-- Sección con facts (hechos) sobre la ruta
-- Formato compatible con Teams
+Teams MessageCard format with:
+- Color by severity
+- Section with facts about the route
+- Teams-compatible format
 
 ### Webhook JSON
 
-Formato genérico JSON:
+Generic JSON format:
 ```json
 {
     "alert": {
@@ -302,15 +302,15 @@ Formato genérico JSON:
         "query_time": 0.5,
         "memory_usage": 1048576,
         "access_count": 100,
-        "last_accessed_at": "2025-01-26T10:30:00+00:00"
+        "last_accessed_at": "2026-01-26T10:30:00+00:00"
     },
-    "timestamp": "2025-01-26T10:30:00+00:00"
+    "timestamp": "2026-01-26T10:30:00+00:00"
 }
 ```
 
-## Deshabilitar Notificaciones
+## Disabling Notifications
 
-Para deshabilitar todas las notificaciones:
+To disable all notifications:
 
 ```yaml
 nowo_performance:
@@ -318,7 +318,7 @@ nowo_performance:
         enabled: false
 ```
 
-O deshabilita canales individuales:
+Or disable individual channels:
 
 ```yaml
 nowo_performance:
@@ -330,15 +330,15 @@ nowo_performance:
             enabled: true
 ```
 
-## Configuración Dinámica desde Base de Datos
+## Dynamic Configuration from Database
 
-Si necesitas almacenar las credenciales de notificaciones en la base de datos en lugar del archivo YAML, puedes usar un servicio para configurar los canales dinámicamente.
+If you need to store notification credentials in the database instead of the YAML file, you can use a service to configure channels dynamically.
 
-### Opción 1: Usando Compiler Pass (Recomendado para configuración estática)
+### Option 1: Using Compiler Pass (Recommended for static configuration)
 
-Este enfoque registra los canales durante la compilación del contenedor. Útil cuando la configuración no cambia frecuentemente.
+This approach registers channels during container compilation. Useful when configuration does not change frequently.
 
-**1. Crea el servicio de configuración dinámica:**
+**1. Create the dynamic configuration service:**
 
 ```php
 <?php
@@ -363,7 +363,7 @@ class DynamicNotificationConfiguration
 
     private function getNotificationConfigFromDatabase(): array
     {
-        // Obtener configuración desde tu entidad/tabla
+        // Get configuration from your entity/table
         $settings = $this->entityManager
             ->getRepository('App\Entity\NotificationSettings')
             ->findOneBy(['key' => 'performance_notifications']);
@@ -412,7 +412,7 @@ class DynamicNotificationConfiguration
             );
         }
 
-        // Webhook genérico
+        // Generic webhook
         if ($config['webhook']['enabled'] ?? false && !empty($config['webhook']['url'] ?? '')) {
             $channels[] = new WebhookNotificationChannel(
                 $this->httpClient,
@@ -434,7 +434,7 @@ class DynamicNotificationConfiguration
 }
 ```
 
-**2. Crea el Compiler Pass:**
+**2. Create the Compiler Pass:**
 
 ```php
 <?php
@@ -469,8 +469,8 @@ class NotificationCompilerPass implements CompilerPassInterface
                 $serviceId = sprintf('nowo_performance.notification.channel.dynamic.%s', $channel->getName());
                 $definition = new Definition(get_class($channel));
                 
-                // Configurar argumentos según el tipo de canal...
-                // (ver ejemplo completo en docs/examples/NotificationCompilerPass.php)
+                // Configure arguments according to channel type...
+                // (see full example in docs/examples/NotificationCompilerPass.php)
                 
                 $definition->setPublic(true);
                 $definition->addTag('nowo_performance.notification_channel', [
@@ -480,18 +480,18 @@ class NotificationCompilerPass implements CompilerPassInterface
                 $container->setDefinition($serviceId, $definition);
             }
         } catch (\Exception $e) {
-            // Usar configuración YAML por defecto si falla
+            // Fall back to default YAML configuration on failure
             error_log('Error loading notification config from database: ' . $e->getMessage());
         }
     }
 }
 ```
 
-**3. Registra el Compiler Pass en tu Bundle:**
+**3. Register the Compiler Pass in your Bundle:**
 
 ```php
 <?php
-// src/Kernel.php o src/YourBundle.php
+// src/Kernel.php or src/YourBundle.php
 
 use App\DependencyInjection\Compiler\NotificationCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -505,11 +505,11 @@ class Kernel extends BaseKernel
 }
 ```
 
-### Opción 2: Usando Factory Service (Recomendado para configuración dinámica)
+### Option 2: Using Factory Service (Recommended for dynamic configuration)
 
-Este enfoque crea los canales bajo demanda. Útil cuando las credenciales cambian frecuentemente.
+This approach creates channels on demand. Useful when credentials change frequently.
 
-**1. Crea el Factory Service:**
+**1. Create the Factory Service:**
 
 ```php
 <?php
@@ -536,7 +536,7 @@ class NotificationFactoryService
 }
 ```
 
-**2. Registra el Factory Service:**
+**2. Register the Factory Service:**
 
 ```yaml
 # config/services.yaml
@@ -550,11 +550,11 @@ services:
         public: true
 ```
 
-**3. Usa el Factory Service en tu código:**
+**3. Use the Factory Service in your code:**
 
 ```php
 <?php
-// En un EventListener o Service
+// In an EventListener or Service
 
 use App\Service\NotificationFactoryService;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
@@ -568,10 +568,10 @@ class PerformanceAlertListener
 
     public function onAfterMetricsRecorded(AfterMetricsRecordedEvent $event): void
     {
-        // Crear NotificationService con configuración actualizada de BD
+        // Create NotificationService with up-to-date config from DB
         $notificationService = $this->notificationFactory->createNotificationService();
         
-        // Usar el servicio normalmente
+        // Use the service as usual
         if ($event->getRouteData()->getRequestTime() > 1.0) {
             $alert = new PerformanceAlert(/* ... */);
             $notificationService->sendAlert($alert, $event->getRouteData());
@@ -580,9 +580,9 @@ class PerformanceAlertListener
 }
 ```
 
-### Estructura de Base de Datos Recomendada
+### Recommended Database Structure
 
-Ejemplo de entidad para almacenar la configuración:
+Example entity for storing configuration:
 
 ```php
 <?php
@@ -607,11 +607,11 @@ class NotificationSettings
     #[ORM\Column(type: 'text')]
     private string $value;
 
-    // Getters y setters...
+    // Getters and setters...
 }
 ```
 
-**Ejemplo de valor JSON almacenado:**
+**Example stored JSON value:**
 
 ```json
 {
@@ -640,38 +640,38 @@ class NotificationSettings
 }
 ```
 
-### Ejemplos Completos
+### Full Examples
 
-Ver ejemplos completos y bien documentados en:
-- `docs/examples/DynamicNotificationConfiguration.php` - Servicio de configuración
-- `docs/examples/NotificationCompilerPass.php` - Compiler Pass completo
-- `docs/examples/NotificationFactoryService.php` - Factory Service completo
+See full, documented examples in:
+- `docs/examples/DynamicNotificationConfiguration.php` — Configuration service
+- `docs/examples/NotificationCompilerPass.php` — Full Compiler Pass
+- `docs/examples/NotificationFactoryService.php` — Full Factory Service
 
 ## Troubleshooting
 
-### Las notificaciones no se envían
+### Notifications are not sent
 
-1. Verifica que `notifications.enabled: true`
-2. Verifica que el canal específico esté habilitado
-3. Verifica que las dependencias estén instaladas (mailer/http-client)
-4. Revisa los logs para errores
+1. Check that `notifications.enabled: true`
+2. Check that the specific channel is enabled
+3. Check that dependencies are installed (mailer/http-client)
+4. Check logs for errors
 
-### Email no funciona
+### Email does not work
 
-- Verifica la configuración de Symfony Mailer
-- Verifica que `from` y `to` estén configurados
-- Revisa la configuración SMTP
+- Check Symfony Mailer configuration
+- Check that `from` and `to` are set
+- Review SMTP configuration
 
-### Webhooks no funcionan
+### Webhooks do not work
 
-- Verifica que la URL del webhook sea correcta
-- Verifica que `symfony/http-client` esté instalado
-- Revisa los logs para errores HTTP
-- Prueba la URL del webhook manualmente
+- Check that the webhook URL is correct
+- Check that `symfony/http-client` is installed
+- Check logs for HTTP errors
+- Test the webhook URL manually
 
-### Configuración dinámica no funciona
+### Dynamic configuration does not work
 
-- **Compiler Pass**: Verifica que la BD esté disponible durante `cache:clear`
-- **Factory Service**: Verifica que el servicio esté correctamente inyectado
-- Revisa los logs para errores de conexión a BD
-- Verifica que la estructura JSON en BD sea correcta
+- **Compiler Pass:** Ensure the DB is available during `cache:clear`
+- **Factory Service:** Ensure the service is correctly injected
+- Check logs for DB connection errors
+- Verify the JSON structure in the DB is correct

@@ -20,7 +20,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * to track all database queries automatically.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsEventListener(event: KernelEvents::REQUEST, priority: 4096)]
 class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
@@ -53,7 +53,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
     private array $trackedConnections = [];
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param ManagerRegistry $registry       The Doctrine registry
      * @param bool            $enabled        Whether the bundle is enabled

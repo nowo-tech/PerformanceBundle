@@ -10,7 +10,7 @@ declare(strict_types=1);
  * without Messenger as an optional dependency.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 
 // Only define the polyfill if Messenger is not available

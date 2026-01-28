@@ -85,6 +85,51 @@ final class RouteDataRecordTest extends TestCase
         $this->assertNull($this->record->getResponseTime());
     }
 
+    public function testTotalQueriesIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getTotalQueries());
+    }
+
+    public function testSetAndGetTotalQueries(): void
+    {
+        $this->record->setTotalQueries(10);
+        $this->assertSame(10, $this->record->getTotalQueries());
+
+        $this->record->setTotalQueries(0);
+        $this->assertSame(0, $this->record->getTotalQueries());
+
+        $this->record->setTotalQueries(null);
+        $this->assertNull($this->record->getTotalQueries());
+    }
+
+    public function testQueryTimeIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getQueryTime());
+    }
+
+    public function testSetAndGetQueryTime(): void
+    {
+        $this->record->setQueryTime(0.2);
+        $this->assertSame(0.2, $this->record->getQueryTime());
+
+        $this->record->setQueryTime(null);
+        $this->assertNull($this->record->getQueryTime());
+    }
+
+    public function testMemoryUsageIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getMemoryUsage());
+    }
+
+    public function testSetAndGetMemoryUsage(): void
+    {
+        $this->record->setMemoryUsage(1024);
+        $this->assertSame(1024, $this->record->getMemoryUsage());
+
+        $this->record->setMemoryUsage(null);
+        $this->assertNull($this->record->getMemoryUsage());
+    }
+
     public function testFluentInterface(): void
     {
         $routeData = new RouteData();
@@ -94,7 +139,10 @@ final class RouteDataRecordTest extends TestCase
             ->setRouteData($routeData)
             ->setAccessedAt($date)
             ->setStatusCode(200)
-            ->setResponseTime(0.5);
+            ->setResponseTime(0.5)
+            ->setTotalQueries(10)
+            ->setQueryTime(0.2)
+            ->setMemoryUsage(2048);
 
         $this->assertSame($this->record, $result);
     }

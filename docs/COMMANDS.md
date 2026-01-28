@@ -78,7 +78,7 @@ Route metrics saved successfully!
 | Request Time   | 0.5000 s |
 | Total Queries  | 10    |
 | Query Time     | 0.2000 s |
-| Updated At     | 2025-01-23 10:30:00 |
+| Updated At     | 2026-01-23 10:30:00 |
 +----------------+-------+
 ```
 
@@ -102,6 +102,7 @@ php bin/console nowo:performance:create-table [options]
 
 - `--force, -f` - Force table creation even if it already exists (WARNING: This will delete all data)
 - `--update, -u` - Add missing columns to existing table without losing data (safe, preserves data)
+- `--drop-obsolete` - Drop columns that exist in DB but not in entity (use with `--update`). Never drops the `id` column.
 - `--connection` - The Doctrine connection name to use (default: `default`)
 
 ### Description
@@ -124,6 +125,9 @@ php bin/console nowo:performance:create-table --force
 
 # Update existing table (add missing columns, fix AUTO_INCREMENT)
 php bin/console nowo:performance:create-table --update
+
+# Sync schema and drop columns no longer in entity (after removing fields from RouteData)
+php bin/console nowo:performance:create-table --update --drop-obsolete
 
 # Use a different connection
 php bin/console nowo:performance:create-table --connection=performance
@@ -149,6 +153,11 @@ The `--update` option:
 - Updates column definitions if they differ (nullable, type, defaults)
 - Adds missing indexes
 - Preserves all existing data
+
+With `--drop-obsolete` (use together with `--update`):
+- Drops columns that exist in the database but are no longer in the entity mapping
+- The primary key column `id` is never dropped
+- Use when you have removed or renamed fields in the entity and want the table to match
 
 ### Output
 
@@ -177,6 +186,109 @@ php bin/console nowo:performance:create-table --update
 ```
 
 The command will automatically drop and restore foreign keys during the fix.
+
+## nowo:performance:create-records-table
+
+Create or update the temporal access records table used for seasonality analysis.
+
+### Usage
+
+```bash
+php bin/console nowo:performance:create-records-table [options]
+```
+
+### Options
+
+- `--force, -f` - Force table creation even if it already exists (WARNING: This will delete all data)
+- `--update, -u` - Add missing columns to existing table without losing data (safe, preserves data)
+- `--drop-obsolete` - Drop columns that exist in DB but not in entity (use with `--update`). Never drops the `id` column.
+- `--connection` - The Doctrine connection name to use (default: `default`)
+
+### Description
+
+This command creates the `routes_data_records` table based on the `RouteDataRecord` entity. It is used
+for temporal analysis features (hour-of-day, day-of-week, month and heatmaps in the access statistics UI).
+
+The `--update` option:
+- Adds missing columns without losing existing data
+- Updates column definitions if they differ (type, nullable, defaults)
+- Adds missing indexes
+- Leaves extra/legacy columns untouched unless you use `--drop-obsolete`
+
+With `--drop-obsolete`: drops columns that exist in DB but not in the entity (never drops `id`).
+
+Use this command when:
+- Enabling `enable_access_records` for the first time
+- Deploying to a new environment where temporal records are needed
+- Adding new fields to `RouteDataRecord` in future versions
+
+## nowo:performance:sync-schema
+
+Sync database schema with entity metadata for both tables in one go.
+
+### Usage
+
+```bash
+php bin/console nowo:performance:sync-schema [options]
+```
+
+### Options
+
+- `--drop-obsolete` - Drop columns that exist in DB but not in entity (for both tables). Never drops the `id` column.
+
+### Description
+
+Runs the same logic as `nowo:performance:create-table --update` and `nowo:performance:create-records-table --update` together:
+
+1. **Add** columns that exist in the entity but not in the database
+2. **Alter** columns whose type, nullable or default differ from the entity
+3. **Drop** (only with `--drop-obsolete`) columns that exist in the database but not in the entity
+
+Useful after changing entity mappings: run sync-schema to bring the database in line with the code without generating migrations manually.
+
+### Examples
+
+```bash
+# Sync without dropping any columns (add + alter only)
+php bin/console nowo:performance:sync-schema
+
+# Sync and drop obsolete columns
+php bin/console nowo:performance:sync-schema --drop-obsolete
+```
+
+## nowo:performance:rebuild-aggregates
+
+Rebuild `RouteData` aggregate fields from `RouteDataRecord` access logs.
+
+### Usage
+
+```bash
+php bin/console nowo:performance:rebuild-aggregates [options]
+```
+
+### Options
+
+- `--env=ENV` - Restrict rebuild to a single environment (e.g. `dev`, `test`, `prod`)
+- `--batch-size=NUMBER` - Batch size for flushing changes (default: `200`)
+
+### Description
+
+`RouteData` stores aggregate metrics (request time, query count, status codes, access count, last access)
+while `RouteDataRecord` stores individual access records. In some scenarios (manual imports, schema changes)
+aggregates can become out of sync with the underlying records.
+
+This command:
+- Iterates over all `RouteData` rows (optionally filtered by environment)
+- Recomputes:
+  - `accessCount` from the number of related `RouteDataRecord` rows
+  - `lastAccessedAt` from the latest `accessedAt`
+  - `statusCodes` JSON from the distribution of `statusCode` values in records
+- Flushes changes in batches for efficiency
+
+Use it when:
+- You imported `routes_data_records` manually
+- You suspect `accessCount`, `lastAccessedAt` or `statusCodes` are out of sync
+- After upgrading and backfilling temporal records
 
 ## nowo:performance:diagnose
 

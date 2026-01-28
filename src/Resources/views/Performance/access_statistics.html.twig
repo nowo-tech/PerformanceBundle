@@ -1,4 +1,4 @@
-{% extends template == 'bootstrap' ? '@NowoPerformanceBundle/Performance/layout_bootstrap.html.twig' : '@NowoPerformanceBundle/Performance/layout_tailwind.html.twig' %}
+{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
 {% block title %}{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}{% endblock %}
 
@@ -6,40 +6,38 @@
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}</h1>
-            <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
-                {{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}
-            </a>
+            <div>
+                <a href="{{ path('nowo_performance.access_records', {env: environment, start_date: start_date|date('Y-m-d\\TH:i'), end_date: end_date|date('Y-m-d\\TH:i'), route: selected_route, status_code: selected_status_code}) }}" class="btn btn-info me-2">
+                    {{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}
+                </a>
+                <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
+                    {{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}
+                </a>
+            </div>
         </div>
 
-        {# Date Range Filter #}
+        {# Filters – FormType (RecordFiltersType) #}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">{{ 'access_statistics.date_range'|trans({}, 'nowo_performance') }}</h5>
+                <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h5>
             </div>
             <div class="card-body">
-                <form method="get" action="{{ path('nowo_performance.access_statistics') }}" class="row g-3">
-                    <div class="col-md-4">
-                        <label for="start_date" class="form-label">{{ 'access_statistics.start_date'|trans({}, 'nowo_performance') }}</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|date('Y-m-d') }}">
+                {{ form_start(filterForm, {'action': path('nowo_performance.access_statistics'), 'attr': {'class': 'row g-3'}}) }}
+                    <div class="col-md-3">{{ form_row(filterForm.start_date) }}</div>
+                    <div class="col-md-3">{{ form_row(filterForm.end_date) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.env) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.route) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.status_code) }}</div>
+                    <div class="col-md-12">
+                        {{ form_widget(filterForm.filter) }}
+                        <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="btn btn-secondary">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
                     </div>
-                    <div class="col-md-4">
-                        <label for="end_date" class="form-label">{{ 'access_statistics.end_date'|trans({}, 'nowo_performance') }}</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|date('Y-m-d') }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="env" class="form-label">{{ 'access_statistics.environment'|trans({}, 'nowo_performance') }}</label>
-                        <select class="form-select" id="env" name="env">
-                            {% for environment in environments %}
-                                <option value="{{ environment }}" {{ environment == env ? 'selected' : '' }}>
-                                    {{ environment }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">{{ 'access_statistics.filter'|trans({}, 'nowo_performance') }}</button>
-                    </div>
-                </form>
+                {{ form_end(filterForm, {'render_rest': false}) }}
+                {% if enable_record_management|default(false) %}
+                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                        {{ form_widget(deleteByFilterForm) }}
+                    {{ form_end(deleteByFilterForm) }}
+                {% endif %}
             </div>
         </div>
 
@@ -49,16 +47,79 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">{{ 'access_statistics.summary'|trans({}, 'nowo_performance') }}</h5>
-                        <p class="card-text">
-                            <strong>{{ 'access_statistics.total_accesses'|trans({}, 'nowo_performance') }}:</strong> 
-                            {{ total_access_count|number_format }}
-                        </p>
-                        <p class="card-text">
-                            <strong>{{ 'access_statistics.period'|trans({}, 'nowo_performance') }}:</strong>
-                            {{ start_date|date(dateFormat) }} - {{ end_date|date(dateFormat) }}
-                        </p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p class="card-text">
+                                    <strong>{{ 'access_statistics.total_accesses'|trans({}, 'nowo_performance') }}:</strong> 
+                                    <span class="badge bg-primary">{{ total_access_count|number_format }}</span>
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="card-text">
+                                    <strong>{{ 'access_statistics.period'|trans({}, 'nowo_performance') }}:</strong>
+                                    {{ start_date|date(dateFormat) }} - {{ end_date|date(dateFormat) }}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                {% if selected_route %}
+                                    <p class="card-text">
+                                        <strong>{{ 'access_statistics.filtered_route'|trans({}, 'nowo_performance') }}:</strong>
+                                        <code>{{ selected_route }}</code>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {# Charts Row #}
+        <div class="row mb-4">
+            {# Hourly Chart #}
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="hourlyChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            {# Day of Week Chart #}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ 'access_statistics.by_day_of_week'|trans({}, 'nowo_performance') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="dayOfWeekChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            {# Monthly Chart #}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ 'access_statistics.by_month'|trans({}, 'nowo_performance') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthlyChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Heatmap #}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">{{ 'access_statistics.heatmap'|trans({}, 'nowo_performance') }}</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="heatmapChart" style="height: 400px;"></canvas>
             </div>
         </div>
 
@@ -135,82 +196,173 @@
                 </div>
             </div>
         </div>
-
-        {# Chart Visualization #}
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">{{ 'access_statistics.chart_title'|trans({}, 'nowo_performance') }}</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="accessChart" style="height: 400px;"></canvas>
-            </div>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('accessChart');
-            if (!ctx) return;
+            // Hourly Chart
+            const hourlyCtx = document.getElementById('hourlyChart');
+            if (hourlyCtx) {
+                const statistics = {{ statistics_by_hour|json_encode|raw }};
+                const labels = statistics.map(s => String(s.hour).padStart(2, '0') + ':00');
+                const accessCounts = statistics.map(s => s.count);
+                const avgResponseTimes = statistics.map(s => (s.avg_response_time || 0) * 1000);
 
-            const statistics = {{ statistics_by_hour|json_encode|raw }};
-            const labels = statistics.map(s => String(s.hour).padStart(2, '0') + ':00');
-            const accessCounts = statistics.map(s => s.count);
-            const avgResponseTimes = statistics.map(s => (s.avg_response_time || 0) * 1000); // Convert to ms
-
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}',
-                            data: accessCounts,
-                            borderColor: 'rgb(75, 192, 192)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            yAxisID: 'y',
-                        },
-                        {
-                            label: '{{ 'access_statistics.avg_response_time_ms'|trans({}, 'nowo_performance') }}',
-                            data: avgResponseTimes,
-                            borderColor: 'rgb(255, 99, 132)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            yAxisID: 'y1',
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}'
+                new Chart(hourlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}',
+                                data: accessCounts,
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: '{{ 'access_statistics.avg_response_time_ms'|trans({}, 'nowo_performance') }}',
+                                data: avgResponseTimes,
+                                borderColor: 'rgb(255, 99, 132)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                yAxisID: 'y1',
                             }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: '{{ 'access_statistics.response_time_ms'|trans({}, 'nowo_performance') }}'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                            },
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}' } },
+                            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '{{ 'access_statistics.response_time_ms'|trans({}, 'nowo_performance') }}' }, grid: { drawOnChartArea: false } }
                         }
                     }
+                });
+            }
+
+            // Day of Week Chart
+            const dayOfWeekCtx = document.getElementById('dayOfWeekChart');
+            if (dayOfWeekCtx) {
+                const statistics = {{ statistics_by_day_of_week|json_encode|raw }};
+                const labels = statistics.map(s => s.day_name);
+                const accessCounts = statistics.map(s => s.count);
+
+                new Chart(dayOfWeekCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}',
+                            data: accessCounts,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}' } }
+                        }
+                    }
+                });
+            }
+
+            // Monthly Chart
+            const monthlyCtx = document.getElementById('monthlyChart');
+            if (monthlyCtx) {
+                const statistics = {{ statistics_by_month|json_encode|raw }};
+                const labels = statistics.map(s => s.month_name);
+                const accessCounts = statistics.map(s => s.count);
+
+                new Chart(monthlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}',
+                            data: accessCounts,
+                            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}' } }
+                        }
+                    }
+                });
+            }
+
+            // Heatmap Chart
+            const heatmapCtx = document.getElementById('heatmapChart');
+            if (heatmapCtx) {
+                const heatmapData = {{ heatmap_data|json_encode|raw }};
+                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const hourLabels = Array.from({length: 24}, (_, i) => String(i).padStart(2, '0') + ':00');
+                
+                // Prepare data for heatmap
+                const datasets = [];
+                const colors = ['#f0f0f0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+                
+                for (let day = 0; day < 7; day++) {
+                    const data = [];
+                    for (let hour = 0; hour < 24; hour++) {
+                        data.push(heatmapData[day]?.[hour] || 0);
+                    }
+                    datasets.push({
+                        label: dayNames[day],
+                        data: data,
+                        backgroundColor: colors[day % colors.length],
+                        borderColor: colors[day % colors.length],
+                    });
                 }
-            });
+
+                // Find max value for normalization
+                const maxValue = Math.max(...datasets.flatMap(d => d.data));
+
+                new Chart(heatmapCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: hourLabels,
+                        datasets: datasets.map((dataset, index) => ({
+                            ...dataset,
+                            backgroundColor: dataset.data.map(value => {
+                                const intensity = maxValue > 0 ? value / maxValue : 0;
+                                if (intensity === 0) return '#f0f0f0';
+                                if (intensity < 0.25) return '#c6e48b';
+                                if (intensity < 0.5) return '#7bc96f';
+                                if (intensity < 0.75) return '#239a3b';
+                                return '#196127';
+                            })
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { stacked: true, title: { display: true, text: 'Hour of Day' } },
+                            y: { stacked: true, title: { display: true, text: 'Day of Week' } }
+                        },
+                        plugins: {
+                            legend: { display: true, position: 'right' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return dayNames[context.datasetIndex] + ' ' + context.label + ': ' + context.parsed.y + ' requests';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         });
     </script>
 {% endblock %}

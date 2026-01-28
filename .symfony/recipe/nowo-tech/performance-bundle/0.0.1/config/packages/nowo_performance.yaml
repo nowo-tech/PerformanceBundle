@@ -52,7 +52,7 @@ nowo_performance:
     # Useful for analyzing access patterns by time of day, hour, or specific time periods
     # When enabled, the create-table command will automatically create routes_data_records table
     # Note: Enabling this will increase database storage requirements
-    enable_access_records: false
+    enable_access_records: true
 
     # Enable or disable bundle logging
     # When disabled, no error_log() calls will be made by the bundle

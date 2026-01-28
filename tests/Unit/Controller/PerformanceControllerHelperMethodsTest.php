@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -71,6 +72,34 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         return $method->invokeArgs($this->controller, $args);
     }
 
+    /**
+     * Build RouteDataWithAggregates for tests (calculateStats / calculateAdvancedStats expect this type).
+     *
+     * @param ?int $memoryUsage Memory in bytes (optional)
+     */
+    private function routeWithAggregates(
+        ?float $requestTime,
+        ?float $queryTime,
+        ?int $totalQueries,
+        int $accessCount = 1,
+        ?int $memoryUsage = null,
+    ): RouteDataWithAggregates {
+        $routeData = $this->createMock(RouteData::class);
+        $routeData->method('getId')->willReturn(1);
+        $routeData->method('getEnv')->willReturn('dev');
+        $routeData->method('getName')->willReturn('test');
+        $routeData->method('getAccessRecords')->willReturn(new \Doctrine\Common\Collections\ArrayCollection());
+
+        return new RouteDataWithAggregates($routeData, [
+            'request_time' => $requestTime,
+            'query_time' => $queryTime,
+            'total_queries' => $totalQueries,
+            'memory_usage' => $memoryUsage,
+            'access_count' => $accessCount,
+            'status_codes' => [],
+        ]);
+    }
+
     // ========== getSortValue() tests ==========
 
     public function testGetSortValueWithName(): void
@@ -84,8 +113,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithRequestTime(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.5);
+        $route = $this->routeWithAggregates(0.5, null, null);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'requestTime');
         $this->assertSame(0.5, $result);
@@ -93,8 +121,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithQueryTime(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getQueryTime')->willReturn(0.25);
+        $route = $this->routeWithAggregates(null, 0.25, null);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'queryTime');
         $this->assertSame(0.25, $result);
@@ -102,8 +129,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithTotalQueries(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getTotalQueries')->willReturn(10);
+        $route = $this->routeWithAggregates(null, null, 10);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'totalQueries');
         $this->assertSame(10, $result);
@@ -111,8 +137,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithAccessCount(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getAccessCount')->willReturn(100);
+        $route = $this->routeWithAggregates(null, null, null, 100);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'accessCount');
         $this->assertSame(100, $result);
@@ -129,8 +154,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithDefault(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.75);
+        $route = $this->routeWithAggregates(0.75, null, null);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'unknown');
         $this->assertSame(0.75, $result);
@@ -173,10 +197,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testCalculateStatsWithSingleRoute(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.5);
-        $route->method('getQueryTime')->willReturn(0.1);
-        $route->method('getTotalQueries')->willReturn(5);
+        $route = $this->routeWithAggregates(0.5, 0.1, 5);
 
         $result = $this->callPrivateMethod('calculateStats', [$route]);
 
@@ -191,20 +212,9 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testCalculateStatsWithMultipleRoutes(): void
     {
-        $route1 = $this->createMock(RouteData::class);
-        $route1->method('getRequestTime')->willReturn(0.5);
-        $route1->method('getQueryTime')->willReturn(0.1);
-        $route1->method('getTotalQueries')->willReturn(5);
-
-        $route2 = $this->createMock(RouteData::class);
-        $route2->method('getRequestTime')->willReturn(1.0);
-        $route2->method('getQueryTime')->willReturn(0.2);
-        $route2->method('getTotalQueries')->willReturn(10);
-
-        $route3 = $this->createMock(RouteData::class);
-        $route3->method('getRequestTime')->willReturn(0.3);
-        $route3->method('getQueryTime')->willReturn(0.05);
-        $route3->method('getTotalQueries')->willReturn(3);
+        $route1 = $this->routeWithAggregates(0.5, 0.1, 5);
+        $route2 = $this->routeWithAggregates(1.0, 0.2, 10);
+        $route3 = $this->routeWithAggregates(0.3, 0.05, 3);
 
         $result = $this->callPrivateMethod('calculateStats', [$route1, $route2, $route3]);
 
@@ -219,15 +229,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testCalculateStatsFiltersNullValues(): void
     {
-        $route1 = $this->createMock(RouteData::class);
-        $route1->method('getRequestTime')->willReturn(0.5);
-        $route1->method('getQueryTime')->willReturn(null);
-        $route1->method('getTotalQueries')->willReturn(5);
-
-        $route2 = $this->createMock(RouteData::class);
-        $route2->method('getRequestTime')->willReturn(null);
-        $route2->method('getQueryTime')->willReturn(0.2);
-        $route2->method('getTotalQueries')->willReturn(null);
+        $route1 = $this->routeWithAggregates(0.5, null, 5);
+        $route2 = $this->routeWithAggregates(null, 0.2, null);
 
         $result = $this->callPrivateMethod('calculateStats', [$route1, $route2]);
 
@@ -284,19 +287,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testCalculateAdvancedStatsWithRoutes(): void
     {
-        $route1 = $this->createMock(RouteData::class);
-        $route1->method('getRequestTime')->willReturn(0.5);
-        $route1->method('getQueryTime')->willReturn(0.1);
-        $route1->method('getTotalQueries')->willReturn(5);
-        $route1->method('getMemoryUsage')->willReturn(1048576); // 1MB in bytes
-        $route1->method('getAccessCount')->willReturn(10);
-
-        $route2 = $this->createMock(RouteData::class);
-        $route2->method('getRequestTime')->willReturn(1.0);
-        $route2->method('getQueryTime')->willReturn(0.2);
-        $route2->method('getTotalQueries')->willReturn(10);
-        $route2->method('getMemoryUsage')->willReturn(2097152); // 2MB in bytes
-        $route2->method('getAccessCount')->willReturn(20);
+        $route1 = $this->routeWithAggregates(0.5, 0.1, 5, 10, 1048576);   // 1 MB
+        $route2 = $this->routeWithAggregates(1.0, 0.2, 10, 20, 2097152);  // 2 MB
 
         $result = $this->callPrivateMethod('calculateAdvancedStats', [$route1, $route2]);
 
@@ -313,19 +305,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testCalculateAdvancedStatsFiltersNullValues(): void
     {
-        $route1 = $this->createMock(RouteData::class);
-        $route1->method('getRequestTime')->willReturn(0.5);
-        $route1->method('getQueryTime')->willReturn(null);
-        $route1->method('getTotalQueries')->willReturn(null);
-        $route1->method('getMemoryUsage')->willReturn(null);
-        $route1->method('getAccessCount')->willReturn(10);
-
-        $route2 = $this->createMock(RouteData::class);
-        $route2->method('getRequestTime')->willReturn(null);
-        $route2->method('getQueryTime')->willReturn(0.2);
-        $route2->method('getTotalQueries')->willReturn(10);
-        $route2->method('getMemoryUsage')->willReturn(2097152);
-        $route2->method('getAccessCount')->willReturn(0); // getAccessCount returns int, not nullable
+        $route1 = $this->routeWithAggregates(0.5, null, null, 10, null);
+        $route2 = $this->routeWithAggregates(null, 0.2, 10, 0, 2097152);  // 2 MB
 
         $result = $this->callPrivateMethod('calculateAdvancedStats', [$route1, $route2]);
 
@@ -345,16 +326,16 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $this->assertSame(1, $result['memory_usage']['count']);
         $this->assertSame(2.0, $result['memory_usage']['mean']);
 
-        // access_count should only have route1 (10)
-        $this->assertSame(1, $result['access_count']['count']);
-        $this->assertSame(10.0, $result['access_count']['mean']);
+        // access_count: 0 is kept (filter null only), so [10, 0] -> count 2, mean 5
+        $this->assertSame(2, $result['access_count']['count']);
+        $this->assertSame(5.0, $result['access_count']['mean']);
     }
 
     // ========== calculateDetailedStats() tests ==========
 
     public function testCalculateDetailedStatsWithEmptyArray(): void
     {
-        $result = $this->callPrivateMethod('calculateDetailedStats', [[], 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', [], 'Test Label', 's');
 
         $emptyStats = $this->callPrivateMethod('getEmptyStats');
         $this->assertSame($emptyStats, $result);
@@ -362,7 +343,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testCalculateDetailedStatsWithSingleValue(): void
     {
-        $result = $this->callPrivateMethod('calculateDetailedStats', [[5.0], 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', [5.0], 'Test Label', 's');
 
         $this->assertSame('Test Label', $result['label']);
         $this->assertSame('s', $result['unit']);
@@ -380,7 +361,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
     public function testCalculateDetailedStatsWithMultipleValues(): void
     {
         $values = [1.0, 2.0, 3.0, 4.0, 5.0];
-        $result = $this->callPrivateMethod('calculateDetailedStats', [$values, 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', $values, 'Test Label', 's');
 
         $this->assertSame('Test Label', $result['label']);
         $this->assertSame('s', $result['unit']);
@@ -402,7 +383,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
     public function testCalculateDetailedStatsWithEvenCount(): void
     {
         $values = [1.0, 2.0, 3.0, 4.0];
-        $result = $this->callPrivateMethod('calculateDetailedStats', [$values, 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', $values, 'Test Label', 's');
 
         $this->assertSame(4, $result['count']);
         // Median for even count: (values[n/2-1] + values[n/2]) / 2 = (2 + 3) / 2 = 2.5
@@ -413,7 +394,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
     {
         // Values: 1, 2, 3, 4, 5, 100 (100 is an outlier)
         $values = [1.0, 2.0, 3.0, 4.0, 5.0, 100.0];
-        $result = $this->callPrivateMethod('calculateDetailedStats', [$values, 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', $values, 'Test Label', 's');
 
         $this->assertSame(6, $result['count']);
         $this->assertGreaterThan(0, $result['outliers_count']);
@@ -423,7 +404,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
     public function testCalculateDetailedStatsWithDistribution(): void
     {
         $values = range(1, 100); // 1 to 100
-        $result = $this->callPrivateMethod('calculateDetailedStats', [$values, 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', $values, 'Test Label', 's');
 
         $this->assertSame(100, $result['count']);
         $this->assertArrayHasKey('distribution', $result);
@@ -435,7 +416,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
     public function testCalculateDetailedStatsWithAllSameValues(): void
     {
         $values = array_fill(0, 10, 5.0); // All 5.0
-        $result = $this->callPrivateMethod('calculateDetailedStats', [$values, 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', $values, 'Test Label', 's');
 
         $this->assertSame(10, $result['count']);
         $this->assertSame(5.0, $result['mean']);
@@ -451,7 +432,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
     public function testCalculateDetailedStatsRoundsValues(): void
     {
         $values = [1.123456, 2.234567, 3.345678];
-        $result = $this->callPrivateMethod('calculateDetailedStats', [$values, 'Test Label', 's']);
+        $result = $this->callPrivateMethod('calculateDetailedStats', $values, 'Test Label', 's');
 
         // Values should be rounded to 4 decimal places
         $this->assertNotEquals(1.123456, $result['mean']);
@@ -476,10 +457,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetRoutesNeedingAttentionWithSlowRequestTime(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getRequestTime')->willReturn(2.0); // Above 95th percentile (1.0)
-        $route->method('getTotalQueries')->willReturn(5);
-        $route->method('getMemoryUsage')->willReturn(1048576); // 1MB
+        $route = $this->routeWithAggregates(2.0, 0.05, 5, 1, 1048576); // 2.0 > 95th 1.0
 
         $advancedStats = [
             'request_time' => [
@@ -508,10 +486,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetRoutesNeedingAttentionWithHighQueryCount(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.5);
-        $route->method('getTotalQueries')->willReturn(100); // Above 95th percentile (50)
-        $route->method('getMemoryUsage')->willReturn(1048576);
+        $route = $this->routeWithAggregates(0.5, 0.1, 100, 1, 1048576); // 100 > 95th 50
 
         $advancedStats = [
             'request_time' => [
@@ -540,10 +515,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetRoutesNeedingAttentionWithHighMemory(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.5);
-        $route->method('getTotalQueries')->willReturn(5);
-        $route->method('getMemoryUsage')->willReturn(52428800); // 50MB, above 95th percentile (40MB)
+        $route = $this->routeWithAggregates(0.5, 0.05, 5, 1, 52428800); // 50 MB > 95th 40 MB
 
         $advancedStats = [
             'request_time' => [

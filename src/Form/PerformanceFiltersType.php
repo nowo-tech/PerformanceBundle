@@ -18,7 +18,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * Form type for performance dashboard filters.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class PerformanceFiltersType extends AbstractType
 {
@@ -70,6 +70,8 @@ class PerformanceFiltersType extends AbstractType
                     'sort_options.queries' => 'totalQueries',
                     'sort_options.access_count' => 'accessCount',
                     'sort_options.route_name' => 'name',
+                    'sort_options.created_at' => 'createdAt',
+                    'sort_options.last_accessed_at' => 'lastAccessedAt',
                 ],
                 'choice_translation_domain' => 'nowo_performance',
                 'data' => $currentSortBy,

@@ -179,11 +179,189 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertSame(0.0, $this->collector->getQueryTime());
     }
 
-    public function testSetEnvironment(): void
+    public function testSetAndGetDisabledReason(): void
     {
-        // This method doesn't exist in PerformanceDataCollector
-        // Removing this test as it's not applicable
-        $this->assertTrue(true);
+        $this->collector->setDisabledReason('Route "_profiler" is in ignore_routes list');
+        $this->collector->setEnabled(false);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertSame('Route "_profiler" is in ignore_routes list', $this->collector->getDisabledReason());
+    }
+
+    public function testGetDisabledReasonWhenEnabled(): void
+    {
+        $this->collector->setEnabled(true);
+        $this->collector->setDisabledReason(null);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertNull($this->collector->getDisabledReason());
+    }
+
+    public function testSetAndGetConfiguredEnvironments(): void
+    {
+        $this->collector->setConfiguredEnvironments(['dev', 'test', 'prod']);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertSame(['dev', 'test', 'prod'], $this->collector->getConfiguredEnvironments());
+    }
+
+    public function testSetAndGetCurrentEnvironment(): void
+    {
+        $this->collector->setCurrentEnvironment('test');
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertSame('test', $this->collector->getCurrentEnvironment());
+    }
+
+    public function testCollectWhenDisabledStillStoresDiagnostics(): void
+    {
+        $this->collector->setEnabled(false);
+        $this->collector->setDisabledReason('Bundle is disabled in configuration (nowo_performance.enabled: false)');
+        $this->collector->setRouteName('_profiler');
+        $this->collector->setConfiguredEnvironments(['dev', 'test']);
+        $this->collector->setCurrentEnvironment('dev');
+
+        $request = Request::create('/');
+        $request->attributes->set('_route', '_profiler');
+        $response = new Response();
+
+        $this->collector->collect($request, $response);
+
+        $this->assertFalse($this->collector->isEnabled());
+        $this->assertSame('Bundle is disabled in configuration (nowo_performance.enabled: false)', $this->collector->getDisabledReason());
+        $this->assertSame('_profiler', $this->collector->getRouteName());
+        $this->assertSame(['dev', 'test'], $this->collector->getConfiguredEnvironments());
+        $this->assertSame('dev', $this->collector->getCurrentEnvironment());
+        $this->assertSame('N/A', $this->collector->getFormattedRequestTime());
+        $this->assertSame(0, $this->collector->getQueryCount());
+    }
+
+    public function testResetClearsDisabledReasonAndEnvironments(): void
+    {
+        $this->collector->setDisabledReason('Test reason');
+        $this->collector->setConfiguredEnvironments(['dev']);
+        $this->collector->setCurrentEnvironment('dev');
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->collector->reset();
+        $this->collector->setEnabled(false);
+        $this->collector->collect($request, $response);
+
+        $this->assertNull($this->collector->getDisabledReason());
+        $this->assertNull($this->collector->getConfiguredEnvironments());
+        $this->assertNull($this->collector->getCurrentEnvironment());
+    }
+
+    public function testCollectWithoutTableCheckerReturnsDefaultTableStatus(): void
+    {
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertFalse($this->collector->tableExists());
+        $this->assertFalse($this->collector->tableIsComplete());
+        $this->assertNull($this->collector->getTableName());
+        $this->assertSame([], $this->collector->getMissingColumns());
+    }
+
+    public function testCollectWithTableStatusChecker(): void
+    {
+        $checker = $this->createMock(\Nowo\PerformanceBundle\Service\TableStatusChecker::class);
+        $checker->method('tableExists')->willReturn(true);
+        $checker->method('tableIsComplete')->willReturn(true);
+        $checker->method('getTableName')->willReturn('routes_data');
+        $checker->method('getMissingColumns')->willReturn([]);
+
+        $collector = new PerformanceDataCollector(null, null, $checker, null, null);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertTrue($collector->tableExists());
+        $this->assertTrue($collector->tableIsComplete());
+        $this->assertSame('routes_data', $collector->getTableName());
+        $this->assertSame([], $collector->getMissingColumns());
+    }
+
+    public function testCollectWithTableStatusCheckerIncomplete(): void
+    {
+        $checker = $this->createMock(\Nowo\PerformanceBundle\Service\TableStatusChecker::class);
+        $checker->method('tableExists')->willReturn(true);
+        $checker->method('tableIsComplete')->willReturn(false);
+        $checker->method('getTableName')->willReturn('routes_data');
+        $checker->method('getMissingColumns')->willReturn(['total_queries', 'query_time']);
+
+        $collector = new PerformanceDataCollector(null, null, $checker, null, null);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertTrue($collector->tableExists());
+        $this->assertFalse($collector->tableIsComplete());
+        $this->assertSame(['total_queries', 'query_time'], $collector->getMissingColumns());
+    }
+
+    public function testCollectWithDependencyChecker(): void
+    {
+        $depChecker = $this->createMock(\Nowo\PerformanceBundle\Service\DependencyChecker::class);
+        $depChecker->method('getMissingDependencies')->willReturn([
+            ['package' => 'symfony/messenger', 'feature' => 'Async', 'message' => 'Optional', 'install_command' => 'composer require symfony/messenger'],
+        ]);
+        $depChecker->method('getDependencyStatus')->willReturn([
+            'messenger' => ['available' => false, 'package' => 'symfony/messenger'],
+            'form' => ['available' => true, 'package' => 'symfony/form'],
+        ]);
+
+        $collector = new PerformanceDataCollector(null, null, null, $depChecker, null);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $missing = $collector->getMissingDependencies();
+        $this->assertCount(1, $missing);
+        $this->assertSame('symfony/messenger', $missing[0]['package']);
+
+        $status = $collector->getDependencyStatus();
+        $this->assertArrayHasKey('messenger', $status);
+        $this->assertFalse($status['messenger']['available']);
+        $this->assertArrayHasKey('form', $status);
+        $this->assertTrue($status['form']['available']);
+    }
+
+    public function testGetProcessingMode(): void
+    {
+        $this->collector->setAsync(false);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $this->collector->collect($request, $response);
+
+        $this->assertSame('sync', $this->collector->getProcessingMode());
+
+        $this->collector->reset();
+        $this->collector->setAsync(true);
+        $this->collector->collect($request, $response);
+
+        $mode = $this->collector->getProcessingMode();
+        $this->assertContains($mode, ['sync', 'async']);
     }
 
     public function testSetRequestTime(): void
@@ -201,7 +379,6 @@ final class PerformanceDataCollectorTest extends TestCase
         $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
         $routeData->setName('app_home');
         $routeData->setEnv('dev');
-        $routeData->setAccessCount(5);
 
         $repository
             ->expects($this->once())
@@ -209,12 +386,19 @@ final class PerformanceDataCollectorTest extends TestCase
             ->with('app_home', 'dev')
             ->willReturn($routeData);
 
+        $recordRepository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRecordRepository::class);
+        $recordRepository
+            ->expects($this->once())
+            ->method('countByRouteData')
+            ->with($this->identicalTo($routeData))
+            ->willReturn(5);
+
         $kernel
             ->expects($this->once())
             ->method('getEnvironment')
             ->willReturn('dev');
 
-        $collector = new PerformanceDataCollector($repository, $kernel);
+        $collector = new PerformanceDataCollector($repository, $kernel, null, null, $recordRepository);
         $collector->setRouteName('app_home');
         $collector->setEnabled(true);
 

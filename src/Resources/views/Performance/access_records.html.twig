@@ -1,0 +1,217 @@
+{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
+
+{% block title %}{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}</h1>
+            <div>
+                {% set export_params = {
+                    env: environment,
+                    start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '',
+                    end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '',
+                    route: selected_route ?? '',
+                    status_code: selected_status_code ?? '',
+                    min_query_time: filterForm.min_query_time.vars.value ?? '',
+                    max_query_time: filterForm.max_query_time.vars.value ?? '',
+                    min_memory_mb: filterForm.min_memory_mb.vars.value ?? '',
+                    max_memory_mb: filterForm.max_memory_mb.vars.value ?? ''
+                } %}
+                <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="btn btn-success me-2">
+                    {{ 'access_statistics.export_records_csv'|trans({}, 'nowo_performance') }}
+                </a>
+                <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="btn btn-info me-2 text-white">
+                    {{ 'access_statistics.export_records_json'|trans({}, 'nowo_performance') }}
+                </a>
+                <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="btn btn-info me-2">
+                    {{ 'access_statistics.back_to_statistics'|trans({}, 'nowo_performance') }}
+                </a>
+                <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
+                    {{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}
+                </a>
+            </div>
+        </div>
+
+        {# Filters – FormType (RecordFiltersType) #}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h5>
+            </div>
+            <div class="card-body">
+                {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'row g-3'}}) }}
+                    <div class="col-md-3">{{ form_row(filterForm.start_date) }}</div>
+                    <div class="col-md-3">{{ form_row(filterForm.end_date) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.env) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.route) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.status_code) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.min_query_time) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.max_query_time) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.min_memory_mb) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.max_memory_mb) }}</div>
+                    <div class="col-md-12">
+                        {{ form_widget(filterForm.filter) }}
+                        <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="btn btn-secondary">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
+                    </div>
+                {{ form_end(filterForm, {'render_rest': false}) }}
+                {% if enable_record_management|default(false) %}
+                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                        {{ form_widget(deleteByFilterForm) }}
+                    {{ form_end(deleteByFilterForm) }}
+                {% endif %}
+            </div>
+        </div>
+
+        {# Records Table #}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ 'access_statistics.records'|trans({}, 'nowo_performance') }}</h5>
+                <span class="badge bg-primary">
+                    {{ 'access_statistics.total_records'|trans({}, 'nowo_performance') }}: {{ paginated_data.total|number_format }}
+                </span>
+            </div>
+            <div class="card-body">
+                {% if paginated_data.records|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'access_statistics.timestamp'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.route'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.status_code'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.response_time'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.total_queries'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.query_time'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.memory_usage'|trans({}, 'nowo_performance') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in paginated_data.records %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ record.accessedAt|date(dateTimeFormat) }}</strong>
+                                        </td>
+                                        <td>
+                                            <code>{{ record.routeData.name ?? 'N/A' }}</code>
+                                        </td>
+                                        <td>
+                                            {% if record.statusCode %}
+                                                {% set badgeClass = 'bg-secondary' %}
+                                                {% if record.statusCode >= 200 and record.statusCode < 300 %}{% set badgeClass = 'bg-success' %}
+                                                {% elseif record.statusCode >= 400 and record.statusCode < 500 %}{% set badgeClass = 'bg-warning text-dark' %}
+                                                {% elseif record.statusCode >= 500 %}{% set badgeClass = 'bg-danger' %}
+                                                {% endif %}
+                                                <span class="badge {{ badgeClass }}">{{ record.statusCode }}</span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.responseTime is not null %}
+                                                <span class="badge {{ record.responseTime > 1.0 ? 'bg-danger' : (record.responseTime > 0.5 ? 'bg-warning' : 'bg-success') }}">
+                                                    {{ (record.responseTime * 1000)|number_format(0) }}ms
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.totalQueries is not null %}
+                                                <span class="badge bg-secondary">{{ record.totalQueries }}</span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.queryTime is not null %}
+                                                <span class="badge {{ record.queryTime > 1.0 ? 'bg-danger' : (record.queryTime > 0.5 ? 'bg-warning' : 'bg-success') }}">
+                                                    {{ (record.queryTime * 1000)|number_format(0) }}ms
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.memoryUsage is not null %}
+                                                {% set mem_mb = record.memoryUsage / 1024 / 1024 %}
+                                                <span class="badge {{ mem_mb > 50 ? 'bg-danger' : (mem_mb > 20 ? 'bg-warning' : 'bg-info') }}">
+                                                    {% if mem_mb >= 1 %}{{ mem_mb|number_format(2) }} MB
+                                                    {% else %}{{ (record.memoryUsage / 1024)|number_format(0) }} KB
+                                                    {% endif %}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {# Pagination #}
+                    {% if paginated_data.total_pages > 1 %}
+                        {% set pagination_params = {
+                            env: environment,
+                            start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '',
+                            end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '',
+                            route: selected_route,
+                            status_code: selected_status_code,
+                            min_query_time: filterForm.min_query_time.vars.value ?? '',
+                            max_query_time: filterForm.max_query_time.vars.value ?? '',
+                            min_memory_mb: filterForm.min_memory_mb.vars.value ?? '',
+                            max_memory_mb: filterForm.max_memory_mb.vars.value ?? '',
+                            per_page: paginated_data.per_page
+                        } %}
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                {% if paginated_data.page > 1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page - 1})) }}">
+                                            {{ 'access_statistics.previous'|trans({}, 'nowo_performance') }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for pageNum in 1..paginated_data.total_pages %}
+                                    {% if pageNum == 1 or pageNum == paginated_data.total_pages or (pageNum >= paginated_data.page - 2 and pageNum <= paginated_data.page + 2) %}
+                                        <li class="page-item {{ pageNum == paginated_data.page ? 'active' : '' }}">
+                                            <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: pageNum})) }}">
+                                                {{ pageNum }}
+                                            </a>
+                                        </li>
+                                    {% elseif pageNum == paginated_data.page - 3 or pageNum == paginated_data.page + 3 %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if paginated_data.page < paginated_data.total_pages %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page + 1})) }}">
+                                            {{ 'access_statistics.next'|trans({}, 'nowo_performance') }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                {{ 'access_statistics.showing'|trans({}, 'nowo_performance') }} 
+                                {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - 
+                                {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }}
+                                {{ 'access_statistics.of'|trans({}, 'nowo_performance') }} 
+                                {{ paginated_data.total|number_format }}
+                            </small>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-info">
+                        {{ 'access_statistics.no_records'|trans({}, 'nowo_performance') }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

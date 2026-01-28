@@ -10,7 +10,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * Statistics component for displaying performance statistics.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsTwigComponent('nowo_performance.Statistics', template: '@NowoPerformanceBundle/components/Statistics.html.twig')]
 final class StatisticsComponent

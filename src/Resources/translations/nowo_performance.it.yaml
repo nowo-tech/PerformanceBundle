@@ -22,6 +22,10 @@ statistics:
 routes_table:
   title: Route
   route_name: Nome Route
+  http_method: Metodo HTTP
+  status_codes: Codici di stato
+  total_responses: Totale risposte
+  error_rate: Tasso di errore
   environment: Ambiente
   request_time: Tempo Richiesta
   query_time: Tempo Query
@@ -65,6 +69,11 @@ filters:
   placeholder_route: Filtra per nome route...
   placeholder_time: '0.0000'
   placeholder_count: '0'
+  request_time_range: Intervallo tempo richiesta (secondi)
+  query_count_range: Intervallo numero query
+  date_range: Intervallo date
+  min: Min
+  max: Max
 review:
   modal_title: Segna come Revisionato
   queries_improved: Query Migliorate?
@@ -115,6 +124,55 @@ sort_options:
   queries: Query
   access_count: Numero Accessi
   route_name: Nome Route
+  created_at: Data di creazione
+  last_accessed_at: Ultimo accesso
 order_options:
   descending: Decrescente
   ascending: Crescente
+
+access_statistics:
+  title: Statistiche di accesso per ora
+  date_range: Filtro intervallo date
+  start_date: Data inizio
+  end_date: Data fine
+  environment: Ambiente
+  filter: Filtra
+  reset: Reimposta
+  summary: Riepilogo
+  total_accesses: Totale accessi
+  period: Periodo
+  by_hour: Statistiche per ora del giorno
+  by_day_of_week: Statistiche per giorno della settimana
+  by_month: Statistiche per mese
+  hour: Ora
+  access_count: Numero accessi
+  avg_response_time: Tempo medio di risposta
+  status_codes: Codici di stato
+  current_hour: Corrente
+  requests: richieste
+  no_data: Nessun dato di accesso per il periodo selezionato.
+  chart_title: Visualizzazione pattern di accesso
+  avg_response_time_ms: Tempo medio di risposta (ms)
+  response_time_ms: Tempo di risposta (ms)
+  filters: Filtri
+  route: Route
+  status_code: Codice di stato
+  all_routes: Tutte le route
+  all_status_codes: Tutti i codici di stato
+  filtered_route: Route filtrata
+  view_records: Visualizza record singoli
+  back_to_statistics: Torna alle statistiche
+  export_records_csv: "Esporta record (CSV)"
+  export_records_json: "Esporta record (JSON)"
+  records: Record di accesso
+  total_records: Totale record
+  timestamp: Data e ora
+  response_time: Tempo di risposta
+  no_records: Nessun record trovato per i filtri selezionati.
+  showing: Visualizzazione
+  of: di
+  previous: Precedente
+  next: Successivo
+  heatmap: Mappa di calore (giorno settimana vs ora)
+  delete_records_matching_filter: Elimina record corrispondenti al filtro
+  delete_records_confirm: Sei sicuro di voler eliminare tutti i record corrispondenti al filtro attuale? Questa azione non può essere annullata.

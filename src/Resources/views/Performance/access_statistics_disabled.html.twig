@@ -1,4 +1,4 @@
-{% extends template == 'bootstrap' ? '@NowoPerformanceBundle/Performance/layout_bootstrap.html.twig' : '@NowoPerformanceBundle/Performance/layout_tailwind.html.twig' %}
+{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
 {% block title %}{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}{% endblock %}
 

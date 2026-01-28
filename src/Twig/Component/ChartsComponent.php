@@ -10,7 +10,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * Charts component for displaying performance trends.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsTwigComponent('nowo_performance.Charts', template: '@NowoPerformanceBundle/components/Charts.html.twig')]
 final class ChartsComponent

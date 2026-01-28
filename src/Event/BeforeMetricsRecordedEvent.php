@@ -12,12 +12,12 @@ use Symfony\Contracts\EventDispatcher\Event;
  * This event allows listeners to modify metrics before they are saved to the database.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class BeforeMetricsRecordedEvent extends Event
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param string     $routeName    The route name
      * @param string     $env          The environment

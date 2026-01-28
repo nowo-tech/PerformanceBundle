@@ -1,0 +1,16 @@
+# Security configuration (required by symfony/security-bundle)
+# Minimal setup for demo; no real authentication
+security:
+    password_hashers:
+        Symfony\Component\Security\Core\User\InMemoryUser: 'auto'
+    providers:
+        users_in_memory:
+            memory:
+                users: {}
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: users_in_memory

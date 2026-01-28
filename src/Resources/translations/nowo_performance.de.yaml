@@ -22,6 +22,10 @@ statistics:
 routes_table:
   title: Routen
   route_name: Routenname
+  http_method: HTTP-Methode
+  status_codes: Statuscodes
+  total_responses: Gesamtantworten
+  error_rate: Fehlerrate
   environment: Umgebung
   request_time: Anforderungszeit
   query_time: Abfragezeit
@@ -65,6 +69,11 @@ filters:
   placeholder_route: Nach Routenname filtern...
   placeholder_time: '0.0000'
   placeholder_count: '0'
+  request_time_range: Anforderungszeit-Bereich (Sekunden)
+  query_count_range: Abfrageanzahl-Bereich
+  date_range: Datumsbereich
+  min: Min
+  max: Max
 review:
   modal_title: Als überprüft markieren
   queries_improved: Abfragen verbessert?
@@ -115,6 +124,55 @@ sort_options:
   queries: Abfragen
   access_count: Anzahl der Zugriffe
   route_name: Routenname
+  created_at: Erstellungsdatum
+  last_accessed_at: Letzter Zugriff
 order_options:
   descending: Absteigend
   ascending: Aufsteigend
+
+access_statistics:
+  title: Zugriffsstatistiken nach Stunde
+  date_range: Datumsbereich-Filter
+  start_date: Startdatum
+  end_date: Enddatum
+  environment: Umgebung
+  filter: Filtern
+  reset: Zurücksetzen
+  summary: Zusammenfassung
+  total_accesses: Gesamtzugriffe
+  period: Zeitraum
+  by_hour: Statistiken nach Tagesstunde
+  by_day_of_week: Statistiken nach Wochentag
+  by_month: Statistiken nach Monat
+  hour: Stunde
+  access_count: Anzahl der Zugriffe
+  avg_response_time: Durchschn. Antwortzeit
+  status_codes: Statuscodes
+  current_hour: Aktuell
+  requests: Anfragen
+  no_data: Keine Zugriffsdaten für den gewählten Zeitraum.
+  chart_title: Darstellung der Zugriffsmuster
+  avg_response_time_ms: Durchschn. Antwortzeit (ms)
+  response_time_ms: Antwortzeit (ms)
+  filters: Filter
+  route: Route
+  status_code: Statuscode
+  all_routes: Alle Routen
+  all_status_codes: Alle Statuscodes
+  filtered_route: Gefilterte Route
+  view_records: Einzelne Datensätze anzeigen
+  back_to_statistics: Zurück zu Statistiken
+  export_records_csv: "Datensätze exportieren (CSV)"
+  export_records_json: "Datensätze exportieren (JSON)"
+  records: Zugriffsdatensätze
+  total_records: Gesamtdatensätze
+  timestamp: Zeitstempel
+  response_time: Antwortzeit
+  no_records: Keine Datensätze für die gewählten Filter gefunden.
+  showing: Anzeige
+  of: von
+  previous: Zurück
+  next: Weiter
+  heatmap: Zugriffs-Heatmap (Wochentag vs. Stunde)
+  delete_records_matching_filter: Datensätze löschen, die dem Filter entsprechen
+  delete_records_confirm: Sind Sie sicher, dass Sie alle dem aktuellen Filter entsprechenden Datensätze löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.

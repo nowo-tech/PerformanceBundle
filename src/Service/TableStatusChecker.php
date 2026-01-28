@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * Service to check the status of the performance metrics database table.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class TableStatusChecker
 {
@@ -21,7 +21,7 @@ class TableStatusChecker
     private ?PerformanceCacheService $cacheService = null;
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param ManagerRegistry $registry       Doctrine registry
      * @param string          $connectionName The name of the Doctrine connection to use

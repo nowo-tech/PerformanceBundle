@@ -1,100 +1,100 @@
-# Guardado Asíncrono de Métricas
+# Asynchronous Metrics Storage
 
-El bundle soporta el guardado asíncrono de métricas de rendimiento usando Symfony Messenger. Esto permite que las métricas se guarden en background sin bloquear la respuesta HTTP.
+The bundle supports asynchronous storage of performance metrics using Symfony Messenger. This allows metrics to be stored in the background without blocking the HTTP response.
 
-## Requisitos
+## Requirements
 
-Para usar el modo asíncrono, necesitas instalar Symfony Messenger:
+To use asynchronous mode, you need to install Symfony Messenger:
 
 ```bash
 composer require symfony/messenger
 ```
 
-## Configuración
+## Configuration
 
-### 1. Habilitar el modo asíncrono
+### 1. Enable asynchronous mode
 
-En tu archivo de configuración (`config/packages/nowo_performance.yaml`):
+In your configuration file (`config/packages/nowo_performance.yaml`):
 
 ```yaml
 nowo_performance:
-    async: true  # Habilita el guardado asíncrono
-    # ... resto de configuración
+    async: true  # Enables asynchronous storage
+    # ... rest of configuration
 ```
 
-### 2. Configurar Messenger
+### 2. Configure Messenger
 
-El bundle usa el bus de mensajes por defecto. Asegúrate de tener Messenger configurado:
+The bundle uses the default message bus. Ensure Messenger is configured:
 
 ```yaml
 # config/packages/messenger.yaml
 framework:
     messenger:
-        # Por defecto, los mensajes se procesan de forma síncrona
-        # Para procesamiento asíncrono, configura un transporte
+        # By default, messages are processed synchronously
+        # For asynchronous processing, configure a transport
         transports:
             async:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
         
         routing:
-            # Opcional: enruta los mensajes de métricas a un transporte específico
+            # Optional: route metrics messages to a specific transport
             'Nowo\PerformanceBundle\Message\RecordMetricsMessage': async
 ```
 
-### 3. Procesar mensajes (si usas transporte asíncrono)
+### 3. Process messages (if using asynchronous transport)
 
-Si configuraste un transporte asíncrono, necesitas ejecutar el worker:
+If you configured an asynchronous transport, you need to run the worker:
 
 ```bash
 php bin/console messenger:consume async -vv
 ```
 
-O en producción con supervisord/systemd para mantener el worker corriendo.
+Or in production with supervisord/systemd to keep the worker running.
 
-## Cómo Funciona
+## How It Works
 
-### Modo Síncrono (por defecto)
+### Synchronous mode (default)
 
-Cuando `async: false` (o no está configurado):
+When `async: false` (or not set):
 
-1. Las métricas se calculan al final de la petición
-2. Se guardan inmediatamente en la base de datos
-3. La respuesta HTTP se envía después de guardar
+1. Metrics are calculated at the end of the request
+2. They are stored immediately in the database
+3. The HTTP response is sent after storage
 
-### Modo Asíncrono
+### Asynchronous mode
 
-Cuando `async: true` y Messenger está disponible:
+When `async: true` and Messenger is available:
 
-1. Las métricas se calculan al final de la petición
-2. Se crea un mensaje `RecordMetricsMessage` con los datos
-3. El mensaje se envía al bus de mensajes
-4. La respuesta HTTP se envía inmediatamente (sin esperar el guardado)
-5. El mensaje se procesa en background (síncrono o asíncrono según tu configuración)
+1. Metrics are calculated at the end of the request
+2. A `RecordMetricsMessage` is created with the data
+3. The message is dispatched to the message bus
+4. The HTTP response is sent immediately (without waiting for storage)
+5. The message is processed in the background (synchronously or asynchronously depending on your configuration)
 
-## Ventajas del Modo Asíncrono
+## Benefits of Asynchronous Mode
 
-- **Mejor rendimiento**: La respuesta HTTP no se bloquea esperando el guardado en BD
-- **Escalabilidad**: Puedes procesar métricas en workers separados
-- **Resiliencia**: Si falla el guardado, no afecta la respuesta al usuario
-- **Carga distribuida**: Puedes distribuir el procesamiento de métricas
+- **Better performance:** The HTTP response is not blocked waiting for DB storage
+- **Scalability:** You can process metrics in separate workers
+- **Resilience:** If storage fails, it does not affect the user response
+- **Distributed load:** You can distribute metrics processing
 
-## Ejemplo de Configuración Completa
+## Full Configuration Example
 
-### Desarrollo (síncrono para debugging)
+### Development (synchronous for debugging)
 
 ```yaml
 # config/packages/dev/nowo_performance.yaml
 nowo_performance:
-    async: false  # Guardado inmediato para ver resultados al instante
+    async: false  # Immediate storage to see results instantly
     environments: ['dev']
 ```
 
-### Producción (asíncrono)
+### Production (asynchronous)
 
 ```yaml
 # config/packages/prod/nowo_performance.yaml
 nowo_performance:
-    async: true  # Guardado en background
+    async: true  # Background storage
     environments: ['prod']
 ```
 
@@ -110,40 +110,40 @@ framework:
             'Nowo\PerformanceBundle\Message\RecordMetricsMessage': async
 ```
 
-## Verificación
+## Verification
 
-Para verificar que el modo asíncrono está funcionando:
+To verify that asynchronous mode is working:
 
-1. Habilita el modo asíncrono en la configuración
-2. Realiza algunas peticiones
-3. Verifica que las métricas aparecen en la base de datos (puede haber un pequeño retraso)
-4. Revisa los logs del worker de Messenger si usas transporte asíncrono
+1. Enable asynchronous mode in configuration
+2. Make some requests
+3. Check that metrics appear in the database (there may be a short delay)
+4. Check Messenger worker logs if using an asynchronous transport
 
-## Fallback Automático
+## Automatic Fallback
 
-Si `async: true` pero Messenger no está disponible:
+If `async: true` but Messenger is not available:
 
-- El bundle automáticamente usa el modo síncrono
-- No se generan errores
-- Las métricas se guardan normalmente
+- The bundle automatically falls back to synchronous mode
+- No errors are raised
+- Metrics are stored as usual
 
-Esto permite que el bundle funcione sin Messenger, pero puedes optar por el modo asíncrono cuando lo necesites.
+This allows the bundle to work without Messenger, while you can opt into asynchronous mode when needed.
 
 ## Troubleshooting
 
-### Las métricas no se guardan
+### Metrics are not stored
 
-1. Verifica que Messenger está instalado: `composer show symfony/messenger`
-2. Verifica la configuración: `async: true` en `nowo_performance.yaml`
-3. Si usas transporte asíncrono, verifica que el worker está corriendo
-4. Revisa los logs de Symfony y Messenger
+1. Check that Messenger is installed: `composer show symfony/messenger`
+2. Check configuration: `async: true` in `nowo_performance.yaml`
+3. If using an asynchronous transport, check that the worker is running
+4. Check Symfony and Messenger logs
 
-### Las métricas se guardan pero con retraso
+### Metrics are stored with delay
 
-Esto es normal en modo asíncrono. El retraso depende de:
-- Si usas transporte síncrono: casi inmediato
-- Si usas transporte asíncrono: depende de la velocidad del worker
+This is normal in asynchronous mode. The delay depends on:
+- If using a synchronous transport: almost immediate
+- If using an asynchronous transport: depends on worker speed
 
-### Quiero procesamiento inmediato pero sin bloquear
+### I want immediate processing but without blocking
 
-Usa Messenger con transporte síncrono (por defecto) y `async: true`. Los mensajes se procesan inmediatamente pero en un contexto separado que no bloquea la respuesta HTTP.
+Use Messenger with a synchronous transport (default) and `async: true`. Messages are processed immediately but in a separate context that does not block the HTTP response.

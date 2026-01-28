@@ -2,8 +2,9 @@
 # Permite levantar cualquier demo individual o todas las demos
 
 .PHONY: help list up-all down-all setup-all clean-all logs-all
-.PHONY: up-symfony7 down-symfony7 setup-symfony7 clean-symfony7 logs-symfony7 shell-symfony7
-.PHONY: up-symfony8 down-symfony8 setup-symfony8 clean-symfony8 logs-symfony8 shell-symfony8
+.PHONY: up-symfony7 down-symfony7 setup-symfony7 clean-symfony7 logs-symfony7 shell-symfony7 performance-sync-symfony7
+.PHONY: up-symfony8 down-symfony8 setup-symfony8 clean-symfony8 logs-symfony8 shell-symfony8 performance-sync-symfony8
+.PHONY: performance-sync-all
 
 # Detectar demos disponibles (carpetas que contienen un Makefile)
 DEMOS := $(shell find . -maxdepth 2 -mindepth 2 -name "Makefile" -type f | sed 's|./\([^/]*\)/Makefile|\1|' | sort)
@@ -34,6 +35,11 @@ help:
 	@echo "  clean-<demo>    Limpiar una demo específica"
 	@echo "  logs-<demo>     Ver logs de una demo específica"
 	@echo "  shell-<demo>    Abrir shell en el contenedor PHP de una demo"
+	@echo ""
+	@echo "Performance Bundle (schema):"
+	@echo "  performance-sync-symfony7   Sync routes_data + routes_data_records en demo symfony7"
+	@echo "  performance-sync-symfony8   Sync routes_data + routes_data_records en demo symfony8"
+	@echo "  performance-sync-all       Sync schema en todas las demos"
 	@echo ""
 	@echo "Ejemplos:"
 	@echo "  make up-symfony7      # Levantar solo symfony7"
@@ -165,3 +171,20 @@ logs-symfony8:
 shell-symfony8:
 	@echo "🐚 Abriendo shell en demo: symfony8"
 	@$(MAKE) -C symfony8 shell
+
+# Performance Bundle: sync schema en demos (routes_data + routes_data_records)
+performance-sync-symfony7:
+	@echo "🔄 Syncing Performance Bundle schema en demo: symfony7"
+	@$(MAKE) -C symfony7 performance-sync
+	@echo "✅ Schema sync symfony7 listo!"
+
+performance-sync-symfony8:
+	@echo "🔄 Syncing Performance Bundle schema en demo: symfony8"
+	@$(MAKE) -C symfony8 performance-sync
+	@echo "✅ Schema sync symfony8 listo!"
+
+performance-sync-all:
+	@echo "🔄 Syncing Performance Bundle schema en todas las demos..."
+	@$(MAKE) performance-sync-symfony7
+	@$(MAKE) performance-sync-symfony8
+	@echo "✅ Schema sync en todas las demos completado!"

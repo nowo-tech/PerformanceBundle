@@ -13,12 +13,12 @@ use Symfony\Contracts\EventDispatcher\Event;
  * This event allows listeners to perform actions after review.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class AfterRecordReviewedEvent extends Event
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param RouteData $routeData The route data entity that was reviewed
      */

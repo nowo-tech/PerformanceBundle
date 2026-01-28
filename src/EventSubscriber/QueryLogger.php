@@ -11,7 +11,7 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
  * using a simple counter and timer approach that works with DBAL 3.x.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class QueryLogger
 {

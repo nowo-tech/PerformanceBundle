@@ -16,12 +16,12 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * For example, if the main table is 'routes_data', this will be 'routes_data_records'.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class RouteDataRecordTableNameSubscriber implements EventSubscriber
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param string $mainTableName The configured table name for RouteData entity
      */

@@ -29,7 +29,7 @@ use Symfony\Component\Stopwatch\Stopwatch;
  * performance metrics for routes including request time, query count, and query time.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class PerformanceMetricsSubscriber implements EventSubscriberInterface
 {
@@ -74,7 +74,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     private ?array $routeParams = null;
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param PerformanceMetricsService $metricsService Service for recording metrics
      * @param ManagerRegistry           $registry       Doctrine registry for entity manager access
@@ -145,6 +145,28 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     #[AsEventListener(event: KernelEvents::REQUEST, priority: 1024)]
     public function onKernelRequest(RequestEvent $event): void
     {
+        $request = $event->getRequest();
+
+        // Always set env + configured environments in collector first (for diagnostics when disabled)
+        $env = null;
+        if (null !== $this->kernel) {
+            $env = $this->kernel->getEnvironment();
+        } elseif ($request->server->has('APP_ENV')) {
+            $env = $request->server->get('APP_ENV');
+        } elseif (isset($_SERVER['APP_ENV'])) {
+            $env = $_SERVER['APP_ENV'];
+        } elseif (isset($_ENV['APP_ENV'])) {
+            $env = $_ENV['APP_ENV'];
+        } else {
+            $env = 'dev';
+        }
+        $this->dataCollector->setConfiguredEnvironments($this->environments);
+        $this->dataCollector->setCurrentEnvironment($env);
+
+        // Set route name early so it's always available in collector (even when disabled)
+        $this->routeName = $request->attributes->get('_route');
+        $this->dataCollector->setRouteName($this->routeName);
+
         if (!$this->enabled) {
             LogHelper::log('[PerformanceBundle] Tracking disabled: enabled=false', $this->enableLogging);
             $this->dataCollector->setEnabled(false);
@@ -170,26 +192,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
             return;
         }
-
-        $request = $event->getRequest();
-
-        // Try multiple methods to detect environment
-        $env = null;
-        if (null !== $this->kernel) {
-            $env = $this->kernel->getEnvironment();
-        } elseif ($request->server->has('APP_ENV')) {
-            $env = $request->server->get('APP_ENV');
-        } elseif (isset($_SERVER['APP_ENV'])) {
-            $env = $_SERVER['APP_ENV'];
-        } elseif (isset($_ENV['APP_ENV'])) {
-            $env = $_ENV['APP_ENV'];
-        } else {
-            $env = 'dev'; // Default fallback
-        }
-
-        // Set environment information in collector
-        $this->dataCollector->setConfiguredEnvironments($this->environments);
-        $this->dataCollector->setCurrentEnvironment($env);
 
         LogHelper::logf('[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s', $this->enableLogging,
             null !== $this->kernel ? $this->kernel->getEnvironment() : 'null',
@@ -218,10 +220,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->dataCollector->isEnabled() ? 'true' : 'false'
         );
 
-        // Get route name
-        $this->routeName = $request->attributes->get('_route');
-        $this->dataCollector->setRouteName($this->routeName);
-
         LogHelper::logf(
             '[PerformanceBundle] onKernelRequest: Collector enabled, route=%s, env=%s, trackQueries=%s, trackRequestTime=%s, trackSubRequests=%s',
             $this->enableLogging,
@@ -232,8 +230,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->trackSubRequests ? 'true' : 'false'
         );
 
-        // Skip ignored routes
-        if (null !== $this->routeName && \in_array($this->routeName, $this->ignoreRoutes, true)) {
+        // Skip ignored routes (exact match or prefix match, e.g. _wdt ignores _wdt, _wdt_open, _wdt_open_file)
+        if (null !== $this->routeName && $this->isRouteIgnored($this->routeName)) {
             LogHelper::logf('[PerformanceBundle] Tracking disabled: route "%s" is in ignore_routes list', $this->enableLogging, $this->routeName);
             $this->dataCollector->setEnabled(false);
             $this->dataCollector->setDisabledReason(\sprintf('Route "%s" is in ignore_routes list', $this->routeName));
@@ -568,6 +566,18 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $e->getLine()
             );
 
+            $msg = $e->getMessage();
+            $schemaHint = str_contains($msg, 'Unknown column') || str_contains($msg, 'Column not found')
+                || str_contains($msg, 'total_queries')
+                || str_contains($msg, "Field 'id' doesn't have a default value")
+                || str_contains($msg, "doesn't have a default value");
+            if ($this->enableLogging && $schemaHint) {
+                LogHelper::logf(
+                    '[PerformanceBundle] Hint: If routes_data_records has schema issues (missing columns, id without AUTO_INCREMENT), run: php bin/console nowo:performance:sync-schema',
+                    $this->enableLogging
+                );
+            }
+
             // Inform collector that save failed
             $this->dataCollector->setRecordOperation(false, false);
 
@@ -738,5 +748,63 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         return ['count' => $queryCount, 'time' => $queryTime];
+    }
+
+    /**
+     * Check if the route is ignored (literal name or glob pattern).
+     *
+     * - Literal: exact match, or sub-routes by prefix (e.g. "_wdt" matches "_wdt", "_wdt_open").
+     * - Pattern: if the entry contains * or ?, it is treated as a glob (e.g. "_wdt*", "*_profiler*").
+     *
+     * @param string|null $routeName The route name from the request
+     *
+     * @return bool True if the route should not be tracked
+     */
+    private function isRouteIgnored(?string $routeName): bool
+    {
+        if (null === $routeName || '' === $routeName) {
+            return false;
+        }
+        foreach ($this->ignoreRoutes as $ignored) {
+            $ignored = (string) $ignored;
+            if ('' === $ignored) {
+                continue;
+            }
+            // Pattern: entry contains glob wildcards
+            if (str_contains($ignored, '*') || str_contains($ignored, '?')) {
+                if (fnmatch($ignored, $routeName, \FNM_NOESCAPE)) {
+                    return true;
+                }
+                continue;
+            }
+            // Literal: exact match or sub-route by prefix (_wdt -> _wdt_open)
+            if ($routeName === $ignored) {
+                return true;
+            }
+            if (str_starts_with($routeName, $ignored . '_')) {
+                return true;
+            }
+        }
+
+        // Symfony's WebProfilerBundle uses route names web_profiler_wdt and web_profiler_profiler
+        // (path /_wdt and /_profiler). If the user has _wdt or _profiler in ignore_routes,
+        // treat these routes as ignored even though their names don't start with _wdt/_profiler.
+        if (str_starts_with($routeName, 'web_profiler_')) {
+            foreach ($this->ignoreRoutes as $ignored) {
+                $ignored = (string) $ignored;
+                if ('' === $ignored) {
+                    continue;
+                }
+                $ig = strtolower($ignored);
+                if ($ig === '_wdt' || str_starts_with($ig, '_wdt') || $ig === '_profiler' || str_starts_with($ig, '_profiler') || str_starts_with($ig, 'web_profiler')) {
+                    return true;
+                }
+                if (str_contains($ignored, '*') && fnmatch($ignored, $routeName, \FNM_NOESCAPE)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

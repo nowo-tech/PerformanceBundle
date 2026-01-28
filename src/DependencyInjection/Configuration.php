@@ -13,7 +13,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  * Defines the configuration structure for the PerformanceBundle.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class Configuration implements ConfigurationInterface
 {
@@ -64,9 +64,9 @@ final class Configuration implements ConfigurationInterface
                     ->defaultValue(false)
                 ->end()
                 ->arrayNode('ignore_routes')
-                    ->info('List of route names to ignore (e.g., _wdt, _profiler)')
+                    ->info('List of route names (literal) or glob patterns (e.g. _wdt, _profiler, web_profiler*, admin_*) to ignore. Symfony toolbar/profiler use route names web_profiler_wdt and web_profiler_profiler.')
                     ->prototype('scalar')->end()
-                    ->defaultValue(['_wdt', '_profiler', '_error'])
+                    ->defaultValue(['_wdt', '_profiler', 'web_profiler*', '_error'])
                 ->end()
                 ->arrayNode('track_status_codes')
                     ->info('HTTP status codes to track and calculate ratios for')

@@ -75,4 +75,37 @@ final class DiagnoseCommandTest extends TestCase
         $output = $tester->getDisplay();
         $this->assertStringContainsString('Query tracking is disabled', $output);
     }
+
+    public function testCommandHelpMentionsDiagnoseAndQueryTracking(): void
+    {
+        $help = $this->command->getHelp();
+        $this->assertStringContainsString('diagnostic', $help);
+        $this->assertStringContainsString('query tracking', $help);
+        $this->assertStringContainsString('nowo:performance:diagnose', $help);
+    }
+
+    public function testExecuteWhenEnabledShowsMiddlewareSection(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+            return match ($key) {
+                'nowo_performance.enabled' => true,
+                'nowo_performance.track_queries' => true,
+                'nowo_performance.track_request_time' => true,
+                'nowo_performance.connection' => 'default',
+                'nowo_performance.environments' => ['dev', 'prod'],
+                default => null,
+            };
+        });
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Query Tracking Middleware', $output);
+        $this->assertStringContainsString('Initial query count', $output);
+        $this->assertStringContainsString('QueryTrackingMiddleware class is available', $output);
+        $this->assertStringContainsString('Query Tracking Status', $output);
+        $this->assertStringContainsString('How Query Tracking Works', $output);
+    }
 }

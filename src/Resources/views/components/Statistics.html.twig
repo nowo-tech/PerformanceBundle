@@ -22,7 +22,7 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ 'statistics.avg_request_time'|trans({}, 'nowo_performance') }}</h5>
                     <h2 class="text-warning">
-                        {% if stats.avg_request_time %}
+                        {% if stats.avg_request_time is not null %}
                             {{ (stats.avg_request_time * 1000)|number_format(2) }} ms
                         {% else %}
                             {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
@@ -36,7 +36,7 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ 'statistics.max_request_time'|trans({}, 'nowo_performance') }}</h5>
                     <h2 class="text-danger">
-                        {% if stats.max_request_time %}
+                        {% if stats.max_request_time is not null %}
                             {{ (stats.max_request_time * 1000)|number_format(2) }} ms
                         {% else %}
                             {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
@@ -97,7 +97,7 @@
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_request_time'|trans({}, 'nowo_performance') }}</dt>
                             <dd class="text-lg font-semibold text-amber-600">
-                                {% if stats.avg_request_time %}
+                                {% if stats.avg_request_time is not null %}
                                     {{ (stats.avg_request_time * 1000)|number_format(2) }} ms
                                 {% else %}
                                     {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
@@ -121,7 +121,7 @@
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_request_time'|trans({}, 'nowo_performance') }}</dt>
                             <dd class="text-lg font-semibold text-red-600">
-                                {% if stats.max_request_time %}
+                                {% if stats.max_request_time is not null %}
                                     {{ (stats.max_request_time * 1000)|number_format(2) }} ms
                                 {% else %}
                                     {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}

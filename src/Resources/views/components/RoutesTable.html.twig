@@ -32,7 +32,6 @@
                                         <th>{{ 'routes_table.memory_usage'|trans({}, 'nowo_performance') }}</th>
                                         <th>{{ 'routes_table.access_count'|trans({}, 'nowo_performance') }}</th>
                                         <th>{{ 'routes_table.last_accessed_at'|trans({}, 'nowo_performance') }}</th>
-                                        <th>{{ 'routes_table.updated_at'|trans({}, 'nowo_performance') }}</th>
                                         {% if enableReviewSystem %}
                                             <th>{{ 'routes_table.review_status'|trans({}, 'nowo_performance') }}</th>
                                         {% endif %}
@@ -65,57 +64,43 @@
                                                 <td>
                                                     {% if route.getStatusCodes() is not empty %}
                                                         {% set totalResponses = route.getTotalResponses() %}
-                                                        {% set errorCodes = [] %}
-                                                        {% set successCodes = [] %}
-                                                        {% for code in trackStatusCodes %}
-                                                            {% set count = route.getStatusCodeCount(code) %}
-                                                            {% if count > 0 %}
-                                                                {% set ratio = route.getStatusCodeRatio(code) %}
-                                                                {% if code >= 400 %}
-                                                                    {% set errorCodes = errorCodes|merge([{'code': code, 'count': count, 'ratio': ratio}]) %}
-                                                                {% else %}
-                                                                    {% set successCodes = successCodes|merge([{'code': code, 'count': count, 'ratio': ratio}]) %}
-                                                                {% endif %}
+                                                        {% set statusList = [] %}
+                                                        {% for code, count in route.getStatusCodes() %}
+                                                            {% set ratio = totalResponses > 0 ? (count / totalResponses) * 100 : 0 %}
+                                                            {% set statusList = statusList|merge([{code: code, count: count, ratio: ratio}]) %}
+                                                        {% endfor %}
+                                                        {% set statusList = statusList|sort((a, b) => b.count <=> a.count) %}
+                                                        {% set errorRatio = 0 %}
+                                                        {% for item in statusList %}
+                                                            {% if item.code >= 400 %}
+                                                                {% set errorRatio = errorRatio + item.ratio %}
                                                             {% endif %}
                                                         {% endfor %}
-                                                        
-                                                        {# Calcular ratio total de errores #}
-                                                        {% set totalErrorRatio = 0 %}
-                                                        {% for error in errorCodes %}
-                                                            {% set totalErrorRatio = totalErrorRatio + error.ratio %}
-                                                        {% endfor %}
-                                                        
-                                                        {# Mostrar ratio de errores destacado si es alto #}
-                                                        {% if totalErrorRatio > 10 %}
+                                                        {% if errorRatio > 10 %}
                                                             <div class="mb-1">
-                                                                <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Error Rate: {{ totalErrorRatio|number_format(1) }}% ({{ errorCodes|map(e => e.count)|sum }} errors out of {{ totalResponses }} total)">
-                                                                    ⚠️ Errors: {{ totalErrorRatio|number_format(1) }}%
+                                                                <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'routes_table.error_rate'|trans({}, 'nowo_performance') }}: {{ errorRatio|number_format(1) }}%">
+                                                                    ⚠️ {{ errorRatio|number_format(1) }}% errors
                                                                 </span>
                                                             </div>
                                                         {% endif %}
-                                                        
                                                         <div class="d-flex flex-wrap gap-1">
-                                                            {% for code in trackStatusCodes %}
-                                                                {% set count = route.getStatusCodeCount(code) %}
-                                                                {% if count > 0 %}
-                                                                    {% set ratio = route.getStatusCodeRatio(code) %}
-                                                                    {% set badgeClass = 'bg-secondary' %}
-                                                                    {% if code >= 200 and code < 300 %}
-                                                                        {% set badgeClass = 'bg-success' %}
-                                                                    {% elseif code >= 400 and code < 500 %}
-                                                                        {% set badgeClass = 'bg-warning text-dark' %}
-                                                                    {% elseif code >= 500 and code < 600 %}
-                                                                        {% set badgeClass = 'bg-danger' %}
-                                                                    {% endif %}
-                                                                    <span class="badge {{ badgeClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ count }} de {{ totalResponses }} ({{ ratio|number_format(2) }}%)">
-                                                                        {{ code }}: {{ ratio|number_format(1) }}%
-                                                                    </span>
+                                                            {% for item in statusList %}
+                                                                {% set badgeClass = 'bg-secondary' %}
+                                                                {% if item.code >= 200 and item.code < 300 %}
+                                                                    {% set badgeClass = 'bg-success' %}
+                                                                {% elseif item.code >= 300 and item.code < 400 %}
+                                                                    {% set badgeClass = 'bg-info' %}
+                                                                {% elseif item.code >= 400 and item.code < 500 %}
+                                                                    {% set badgeClass = 'bg-warning text-dark' %}
+                                                                {% elseif item.code >= 500 %}
+                                                                    {% set badgeClass = 'bg-danger' %}
                                                                 {% endif %}
+                                                                <span class="badge {{ badgeClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ item.count }} / {{ totalResponses }} ({{ item.ratio|number_format(2) }}%)">
+                                                                    {{ item.code }}: {{ item.ratio|number_format(1) }}% ({{ item.count }})
+                                                                </span>
                                                             {% endfor %}
                                                         </div>
-                                                        {% if totalResponses > 0 %}
-                                                            <small class="text-muted d-block mt-1">Total: {{ totalResponses }} responses</small>
-                                                        {% endif %}
+                                                        <small class="text-muted d-block mt-1">{{ 'routes_table.total_responses'|trans({}, 'nowo_performance') }}: {{ totalResponses }}</small>
                                                     {% else %}
                                                         <span class="text-muted">N/A</span>
                                                     {% endif %}
@@ -123,7 +108,7 @@
                                             {% endif %}
                                             <td><span class="badge bg-secondary">{{ route.env ?? 'N/A' }}</span></td>
                                             <td>
-                                                {% if route.requestTime %}
+                                                {% if route.requestTime is not null %}
                                                     {% set thresholds = thresholds|default({}) %}
                                                     {% set requestTimeWarning = thresholds.request_time.warning|default(0.5) %}
                                                     {% set requestTimeCritical = thresholds.request_time.critical|default(1.0) %}
@@ -135,14 +120,14 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if route.queryTime %}
+                                                {% if route.queryTime is not null %}
                                                     <span class="badge bg-info">{{ (route.queryTime * 1000)|number_format(2) }} ms</span>
                                                 {% else %}
                                                     <span class="text-muted">N/A</span>
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if route.totalQueries %}
+                                                {% if route.totalQueries is not null %}
                                                     {% set thresholds = thresholds|default({}) %}
                                                     {% set queryCountWarning = thresholds.query_count.warning|default(20) %}
                                                     {% set queryCountCritical = thresholds.query_count.critical|default(50) %}
@@ -154,7 +139,7 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if route.memoryUsage %}
+                                                {% if route.memoryUsage is not null %}
                                                     {% set thresholds = thresholds|default({}) %}
                                                     {% set memoryUsageWarning = thresholds.memory_usage.warning|default(20.0) %}
                                                     {% set memoryUsageCritical = thresholds.memory_usage.critical|default(50.0) %}
@@ -174,13 +159,6 @@
                                             <td>
                                                 {% if route.getLastAccessedAt() %}
                                                     {{ route.getLastAccessedAt()|date(dateTimeFormat|default('Y-m-d H:i:s')) }}
-                                                {% else %}
-                                                    <span class="text-muted">N/A</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if route.updatedAt %}
-                                                    {{ route.updatedAt|date(dateTimeFormat|default('Y-m-d H:i:s')) }}
                                                 {% else %}
                                                     <span class="text-muted">N/A</span>
                                                 {% endif %}
@@ -210,16 +188,11 @@
                                             {% if enableRecordManagement or enableReviewSystem %}
                                                 <td>
                                                     <div class="btn-group" role="group">
-                                                        {% if enableRecordManagement %}
-                                                            <form method="post" action="{{ path('nowo_performance.delete', {id: route.getId()}) }}" style="display: inline;" onsubmit="return confirm('{{ 'routes_table.confirm_delete'|trans({}, 'nowo_performance') }}');">
-                                                                <input type="hidden" name="_token" value="{{ csrf_token('delete_performance_record_' ~ route.getId()) }}">
-                                                                <button type="submit" class="btn btn-sm btn-danger" title="{{ 'routes_table.delete_record'|trans({}, 'nowo_performance') }}">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                                                                    </svg>
-                                                                </button>
-                                                            </form>
+                                                        {% if enableRecordManagement and (deleteForms|default({}))[route.getId()] is defined %}
+                                                            {% set deleteForm = deleteForms[route.getId()] %}
+                                                            {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.getId()}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ ('routes_table.confirm_delete'|trans({}, 'nowo_performance')) ~ "');"}}) }}
+                                                                {{ form_widget(deleteForm) }}
+                                                            {{ form_end(deleteForm) }}
                                                         {% endif %}
                                                         {% if enableReviewSystem %}
                                                             {% if not route.isReviewed() %}
@@ -312,7 +285,6 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.memory_usage'|trans({}, 'nowo_performance') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.access_count'|trans({}, 'nowo_performance') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.last_accessed_at'|trans({}, 'nowo_performance') }}</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.updated_at'|trans({}, 'nowo_performance') }}</th>
                                 {% if enableReviewSystem %}
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.review_status'|trans({}, 'nowo_performance') }}</th>
                                 {% endif %}
@@ -347,54 +319,43 @@
                                         <td class="px-6 py-4">
                                             {% if route.getStatusCodes() is not empty %}
                                                 {% set totalResponses = route.getTotalResponses() %}
-                                                {% set errorCodes = [] %}
-                                                {% for code in trackStatusCodes %}
-                                                    {% set count = route.getStatusCodeCount(code) %}
-                                                    {% if count > 0 and code >= 400 %}
-                                                        {% set ratio = route.getStatusCodeRatio(code) %}
-                                                        {% set errorCodes = errorCodes|merge([{'code': code, 'count': count, 'ratio': ratio}]) %}
+                                                {% set statusList = [] %}
+                                                {% for code, count in route.getStatusCodes() %}
+                                                    {% set ratio = totalResponses > 0 ? (count / totalResponses) * 100 : 0 %}
+                                                    {% set statusList = statusList|merge([{code: code, count: count, ratio: ratio}]) %}
+                                                {% endfor %}
+                                                {% set statusList = statusList|sort((a, b) => b.count <=> a.count) %}
+                                                {% set errorRatio = 0 %}
+                                                {% for item in statusList %}
+                                                    {% if item.code >= 400 %}
+                                                        {% set errorRatio = errorRatio + item.ratio %}
                                                     {% endif %}
                                                 {% endfor %}
-                                                
-                                                {# Calcular ratio total de errores #}
-                                                {% set totalErrorRatio = 0 %}
-                                                {% for error in errorCodes %}
-                                                    {% set totalErrorRatio = totalErrorRatio + error.ratio %}
-                                                {% endfor %}
-                                                
-                                                {# Mostrar ratio de errores destacado si es alto #}
-                                                {% if totalErrorRatio > 10 %}
+                                                {% if errorRatio > 10 %}
                                                     <div class="mb-2">
-                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300" title="Error Rate: {{ totalErrorRatio|number_format(1) }}% ({{ errorCodes|map(e => e.count)|sum }} errors out of {{ totalResponses }} total)">
-                                                            ⚠️ Errors: {{ totalErrorRatio|number_format(1) }}%
+                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300" title="{{ 'routes_table.error_rate'|trans({}, 'nowo_performance') }}: {{ errorRatio|number_format(1) }}%">
+                                                            ⚠️ {{ errorRatio|number_format(1) }}% errors
                                                         </span>
                                                     </div>
                                                 {% endif %}
-                                                
                                                 <div class="flex flex-wrap gap-1">
-                                                    {% for code in trackStatusCodes %}
-                                                        {% set count = route.getStatusCodeCount(code) %}
-                                                        {% if count > 0 %}
-                                                            {% set ratio = route.getStatusCodeRatio(code) %}
-                                                            {% set statusColors = {
-                                                                200: 'bg-green-100 text-green-800',
-                                                                201: 'bg-green-100 text-green-800',
-                                                                400: 'bg-yellow-100 text-yellow-800',
-                                                                401: 'bg-yellow-100 text-yellow-800',
-                                                                403: 'bg-yellow-100 text-yellow-800',
-                                                                404: 'bg-red-100 text-red-800',
-                                                                500: 'bg-red-100 text-red-800',
-                                                                503: 'bg-red-100 text-red-800'
-                                                            } %}
-                                                            <span class="px-2 py-1 text-xs font-semibold rounded-full {{ statusColors[code]|default('bg-gray-100 text-gray-800') }}" title="{{ count }} de {{ totalResponses }} ({{ ratio|number_format(2) }}%)">
-                                                                {{ code }}: {{ ratio|number_format(1) }}%
-                                                            </span>
+                                                    {% for item in statusList %}
+                                                        {% set badgeClass = 'bg-gray-100 text-gray-800' %}
+                                                        {% if item.code >= 200 and item.code < 300 %}
+                                                            {% set badgeClass = 'bg-green-100 text-green-800' %}
+                                                        {% elseif item.code >= 300 and item.code < 400 %}
+                                                            {% set badgeClass = 'bg-blue-100 text-blue-800' %}
+                                                        {% elseif item.code >= 400 and item.code < 500 %}
+                                                            {% set badgeClass = 'bg-yellow-100 text-yellow-800' %}
+                                                        {% elseif item.code >= 500 %}
+                                                            {% set badgeClass = 'bg-red-100 text-red-800' %}
                                                         {% endif %}
+                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ badgeClass }}" title="{{ item.count }} / {{ totalResponses }} ({{ item.ratio|number_format(1) }}%)">
+                                                            {{ item.code }}: {{ item.ratio|number_format(1) }}% ({{ item.count }})
+                                                        </span>
                                                     {% endfor %}
                                                 </div>
-                                                {% if totalResponses > 0 %}
-                                                    <div class="mt-1 text-xs text-gray-500">Total: {{ totalResponses }} responses</div>
-                                                {% endif %}
+                                                <div class="mt-1 text-xs text-gray-500">{{ 'routes_table.total_responses'|trans({}, 'nowo_performance') }}: {{ totalResponses }}</div>
                                             {% else %}
                                                 <span class="text-gray-400">N/A</span>
                                             {% endif %}
@@ -404,7 +365,7 @@
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ route.env ?? 'N/A' }}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if route.requestTime %}
+                                        {% if route.requestTime is not null %}
                                             {% set thresholds = thresholds|default({}) %}
                                             {% set requestTimeWarning = (thresholds.request_time.warning|default(0.5)) * 1000 %}
                                             {% set requestTimeCritical = (thresholds.request_time.critical|default(1.0)) * 1000 %}
@@ -421,14 +382,14 @@
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if route.queryTime %}
+                                        {% if route.queryTime is not null %}
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 text-cyan-800">{{ (route.queryTime * 1000)|number_format(2) }} ms</span>
                                         {% else %}
                                             <span class="text-sm text-gray-500">N/A</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if route.totalQueries %}
+                                        {% if route.totalQueries is not null %}
                                             {% set thresholds = thresholds|default({}) %}
                                             {% set queryCountWarning = thresholds.query_count.warning|default(20) %}
                                             {% set queryCountCritical = thresholds.query_count.critical|default(50) %}
@@ -444,7 +405,7 @@
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if route.memoryUsage %}
+                                        {% if route.memoryUsage is not null %}
                                             {% set thresholds = thresholds|default({}) %}
                                             {% set memoryUsageWarning = thresholds.memory_usage.warning|default(20.0) %}
                                             {% set memoryUsageCritical = thresholds.memory_usage.critical|default(50.0) %}
@@ -467,9 +428,6 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {% if route.getLastAccessedAt() %}{{ route.getLastAccessedAt()|date(dateTimeFormat|default('Y-m-d H:i:s')) }}{% else %}<span class="text-gray-400">N/A</span>{% endif %}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {% if route.updatedAt %}{{ route.updatedAt|date(dateTimeFormat|default('Y-m-d H:i:s')) }}{% else %}<span class="text-gray-400">N/A</span>{% endif %}
                                     </td>
                                     {% if enableReviewSystem %}
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -496,15 +454,11 @@
                                     {% if enableRecordManagement or enableReviewSystem %}
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
-                                                {% if enableRecordManagement %}
-                                                    <form method="post" action="{{ path('nowo_performance.delete', {id: route.getId()}) }}" style="display: inline;" onsubmit="return confirm('{{ 'routes_table.confirm_delete'|trans({}, 'nowo_performance') }}');">
-                                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_performance_record_' ~ route.getId()) }}">
-                                                        <button type="submit" class="text-red-600 hover:text-red-900" title="{{ 'routes_table.delete_record'|trans({}, 'nowo_performance') }}">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
+                                                {% if enableRecordManagement and (deleteForms|default({}))[route.getId()] is defined %}
+                                                    {% set deleteForm = deleteForms[route.getId()] %}
+                                                    {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.getId()}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ ('routes_table.confirm_delete'|trans({}, 'nowo_performance')) ~ "');"}}) }}
+                                                        {{ form_widget(deleteForm) }}
+                                                    {{ form_end(deleteForm) }}
                                                 {% endif %}
                                                 {% if enableReviewSystem %}
                                                     {% if not route.isReviewed() %}
@@ -515,8 +469,8 @@
                                                         </button>
                                                         {% if reviewForms[route.getId()] is defined %}
                                                             {% set reviewForm = reviewForms[route.getId()] %}
-                                                            <div id="reviewModal{{ route.getId() }}" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                                                                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                                                            <div id="reviewModal{{ route.getId() }}" class="hidden fixed inset-0 z-50 flex min-h-screen items-center justify-center overflow-y-auto bg-gray-600/50 p-4" onclick="if (event.target === this) this.classList.add('hidden')">
+                                                                <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-gray-200 bg-white p-5 shadow-lg" onclick="event.stopPropagation()">
                                                                     {{ form_start(reviewForm, {'action': path('nowo_performance.review', {id: route.getId()})}) }}
                                                                         <div class="flex justify-between items-center mb-4">
                                                                             <h3 class="text-lg font-medium">{{ 'review.modal_title'|trans({}, 'nowo_performance') }}</h3>
@@ -536,11 +490,12 @@
                                                                             {{ form_widget(reviewForm.time_improved, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                                                                             {{ form_errors(reviewForm.time_improved) }}
                                                                         </div>
-                                                                    <div class="flex justify-end space-x-2">
-                                                                        <button type="button" onclick="document.getElementById('reviewModal{{ route.getId() }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">{{ 'routes_table.cancel'|trans({}, 'nowo_performance') }}</button>
-                                                                        {{ form_widget(reviewForm.submit, {'attr': {'class': 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'}}) }}
-                                                                    </div>
-                                                                {{ form_end(reviewForm) }}
+                                                                        <div class="flex justify-end space-x-2">
+                                                                            <button type="button" onclick="document.getElementById('reviewModal{{ route.getId() }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">{{ 'routes_table.cancel'|trans({}, 'nowo_performance') }}</button>
+                                                                            {{ form_widget(reviewForm.submit, {'attr': {'class': 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'}}) }}
+                                                                        </div>
+                                                                    {{ form_end(reviewForm) }}
+                                                                </div>
                                                             </div>
                                                         {% endif %}
                                                     {% endif %}

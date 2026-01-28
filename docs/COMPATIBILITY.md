@@ -397,8 +397,6 @@ $originalDriver = $driverProperty->getValue($connection);
 
 ## Diagnostic Commands
 
-## Troubleshooting
-
 ### Common Issues
 
 #### Issue: "Unrecognized option 'middlewares'" error
@@ -448,6 +446,74 @@ php bin/console nowo:performance:diagnose
 4. Connection name mismatch
 
 **Solution**: Check the diagnose command output and verify your configuration.
+
+### 4. Metrics and Temporal Records
+
+The bundle uses two closely related entities for storing performance data:
+
+- `RouteData`: aggregate metrics per route and environment.
+- `RouteDataRecord`: individual access records for temporal analysis.
+
+#### 4.1. RouteData (aggregate)
+
+`RouteData` is the main entity used by the dashboard (`/performance`) to display
+per-route metrics. It stores:
+
+- Identification:
+  - `env`
+  - `name`
+  - `httpMethod`
+- Aggregate metrics (representative values):
+  - `requestTime`
+  - `queryTime`
+  - `totalQueries`
+  - `memoryUsage`
+  - `accessCount`
+  - `lastAccessedAt`
+- Review state:
+  - `reviewed`, `reviewedAt`, `reviewedBy`
+  - `queriesImproved`, `timeImproved`
+- Status codes summary:
+  - `statusCodes` JSON with counts per HTTP status code
+
+These fields are **denormalized aggregates** which are updated by
+`PerformanceMetricsService` whenever a request is recorded. They are designed
+to make dashboard queries fast (simple `SELECT`/`ORDER BY` on `routes_data`).
+
+#### 4.2. RouteDataRecord (temporal log)
+
+`RouteDataRecord` stores **one row per access**, and is used for all advanced
+temporal analysis:
+
+- `routeData` (FK to `RouteData`)
+- `accessedAt`
+- `statusCode`
+- `responseTime`
+
+Advanced statistics pages (`/performance/access-statistics`, heatmaps, hourly
+and daily distributions) are computed against `RouteDataRecord` using
+`RouteDataRecordRepository`. This avoids duplicating logic in the aggregate
+entity and keeps the model compatible across DBAL/ORM versions.
+
+#### 4.3. Aggregate rebuild command
+
+If, for any reason, aggregates in `RouteData` become out of sync with
+`RouteDataRecord` (for example after manual data imports), you can rebuild them:
+
+```bash
+php bin/console nowo:performance:rebuild-aggregates
+```
+
+Options:
+
+- `--env=dev` – restrict rebuild to a specific environment.
+- `--batch-size=200` – control batch size for flushing (default: 200).
+
+For each `RouteData`, this command recomputes:
+
+- `accessCount` – from the number of `RouteDataRecord` rows.
+- `lastAccessedAt` – from the latest `accessedAt`.
+- `statusCodes` – from the distribution of `statusCode` values in records.
 
 ### Diagnostic Commands
 
@@ -514,7 +580,7 @@ This command shows:
 
 ## Compatibility Changelog
 
-### Version 0.0.1 (2025-01-27)
+### Version 0.0.1 (2026-01-27)
 
 - ✅ Initial support for Doctrine ORM 2.13+ and 3.0+
 - ✅ Initial support for DoctrineBundle 2.8+ and 3.0+

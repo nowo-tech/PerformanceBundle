@@ -23,7 +23,8 @@ class HomeController extends AbstractController
         
         try {
             $routes = $this->metricsService->getRoutesByEnvironment($env);
-            $worstRoutes = $this->metricsService->getWorstPerformingRoutes($env, 10);
+            $withAggregates = $this->metricsService->getRoutesWithAggregates($env);
+            $worstRoutes = \array_slice($withAggregates, 0, 10);
         } catch (\Exception $e) {
             // If metrics table doesn't exist yet, show empty state
             $routes = [];

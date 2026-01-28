@@ -8,7 +8,7 @@ namespace Nowo\PerformanceBundle\Notification;
  * Represents a performance alert.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class PerformanceAlert
 {
@@ -28,7 +28,7 @@ final class PerformanceAlert
     public const TYPE_OUTLIER = 'outlier';
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param string               $type     Alert type (request_time, query_count, etc.)
      * @param string               $severity Alert severity (warning, critical)

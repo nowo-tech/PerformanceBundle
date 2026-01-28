@@ -28,6 +28,24 @@ curl http://localhost:8000/app_home
 # Metrics are automatically saved to database
 ```
 
+### Temporal Access Records (Seasonality)
+
+When `enable_access_records: true` is enabled in configuration, the bundle also stores
+**one access record per request** in the `routes_data_records` table (`RouteDataRecord` entity).
+These records contain:
+
+- `accessedAt` (timestamp)
+- `statusCode`
+- `responseTime`
+
+They power the **Access Statistics** and **Access Records** pages:
+
+- `/performance/access-statistics` – charts and heatmaps (by hour, day of week, month)
+- `/performance/access-records` – paginated list of individual hits with filters
+
+The main `RouteData` entity remains an aggregate view (per route + environment), while
+`RouteDataRecord` is the normalized temporal log used for seasonality analysis.
+
 ## Manual Metrics Management
 
 ### Setting Route Metrics
@@ -226,6 +244,12 @@ The dashboard includes export functionality to download performance data:
 - Date range filters
 - Current sorting
 
+**Access records export (CSV / JSON):**
+- On the **Access Records** page (temporal records per route), use **Export Records (CSV)** or **Export Records (JSON)**.
+- Exports individual `RouteDataRecord` rows (id, route name, environment, accessed at, status code, response time, total queries, query time, memory usage).
+- Uses the same filters as the records page: environment, date range, route, status code.
+- Requires `enable_access_records: true`. Subject to dashboard roles if configured.
+
 ### Record Management
 
 When `enable_record_management` is enabled:
@@ -243,6 +267,13 @@ When `enable_record_management` is enabled:
 - Confirmation dialog before clearing
 - CSRF protection
 - Redirects to referer after clearing
+
+**Delete records by filter:**
+- Available on **Access Records** and **Access Statistics** pages when `enable_record_management` is enabled
+- Deletes all `RouteDataRecord` rows matching the current filters (environment, date range, route, status code)
+- Confirmation dialog before deletion
+- CSRF protection (`delete_records_by_filter` token)
+- Redirects back to the page you came from (Access Records or Access Statistics)
 
 ### Review System
 

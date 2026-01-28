@@ -86,6 +86,8 @@
                 <span style="color: #999;">
                     {% if collector.disabledReason %}
                         {{ collector.disabledReason }}
+                    {% elseif collector.routeName and (collector.routeName starts with '_wdt' or collector.routeName starts with '_profiler' or collector.routeName starts with 'web_profiler') %}
+                        This is the toolbar/profiler request; tracking is disabled here. Your page request was tracked – open the Performance dashboard or the full profiler for the page token to see its data.
                     {% else %}
                         Bundle disabled or environment not tracked
                     {% endif %}
@@ -179,9 +181,141 @@
     <h2>Performance Metrics</h2>
 
     {% if not collector.enabled %}
-        <div class="empty">
-            <p>Performance tracking is disabled.</p>
+        <div style="margin-bottom: 20px; padding: 12px 16px; background: #fff8e6; border: 1px solid #f57c00; border-radius: 4px;">
+            <strong style="color: #e65100;">Tracking disabled for this request</strong>
+            {% if collector.disabledReason %}
+                <p style="margin: 8px 0 0 0;">{{ collector.disabledReason }}</p>
+            {% elseif collector.routeName and (collector.routeName starts with '_wdt' or collector.routeName starts with '_profiler' or collector.routeName starts with 'web_profiler') %}
+                <p style="margin: 8px 0 0 0;">This is the toolbar/profiler request; tracking is disabled here. Your page request was tracked – open the Performance dashboard or use the profiler token from your page URL to see its data.</p>
+            {% else %}
+                <p style="margin: 8px 0 0 0;">Bundle disabled or environment/route not tracked.</p>
+            {% endif %}
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                <em>Profiler and toolbar routes (<code>_profiler*</code>, <code>_wdt*</code>) are ignored by default. Visit a normal app route (e.g. /) to see tracking enabled.</em>
+            </p>
         </div>
+
+        <h3 style="margin-top: 24px; font-size: 14px;">Diagnostics (always shown when disabled)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Setting</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Route</td>
+                    <td><code>{{ collector.routeName ?? 'N/A' }}</code></td>
+                </tr>
+                <tr>
+                    <td>Request time (this request)</td>
+                    <td>{{ collector.formattedRequestTime }}</td>
+                </tr>
+                <tr>
+                    <td>Query count</td>
+                    <td>{{ collector.queryCount }}</td>
+                </tr>
+                <tr>
+                    <td>Query time</td>
+                    <td>{{ collector.formattedQueryTime }}</td>
+                </tr>
+                <tr>
+                    <td>Current environment</td>
+                    <td>
+                        {% if collector.currentEnvironment %}
+                            <code>{{ collector.currentEnvironment }}</code>
+                            {% set envs = collector.configuredEnvironments ?? [] %}
+                            {% if envs is not empty and collector.currentEnvironment in envs %}
+                                <span style="color: #4caf50;">✓ in allowed list</span>
+                            {% elseif envs is not empty %}
+                                <span style="color: #d32f2f;">✗ not in allowed list</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Configured environments</td>
+                    <td>
+                        {% set envs = collector.configuredEnvironments ?? [] %}
+                        {% if envs is not empty %}
+                            <code>{{ envs|join(', ') }}</code>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Processing mode</td>
+                    <td>
+                        {% if collector.async %}
+                            <span style="color: #4caf50;">● Async</span>
+                        {% else %}
+                            <span style="color: #2196f3;">● Sync</span>
+                        {% endif %}
+                        {% if collector.dependencyStatus is defined and collector.dependencyStatus.messenger is defined and not collector.dependencyStatus.messenger.available %}
+                            <span class="text-muted">(Messenger not installed)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Table</td>
+                    <td>
+                        {% if collector.tableName %}
+                            <code>{{ collector.tableName }}</code>
+                            {% if collector.tableExists %}
+                                {% if collector.tableIsComplete %}
+                                    <span style="color: #4caf50;">✓ Complete</span>
+                                {% else %}
+                                    <span style="color: #f57c00;">⚠ Incomplete</span>
+                                    {% set missingCols = collector.missingColumns %}
+                                    {% if missingCols is not empty %}
+                                        <br><small>Missing: {{ missingCols|join(', ') }}</small>
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #d32f2f;">✗ Missing</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if collector.dependencyStatus is defined and collector.dependencyStatus is not empty %}
+                <tr>
+                    <td>Dependencies</td>
+                    <td>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            {% for feature, status in collector.dependencyStatus %}
+                                <tr>
+                                    <td style="padding: 2px 8px 2px 0; font-size: 12px;">{{ feature|replace({'_': ' '})|title }}</td>
+                                    <td style="padding: 2px 0; font-size: 12px;">
+                                        {% if status.available %}
+                                            <span style="color: #4caf50;">✓</span>
+                                        {% else %}
+                                            <span style="color: #f57c00;">⚠</span> <code>{{ status.package }}</code>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </td>
+                </tr>
+                {% endif %}
+                {% if collector.missingDependencies is defined and collector.missingDependencies is not empty %}
+                <tr>
+                    <td>Optional missing</td>
+                    <td>
+                        {% for dep in collector.missingDependencies %}
+                            <code>{{ dep.package }}</code>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
     {% else %}
         <div class="metrics">
             <div class="metric">

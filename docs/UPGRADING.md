@@ -2,6 +2,119 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 2.0.0 (2026-01-28)
+
+Version **2.0.0** introduces **breaking changes** due to entity normalization: `RouteData` no longer stores aggregate metrics (requestTime, totalQueries, queryTime, memoryUsage, accessCount, statusCodes, updatedAt); those are derived from `RouteDataRecord` or an aggregates layer. `RouteDataRecord` gains totalQueries, queryTime, memoryUsage per record.
+
+**Before upgrading:**
+
+- Read **[V2_MIGRATION.md](V2_MIGRATION.md)** for the full list of breaking changes and migration steps.
+- Read **[ENTITY_NORMALIZATION_PLAN.md](ENTITY_NORMALIZATION_PLAN.md)** for the target data model and implementation phases.
+
+**Summary:**
+
+- Update code that uses `RouteData::getRequestTime()`, `getTotalQueries()`, `getQueryTime()`, `getMemoryUsage()`, `getAccessCount()`, `getStatusCodes()`, `getUpdatedAt()` — in 2.0 these will not exist; use aggregates or records instead.
+- Run schema sync (e.g. `nowo:performance:sync-schema --drop-obsolete`) or Doctrine migrations after updating entities.
+- Adjust dashboard views, notifications, and exports to use the new data source.
+
+The 1.x branch remains supported without these breaking changes.
+
+### Also in 2.0.0: Schema sync, drop-obsolete, collector diagnostics
+
+2.0.0 adds the sync-schema command, drop-obsolete option, and improves Web Profiler diagnostics when tracking is disabled.
+
+#### Changes
+
+- **`nowo:performance:sync-schema`** – Syncs both `routes_data` and `routes_data_records` with entity metadata (add missing, alter differing, optional drop with `--drop-obsolete`).
+- **`--drop-obsolete`** – Available for `create-table`, `create-records-table`, and `sync-schema`. Drops columns that exist in DB but not in the entity; `id` is never dropped.
+- **Collector diagnostics when disabled** – The Performance panel in the Web Profiler always shows route, environment, table status, and dependency info when tracking is disabled, so you can see why it's disabled (e.g. `_profiler` in `ignore_routes`).
+
+#### Migration Steps (2.0.0)
+
+1. **Update the bundle**:
+   ```bash
+   composer require nowo-tech/performance-bundle:^2.0
+   ```
+
+2. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+3. **Optional**: After entity mapping changes, run `php bin/console nowo:performance:sync-schema` (or add `--drop-obsolete` to remove obsolete columns). See [COMMANDS.md](COMMANDS.md#nowoperformancesync-schema).
+
+No configuration changes required.
+
+## Upgrading to 1.0.8 (2026-01-27)
+
+### Default Environments Now Include Production
+
+This version changes the default value for the `environments` configuration to include production, making the bundle more suitable for production monitoring out of the box.
+
+#### Changes
+
+- **Default environments updated**: Changed from `['dev', 'test']` to `['prod', 'dev', 'test']`
+  - The bundle now tracks performance in production by default
+  - This is more appropriate for a performance monitoring bundle
+  - Only affects new installations or configurations that don't explicitly set `environments`
+  - Existing configurations are not affected
+
+#### What This Means
+
+- **Production tracking by default**: New installations will track production environments automatically
+- **No breaking changes**: Existing configurations continue to work as before
+- **Better defaults**: More sensible default for a performance monitoring tool
+- **Easy to override**: Can still be customized via configuration
+
+#### Migration Steps
+
+1. **Update the bundle**:
+   ```bash
+   composer update nowo-tech/performance-bundle
+   ```
+
+2. **Review your configuration** (if you have one):
+   - If you have `environments: ['dev', 'test']` explicitly set, it will continue to work
+   - If you want to include production, update to: `environments: ['prod', 'dev', 'test']`
+   - If you don't have `environments` configured, it will now default to including `prod`
+
+3. **Clear cache** (recommended):
+   ```bash
+   php bin/console cache:clear
+   ```
+
+4. **Verify tracking**: Check that performance data is being recorded in your production environment
+
+#### Configuration Example
+
+If you want to explicitly configure environments (recommended for clarity):
+
+```yaml
+nowo_performance:
+    environments: ['prod', 'dev', 'test', 'stage']  # Add your custom environments
+```
+
+#### Troubleshooting
+
+**Q: I don't want to track production by default**  
+A: Explicitly set `environments` in your configuration:
+   ```yaml
+   nowo_performance:
+       environments: ['dev', 'test']  # Only dev and test
+   ```
+
+**Q: My production data is not being tracked**  
+A: Check that:
+   - Your `APP_ENV` is set to `prod`
+   - The `environments` configuration includes `prod` (or is not set to use the new default)
+   - The bundle is enabled: `enabled: true`
+   - Clear the cache: `php bin/console cache:clear`
+
+**Q: I see "env=prod not in allowed environments" in logs**  
+A: This means your configuration explicitly excludes `prod`. Either:
+   - Remove the `environments` configuration to use the new default
+   - Or add `prod` to your `environments` array
+
 ## Upgrading to 1.0.7 (2026-01-27)
 
 ### Enhanced Debug Logging and Test Coverage
@@ -157,7 +270,7 @@ This version fixes an issue where the diagnose page incorrectly showed the subsc
 
 3. **Verify**:
    - Visit `/performance/diagnose` (or your configured path)
-   - Check that "Subscriber Registrado" shows "✓ Sí"
+   - Check that "Registered Subscriber" shows "✓ Yes"
    - Verify that detection method is shown
 
 #### Troubleshooting
@@ -283,16 +396,16 @@ This version fixes several bugs and improves the reliability of the bundle.
 #### Changes
 
 - **Modal dependency display fix**: Fixed issue where Tailwind modal appeared in Bootstrap projects
-  - Modal de Tailwind ahora solo se incluye cuando se usa template Tailwind
-  - Modal de Bootstrap funciona correctamente en proyectos Bootstrap
-  - Mejorada la detección automática de Bootstrap vs Tailwind
+  - Tailwind modal is now only included when using the Tailwind template
+  - Bootstrap modal works correctly in Bootstrap projects
+  - Improved automatic detection of Bootstrap vs Tailwind
 - **Division by zero fix**: Fixed `DivisionByZeroError` in correlation analysis
-  - Mejora la verificación de varianzas antes de calcular correlaciones
-  - Previene errores cuando los datos tienen varianza cero
-  - Retorna `null` de forma segura cuando no se puede calcular la correlación
+  - Improved variance checks before computing correlations
+  - Prevents errors when data has zero variance
+  - Returns `null` safely when correlation cannot be computed
 - **Data Collector status fix**: Fixed "Unknown" status in Web Profiler
-  - El collector ahora muestra correctamente si se creó un nuevo registro o se actualizó uno existente
-  - Mejora la precisión del estado mostrado en el toolbar y panel del Web Profiler
+  - The collector now correctly shows whether a new record was created or an existing one was updated
+  - Improves the accuracy of the status shown in the Web Profiler toolbar and panel
 
 #### What This Means
 
@@ -427,7 +540,7 @@ A: Make sure you're using v1.0.1 or higher. Clear cache and try again:
    php bin/console nowo:performance:create-table --update
    ```
 
-## Upgrading to Unreleased (Next Version)
+## Upgrading to 1.0.0 (2026-01-27)
 
 ### Sub-Request Tracking Support
 
@@ -482,7 +595,7 @@ A: Only if you need to monitor sub-request performance separately. By default, o
 **Q: Will enabling this affect performance?**  
 A: There will be a small overhead for tracking sub-requests, and database storage will increase. Use `sampling_rate` to reduce load for high-traffic routes.
 
-## Upgrading to 0.0.7 (2025-01-27)
+## Upgrading to 0.0.7 (2026-01-27)
 
 ### Enhanced Environment Detection and Collector Display
 
@@ -554,7 +667,7 @@ This version improves environment detection and adds environment information to 
 
 **Solution**: This is normal if the kernel is not injected. The bundle will try other methods (`$_SERVER['APP_ENV']`, `$_ENV['APP_ENV']`) automatically.
 
-## Upgrading to 0.0.6 (2025-01-27)
+## Upgrading to 0.0.6 (2026-01-27)
 
 ### Test Coverage Improvement
 
@@ -590,7 +703,7 @@ This version adds comprehensive test coverage for `QueryTrackingConnectionSubscr
    php bin/console nowo:performance:diagnose
    ```
 
-## Upgrading to 0.0.5 (2025-01-27)
+## Upgrading to 0.0.5 (2026-01-27)
 
 ### Compatibility Fix
 
@@ -657,7 +770,7 @@ This version removes YAML middleware configuration completely to fix compatibili
   php bin/console cache:clear
   ```
 
-## Upgrading to 0.0.4 (2025-01-27)
+## Upgrading to 0.0.4 (2026-01-27)
 
 ### Bug Fix
 
@@ -703,7 +816,7 @@ This version fixes a fatal error that occurred during container compilation.
   ```
   Make sure you're using version 0.0.4 or higher.
 
-## Upgrading to 0.0.3 (2025-01-27)
+## Upgrading to 0.0.3 (2026-01-27)
 
 ### Compatibility Fix
 
@@ -757,7 +870,7 @@ This version fixes a compatibility issue with DoctrineBundle middleware configur
   ```
   The command will show which method is being used to register the middleware.
 
-## Upgrading to 0.0.2 (2025-01-27)
+## Upgrading to 0.0.2 (2026-01-27)
 
 ### New Features Overview
 
@@ -922,8 +1035,6 @@ nowo_performance:
    ```
 
 2. **Update configuration** (optional):
-
-2. **Update configuration** (optional):
    ```yaml
    # config/packages/nowo_performance.yaml
    nowo_performance:
@@ -1026,7 +1137,7 @@ nowo_performance:
 
 - **Solution**: Verify JavaScript is enabled and check browser console for errors
 
-## Upgrading to 0.0.1 (2025-01-26)
+## Upgrading to 0.0.1 (2026-01-26)
 
 ### New Features Overview
 
@@ -1222,48 +1333,4 @@ composer require symfony/ux-twig-component
 
 - **Solution**: Run `php bin/console nowo:performance:diagnose` to check configuration
 
-## Upgrading to 0.0.1 (2025-01-26)
-
-### Initial Release
-
-This is the first stable release of the Performance Bundle. No upgrade steps needed if you're installing for the first time.
-
-#### Installation
-
-If you're installing the bundle for the first time, follow the [Installation Guide](INSTALLATION.md).
-
-#### Key Features
-
-This initial release includes:
-
-- Automatic route performance tracking
-- Database query counting and timing
-- Request execution time measurement
-- HTTP method tracking (GET, POST, PUT, DELETE, etc.)
-- Memory usage tracking
-- Access frequency tracking
-- Performance dashboard with filtering and sorting
-- WebProfiler integration
-- CSV and JSON export
-- Record management and review system (optional)
-- Role-based access control
-- Advanced Performance Statistics page
-- Sampling for high-traffic routes
-- Configurable query tracking threshold
-- Auto-refresh dashboard
-- Symfony 6.1+, 7.x, and 8.x compatibility
-
-#### Database Setup
-
-After installation, create the database table:
-
-```bash
-php bin/console nowo:performance:create-table
-```
-
-Or use Doctrine migrations:
-
-```bash
-php bin/console doctrine:migrations:diff
-php bin/console doctrine:migrations:migrate
-```
+**First-time installation:** If you are installing the bundle for the first time, see [INSTALLATION.md](INSTALLATION.md).

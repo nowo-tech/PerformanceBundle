@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * Command to create the performance metrics table.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsCommand(
     name: 'nowo:performance:create-table',
@@ -27,7 +27,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 final class CreateTableCommand extends Command
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param ManagerRegistry $registry       Doctrine registry
      * @param string          $connectionName The name of the Doctrine connection to use
@@ -63,6 +63,9 @@ This command will:
 To add missing columns to existing table (safe, preserves data):
 <info>php %command.full_name% --update</info>
 
+To sync schema: add missing, alter differing, and drop columns not in entity (use with --update):
+<info>php %command.full_name% --update --drop-obsolete</info>
+
 To force recreation of the table (WARNING: This will drop existing data):
 <info>php %command.full_name% --force</info>
 
@@ -78,7 +81,8 @@ HELP
 
         $this
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force table creation even if it already exists')
-            ->addOption('update', 'u', InputOption::VALUE_NONE, 'Add missing columns to existing table without losing data');
+            ->addOption('update', 'u', InputOption::VALUE_NONE, 'Add missing columns to existing table without losing data')
+            ->addOption('drop-obsolete', null, InputOption::VALUE_NONE, 'Drop columns that exist in DB but not in entity (use with --update)');
     }
 
     /**
@@ -152,7 +156,7 @@ HELP
                     \sprintf('Connection: <info>%s</info>', $this->connectionName),
                 ]);
 
-                $this->updateTableSchema($entityManager, $io);
+                $this->updateTableSchema($entityManager, $io, $input->getOption('drop-obsolete'));
 
                 $io->success(\sprintf('Table "%s" updated successfully!', $actualTableName));
 
@@ -160,7 +164,7 @@ HELP
                 if ($this->enableAccessRecords) {
                     $io->newLine();
                     $io->section('Updating Access Records Table');
-                    $this->updateRecordsTable($entityManager, $io);
+                    $this->updateRecordsTable($entityManager, $io, $input->getOption('drop-obsolete'));
                 }
 
                 return Command::SUCCESS;
@@ -283,12 +287,13 @@ HELP
     }
 
     /**
-     * Update the table schema by adding missing columns and updating existing ones.
+     * Update the table schema by adding missing columns, updating existing ones, and optionally dropping obsolete columns.
      *
-     * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io            The Symfony style output
+     * @param EntityManagerInterface $entityManager  The entity manager
+     * @param SymfonyStyle           $io             The Symfony style output
+     * @param bool                   $dropObsolete  Whether to drop columns that exist in DB but not in entity
      */
-    private function updateTableSchema(EntityManagerInterface $entityManager, SymfonyStyle $io): void
+    private function updateTableSchema(EntityManagerInterface $entityManager, SymfonyStyle $io, bool $dropObsolete = false): void
     {
         $connection = $entityManager->getConnection();
         $schemaManager = $this->getSchemaManager($connection);
@@ -409,6 +414,7 @@ HELP
 
         $columnsToAdd = [];
         $columnsToUpdate = [];
+        $columnsToDrop = [];
         $platform = $connection->getDatabasePlatform();
 
         // Compare each expected column with existing ones
@@ -432,7 +438,22 @@ HELP
             }
         }
 
-        $hasChanges = !empty($columnsToAdd) || !empty($columnsToUpdate);
+        // Columns that exist in DB but not in entity (obsolete) - only when --drop-obsolete
+        if ($dropObsolete) {
+            foreach ($table->getColumns() as $column) {
+                $columnName = $this->getColumnName($column, $connection);
+                $columnNameLower = strtolower($columnName);
+                // Never drop primary key column
+                if ('id' === $columnNameLower) {
+                    continue;
+                }
+                if (!isset($expectedColumns[$columnNameLower])) {
+                    $columnsToDrop[] = $columnName;
+                }
+            }
+        }
+
+        $hasChanges = !empty($columnsToAdd) || !empty($columnsToUpdate) || !empty($columnsToDrop);
 
         if (!$hasChanges) {
             $io->success('All columns are up to date. No changes needed.');
@@ -444,6 +465,34 @@ HELP
 
         $io->text(\sprintf('Using table name: <info>%s</info>', $actualTableName));
         $io->newLine();
+
+        // Drop obsolete columns first (before adding/altering, to avoid conflicts)
+        if (!empty($columnsToDrop)) {
+            $io->section(\sprintf('Dropping <info>%d</info> obsolete column(s):', \count($columnsToDrop)));
+            foreach ($columnsToDrop as $columnName) {
+                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
+                $sql = \sprintf(
+                    'ALTER TABLE %s DROP COLUMN %s',
+                    $this->quoteIdentifier($platform, $actualTableName),
+                    $this->quoteIdentifier($platform, $columnName)
+                );
+                try {
+                    $connection->executeStatement($sql);
+                    $io->text(\sprintf('  ✓ Dropped column <info>%s</info>', $columnName));
+                } catch (\Exception $e) {
+                    $io->error(\sprintf('  ✗ Failed to drop column %s: %s', $columnName, $e->getMessage()));
+                    throw $e;
+                }
+            }
+            $io->newLine();
+            // Refresh table schema after drops
+            $table = $schemaManager->introspectTable($actualTableName);
+            $existingColumnsMap = [];
+            foreach ($table->getColumns() as $column) {
+                $columnName = $this->getColumnName($column, $connection);
+                $existingColumnsMap[strtolower($columnName)] = $column;
+            }
+        }
 
         // Add missing columns
         if (!empty($columnsToAdd)) {
@@ -778,12 +827,13 @@ HELP
     }
 
     /**
-     * Update the access records table schema by adding missing columns.
+     * Update the access records table schema by adding missing columns, updating existing ones, and optionally dropping obsolete columns.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io            The Symfony style output
+     * @param SymfonyStyle           $io           The Symfony style output
+     * @param bool                   $dropObsolete Whether to drop columns that exist in DB but not in entity
      */
-    private function updateRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io): void
+    private function updateRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io, bool $dropObsolete = false): void
     {
         $connection = $entityManager->getConnection();
         $schemaManager = $this->getSchemaManager($connection);
@@ -857,6 +907,8 @@ HELP
         }
 
         $columnsToAdd = [];
+        $columnsToUpdate = [];
+        $columnsToDrop = [];
         $platform = $connection->getDatabasePlatform();
 
         // Compare each expected column with existing ones
@@ -864,40 +916,197 @@ HELP
             $columnName = $expectedInfo['column'];
 
             if (!isset($existingColumnsMap[$columnNameLower])) {
-                // Column doesn't exist, needs to be added
                 $columnsToAdd[$columnName] = $expectedInfo;
+            } else {
+                $existingColumn = $existingColumnsMap[$columnNameLower];
+                if ($this->columnNeedsUpdate($existingColumn, $expectedInfo, $platform)) {
+                    $columnsToUpdate[$columnName] = [
+                        'expected' => $expectedInfo,
+                        'existing' => $existingColumn,
+                    ];
+                }
             }
         }
 
-        if (empty($columnsToAdd)) {
+        if ($dropObsolete) {
+            foreach ($table->getColumns() as $column) {
+                $columnName = $this->getColumnName($column, $connection);
+                $columnNameLower = strtolower($columnName);
+                if ('id' === $columnNameLower) {
+                    continue;
+                }
+                if (!isset($expectedColumns[$columnNameLower])) {
+                    $columnsToDrop[] = $columnName;
+                }
+            }
+        }
+
+        $hasChanges = !empty($columnsToAdd) || !empty($columnsToUpdate) || !empty($columnsToDrop);
+
+        if (!$hasChanges) {
             $io->success('All columns are up to date. No changes needed.');
+            $this->addMissingIndexesRecordsTable($entityManager, $io, $table, $actualTableName);
 
             return;
         }
 
-        // Add missing columns
-        $io->section(\sprintf('Adding <info>%d</info> missing column(s):', \count($columnsToAdd)));
-        foreach ($columnsToAdd as $columnName => $columnInfo) {
-            $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
+        $io->newLine();
 
-            $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-            $sql = \sprintf(
-                'ALTER TABLE %s ADD COLUMN %s %s',
-                $this->quoteIdentifier($platform, $actualTableName),
-                $this->quoteIdentifier($platform, $columnName),
-                $columnDefinition
-            );
-
-            try {
-                $connection->executeStatement($sql);
-                $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
-            } catch (\Exception $e) {
-                $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
-                throw $e;
+        // Drop obsolete columns first
+        if (!empty($columnsToDrop)) {
+            $io->section(\sprintf('Dropping <info>%d</info> obsolete column(s) (records table):', \count($columnsToDrop)));
+            foreach ($columnsToDrop as $columnName) {
+                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
+                $sql = \sprintf(
+                    'ALTER TABLE %s DROP COLUMN %s',
+                    $this->quoteIdentifier($platform, $actualTableName),
+                    $this->quoteIdentifier($platform, $columnName)
+                );
+                try {
+                    $connection->executeStatement($sql);
+                    $io->text(\sprintf('  ✓ Dropped column <info>%s</info>', $columnName));
+                } catch (\Exception $e) {
+                    $io->error(\sprintf('  ✗ Failed to drop column %s: %s', $columnName, $e->getMessage()));
+                    throw $e;
+                }
+            }
+            $io->newLine();
+            $table = $schemaManager->introspectTable($actualTableName);
+            $existingColumnsMap = [];
+            foreach ($table->getColumns() as $column) {
+                $columnName = $this->getColumnName($column, $connection);
+                $existingColumnsMap[strtolower($columnName)] = $column;
             }
         }
 
+        // Update existing columns
+        if (!empty($columnsToUpdate)) {
+            $io->section(\sprintf('Updating <info>%d</info> column(s) (records table):', \count($columnsToUpdate)));
+            foreach ($columnsToUpdate as $columnName => $columnData) {
+                $expected = $columnData['expected'];
+                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
+                $columnDefinition = $this->getColumnDefinition($expected, $platform);
+                $sql = \sprintf(
+                    'ALTER TABLE %s MODIFY COLUMN %s %s',
+                    $this->quoteIdentifier($platform, $actualTableName),
+                    $this->quoteIdentifier($platform, $columnName),
+                    $columnDefinition
+                );
+                try {
+                    $connection->executeStatement($sql);
+                    $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                } catch (\Exception $e) {
+                    $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
+                    throw $e;
+                }
+            }
+            $io->newLine();
+        }
+
+        // Add missing columns
+        if (!empty($columnsToAdd)) {
+            $io->section(\sprintf('Adding <info>%d</info> missing column(s) (records table):', \count($columnsToAdd)));
+            foreach ($columnsToAdd as $columnName => $columnInfo) {
+                $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
+
+                $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
+                $sql = \sprintf(
+                    'ALTER TABLE %s ADD COLUMN %s %s',
+                    $this->quoteIdentifier($platform, $actualTableName),
+                    $this->quoteIdentifier($platform, $columnName),
+                    $columnDefinition
+                );
+
+                try {
+                    $connection->executeStatement($sql);
+                    $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
+                } catch (\Exception $e) {
+                    $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
+                    throw $e;
+                }
+            }
+            $io->newLine();
+        }
+
+        $this->addMissingIndexesRecordsTable($entityManager, $io, $table, $actualTableName);
         $io->success(\sprintf('Access records table "%s" updated successfully!', $actualTableName));
+    }
+
+    /**
+     * Add missing indexes to the access records table.
+     *
+     * @param EntityManagerInterface      $entityManager The entity manager
+     * @param SymfonyStyle                $io            The Symfony style output
+     * @param \Doctrine\DBAL\Schema\Table $table         The table schema
+     * @param string                      $actualTableName The table name
+     */
+    private function addMissingIndexesRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io, \Doctrine\DBAL\Schema\Table $table, string $actualTableName): void
+    {
+        $connection = $entityManager->getConnection();
+        $platform = $connection->getDatabasePlatform();
+        $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+        $expectedIndexes = [];
+
+        if (isset($metadata->table['indexes']) && \is_array($metadata->table['indexes'])) {
+            foreach ($metadata->table['indexes'] as $indexName => $indexDefinition) {
+                $columns = $indexDefinition['columns'] ?? [];
+                if (!empty($columns)) {
+                    $expectedIndexes[$indexName] = $columns;
+                }
+            }
+        }
+
+        if (\PHP_VERSION_ID >= 80000) {
+            try {
+                $reflection = new \ReflectionClass('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+                $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\Index::class);
+                foreach ($attributes as $attribute) {
+                    $index = $attribute->newInstance();
+                    $indexName = $index->name ?? null;
+                    $columns = $index->columns ?? [];
+                    if ($indexName && !empty($columns)) {
+                        $expectedIndexes[$indexName] = $columns;
+                    }
+                }
+            } catch (\ReflectionException $e) {
+                // Ignore
+            }
+        }
+
+        $existingIndexes = [];
+        foreach ($table->getIndexes() as $index) {
+            $indexName = $this->getAssetName($index, $connection);
+            $existingIndexes[strtolower($indexName)] = $index;
+        }
+
+        foreach ($expectedIndexes as $indexName => $columns) {
+            if (isset($existingIndexes[strtolower($indexName)])) {
+                continue;
+            }
+            $allColumnsExist = true;
+            foreach ($columns as $column) {
+                if (!$table->hasColumn($column)) {
+                    $allColumnsExist = false;
+                    break;
+                }
+            }
+            if (!$allColumnsExist) {
+                continue;
+            }
+            $quotedColumns = array_map(fn ($col) => $this->quoteIdentifier($platform, $col), $columns);
+            $sql = \sprintf(
+                'CREATE INDEX %s ON %s (%s)',
+                $this->quoteIdentifier($platform, $indexName),
+                $this->quoteIdentifier($platform, $actualTableName),
+                implode(', ', $quotedColumns)
+            );
+            try {
+                $connection->executeStatement($sql);
+                $io->text(\sprintf('  ✓ Created index <info>%s</info> on records table', $indexName));
+            } catch (\Exception $e) {
+                $io->warning(\sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
+            }
+        }
     }
 
     /**

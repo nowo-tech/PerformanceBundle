@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * to improve dashboard performance.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class PerformanceCacheService
 {
@@ -34,7 +34,7 @@ class PerformanceCacheService
     private readonly ?CacheItemPoolInterface $cachePool;
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param CacheItemPoolInterface|string|null $cachePool The cache pool (optional, uses app cache if not provided)
      */

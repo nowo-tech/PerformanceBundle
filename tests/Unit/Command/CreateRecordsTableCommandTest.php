@@ -76,6 +76,12 @@ final class CreateRecordsTableCommandTest extends TestCase
         $this->assertTrue($definition->hasOption('update'));
     }
 
+    public function testCommandHasDropObsoleteOption(): void
+    {
+        $definition = $this->command->getDefinition();
+        $this->assertTrue($definition->hasOption('drop-obsolete'));
+    }
+
     public function testExecuteWhenTableExistsWithoutOptions(): void
     {
         $classMetadata = $this->createMock(ClassMetadata::class);

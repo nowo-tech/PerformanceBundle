@@ -11,7 +11,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * Routes table component for displaying route performance data.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsTwigComponent('nowo_performance.RoutesTable', template: '@NowoPerformanceBundle/components/RoutesTable.html.twig')]
 final class RoutesTableComponent
@@ -51,4 +51,11 @@ final class RoutesTableComponent
      * @var array<int, \Symfony\Component\Form\FormView>
      */
     public array $reviewForms = [];
+
+    /**
+     * Delete-record forms indexed by route ID (FormType with CSRF only).
+     *
+     * @var array<int, \Symfony\Component\Form\FormView>
+     */
+    public array $deleteForms = [];
 }

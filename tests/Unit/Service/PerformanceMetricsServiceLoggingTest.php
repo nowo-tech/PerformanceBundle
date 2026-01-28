@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
@@ -36,8 +37,17 @@ final class PerformanceMetricsServiceLoggingTest extends TestCase
 
         $this->entityManager
             ->method('getRepository')
-            ->with(RouteData::class)
-            ->willReturn($this->repository);
+            ->willReturnCallback(function (string $class) {
+                if (RouteData::class === $class) {
+                    return $this->repository;
+                }
+
+                if (\is_a($class, RouteDataRecordRepository::class, true) || $class === \Nowo\PerformanceBundle\Entity\RouteDataRecord::class) {
+                    return $this->createMock(RouteDataRecordRepository::class);
+                }
+
+                return $this->createMock(\Doctrine\ORM\EntityRepository::class);
+            });
 
         // Service with logging enabled
         $this->serviceWithLogging = new PerformanceMetricsService(

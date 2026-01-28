@@ -5,14 +5,24 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Controller;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordsClearedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
+use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
+use Nowo\PerformanceBundle\Form\DeleteRecordType;
+use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
+use Nowo\PerformanceBundle\Form\RecordFiltersType;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
+use Nowo\PerformanceBundle\Form\StatisticsEnvFilterType;
+use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
+use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
+use Nowo\PerformanceBundle\Model\RecordFilters;
+use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
@@ -35,12 +45,12 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * The route path and prefix can be configured via bundle configuration.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class PerformanceController extends AbstractController
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param PerformanceMetricsService $metricsService Service for retrieving metrics
      * @param bool                      $enabled        Whether the performance dashboard is enabled
@@ -210,28 +220,24 @@ class PerformanceController extends AbstractController
             $filters['date_to'] = $formData['date_to'];
         }
 
-        // Get routes with advanced filtering
+        // Get routes with aggregates (normalized: metrics from RouteDataRecord)
         try {
-            $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, $sortBy, $order, $limit);
+            $routes = $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, $sortBy, $order, $limit);
         } catch (\Exception $e) {
-            // If there's an error getting routes, return empty list
             $routes = [];
         }
 
         // Calculate statistics (with caching)
-        // Reuse the already fetched routes if they match the statistics requirements
         try {
             $stats = null;
             if (null !== $this->cacheService) {
                 $stats = $this->cacheService->getCachedStatistics($env);
             }
             if (null === $stats) {
-                // If we already have all routes (no filters or limit), reuse them for statistics
-                // Otherwise, fetch all routes for statistics
                 if (empty($filters) && (null === $limit || $limit >= 1000)) {
                     $allRoutes = $routes;
                 } else {
-                    $allRoutes = $this->metricsService->getRoutesByEnvironment($env);
+                    $allRoutes = $this->metricsService->getRoutesWithAggregates($env);
                 }
                 $stats = $this->calculateStats($allRoutes);
                 if (null !== $this->cacheService) {
@@ -256,11 +262,31 @@ class PerformanceController extends AbstractController
         $reviewForms = [];
         if ($this->enableReviewSystem) {
             foreach ($routes as $route) {
-                if ($route instanceof RouteData && !$route->isReviewed()) {
+                $routeData = $route instanceof RouteDataWithAggregates ? $route->getRouteData() : $route;
+                if ($routeData instanceof RouteData && !$routeData->isReviewed()) {
                     $reviewForm = $this->createForm(ReviewRouteDataType::class, null, [
-                        'csrf_token_id' => 'review_performance_record_'.$route->getId(),
+                        'csrf_token_id' => 'review_performance_record_'.$routeData->getId(),
                     ]);
-                    $reviewForms[$route->getId()] = $reviewForm->createView();
+                    $reviewForms[$routeData->getId()] = $reviewForm->createView();
+                }
+            }
+        }
+
+        // Clear performance data form (FormType, no raw inputs)
+        $clearForm = $this->createForm(ClearPerformanceDataType::class, new ClearPerformanceDataRequest($env));
+        $clearFormView = $clearForm->createView();
+
+        // Delete-record forms per route (FormType with CSRF only)
+        $deleteForms = [];
+        if ($this->enableRecordManagement) {
+            foreach ($routes as $route) {
+                $routeId = $route instanceof RouteDataWithAggregates ? $route->getId() : $route->getId();
+                if (null !== $routeId) {
+                    $deleteForm = $this->createForm(DeleteRecordType::class, null, [
+                        'csrf_token_id' => 'delete_performance_record_'.$routeId,
+                        'submit_attr_class' => $this->template === 'tailwind' ? 'inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200' : 'btn btn-danger btn-sm',
+                    ]);
+                    $deleteForms[$routeId] = $deleteForm->createView();
                 }
             }
         }
@@ -296,10 +322,13 @@ class PerformanceController extends AbstractController
             'template' => $this->template,
             'form' => $formView,
             'reviewForms' => $reviewForms,
+            'clearForm' => $clearFormView,
+            'deleteForms' => $deleteForms,
             'useComponents' => $useComponents,
             'missingDependencies' => $missingDependencies,
             'dependencyStatus' => $dependencyStatus,
             'enableRecordManagement' => $this->enableRecordManagement,
+            'enableAccessRecords' => $this->enableAccessRecords,
             'dateTimeFormat' => $this->dateTimeFormat,
             'dateFormat' => $this->dateFormat,
             'enableReviewSystem' => $this->enableReviewSystem,
@@ -323,30 +352,32 @@ class PerformanceController extends AbstractController
     }
 
     /**
-     * Get sort value for a route.
+     * Get sort value for a route (RouteDataWithAggregates for metric fields).
      *
-     * @param RouteData $route  The route data
-     * @param string    $sortBy The field to sort by
+     * @param RouteData|RouteDataWithAggregates $route  The route or route with aggregates
+     * @param string                            $sortBy The field to sort by
      *
      * @return float|int|string|null The sort value
      */
-    private function getSortValue($route, string $sortBy): float|int|string|null
+    private function getSortValue(RouteData|RouteDataWithAggregates $route, string $sortBy): float|int|string|null
     {
         return match ($sortBy) {
             'name' => $route->getName() ?? '',
-            'requestTime' => $route->getRequestTime() ?? 0.0,
-            'queryTime' => $route->getQueryTime() ?? 0.0,
-            'totalQueries' => $route->getTotalQueries() ?? 0,
-            'accessCount' => $route->getAccessCount() ?? 1,
+            'requestTime' => $route instanceof RouteDataWithAggregates ? ($route->getRequestTime() ?? 0.0) : 0.0,
+            'queryTime' => $route instanceof RouteDataWithAggregates ? ($route->getQueryTime() ?? 0.0) : 0.0,
+            'totalQueries' => $route instanceof RouteDataWithAggregates ? ($route->getTotalQueries() ?? 0) : 0,
+            'accessCount' => $route instanceof RouteDataWithAggregates ? $route->getAccessCount() : 1,
             'env' => $route->getEnv() ?? '',
-            default => $route->getRequestTime() ?? 0.0,
+            'createdAt' => ($dt = $route->getCreatedAt()) ? (float) $dt->getTimestamp() : 0.0,
+            'lastAccessedAt' => ($dt = $route->getLastAccessedAt()) ? (float) $dt->getTimestamp() : 0.0,
+            default => $route instanceof RouteDataWithAggregates ? ($route->getRequestTime() ?? 0.0) : 0.0,
         };
     }
 
     /**
-     * Calculate statistics for routes.
+     * Calculate statistics for routes (RouteDataWithAggregates; metrics from aggregates).
      *
-     * @param array $routes Array of RouteData entities
+     * @param array<RouteDataWithAggregates> $routes Routes with aggregates
      *
      * @return array<string, mixed> Statistics array
      */
@@ -364,25 +395,25 @@ class PerformanceController extends AbstractController
             ];
         }
 
-        $requestTimes = array_filter(array_map(static fn ($r) => $r->getRequestTime(), $routes));
-        $queryTimes = array_filter(array_map(static fn ($r) => $r->getQueryTime(), $routes));
-        $queryCounts = array_filter(array_map(static fn ($r) => $r->getTotalQueries(), $routes));
+        $requestTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getRequestTime(), $routes), static fn ($v) => $v !== null));
+        $queryTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getQueryTime(), $routes), static fn ($v) => $v !== null));
+        $queryCounts = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getTotalQueries(), $routes), static fn ($v) => $v !== null));
 
         return [
             'total_routes' => \count($routes),
             'total_queries' => array_sum($queryCounts),
-            'avg_request_time' => !empty($requestTimes) ? array_sum($requestTimes) / \count($requestTimes) : 0.0,
-            'avg_query_time' => !empty($queryTimes) ? array_sum($queryTimes) / \count($queryTimes) : 0.0,
-            'max_request_time' => !empty($requestTimes) ? max($requestTimes) : 0.0,
-            'max_query_time' => !empty($queryTimes) ? max($queryTimes) : 0.0,
-            'max_queries' => !empty($queryCounts) ? max($queryCounts) : 0,
+            'avg_request_time' => $requestTimes !== [] ? array_sum($requestTimes) / \count($requestTimes) : 0.0,
+            'avg_query_time' => $queryTimes !== [] ? array_sum($queryTimes) / \count($queryTimes) : 0.0,
+            'max_request_time' => $requestTimes !== [] ? max($requestTimes) : 0.0,
+            'max_query_time' => $queryTimes !== [] ? max($queryTimes) : 0.0,
+            'max_queries' => $queryCounts !== [] ? max($queryCounts) : 0,
         ];
     }
 
     /**
-     * Calculate advanced statistics for routes.
+     * Calculate advanced statistics for routes (RouteDataWithAggregates).
      *
-     * @param array $routes Array of RouteData entities
+     * @param array<RouteDataWithAggregates> $routes Routes with aggregates
      *
      * @return array<string, mixed> Advanced statistics array
      */
@@ -398,11 +429,11 @@ class PerformanceController extends AbstractController
             ];
         }
 
-        $requestTimes = array_values(array_filter(array_map(static fn ($r) => $r->getRequestTime(), $routes), static fn ($v) => null !== $v));
-        $queryTimes = array_values(array_filter(array_map(static fn ($r) => $r->getQueryTime(), $routes), static fn ($v) => null !== $v));
-        $queryCounts = array_values(array_filter(array_map(static fn ($r) => $r->getTotalQueries(), $routes), static fn ($v) => null !== $v));
-        $memoryUsages = array_values(array_filter(array_map(static fn ($r) => $r->getMemoryUsage() ? $r->getMemoryUsage() / 1024 / 1024 : null, $routes), static fn ($v) => null !== $v)); // Convert to MB
-        $accessCounts = array_values(array_filter(array_map(static fn ($r) => $r->getAccessCount(), $routes), static fn ($v) => null !== $v));
+        $requestTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getRequestTime(), $routes), static fn ($v) => null !== $v));
+        $queryTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getQueryTime(), $routes), static fn ($v) => null !== $v));
+        $queryCounts = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getTotalQueries(), $routes), static fn ($v) => null !== $v));
+        $memoryUsages = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getMemoryUsage() ? $r->getMemoryUsage() / 1024 / 1024 : null, $routes), static fn ($v) => null !== $v)); // Convert to MB
+        $accessCounts = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getAccessCount(), $routes), static fn ($v) => null !== $v));
 
         return [
             'request_time' => $this->calculateDetailedStats($requestTimes, 'Request Time', 's'),
@@ -574,17 +605,26 @@ class PerformanceController extends AbstractController
             }
         }
 
-        // Get environment
-        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
-
-        // Get all routes for statistics
+        // Environment selector form (FormType) – GET
         try {
-            $routes = $this->metricsService->getRepository()->findAllForStatistics($env);
+            $environments = $this->getAvailableEnvironments();
+        } catch (\Exception $e) {
+            $environments = ['dev', 'test', 'prod'];
+        }
+        $envFilter = new StatisticsEnvFilter($request->query->get('env') ?? $this->getParameter('kernel.environment'));
+        $envForm = $this->createForm(StatisticsEnvFilterType::class, $envFilter, [
+            'environments' => $environments,
+            'attr_class' => $this->template === 'tailwind' ? 'mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500' : 'form-select',
+        ]);
+        $envForm->handleRequest($request);
+        $env = $envForm->getData()->env ?? $this->getParameter('kernel.environment');
+
+        try {
+            $routes = $this->metricsService->getRoutesWithAggregates($env);
         } catch (\Exception $e) {
             $routes = [];
         }
 
-        // Calculate advanced statistics
         $advancedStats = $this->calculateAdvancedStats($routes);
 
         // Get routes needing attention (outliers and worst performers)
@@ -603,13 +643,6 @@ class PerformanceController extends AbstractController
             $trafficDistribution = $this->analysisService->analyzeTrafficDistribution($routes);
         }
 
-        // Get available environments
-        try {
-            $environments = $this->getAvailableEnvironments();
-        } catch (\Exception $e) {
-            $environments = ['dev', 'test', 'prod'];
-        }
-
         return $this->render('@NowoPerformanceBundle/Performance/statistics.html.twig', [
             'advanced_stats' => $advancedStats,
             'routes_needing_attention' => $routesNeedingAttention,
@@ -621,14 +654,15 @@ class PerformanceController extends AbstractController
             'environments' => $environments,
             'template' => $this->template,
             'total_routes' => \count($routes),
+            'envForm' => $envForm->createView(),
         ]);
     }
 
     /**
      * Get routes that need attention (outliers and worst performers).
      *
-     * @param array $routes        Array of RouteData entities
-     * @param array $advancedStats Advanced statistics
+     * @param array<RouteDataWithAggregates> $routes        Routes with aggregates
+     * @param array                          $advancedStats Advanced statistics
      *
      * @return array<string, mixed> Routes needing attention grouped by reason
      */
@@ -809,17 +843,15 @@ class PerformanceController extends AbstractController
                 'Access Count',
                 'Last Accessed At',
                 'Created At',
-                'Updated At',
+                'Last Accessed At',
             ]);
 
-            // Get routes
             try {
-                $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, 'requestTime', 'DESC', null);
+                $routes = $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, 'requestTime', 'DESC', null);
             } catch (\Exception $e) {
                 $routes = [];
             }
 
-            // Write data rows
             foreach ($routes as $route) {
                 fputcsv($handle, [
                     $route->getName() ?? '',
@@ -832,7 +864,7 @@ class PerformanceController extends AbstractController
                     $route->getAccessCount() ?? 1,
                     $route->getLastAccessedAt()?->format('Y-m-d H:i:s') ?? '',
                     $route->getCreatedAt()?->format('Y-m-d H:i:s') ?? '',
-                    $route->getUpdatedAt()?->format('Y-m-d H:i:s') ?? '',
+                    $route->getLastAccessedAt()?->format('Y-m-d H:i:s') ?? '',
                 ]);
             }
 
@@ -885,15 +917,13 @@ class PerformanceController extends AbstractController
         $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
         $filters = $this->buildFiltersFromRequest($request);
 
-        // Get routes
         try {
-            $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, 'requestTime', 'DESC', null);
+            $routes = $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, 'requestTime', 'DESC', null);
         } catch (\Exception $e) {
             $routes = [];
         }
 
-        // Convert routes to array
-        $data = array_map(static function (RouteData $route) {
+        $data = array_map(static function ($route) {
             return [
                 'route_name' => $route->getName(),
                 'http_method' => $route->getHttpMethod(),
@@ -907,7 +937,7 @@ class PerformanceController extends AbstractController
                 'last_accessed_at' => $route->getLastAccessedAt()?->format('c'),
                 'params' => $route->getParams(),
                 'created_at' => $route->getCreatedAt()?->format('c'),
-                'updated_at' => $route->getUpdatedAt()?->format('c'),
+                'last_accessed_at_iso' => $route->getLastAccessedAt()?->format('c'),
             ];
         }, $routes);
 
@@ -921,6 +951,220 @@ class PerformanceController extends AbstractController
         $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
         $response->headers->set('Content-Disposition', \sprintf(
             'attachment; filename="performance_metrics_%s_%s.json"',
+            $env,
+            date('Y-m-d_His')
+        ));
+
+        return $response;
+    }
+
+    /**
+     * Export access records (RouteDataRecord) to CSV.
+     *
+     * Uses same filters as access-records page: env, start_date, end_date, route, status_code.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return StreamedResponse The CSV file response
+     */
+    #[Route(
+        path: '/export/records/csv',
+        name: 'nowo_performance.export_records_csv',
+        methods: ['GET']
+    )]
+    public function exportRecordsCsv(Request $request): StreamedResponse
+    {
+        if (!$this->enabled || !$this->enableAccessRecords) {
+            throw $this->createNotFoundException('Temporal access records are disabled.');
+        }
+
+        if (null === $this->recordRepository) {
+            throw $this->createNotFoundException('RouteDataRecordRepository is not available.');
+        }
+
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to export access records.');
+            }
+        }
+
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $startDate = $request->query->get('start_date') ? new \DateTimeImmutable($request->query->get('start_date')) : null;
+        $endDate = $request->query->get('end_date') ? new \DateTimeImmutable($request->query->get('end_date')) : null;
+        $routeName = $request->query->get('route');
+        $routeName = \is_string($routeName) && $routeName !== '' ? $routeName : null;
+        $sc = $request->query->get('status_code');
+        $statusCode = $sc !== null && $sc !== '' ? (int) $sc : null;
+        $minQt = $request->query->get('min_query_time');
+        $maxQt = $request->query->get('max_query_time');
+        $minMb = $request->query->get('min_memory_mb');
+        $maxMb = $request->query->get('max_memory_mb');
+        $minQueryTime = $minQt !== null && $minQt !== '' ? (float) $minQt : null;
+        $maxQueryTime = $maxQt !== null && $maxQt !== '' ? (float) $maxQt : null;
+        $minMemoryUsage = $minMb !== null && $minMb !== '' ? (int) round((float) $minMb * 1024 * 1024) : null;
+        $maxMemoryUsage = $maxMb !== null && $maxMb !== '' ? (int) round((float) $maxMb * 1024 * 1024) : null;
+
+        try {
+            $result = $this->recordRepository->getRecordsForExport(
+                $env,
+                $startDate,
+                $endDate,
+                $routeName,
+                $statusCode,
+                $minQueryTime,
+                $maxQueryTime,
+                $minMemoryUsage,
+                $maxMemoryUsage,
+            );
+        } catch (\Throwable $e) {
+            $result = ['records' => [], 'total' => 0];
+        }
+
+        $records = $result['records'];
+
+        $response = new StreamedResponse(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, [
+                'ID',
+                'Route Name',
+                'Environment',
+                'Accessed At',
+                'Status Code',
+                'Response Time (s)',
+                'Total Queries',
+                'Query Time (s)',
+                'Memory Usage (bytes)',
+            ]);
+            foreach ($records as $r) {
+                $rd = $r->getRouteData();
+                fputcsv($handle, [
+                    $r->getId() ?? '',
+                    $rd?->getName() ?? '',
+                    $rd?->getEnv() ?? '',
+                    $r->getAccessedAt()?->format('Y-m-d H:i:s') ?? '',
+                    $r->getStatusCode() ?? '',
+                    $r->getResponseTime() ?? '',
+                    $r->getTotalQueries() ?? '',
+                    $r->getQueryTime() ?? '',
+                    $r->getMemoryUsage() ?? '',
+                ]);
+            }
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', \sprintf(
+            'attachment; filename="performance_access_records_%s_%s.csv"',
+            $env,
+            date('Y-m-d_His')
+        ));
+
+        return $response;
+    }
+
+    /**
+     * Export access records (RouteDataRecord) to JSON.
+     *
+     * Uses same filters as access-records page: env, start_date, end_date, route, status_code.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return Response The JSON file response
+     */
+    #[Route(
+        path: '/export/records/json',
+        name: 'nowo_performance.export_records_json',
+        methods: ['GET']
+    )]
+    public function exportRecordsJson(Request $request): Response
+    {
+        if (!$this->enabled || !$this->enableAccessRecords) {
+            throw $this->createNotFoundException('Temporal access records are disabled.');
+        }
+
+        if (null === $this->recordRepository) {
+            throw $this->createNotFoundException('RouteDataRecordRepository is not available.');
+        }
+
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to export access records.');
+            }
+        }
+
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $startDate = $request->query->get('start_date') ? new \DateTimeImmutable($request->query->get('start_date')) : null;
+        $endDate = $request->query->get('end_date') ? new \DateTimeImmutable($request->query->get('end_date')) : null;
+        $routeName = $request->query->get('route');
+        $routeName = \is_string($routeName) && $routeName !== '' ? $routeName : null;
+        $sc = $request->query->get('status_code');
+        $statusCode = $sc !== null && $sc !== '' ? (int) $sc : null;
+        $minQt = $request->query->get('min_query_time');
+        $maxQt = $request->query->get('max_query_time');
+        $minMb = $request->query->get('min_memory_mb');
+        $maxMb = $request->query->get('max_memory_mb');
+        $minQueryTime = $minQt !== null && $minQt !== '' ? (float) $minQt : null;
+        $maxQueryTime = $maxQt !== null && $maxQt !== '' ? (float) $maxQt : null;
+        $minMemoryUsage = $minMb !== null && $minMb !== '' ? (int) round((float) $minMb * 1024 * 1024) : null;
+        $maxMemoryUsage = $maxMb !== null && $maxMb !== '' ? (int) round((float) $maxMb * 1024 * 1024) : null;
+
+        try {
+            $result = $this->recordRepository->getRecordsForExport(
+                $env,
+                $startDate,
+                $endDate,
+                $routeName,
+                $statusCode,
+                $minQueryTime,
+                $maxQueryTime,
+                $minMemoryUsage,
+                $maxMemoryUsage,
+            );
+        } catch (\Throwable $e) {
+            $result = ['records' => [], 'total' => 0];
+        }
+
+        $data = array_map(static function ($r) {
+            $rd = $r->getRouteData();
+            return [
+                'id' => $r->getId(),
+                'route_name' => $rd?->getName(),
+                'environment' => $rd?->getEnv(),
+                'accessed_at' => $r->getAccessedAt()?->format('c'),
+                'status_code' => $r->getStatusCode(),
+                'response_time' => $r->getResponseTime(),
+                'total_queries' => $r->getTotalQueries(),
+                'query_time' => $r->getQueryTime(),
+                'memory_usage' => $r->getMemoryUsage(),
+            ];
+        }, $result['records']);
+
+        $response = new Response(json_encode([
+            'environment' => $env,
+            'exported_at' => date('c'),
+            'total_records' => \count($data),
+            'total_matching' => $result['total'],
+            'data' => $data,
+        ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES));
+
+        $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
+        $response->headers->set('Content-Disposition', \sprintf(
+            'attachment; filename="performance_access_records_%s_%s.json"',
             $env,
             date('Y-m-d_His')
         ));
@@ -1119,7 +1363,9 @@ class PerformanceController extends AbstractController
             'main_table_name' => null,
             'missing_columns' => [],
             'records_table_exists' => false,
+            'records_table_complete' => false,
             'records_table_name' => null,
+            'records_missing_columns' => [],
         ];
 
         if (null !== $this->tableStatusChecker) {
@@ -1133,7 +1379,7 @@ class PerformanceController extends AbstractController
             }
         }
 
-        // Check records table if enabled
+        // Check records table if enabled (existence + completeness vs entity schema)
         if ($this->enableAccessRecords && null !== $this->recordRepository) {
             try {
                 $entityManager = $this->recordRepository->getEntityManager();
@@ -1142,7 +1388,6 @@ class PerformanceController extends AbstractController
                     ? $metadata->getTableName()
                     : ($metadata->table['name'] ?? $this->tableStatusChecker?->getTableName().'_records');
                 $connection = $entityManager->getConnection();
-                // Get schema manager (compatible with DBAL 2.x and 3.x)
                 if (method_exists($connection, 'createSchemaManager')) {
                     $schemaManager = $connection->createSchemaManager();
                 } else {
@@ -1152,6 +1397,29 @@ class PerformanceController extends AbstractController
                 }
                 $tableStatus['records_table_exists'] = $schemaManager->tablesExist([$recordsTableName]);
                 $tableStatus['records_table_name'] = $recordsTableName;
+
+                if ($tableStatus['records_table_exists']) {
+                    $table = $schemaManager->introspectTable($recordsTableName);
+                    $existingColumns = [];
+                    foreach ($table->getColumns() as $column) {
+                        $columnName = method_exists($column, 'getName') ? $column->getName() : '';
+                        $columnName = \is_string($columnName) ? $columnName : (string) $columnName;
+                        $columnName = trim($columnName, '`"\'');
+                        $existingColumns[strtolower($columnName)] = true;
+                    }
+                    $expectedRecordsColumns = [];
+                    foreach ($metadata->getFieldNames() as $fieldName) {
+                        $expectedRecordsColumns[] = $metadata->getColumnName($fieldName);
+                    }
+                    $recordsMissing = [];
+                    foreach ($expectedRecordsColumns as $col) {
+                        if (!isset($existingColumns[strtolower($col)])) {
+                            $recordsMissing[] = $col;
+                        }
+                    }
+                    $tableStatus['records_missing_columns'] = $recordsMissing;
+                    $tableStatus['records_table_complete'] = empty($recordsMissing);
+                }
             } catch (\Exception $e) {
                 $tableStatus['records_table_error'] = $e->getMessage();
             }
@@ -1183,7 +1451,7 @@ class PerformanceController extends AbstractController
                     ->getQuery()
                     ->getOneOrNullResult();
                 $lastRecord = $repository->createQueryBuilder('r')
-                    ->orderBy('r.updatedAt', 'DESC')
+                    ->orderBy('r.lastAccessedAt', 'DESC')
                     ->setMaxResults(1)
                     ->getQuery()
                     ->getOneOrNullResult();
@@ -1192,7 +1460,7 @@ class PerformanceController extends AbstractController
                     $dataStatus['first_record_date'] = $firstRecord->getCreatedAt();
                 }
                 if (null !== $lastRecord) {
-                    $dataStatus['last_record_date'] = $lastRecord->getUpdatedAt();
+                    $dataStatus['last_record_date'] = $lastRecord->getLastAccessedAt();
                     // Check if last update was in the last 24 hours
                     if (null !== $dataStatus['last_record_date']) {
                         $now = new \DateTimeImmutable();
@@ -1218,12 +1486,13 @@ class PerformanceController extends AbstractController
 
         $diagnostic['data_status'] = $dataStatus;
 
-        // 6. Route Tracking Check
+        // 6. Route Tracking Check (same prefix logic as PerformanceMetricsSubscriber: _wdt ignores _wdt_open, etc.)
+        $currentRoute = $request->attributes->get('_route');
         $routeTracking = [
             'ignored_routes_count' => \count($this->ignoreRoutes),
             'ignored_routes' => $this->ignoreRoutes,
-            'current_route' => $request->attributes->get('_route'),
-            'current_route_ignored' => \in_array($request->attributes->get('_route'), $this->ignoreRoutes, true),
+            'current_route' => $currentRoute,
+            'current_route_ignored' => $this->isRouteIgnored($currentRoute),
         ];
 
         $diagnostic['route_tracking'] = $routeTracking;
@@ -1365,6 +1634,29 @@ class PerformanceController extends AbstractController
             'required' => true,
         ];
         $trackingConditions[] = [
+            'condition' => 'Tabla principal completa (según entidad)',
+            'status' => $tableStatus['main_table_complete'],
+            'required' => true,
+            'details' => $tableStatus['main_table_exists'] && !$tableStatus['main_table_complete']
+                ? 'Faltan columnas: '.implode(', ', $tableStatus['missing_columns'])
+                : ($tableStatus['main_table_exists'] ? 'Todas las columnas esperadas están presentes' : 'La tabla no existe'),
+        ];
+        if ($this->enableAccessRecords) {
+            $trackingConditions[] = [
+                'condition' => 'Tabla de registros existe',
+                'status' => $tableStatus['records_table_exists'],
+                'required' => true,
+            ];
+            $trackingConditions[] = [
+                'condition' => 'Tabla de registros completa (según entidad)',
+                'status' => $tableStatus['records_table_complete'] ?? true,
+                'required' => true,
+                'details' => $tableStatus['records_table_exists'] && !($tableStatus['records_table_complete'] ?? true)
+                    ? 'Faltan columnas: '.implode(', ', $tableStatus['records_missing_columns'] ?? [])
+                    : ($tableStatus['records_table_exists'] ? 'Todas las columnas esperadas están presentes' : 'La tabla no existe'),
+            ];
+        }
+        $trackingConditions[] = [
             'condition' => 'Conexión a base de datos',
             'status' => $diagnostic['database_connection']['connected'],
             'required' => true,
@@ -1416,6 +1708,16 @@ class PerformanceController extends AbstractController
 
         if ($this->enableAccessRecords && !$tableStatus['records_table_exists']) {
             $warnings[] = 'La tabla de registros de acceso no existe aunque está habilitada. Ejecuta: php bin/console nowo:performance:create-records-table';
+        }
+        if ($this->enableAccessRecords && $tableStatus['records_table_exists'] && !($tableStatus['records_table_complete'] ?? true)) {
+            $warnings[] = 'La tabla de registros de acceso está incompleta. Faltan columnas: '.implode(', ', $tableStatus['records_missing_columns'] ?? []);
+            $suggestions[] = 'Ejecuta: php bin/console nowo:performance:create-records-table --update para añadir las columnas faltantes sin perder datos.';
+        }
+        if (isset($tableStatus['error']) && $tableStatus['error']) {
+            $issues[] = 'Error al comprobar la tabla principal: '.$tableStatus['error'];
+        }
+        if (isset($tableStatus['records_table_error']) && $tableStatus['records_table_error']) {
+            $warnings[] = 'Error al comprobar la tabla de registros: '.$tableStatus['records_table_error'];
         }
 
         if (!$dataStatus['has_data']) {
@@ -1510,11 +1812,12 @@ class PerformanceController extends AbstractController
             }
         }
 
-        // Validate CSRF token
-        $token = $request->request->get('_token');
-        if (!$this->isCsrfTokenValid('clear_performance_data', $token)) {
+        $currentEnv = $this->getParameter('kernel.environment');
+        $form = $this->createForm(ClearPerformanceDataType::class, new ClearPerformanceDataRequest($currentEnv));
+        $form->handleRequest($request);
+
+        if (!$form->isSubmitted() || !$form->isValid()) {
             $this->addFlash('error', 'Invalid security token. Please try again.');
-            // Redirect to referer if available
             $referer = $request->headers->get('referer');
             if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
                 return $this->redirect($referer);
@@ -1523,9 +1826,10 @@ class PerformanceController extends AbstractController
             return $this->redirectToRoute('nowo_performance.index');
         }
 
+        $env = $form->getData()->env;
+
         try {
             $repository = $this->metricsService->getRepository();
-            $env = $request->request->get('env');
 
             // Dispatch before event
             if (null !== $this->eventDispatcher) {
@@ -1554,11 +1858,9 @@ class PerformanceController extends AbstractController
 
             // Invalidate cache
             if (null !== $this->cacheService) {
-                $env = $request->request->get('env');
                 if ($env) {
                     $this->cacheService->clearStatistics($env);
                 } else {
-                    // Clear all environments if no specific env provided
                     $this->cacheService->clearEnvironments();
                 }
             }
@@ -1572,7 +1874,6 @@ class PerformanceController extends AbstractController
             $this->addFlash('error', 'An error occurred while clearing performance data: '.$e->getMessage());
         }
 
-        // Redirect to referer if available, otherwise to the dashboard
         $referer = $request->headers->get('referer');
         if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
             return $this->redirect($referer);
@@ -1622,9 +1923,13 @@ class PerformanceController extends AbstractController
             }
         }
 
-        // Validate CSRF token
-        $token = $request->request->get('_token');
-        if (!$this->isCsrfTokenValid('delete_performance_record_'.$id, $token)) {
+        $form = $this->createForm(DeleteRecordType::class, null, [
+            'csrf_token_id' => 'delete_performance_record_'.$id,
+            'submit_attr_class' => 'btn btn-danger btn-sm',
+        ]);
+        $form->handleRequest($request);
+
+        if (!$form->isSubmitted() || !$form->isValid()) {
             $this->addFlash('error', 'Invalid security token. Please try again.');
             $referer = $request->headers->get('referer');
             if ($referer && filter_var($referer, \FILTER_VALIDATE_URL)) {
@@ -1875,12 +2180,11 @@ class PerformanceController extends AbstractController
             $filters['route_name_pattern'] = $routeName;
         }
 
-        $routes = $this->metricsService->getRepository()->findWithFilters($env, $filters, 'createdAt', 'ASC', null);
+        $routes = $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, 'createdAt', 'ASC', null);
 
-        // Group by date and calculate averages
         $groupedData = [];
         foreach ($routes as $route) {
-            $date = $route->getCreatedAt()?->format('Y-m-d') ?? $route->getUpdatedAt()?->format('Y-m-d') ?? date('Y-m-d');
+            $date = $route->getCreatedAt()?->format('Y-m-d') ?? $route->getLastAccessedAt()?->format('Y-m-d') ?? date('Y-m-d');
 
             if (!isset($groupedData[$date])) {
                 $groupedData[$date] = [
@@ -1969,7 +2273,11 @@ class PerformanceController extends AbstractController
     )]
     public function accessStatistics(Request $request): Response
     {
-        if (!$this->enabled || !$this->enableAccessRecords) {
+        if (!$this->enabled) {
+            throw $this->createNotFoundException('Performance dashboard is disabled.');
+        }
+
+        if (!$this->enableAccessRecords) {
             throw $this->createNotFoundException('Temporal access records are disabled.');
         }
 
@@ -1988,46 +2296,433 @@ class PerformanceController extends AbstractController
             }
         }
 
-        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
-        $startDateParam = $request->query->get('start_date');
-        $endDateParam = $request->query->get('end_date');
-
-        $startDate = $startDateParam ? new \DateTimeImmutable($startDateParam) : (new \DateTimeImmutable())->modify('-7 days')->setTime(0, 0, 0);
-        $endDate = $endDateParam ? new \DateTimeImmutable($endDateParam) : new \DateTimeImmutable();
-
-        $statisticsByHour = [];
-        $totalAccessCount = 0;
-
-        if (null !== $this->recordRepository) {
-            try {
-                $statisticsByHour = $this->recordRepository->getStatisticsByHour($env, $startDate, $endDate);
-                $totalAccessCount = $this->recordRepository->getTotalAccessCount($env, $startDate, $endDate);
-            } catch (\Exception $e) {
-                $this->addFlash('error', 'Error fetching hourly access statistics: '.$e->getMessage());
-                $statisticsByHour = [];
-            }
-        } else {
-            $this->addFlash('warning', 'RouteDataRecordRepository is not available. Cannot fetch temporal access statistics.');
-        }
-
-        // Get available environments
+        // Get available environments and routes first (needed for form)
         try {
             $environments = $this->getAvailableEnvironments();
         } catch (\Exception $e) {
             $environments = ['dev', 'test', 'prod'];
         }
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $availableRoutes = [];
+        try {
+            $routeEntities = $this->metricsService->getRepository()->findBy(['env' => $env], ['name' => 'ASC']);
+            foreach ($routeEntities as $routeEntity) {
+                if (null !== $routeEntity->getName()) {
+                    $availableRoutes[] = $routeEntity->getName();
+                }
+            }
+            $availableRoutes = array_values(array_unique($availableRoutes));
+            sort($availableRoutes);
+        } catch (\Exception $e) {
+            // Ignore
+        }
+
+        // Filter form (FormType) – GET
+        $filterData = new RecordFilters(
+            $request->query->get('start_date') ? new \DateTimeImmutable($request->query->get('start_date')) : (new \DateTimeImmutable())->modify('-7 days')->setTime(0, 0, 0),
+            $request->query->get('end_date') ? new \DateTimeImmutable($request->query->get('end_date')) : new \DateTimeImmutable(),
+            $env,
+            $request->query->get('route'),
+            $request->query->get('status_code') ? (int) $request->query->get('status_code') : null
+        );
+        $filterForm = $this->createForm(RecordFiltersType::class, $filterData, [
+            'environments' => $environments,
+            'available_routes' => $availableRoutes,
+            'all_routes_label' => 'access_statistics.all_routes',
+            'all_status_label' => 'access_statistics.all_status_codes',
+        ]);
+        $filterForm->handleRequest($request);
+        $filterData = $filterForm->getData();
+        $startDate = $filterData->startDate ?? (new \DateTimeImmutable())->modify('-7 days')->setTime(0, 0, 0);
+        $endDate = $filterData->endDate ?? new \DateTimeImmutable();
+        $env = $filterData->env ?? $this->getParameter('kernel.environment');
+        $routeName = $filterData->route;
+        if ($routeName === '' || $routeName === null) {
+            $routeName = null;
+        }
+        $statusCode = $filterData->statusCode;
+
+        $statisticsByHour = [];
+        $statisticsByDayOfWeek = [];
+        $statisticsByMonth = [];
+        $heatmapData = [];
+        $totalAccessCount = 0;
+
+        if (null !== $this->recordRepository) {
+            try {
+                $statisticsByHour = $this->recordRepository->getStatisticsByHour($env, $startDate, $endDate, $routeName, $statusCode);
+                $statisticsByDayOfWeek = $this->recordRepository->getStatisticsByDayOfWeek($env, $startDate, $endDate, $routeName, $statusCode);
+                $statisticsByMonth = $this->recordRepository->getStatisticsByMonth($env, $startDate, $endDate, $routeName, $statusCode);
+                $heatmapData = $this->recordRepository->getHeatmapData($env, $startDate, $endDate, $routeName, $statusCode);
+                $totalAccessCount = $this->recordRepository->getTotalAccessCount($env, $startDate, $endDate, $routeName, $statusCode);
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Error fetching access statistics: '.$e->getMessage());
+                $statisticsByHour = [];
+                $statisticsByDayOfWeek = [];
+                $statisticsByMonth = [];
+                $heatmapData = [];
+            }
+        } else {
+            $this->addFlash('warning', 'RouteDataRecordRepository is not available. Cannot fetch temporal access statistics.');
+        }
+
+        // Delete-records-by-filter form (FormType) – POST, for the delete button
+        $deleteByFilterData = new DeleteRecordsByFilterRequest(
+            $env,
+            'access_statistics',
+            $startDate->format('Y-m-d\TH:i'),
+            $endDate->format('Y-m-d\TH:i'),
+            $routeName ?? '',
+            $statusCode !== null ? (string) $statusCode : null
+        );
+        $deleteByFilterForm = $this->createForm(DeleteRecordsByFilterType::class, $deleteByFilterData, [
+            'from_value' => 'access_statistics',
+        ]);
 
         return $this->render('@NowoPerformanceBundle/Performance/access_statistics.html.twig', [
             'statistics_by_hour' => $statisticsByHour,
+            'statistics_by_day_of_week' => $statisticsByDayOfWeek,
+            'statistics_by_month' => $statisticsByMonth,
+            'heatmap_data' => $heatmapData,
             'total_access_count' => $totalAccessCount,
             'environment' => $env,
             'environments' => $environments,
+            'available_routes' => $availableRoutes,
+            'selected_route' => $routeName,
+            'selected_status_code' => $statusCode,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'template' => $this->template,
             'dateTimeFormat' => $this->dateTimeFormat,
             'dateFormat' => $this->dateFormat,
+            'enable_record_management' => $this->enableRecordManagement,
+            'filterForm' => $filterForm->createView(),
+            'deleteByFilterForm' => $deleteByFilterForm->createView(),
         ]);
+    }
+
+    /**
+     * Display paginated access records.
+     *
+     * Shows individual access records with pagination.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return Response The HTTP response
+     */
+    #[Route(
+        path: '/access-records',
+        name: 'nowo_performance.access_records',
+        methods: ['GET']
+    )]
+    public function accessRecords(Request $request): Response
+    {
+        if (!$this->enabled || !$this->enableAccessRecords) {
+            throw $this->createNotFoundException('Temporal access records are disabled.');
+        }
+
+        // Check role requirements if configured
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to access access records.');
+            }
+        }
+
+        $page = max(1, (int) $request->query->get('page', 1));
+        $perPage = max(10, min(100, (int) $request->query->get('per_page', 50)));
+
+        // Get environments and available routes for form
+        try {
+            $environments = $this->getAvailableEnvironments();
+        } catch (\Exception $e) {
+            $environments = ['dev', 'test', 'prod'];
+        }
+        $env = $request->query->get('env') ?? $this->getParameter('kernel.environment');
+        $availableRoutes = [];
+        try {
+            $routeEntities = $this->metricsService->getRepository()->findBy(['env' => $env], ['name' => 'ASC']);
+            foreach ($routeEntities as $routeEntity) {
+                if (null !== $routeEntity->getName()) {
+                    $availableRoutes[] = $routeEntity->getName();
+                }
+            }
+            $availableRoutes = array_values(array_unique($availableRoutes));
+            sort($availableRoutes);
+        } catch (\Exception $e) {
+            // Ignore
+        }
+
+        // Filter form (FormType) – GET
+        $minQt = $request->query->get('min_query_time');
+        $maxQt = $request->query->get('max_query_time');
+        $minMb = $request->query->get('min_memory_mb');
+        $maxMb = $request->query->get('max_memory_mb');
+        $filterData = new RecordFilters(
+            $request->query->get('start_date') ? new \DateTimeImmutable($request->query->get('start_date')) : null,
+            $request->query->get('end_date') ? new \DateTimeImmutable($request->query->get('end_date')) : null,
+            $env,
+            $request->query->get('route'),
+            $request->query->get('status_code') ? (int) $request->query->get('status_code') : null,
+            $minQt !== null && $minQt !== '' ? (float) $minQt : null,
+            $maxQt !== null && $maxQt !== '' ? (float) $maxQt : null,
+            $minMb !== null && $minMb !== '' ? (int) round((float) $minMb * 1024 * 1024) : null,
+            $maxMb !== null && $maxMb !== '' ? (int) round((float) $maxMb * 1024 * 1024) : null,
+        );
+        $filterForm = $this->createForm(RecordFiltersType::class, $filterData, [
+            'environments' => $environments,
+            'available_routes' => $availableRoutes,
+            'all_routes_label' => 'access_statistics.all_routes',
+            'all_status_label' => 'access_statistics.all_status_codes',
+        ]);
+        $filterForm->handleRequest($request);
+        $filterData = $filterForm->getData();
+        // Sync memory MB fields (not mapped) into filterData
+        $minMbData = $filterForm->get('min_memory_mb')->getData();
+        $maxMbData = $filterForm->get('max_memory_mb')->getData();
+        $filterData->minMemoryUsage = $minMbData !== null && $minMbData !== '' ? (int) round((float) $minMbData * 1024 * 1024) : null;
+        $filterData->maxMemoryUsage = $maxMbData !== null && $maxMbData !== '' ? (int) round((float) $maxMbData * 1024 * 1024) : null;
+        $startDate = $filterData->startDate;
+        $endDate = $filterData->endDate;
+        $env = $filterData->env ?? $this->getParameter('kernel.environment');
+        $routeName = $filterData->route;
+        $statusCode = $filterData->statusCode;
+
+        $paginatedData = [
+            'records' => [],
+            'total' => 0,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => 0,
+        ];
+
+        if (null !== $this->recordRepository) {
+            try {
+                $paginatedData = $this->recordRepository->getPaginatedRecords(
+                    $env,
+                    $page,
+                    $perPage,
+                    $startDate,
+                    $endDate,
+                    $routeName,
+                    $statusCode,
+                    $filterData->minQueryTime,
+                    $filterData->maxQueryTime,
+                    $filterData->minMemoryUsage,
+                    $filterData->maxMemoryUsage
+                );
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Error fetching access records: '.$e->getMessage());
+            }
+        } else {
+            $this->addFlash('warning', 'RouteDataRecordRepository is not available. Cannot fetch access records.');
+        }
+
+        // Delete-records-by-filter form (FormType) – POST (hidden fields carry current filter state)
+        $deleteByFilterData = new DeleteRecordsByFilterRequest(
+            $env,
+            'access_records',
+            $startDate?->format('Y-m-d\TH:i'),
+            $endDate?->format('Y-m-d\TH:i'),
+            $routeName ?? '',
+            $statusCode !== null ? (string) $statusCode : null,
+            $filterData->minQueryTime !== null ? (string) $filterData->minQueryTime : null,
+            $filterData->maxQueryTime !== null ? (string) $filterData->maxQueryTime : null,
+            $filterData->minMemoryUsage !== null ? (string) $filterData->minMemoryUsage : null,
+            $filterData->maxMemoryUsage !== null ? (string) $filterData->maxMemoryUsage : null,
+        );
+        $deleteByFilterForm = $this->createForm(DeleteRecordsByFilterType::class, $deleteByFilterData, [
+            'from_value' => 'access_records',
+        ]);
+
+        return $this->render('@NowoPerformanceBundle/Performance/access_records.html.twig', [
+            'paginated_data' => $paginatedData,
+            'environment' => $env,
+            'environments' => $environments,
+            'available_routes' => $availableRoutes,
+            'selected_route' => $routeName,
+            'selected_status_code' => $statusCode,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'template' => $this->template,
+            'dateTimeFormat' => $this->dateTimeFormat,
+            'dateFormat' => $this->dateFormat,
+            'enable_record_management' => $this->enableRecordManagement,
+            'filterForm' => $filterForm->createView(),
+            'deleteByFilterForm' => $deleteByFilterForm->createView(),
+        ]);
+    }
+
+    /**
+     * Delete access records (RouteDataRecord) matching the current filter.
+     *
+     * Expects POST with _token and filter params: env, start_date?, end_date?, route?, status_code?.
+     * Requires enable_access_records and enable_record_management.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return RedirectResponse Redirects back to access records or access statistics
+     */
+    #[Route(
+        path: '/delete-records-by-filter',
+        name: 'nowo_performance.delete_records_by_filter',
+        methods: ['POST']
+    )]
+    public function deleteRecordsByFilter(Request $request): RedirectResponse
+    {
+        if (!$this->enabled || !$this->enableAccessRecords) {
+            throw $this->createNotFoundException('Temporal access records are disabled.');
+        }
+
+        if (!$this->enableRecordManagement) {
+            throw $this->createAccessDeniedException('Record management is disabled.');
+        }
+
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to delete access records.');
+            }
+        }
+
+        $currentEnv = $this->getParameter('kernel.environment');
+        $form = $this->createForm(DeleteRecordsByFilterType::class, new DeleteRecordsByFilterRequest($currentEnv, 'access_records'));
+        $form->handleRequest($request);
+
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $this->addFlash('error', 'Invalid security token. Please try again.');
+            $redirectEnv = $form->get('env')->getData() ?? $currentEnv;
+
+            return $this->redirectToRoute('nowo_performance.access_records', ['env' => $redirectEnv]);
+        }
+
+        $data = $form->getData();
+        $env = $data->env;
+        if ('' === $env || !\is_string($env)) {
+            $this->addFlash('error', 'Environment is required.');
+            return $this->redirectToRoute('nowo_performance.access_records');
+        }
+
+        $startDateParam = $data->startDate;
+        $endDateParam = $data->endDate;
+        $routeName = $data->route;
+        $statusCodeParam = $data->statusCode;
+        $statusCode = null !== $statusCodeParam && '' !== $statusCodeParam ? (int) $statusCodeParam : null;
+        $minQueryTime = null !== $data->minQueryTime && '' !== $data->minQueryTime ? (float) $data->minQueryTime : null;
+        $maxQueryTime = null !== $data->maxQueryTime && '' !== $data->maxQueryTime ? (float) $data->maxQueryTime : null;
+        $minMemoryUsage = null !== $data->minMemoryUsage && '' !== $data->minMemoryUsage ? (int) $data->minMemoryUsage : null;
+        $maxMemoryUsage = null !== $data->maxMemoryUsage && '' !== $data->maxMemoryUsage ? (int) $data->maxMemoryUsage : null;
+
+        $startDate = null;
+        if (null !== $startDateParam && '' !== $startDateParam) {
+            try {
+                $startDate = new \DateTimeImmutable($startDateParam);
+            } catch (\Exception $e) {
+                $startDate = null;
+            }
+        }
+        $endDate = null;
+        if (null !== $endDateParam && '' !== $endDateParam) {
+            try {
+                $endDate = new \DateTimeImmutable($endDateParam);
+            } catch (\Exception $e) {
+                $endDate = null;
+            }
+        }
+
+        if (null === $this->recordRepository) {
+            $this->addFlash('error', 'Access records repository is not available.');
+            return $this->redirectToRoute('nowo_performance.access_records', ['env' => $env]);
+        }
+
+        try {
+            $deleted = $this->recordRepository->deleteByFilter(
+                $env,
+                $startDate,
+                $endDate,
+                $routeName,
+                $statusCode,
+                $minQueryTime,
+                $maxQueryTime,
+                $minMemoryUsage,
+                $maxMemoryUsage,
+            );
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Error deleting records: '.$e->getMessage());
+            $redirectParams = [
+                'env' => $env,
+                'start_date' => $startDateParam,
+                'end_date' => $endDateParam,
+                'route' => $routeName,
+                'status_code' => $statusCodeParam,
+            ];
+            if (null !== $minQueryTime) {
+                $redirectParams['min_query_time'] = $minQueryTime;
+            }
+            if (null !== $maxQueryTime) {
+                $redirectParams['max_query_time'] = $maxQueryTime;
+            }
+            if (null !== $minMemoryUsage) {
+                $redirectParams['min_memory_mb'] = round($minMemoryUsage / 1024 / 1024, 2);
+            }
+            if (null !== $maxMemoryUsage) {
+                $redirectParams['max_memory_mb'] = round($maxMemoryUsage / 1024 / 1024, 2);
+            }
+
+            return $this->redirectToRoute('nowo_performance.access_records', $redirectParams);
+        }
+
+        if (null !== $this->cacheService) {
+            $this->cacheService->clearStatistics($env);
+        }
+
+        $this->addFlash('success', \sprintf('Deleted %d access record(s) matching the filter.', $deleted));
+
+        $redirectParams = ['env' => $env];
+        if (null !== $startDateParam && '' !== $startDateParam) {
+            $redirectParams['start_date'] = $startDateParam;
+        }
+        if (null !== $endDateParam && '' !== $endDateParam) {
+            $redirectParams['end_date'] = $endDateParam;
+        }
+        if (null !== $routeName && '' !== $routeName) {
+            $redirectParams['route'] = $routeName;
+        }
+        if (null !== $statusCode) {
+            $redirectParams['status_code'] = $statusCode;
+        }
+        if (null !== $data->minQueryTime && '' !== $data->minQueryTime) {
+            $redirectParams['min_query_time'] = $data->minQueryTime;
+        }
+        if (null !== $data->maxQueryTime && '' !== $data->maxQueryTime) {
+            $redirectParams['max_query_time'] = $data->maxQueryTime;
+        }
+        if (null !== $data->minMemoryUsage && '' !== $data->minMemoryUsage) {
+            $redirectParams['min_memory_mb'] = round((int) $data->minMemoryUsage / 1024 / 1024, 2);
+        }
+        if (null !== $data->maxMemoryUsage && '' !== $data->maxMemoryUsage) {
+            $redirectParams['max_memory_mb'] = round((int) $data->maxMemoryUsage / 1024 / 1024, 2);
+        }
+
+        $from = $data->from ?? 'access_records';
+        if ('access_statistics' === $from) {
+            return $this->redirectToRoute('nowo_performance.access_statistics', $redirectParams);
+        }
+
+        return $this->redirectToRoute('nowo_performance.access_records', $redirectParams);
     }
 
     /**
@@ -2102,5 +2797,43 @@ class PerformanceController extends AbstractController
             // If all methods fail, return 'unknown'
             return 'unknown';
         }
+    }
+
+    /**
+     * Check if the route is ignored (literal name or glob pattern).
+     *
+     * Must match PerformanceMetricsSubscriber::isRouteIgnored logic so diagnose "current_route_ignored" is consistent.
+     * Literal = exact or prefix with '_'; pattern = entry contains * or ? → fnmatch.
+     *
+     * @param mixed $routeName The route name from the request (can be null)
+     *
+     * @return bool True if the route should not be tracked
+     */
+    private function isRouteIgnored(mixed $routeName): bool
+    {
+        if (null === $routeName || '' === (string) $routeName) {
+            return false;
+        }
+        $routeName = (string) $routeName;
+        foreach ($this->ignoreRoutes as $ignored) {
+            $ignored = (string) $ignored;
+            if ('' === $ignored) {
+                continue;
+            }
+            if (str_contains($ignored, '*') || str_contains($ignored, '?')) {
+                if (fnmatch($ignored, $routeName, \FNM_NOESCAPE)) {
+                    return true;
+                }
+                continue;
+            }
+            if ($routeName === $ignored) {
+                return true;
+            }
+            if (str_starts_with($routeName, $ignored . '_')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

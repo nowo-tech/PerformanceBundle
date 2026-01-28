@@ -46,6 +46,7 @@
         "symfony/dependency-injection": "^6.1 || ^7.0 || ^8.0",
         "symfony/framework-bundle": "^6.1 || ^7.0 || ^8.0",
         "symfony/http-kernel": "^6.1 || ^7.0 || ^8.0",
+        "symfony/security-bundle": "^6.1 || ^7.0 || ^8.0",
         "symfony/stopwatch": "^6.1 || ^7.0 || ^8.0",
         "symfony/translation": "^6.1 || ^7.0 || ^8.0",
         "symfony/twig-bundle": "^6.1 || ^7.0 || ^8.0",

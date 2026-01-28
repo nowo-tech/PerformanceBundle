@@ -22,6 +22,10 @@ statistics:
 routes_table:
   title: Rotas
   route_name: Nome da Rota
+  http_method: Método HTTP
+  status_codes: Códigos de status
+  total_responses: Total de respostas
+  error_rate: Taxa de erro
   environment: Ambiente
   request_time: Tempo de Solicitação
   query_time: Tempo de Consulta
@@ -65,6 +69,11 @@ filters:
   placeholder_route: Filtrar por nome da rota...
   placeholder_time: '0.0000'
   placeholder_count: '0'
+  request_time_range: Intervalo de tempo de solicitação (segundos)
+  query_count_range: Intervalo de número de consultas
+  date_range: Intervalo de datas
+  min: Mín
+  max: Máx
 review:
   modal_title: Marcar como Revisado
   queries_improved: Consultas Melhoradas?
@@ -115,6 +124,55 @@ sort_options:
   queries: Consultas
   access_count: Número de Acessos
   route_name: Nome da Rota
+  created_at: Data de criação
+  last_accessed_at: Último acesso
 order_options:
   descending: Decrescente
   ascending: Crescente
+
+access_statistics:
+  title: Estatísticas de acesso por hora
+  date_range: Filtro por intervalo de datas
+  start_date: Data de início
+  end_date: Data de fim
+  environment: Ambiente
+  filter: Filtrar
+  reset: Redefinir
+  summary: Resumo
+  total_accesses: Total de acessos
+  period: Período
+  by_hour: Estatísticas por hora do dia
+  by_day_of_week: Estatísticas por dia da semana
+  by_month: Estatísticas por mês
+  hour: Hora
+  access_count: Número de acessos
+  avg_response_time: Tempo médio de resposta
+  status_codes: Códigos de status
+  current_hour: Atual
+  requests: solicitações
+  no_data: Nenhum dado de acesso para o período selecionado.
+  chart_title: Visualização dos padrões de acesso
+  avg_response_time_ms: Tempo médio de resposta (ms)
+  response_time_ms: Tempo de resposta (ms)
+  filters: Filtros
+  route: Rota
+  status_code: Código de status
+  all_routes: Todas as rotas
+  all_status_codes: Todos os códigos de status
+  filtered_route: Rota filtrada
+  view_records: Ver registros individuais
+  back_to_statistics: Voltar às estatísticas
+  export_records_csv: "Exportar registros (CSV)"
+  export_records_json: "Exportar registros (JSON)"
+  records: Registros de acesso
+  total_records: Total de registros
+  timestamp: Data e hora
+  response_time: Tempo de resposta
+  no_records: Nenhum registro encontrado para os filtros selecionados.
+  showing: Mostrando
+  of: de
+  previous: Anterior
+  next: Próximo
+  heatmap: Mapa de calor (dia da semana vs hora)
+  delete_records_matching_filter: Excluir registros correspondentes ao filtro
+  delete_records_confirm: Tem certeza de que deseja excluir todos os registros correspondentes ao filtro atual? Esta ação não pode ser desfeita.

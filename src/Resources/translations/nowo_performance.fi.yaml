@@ -22,6 +22,10 @@ statistics:
 routes_table:
   title: Routes
   route_name: Route Name
+  http_method: HTTP Method
+  status_codes: Status Codes
+  total_responses: Vastaukset yhteensä
+  error_rate: Virheprosentti
   environment: Environment
   request_time: Request Time
   query_time: Query Time
@@ -65,6 +69,11 @@ filters:
   placeholder_route: Filter by route name...
   placeholder_time: '0.0000'
   placeholder_count: '0'
+  request_time_range: Request Time Range (seconds)
+  query_count_range: Query Count Range
+  date_range: Date Range
+  min: Min
+  max: Max
 review:
   modal_title: Mark as Reviewed
   queries_improved: Queries Improved?
@@ -115,6 +124,53 @@ sort_options:
   queries: Queries
   access_count: Access Count
   route_name: Route Name
+  created_at: Created At
+  last_accessed_at: Last Accessed At
 order_options:
   descending: Descending
   ascending: Ascending
+
+access_statistics:
+  title: Access Statistics by Hour
+  date_range: Date Range Filter
+  start_date: Start Date
+  end_date: End Date
+  environment: Environment
+  filter: Filter
+  reset: Reset
+  summary: Summary
+  total_accesses: Total Accesses
+  period: Period
+  by_hour: Statistics by Hour of Day
+  by_day_of_week: Statistics by Day of Week
+  by_month: Statistics by Month
+  hour: Hour
+  access_count: Access Count
+  avg_response_time: Avg Response Time
+  status_codes: Status Codes
+  current_hour: Current
+  requests: requests
+  no_data: No access data available for the selected period.
+  chart_title: Access Pattern Visualization
+  avg_response_time_ms: Average Response Time (ms)
+  response_time_ms: Response Time (ms)
+  filters: Filters
+  route: Route
+  status_code: Status Code
+  all_routes: All Routes
+  all_status_codes: All Status Codes
+  filtered_route: Filtered Route
+  view_records: View Individual Records
+  back_to_statistics: Back to Statistics
+  records: Access Records
+  total_records: Total Records
+  timestamp: Timestamp
+  response_time: Response Time
+  no_records: No records found for the selected filters.
+  showing: Showing
+  of: of
+  previous: Previous
+  next: Next
+  heatmap: Access Heatmap (Day of Week vs Hour)
+  delete_records_matching_filter: Delete records matching filter
+  delete_records_confirm: Are you sure you want to delete all records matching the current filter? This cannot be undone.

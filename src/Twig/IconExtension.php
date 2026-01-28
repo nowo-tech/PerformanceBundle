@@ -15,7 +15,7 @@ use Twig\TwigFunction;
  * with automatic fallback to SVG if UX Icons is not available.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class IconExtension extends AbstractExtension
 {

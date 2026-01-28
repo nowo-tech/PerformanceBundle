@@ -27,7 +27,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  * - Symfony 6.1+, 7.x, and 8.x compatible
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class NowoPerformanceBundle extends Bundle
 {

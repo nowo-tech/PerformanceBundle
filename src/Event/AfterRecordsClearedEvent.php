@@ -12,12 +12,12 @@ use Symfony\Contracts\EventDispatcher\Event;
  * This event allows listeners to perform actions after clearing.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class AfterRecordsClearedEvent extends Event
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param int         $deletedCount Number of records deleted
      * @param string|null $env          Optional environment filter (null = all environments)

@@ -13,7 +13,7 @@ use Nowo\PerformanceBundle\Entity\RouteData;
  * and automated recommendations based on performance data.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class PerformanceAnalysisService
 {

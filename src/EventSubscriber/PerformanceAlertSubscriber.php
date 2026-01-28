@@ -15,12 +15,12 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
  * Listens to AfterMetricsRecordedEvent and sends notifications when thresholds are exceeded.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class PerformanceAlertSubscriber
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param NotificationService $notificationService Notification service
      * @param float               $requestTimeWarning  Warning threshold for request time
@@ -56,84 +56,85 @@ final class PerformanceAlertSubscriber
         }
 
         $routeData = $event->getRouteData();
+        $requestTime = $event->getRequestTime();
+        $totalQueries = $event->getTotalQueries();
+        $memoryUsage = $event->getMemoryUsage();
 
-        // Check request time
-        if (null !== $routeData->getRequestTime()) {
-            if ($routeData->getRequestTime() >= $this->requestTimeCritical) {
+        // Check request time (from just-recorded metrics)
+        if (null !== $requestTime) {
+            if ($requestTime >= $this->requestTimeCritical) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_REQUEST_TIME,
                     PerformanceAlert::SEVERITY_CRITICAL,
                     \sprintf(
                         'Critical: Route "%s" has request time of %.4fs (threshold: %.2fs)',
                         $routeData->getName() ?? 'Unknown',
-                        $routeData->getRequestTime(),
+                        $requestTime,
                         $this->requestTimeCritical
                     ),
                     [
-                        'value' => $routeData->getRequestTime(),
+                        'value' => $requestTime,
                         'threshold' => $this->requestTimeCritical,
                     ]
                 );
-                $this->notificationService->sendAlert($alert, $routeData);
-            } elseif ($routeData->getRequestTime() >= $this->requestTimeWarning) {
+                $this->notificationService->sendAlert($alert, $event);
+            } elseif ($requestTime >= $this->requestTimeWarning) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_REQUEST_TIME,
                     PerformanceAlert::SEVERITY_WARNING,
                     \sprintf(
                         'Warning: Route "%s" has request time of %.4fs (threshold: %.2fs)',
                         $routeData->getName() ?? 'Unknown',
-                        $routeData->getRequestTime(),
+                        $requestTime,
                         $this->requestTimeWarning
                     ),
                     [
-                        'value' => $routeData->getRequestTime(),
+                        'value' => $requestTime,
                         'threshold' => $this->requestTimeWarning,
                     ]
                 );
-                $this->notificationService->sendAlert($alert, $routeData);
+                $this->notificationService->sendAlert($alert, $event);
             }
         }
 
-        // Check query count
-        if (null !== $routeData->getTotalQueries()) {
-            if ($routeData->getTotalQueries() >= $this->queryCountCritical) {
+        if (null !== $totalQueries) {
+            if ($totalQueries >= $this->queryCountCritical) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_QUERY_COUNT,
                     PerformanceAlert::SEVERITY_CRITICAL,
                     \sprintf(
                         'Critical: Route "%s" has %d queries (threshold: %d)',
                         $routeData->getName() ?? 'Unknown',
-                        $routeData->getTotalQueries(),
+                        $totalQueries,
                         $this->queryCountCritical
                     ),
                     [
-                        'value' => $routeData->getTotalQueries(),
+                        'value' => $totalQueries,
                         'threshold' => $this->queryCountCritical,
                     ]
                 );
-                $this->notificationService->sendAlert($alert, $routeData);
-            } elseif ($routeData->getTotalQueries() >= $this->queryCountWarning) {
+                $this->notificationService->sendAlert($alert, $event);
+            } elseif ($totalQueries >= $this->queryCountWarning) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_QUERY_COUNT,
                     PerformanceAlert::SEVERITY_WARNING,
                     \sprintf(
                         'Warning: Route "%s" has %d queries (threshold: %d)',
                         $routeData->getName() ?? 'Unknown',
-                        $routeData->getTotalQueries(),
+                        $totalQueries,
                         $this->queryCountWarning
                     ),
                     [
-                        'value' => $routeData->getTotalQueries(),
+                        'value' => $totalQueries,
                         'threshold' => $this->queryCountWarning,
                     ]
                 );
-                $this->notificationService->sendAlert($alert, $routeData);
+                $this->notificationService->sendAlert($alert, $event);
             }
         }
 
-        // Check memory usage
-        if (null !== $routeData->getMemoryUsage()) {
-            $memoryMB = $routeData->getMemoryUsage() / 1024 / 1024;
+        if (null !== $memoryUsage) {
+            $memoryMB = $memoryUsage / 1024 / 1024;
             if ($memoryMB >= $this->memoryUsageCritical) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_MEMORY_USAGE,
@@ -149,7 +150,7 @@ final class PerformanceAlertSubscriber
                         'threshold' => $this->memoryUsageCritical,
                     ]
                 );
-                $this->notificationService->sendAlert($alert, $routeData);
+                $this->notificationService->sendAlert($alert, $event);
             } elseif ($memoryMB >= $this->memoryUsageWarning) {
                 $alert = new PerformanceAlert(
                     PerformanceAlert::TYPE_MEMORY_USAGE,
@@ -165,7 +166,7 @@ final class PerformanceAlertSubscriber
                         'threshold' => $this->memoryUsageWarning,
                     ]
                 );
-                $this->notificationService->sendAlert($alert, $routeData);
+                $this->notificationService->sendAlert($alert, $event);
             }
         }
     }

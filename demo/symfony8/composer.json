@@ -15,6 +15,7 @@
         "symfony/form": "^8.0",
         "symfony/framework-bundle": "^8.0",
         "symfony/runtime": "^8.0",
+        "symfony/security-bundle": "^8.0",
         "symfony/security-csrf": "8.0.*",
         "symfony/translation": "^8.0",
         "symfony/twig-bundle": "^8.0",

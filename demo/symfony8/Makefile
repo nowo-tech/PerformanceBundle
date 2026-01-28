@@ -25,6 +25,10 @@ help:
 	@echo "  db-fixtures   Load fixtures"
 	@echo "  db-view       View performance metrics"
 	@echo ""
+	@echo "Performance Bundle (schema):"
+	@echo "  performance-sync       Sync routes_data + routes_data_records with entities (add/alter)"
+	@echo "  performance-sync-drop  Sync and drop columns no longer in entity (--drop-obsolete)"
+	@echo ""
 
 # Build and start containers
 up:
@@ -78,6 +82,8 @@ setup:
 	-docker-compose exec -T php php bin/console doctrine:database:create --if-not-exists --no-interaction
 	@echo "Creating schema..."
 	-docker-compose exec -T php php bin/console doctrine:schema:create --no-interaction
+	@echo "Syncing Performance Bundle tables (routes_data + routes_data_records)..."
+	-docker-compose exec -T php php bin/console nowo:performance:sync-schema --no-interaction
 	@echo "Loading fixtures..."
 	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Demo setup complete!"
@@ -97,6 +103,8 @@ db-drop:
 db-reset: db-drop db-create
 	@echo "🔄 Resetting database schema..."
 	-docker-compose exec -T php php bin/console doctrine:schema:create --no-interaction
+	@echo "🔄 Syncing Performance Bundle tables..."
+	-docker-compose exec -T php php bin/console nowo:performance:sync-schema --no-interaction
 	@echo "📥 Loading fixtures..."
 	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Database reset complete!"
@@ -109,6 +117,18 @@ db-fixtures:
 db-view:
 	@echo "📋 Viewing performance metrics..."
 	docker-compose exec -T php php bin/console dbal:run-sql "SELECT * FROM routes_data ORDER BY request_time DESC LIMIT 10" 2>/dev/null || echo "No metrics yet or connection error"
+
+# Performance Bundle: sync DB structure with entity metadata (add missing, alter differing columns)
+performance-sync:
+	@echo "🔄 Syncing Performance Bundle schema (routes_data + routes_data_records)..."
+	docker-compose exec -T php php bin/console nowo:performance:sync-schema --no-interaction
+	@echo "✅ Schema sync complete!"
+
+# Performance Bundle: sync and drop columns no longer in entity
+performance-sync-drop:
+	@echo "🔄 Syncing Performance Bundle schema (with --drop-obsolete)..."
+	docker-compose exec -T php php bin/console nowo:performance:sync-schema --drop-obsolete --no-interaction
+	@echo "✅ Schema sync complete!"
 
 # Show logs
 logs:

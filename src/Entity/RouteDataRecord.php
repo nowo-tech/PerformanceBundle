@@ -16,7 +16,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
  * This table is used for temporal analysis of route access patterns.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[ORM\Entity(repositoryClass: RouteDataRecordRepository::class)]
 #[ORM\Table(name: 'routes_data_records')]
@@ -60,7 +60,25 @@ class RouteDataRecord
     private ?float $responseTime = null;
 
     /**
-     * Constructor.
+     * Total number of database queries for this request.
+     */
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $totalQueries = null;
+
+    /**
+     * Total query execution time in seconds for this request.
+     */
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $queryTime = null;
+
+    /**
+     * Peak memory usage in bytes for this request.
+     */
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $memoryUsage = null;
+
+    /**
+     * Creates a new instance.
      */
     public function __construct()
     {
@@ -161,6 +179,72 @@ class RouteDataRecord
     public function setResponseTime(?float $responseTime): self
     {
         $this->responseTime = $responseTime;
+
+        return $this;
+    }
+
+    /**
+     * Get the total number of database queries.
+     *
+     * @return int|null Total queries for this request
+     */
+    public function getTotalQueries(): ?int
+    {
+        return $this->totalQueries;
+    }
+
+    /**
+     * Set the total number of database queries.
+     *
+     * @param int|null $totalQueries Total queries for this request
+     */
+    public function setTotalQueries(?int $totalQueries): self
+    {
+        $this->totalQueries = $totalQueries;
+
+        return $this;
+    }
+
+    /**
+     * Get the total query execution time in seconds.
+     *
+     * @return float|null Query time for this request
+     */
+    public function getQueryTime(): ?float
+    {
+        return $this->queryTime;
+    }
+
+    /**
+     * Set the total query execution time in seconds.
+     *
+     * @param float|null $queryTime Query time for this request
+     */
+    public function setQueryTime(?float $queryTime): self
+    {
+        $this->queryTime = $queryTime;
+
+        return $this;
+    }
+
+    /**
+     * Get the peak memory usage in bytes.
+     *
+     * @return int|null Memory usage for this request
+     */
+    public function getMemoryUsage(): ?int
+    {
+        return $this->memoryUsage;
+    }
+
+    /**
+     * Set the peak memory usage in bytes.
+     *
+     * @param int|null $memoryUsage Memory usage for this request
+     */
+    public function setMemoryUsage(?int $memoryUsage): self
+    {
+        $this->memoryUsage = $memoryUsage;
 
         return $this;
     }

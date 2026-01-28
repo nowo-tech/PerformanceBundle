@@ -171,16 +171,20 @@ nowo_performance:
 **Type:** `array`  
 **Default:** `['_wdt', '_profiler', '_error']`
 
-List of route names to ignore (not tracked).
+List of route names or patterns to ignore (not tracked). Each entry can be:
+
+- **Literal:** exact route name. Sub-routes are also ignored by prefix (e.g. `_wdt` ignores `_wdt`, `_wdt_open`, `_wdt_open_file`).
+- **Pattern (glob):** if the entry contains `*` or `?`, it is matched with [fnmatch](https://www.php.net/manual/en/function.fnmatch.php) (e.g. `_wdt*`, `*_profiler*`, `admin_*`).
 
 ```yaml
 nowo_performance:
     ignore_routes:
-        - '_wdt'
+        - '_wdt'           # literal: _wdt and _wdt_*
         - '_profiler'
         - '_error'
         - 'api_doc'
-        - 'admin_*'  # Note: wildcards not supported, use exact names
+        - 'admin_*'       # pattern: any route starting with admin_
+        - '*_internal'   # pattern: any route ending with _internal
 ```
 
 ### `dashboard`

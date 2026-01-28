@@ -11,15 +11,15 @@ namespace Nowo\PerformanceBundle\Message;
  * performance metrics in the background.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class RecordMetricsMessage
 {
     /**
-     * Constructor.
+     * Creates a new record metrics message for async processing.
      *
      * @param string      $routeName    The route name
-     * @param string      $env          The environment
+     * @param string      $env          The environment (e.g. dev, prod)
      * @param float|null  $requestTime  Request execution time in seconds
      * @param int|null    $totalQueries Total number of database queries
      * @param float|null  $queryTime    Total query execution time in seconds
@@ -39,41 +39,49 @@ final class RecordMetricsMessage
     ) {
     }
 
+    /** @return string The route name */
     public function getRouteName(): string
     {
         return $this->routeName;
     }
 
+    /** @return string The environment */
     public function getEnv(): string
     {
         return $this->env;
     }
 
+    /** @return float|null Request execution time in seconds */
     public function getRequestTime(): ?float
     {
         return $this->requestTime;
     }
 
+    /** @return int|null Total number of database queries */
     public function getTotalQueries(): ?int
     {
         return $this->totalQueries;
     }
 
+    /** @return float|null Total query execution time in seconds */
     public function getQueryTime(): ?float
     {
         return $this->queryTime;
     }
 
+    /** @return array|null Route parameters */
     public function getParams(): ?array
     {
         return $this->params;
     }
 
+    /** @return int|null Peak memory usage in bytes */
     public function getMemoryUsage(): ?int
     {
         return $this->memoryUsage;
     }
 
+    /** @return string|null HTTP method */
     public function getHttpMethod(): ?string
     {
         return $this->httpMethod;

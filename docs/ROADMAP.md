@@ -10,8 +10,8 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
 
 ## 📅 Roadmap Timeline
 
-### Phase 1: Foundation & Core Improvements (Q1 2025)
-**Status:** ✅ **COMPLETED** (2025-01-26)
+### Phase 1: Foundation & Core Improvements (Q1 2026)
+**Status:** ✅ **COMPLETED** (2026-01-26)
 
 #### Performance Optimizations
 - [x] **Database indexing optimization** ✅ **COMPLETED**
@@ -32,10 +32,10 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - ✅ Reflection-based middleware application for DoctrineBundle 3.x
   - ✅ QueryTrackingMiddleware with connection wrapping
   - ✅ QueryTrackingConnectionSubscriber for automatic middleware application
-  - [x] **Sampling for high-traffic routes** ✅ **ADDED** (2025-01-26)
+  - [x] **Sampling for high-traffic routes** ✅ **ADDED** (2026-01-26)
     - ✅ Configurable sampling rate (0.0 to 1.0)
     - ✅ Reduces database load for frequently accessed routes
-  - [x] **Configurable query tracking threshold** ✅ **ADDED** (2025-01-26)
+  - [x] **Configurable query tracking threshold** ✅ **ADDED** (2026-01-26)
     - ✅ Minimum query count threshold for timing individual queries
     - ✅ Reduces overhead for low-query routes
 
@@ -47,7 +47,7 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
 
 #### Dashboard Enhancements
 - [x] **Real-time updates** ✅ **PARTIALLY COMPLETED**
-  - [x] Auto-refresh dashboard ✅ **ADDED** (2025-01-26)
+  - [x] Auto-refresh dashboard ✅ **ADDED** (2026-01-26)
     - ✅ Configurable refresh interval
     - ✅ Visual countdown indicator
     - ✅ Pause on window blur
@@ -76,7 +76,7 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - ✅ API endpoint for chart data (`/api/chart-data`)
   - ✅ Performance trends visualization
   - ✅ Alert when no chart data is available
-  - ✅ **Advanced Performance Statistics page** ✅ **ADDED** (2025-01-26)
+  - ✅ **Advanced Performance Statistics page** ✅ **ADDED** (2026-01-26)
     - ✅ Detailed statistics for all metrics
     - ✅ Statistical measures: Mean, Median, Mode, Standard Deviation
     - ✅ Percentiles: P25, P50, P75, P90, P95, P99
@@ -88,8 +88,8 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - [ ] Heatmaps for performance hotspots
 
 #### Code Quality
-- [x] **Test coverage** ✅ **SIGNIFICANTLY IMPROVED** (2025-01-26)
-  - ✅ Unit tests for core components (123+ tests, 320+ assertions)
+- [x] **Test coverage** ✅ **SIGNIFICANTLY IMPROVED** (2026-01-26)
+  - ✅ Unit tests for core components (712+ tests, 1262+ assertions)
   - ✅ Test coverage: Improved from 34% to ~60%+ (ongoing)
   - ✅ Integration tests for dashboard
   - ✅ Functional tests for query tracking
@@ -97,11 +97,25 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - ✅ Tests for MessageHandler and Events
   - ✅ Tests for Controller methods (statistics, delete, review, clear, chartData)
   - ✅ Tests for Entity methods (review, access count, memory usage, __toString)
-  - ✅ **Additional tests added** ✅ **ADDED** (2025-01-26)
+  - ✅ **Additional tests added** ✅ **ADDED** (2026-01-26)
     - ✅ CreateTableCommand tests for column update functionality
     - ✅ PerformanceDataCollector tests for record operation tracking
     - ✅ PerformanceMetricsService tests for operation info return values
     - ✅ 37 test files with comprehensive coverage
+  - ✅ **Controller helper methods tests** ✅ **ADDED** (2026-01-27)
+    - ✅ PerformanceControllerHelperMethodsTest: 28+ tests for private helper methods
+    - ✅ Tests for getSortValue() (8 tests: name, requestTime, queryTime, totalQueries, accessCount, env, default, null values)
+    - ✅ Tests for calculateStats() (4 tests: empty, single route, multiple routes, null filtering)
+    - ✅ Tests for calculateAdvancedStats() (3 tests: empty, with routes, null filtering)
+    - ✅ Tests for calculateDetailedStats() (8 tests: empty, single, multiple, even count, outliers, distribution, same values, rounding)
+    - ✅ Tests for getRoutesNeedingAttention() (4 tests: empty, slow request time, high query count, high memory)
+    - ✅ Tests for getChartData() (8 tests: requestTime, queryTime, totalQueries, memoryUsage, specific route, empty results, different days)
+    - ✅ Tests for buildFiltersFromRequest() (11 tests: no filters, route, min/max request time, min/max query count, date from/to, all filters, invalid dates, datetime format)
+  - ✅ **Driver name compatibility tests** ✅ **ADDED** (2026-01-27)
+    - ✅ PerformanceControllerDriverNameTest: 9 tests for getDriverName() method
+    - ✅ Tests for unwrapped drivers, wrapped drivers (middleware), and fallback scenarios
+    - ✅ Tests for MySQL, PostgreSQL, SQLite, SQLServer platform detection
+  - ✅ 72+ test files with comprehensive coverage
   - [ ] 100% test coverage target (in progress)
   - [ ] Performance tests for middleware
 
@@ -109,7 +123,7 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - ✅ Installation guide
   - ✅ Configuration documentation
   - ✅ Usage examples
-  - ✅ Command documentation (create-table, diagnose, check-dependencies, set-route)
+  - ✅ Command documentation (create-table, create-records-table, sync-schema, diagnose, check-dependencies, set-route, rebuild-aggregates)
   - ✅ CHANGELOG.md with detailed feature list
   - ✅ UPGRADING.md with migration guides
   - ✅ Symfony Flex recipe with automatic configuration
@@ -120,15 +134,15 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
 
 ---
 
-### Phase 2: Advanced Features (Q2 2025)
+### Phase 2: Advanced Features (Q2 2026)
 **Status:** Partially Started
 
 #### Performance Analysis
-- [x] **Performance thresholds** ✅ **COMPLETED** (2025-01-26)
+- [x] **Performance thresholds** ✅ **COMPLETED** (2026-01-26)
   - ✅ Configurable thresholds for request time, query count, and memory usage
   - ✅ Warning and critical levels
   - ✅ Visual indicators in dashboard
-  - [x] **Performance alerts** ✅ **COMPLETED** (2025-01-26)
+  - [x] **Performance alerts** ✅ **COMPLETED** (2026-01-26)
     - ✅ Email notifications via Symfony Mailer
     - ✅ Slack webhook integration
     - ✅ Microsoft Teams webhook integration
@@ -181,12 +195,12 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - ✅ Memory usage thresholds
   - [ ] Memory leak detection
 
-- [x] **HTTP Method tracking** ✅ **COMPLETED** (2025-01-26)
+- [x] **HTTP Method tracking** ✅ **COMPLETED** (2026-01-26)
   - ✅ Track HTTP method (GET, POST, PUT, DELETE, etc.) for each route
   - ✅ Display in dashboard with color-coded badges
   - ✅ Included in CSV and JSON exports
 
-- [x] **HTTP Status Code tracking** ✅ **COMPLETED** (2025-01-26)
+- [x] **HTTP Status Code tracking** ✅ **COMPLETED** (2026-01-26)
   - ✅ Track HTTP status codes per route (200, 404, 500, etc.)
   - ✅ Configurable status codes to track
   - ✅ Automatic ratio calculation (percentage per status code)
@@ -198,8 +212,10 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - ✅ Last access timestamp (lastAccessedAt)
   - ✅ Display in dashboard with badges
   - ✅ Sorting by access count
+  - ✅ Temporal access records (`RouteDataRecord`) for individual hits
+  - ✅ Seasonality analysis (hour/day/month + heatmaps) based on records
 
-- [x] **Sub-request tracking** ✅ **COMPLETED** (2025-01-27)
+- [x] **Sub-request tracking** ✅ **COMPLETED** (2026-01-27)
   - ✅ Configurable `track_sub_requests` option
   - ✅ Track sub-requests (ESI, fragments, includes) in addition to main requests
   - ✅ Default: false (only main requests tracked for backward compatibility)
@@ -218,7 +234,7 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
 
 ---
 
-### Phase 3: Enterprise Features (Q3 2025)
+### Phase 3: Enterprise Features (Q3 2026)
 **Status:** Future
 
 #### Multi-tenancy Support
@@ -233,7 +249,7 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - Cross-organization comparisons
 
 #### Advanced Analytics
-- [x] **Statistical analysis** ✅ **COMPLETED** (2025-01-26)
+- [x] **Statistical analysis** ✅ **COMPLETED** (2026-01-26)
   - ✅ Percentile calculations (P25, P50, P75, P90, P95, P99)
   - ✅ Standard deviation analysis
   - ✅ Outlier detection
@@ -273,18 +289,24 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
 
 ---
 
-### Phase 4: Developer Experience (Q4 2025)
+### Phase 4: Developer Experience (Q4 2026)
 **Status:** Future
 
 #### Developer Tools
 - [x] **CLI commands** ✅ **COMPLETED**
   - ✅ `nowo:performance:create-table` - Create/update database table
-    - ✅ **Enhanced column management** ✅ **ADDED** (2025-01-26)
+    - ✅ **Enhanced column management** ✅ **ADDED** (2026-01-26)
       - ✅ Individual column comparison and update
       - ✅ Add missing columns without data loss
       - ✅ Update existing columns with differences (type, nullable, length, default)
       - ✅ Shows differences before updating
       - ✅ Safe `--update` option preserves existing data
+    - ✅ **Schema sync and drop obsolete** ✅ **ADDED**
+      - ✅ `--drop-obsolete` option to remove columns no longer in entity (use with `--update`)
+      - ✅ Never drops primary key `id`
+  - ✅ `nowo:performance:create-records-table` - Create/update access records table
+    - ✅ `--update` adds/alters columns; `--drop-obsolete` drops columns not in entity
+  - ✅ `nowo:performance:sync-schema` - Sync both tables with entity metadata in one go (add, alter, optional drop)
   - ✅ `nowo:performance:diagnose` - Comprehensive diagnostic report
   - ✅ `nowo:performance:check-dependencies` - Check optional dependencies
   - ✅ `nowo:performance:set-route` - Manually set/update route metrics
@@ -345,7 +367,7 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
 ### Performance
 - [x] **Zero-overhead mode** ✅ **PARTIALLY COMPLETED**
   - ✅ Minimal impact on application performance
-  - ✅ Configurable sampling rates ✅ **ADDED** (2025-01-26)
+  - ✅ Configurable sampling rates ✅ **ADDED** (2026-01-26)
   - ✅ Production-optimized defaults
   - ✅ Optional async recording
 
@@ -460,7 +482,7 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - Performance prediction
   - Auto-scaling recommendations
 
-- [x] **Statistical analysis** ✅ **COMPLETED** (2025-01-26)
+- [x] **Statistical analysis** ✅ **COMPLETED** (2026-01-26)
   - ✅ Percentile calculations (p50, p95, p99)
   - ✅ Standard deviation analysis
   - ✅ Outlier detection
@@ -564,10 +586,11 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
 - **P3 (Low)**: Future consideration
 
 ### Version Planning
-- **v0.0.1**: Initial release (2025-01-26) - Foundation complete
+- **v0.0.1**: Initial release (2026-01-26) - Foundation complete
 - **v0.1.0**: Performance optimizations + additional dashboard improvements
 - **v0.2.0**: Advanced features + integrations
-- **v1.0.0**: Stable release with enterprise features
+- **v1.0.0**: Stable release (current 1.x line — no breaking changes)
+- **v2.0.0** (2026-01-28): **Released — breaking.** Entity normalization (RouteData / RouteDataRecord). See [ENTITY_NORMALIZATION_PLAN.md](ENTITY_NORMALIZATION_PLAN.md) and [V2_MIGRATION.md](V2_MIGRATION.md). Metrics move from RouteData to records/aggregates; dashboard and API use new data source.
 
 ---
 
@@ -581,7 +604,7 @@ This roadmap is a living document. We welcome feedback and contributions:
 
 ---
 
-## ✅ Recently Completed Features (2025-01-26)
+## ✅ Recently Completed Features (2026-01-26)
 
 ### Core Features
 - ✅ **Database Schema Management**: Added `nowo:performance:create-table` command for easy table creation
@@ -620,17 +643,34 @@ This roadmap is a living document. We welcome feedback and contributions:
 - ✅ **Ranking Information**: Access frequency, ranking by request time and query count
 - ✅ **Visual Indicators**: Status indicators for slow routes and routes needing attention
 - ✅ **Always Visible**: Collector always visible in toolbar, even when disabled
-- ✅ **Record Operation Tracking** ✅ **ADDED** (2025-01-26)
+- ✅ **Record Operation Tracking** ✅ **ADDED** (2026-01-26)
   - ✅ Track if record was newly created or updated
   - ✅ Display operation status in collector detail view
   - ✅ Information about whether metrics were saved or skipped
 
 ---
 
-**Last Updated:** 2025-01-27  
-**Next Review:** 2025-04-27
+**Last Updated:** 2026-01-27  
+**Next Review:** 2026-04-27
 
-### Recent Improvements (2025-01-26)
+### Recent Improvements (2026-01-27)
+
+#### Testing & Quality
+- ✅ **Extended Test Coverage**: Added 37+ new tests for controller helper methods
+  - PerformanceControllerHelperMethodsTest: Comprehensive tests for private helper methods
+    - getSortValue(): 8 tests covering all sort options and null handling
+    - calculateStats(): 4 tests for statistics calculation with various scenarios
+    - calculateAdvancedStats(): 3 tests for advanced statistics with memory conversion
+    - calculateDetailedStats(): 8 tests for detailed statistical analysis (percentiles, outliers, distribution)
+    - getRoutesNeedingAttention(): 4 tests for identifying routes needing attention
+    - getChartData(): 8 tests for chart data generation with different metrics and scenarios
+    - buildFiltersFromRequest(): 11 tests for request filter parsing and validation
+  - PerformanceControllerDriverNameTest: 9 tests for database driver name detection
+    - Tests for unwrapped drivers, middleware-wrapped drivers, and platform fallbacks
+    - Ensures compatibility with DBAL 2.x and 3.x driver detection
+  - Total: 712+ tests, 1262+ assertions across 72+ test files
+
+### Recent Improvements (2026-01-26)
 
 #### Database Schema Management
 - ✅ **Enhanced CreateTableCommand**: Improved `--update` option to check and update columns individually
@@ -640,11 +680,17 @@ This roadmap is a living document. We welcome feedback and contributions:
   - Better error handling and user feedback
 
 #### Testing & Quality
-- ✅ **Additional Test Coverage**: Added 14+ new tests
+- ✅ **Additional Test Coverage**: Added 14+ new tests (2026-01-26)
   - CreateTableCommand: 6 tests for column update functionality
   - PerformanceDataCollector: 5 tests for record operation tracking
   - PerformanceMetricsService: 3 tests for operation info return values
   - Updated existing tests to verify new return values
+- ✅ **Extended Test Coverage for Controller Helpers** ✅ **ADDED** (2026-01-27)
+  - PerformanceControllerHelperMethodsTest: 28+ tests for private helper methods
+    - getSortValue(), calculateStats(), calculateAdvancedStats(), calculateDetailedStats()
+    - getRoutesNeedingAttention(), getChartData(), buildFiltersFromRequest()
+  - PerformanceControllerDriverNameTest: 9 tests for database driver name detection
+  - Total test suite: 712+ tests, 1262+ assertions across 72+ test files
 
 #### Web Profiler
 - ✅ **Record Operation Status**: Added tracking and display of whether records were created or updated
@@ -652,7 +698,7 @@ This roadmap is a living document. We welcome feedback and contributions:
   - Helps debug metric recording behavior
 
 #### Compatibility & Code Quality
-- ✅ **Doctrine DBAL Deprecation Fixes** ✅ **ADDED** (2025-01-27)
+- ✅ **Doctrine DBAL Deprecation Fixes** ✅ **ADDED** (2026-01-27)
   - ✅ Fixed deprecation warnings in CreateTableCommand and TableStatusChecker
   - ✅ Replaced deprecated `AbstractPlatform::quoteIdentifier()` with helper method compatible with DBAL 2.x and 3.x
   - ✅ Replaced deprecated `Column::getName()` with `getColumnName()` helper method
@@ -662,7 +708,7 @@ This roadmap is a living document. We welcome feedback and contributions:
   - ✅ Maintains full backward compatibility with DBAL 2.x
 
 #### Advanced Tracking
-- ✅ **Sub-request Tracking Support** ✅ **ADDED** (2025-01-27)
+- ✅ **Sub-request Tracking Support** ✅ **ADDED** (2026-01-27)
   - ✅ Configurable `track_sub_requests` option (default: false)
   - ✅ Tracks both main requests and sub-requests separately when enabled
   - ✅ Useful for ESI performance monitoring, fragment rendering, and debugging sub-request bottlenecks

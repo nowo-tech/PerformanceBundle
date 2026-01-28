@@ -8,14 +8,14 @@ use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Service\NotificationService;
 
 /**
- * Factory Service para crear NotificationService con canales dinámicos.
+ * Factory service to create NotificationService with dynamic channels.
  *
- * Este enfoque es más flexible que el Compiler Pass porque:
- * - No requiere que la BD esté disponible durante la compilación
- * - Permite cambiar la configuración sin recompilar el contenedor
- * - Útil cuando las credenciales cambian frecuentemente
+ * This approach is more flexible than the Compiler Pass because:
+ * - It does not require the database to be available during compilation
+ * - It allows changing configuration without recompiling the container
+ * - Useful when credentials change frequently
  *
- * Uso:
+ * Usage:
  * ```php
  * $notificationService = $notificationFactory->createNotificationService();
  * ```
@@ -23,9 +23,9 @@ use Nowo\PerformanceBundle\Service\NotificationService;
 class NotificationFactoryService
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
-     * @param DynamicNotificationConfiguration $configService Servicio para obtener configuración de BD
+     * @param DynamicNotificationConfiguration $configService Service to obtain configuration from the database
      */
     public function __construct(
         private readonly DynamicNotificationConfiguration $configService,
@@ -33,10 +33,12 @@ class NotificationFactoryService
     }
 
     /**
-     * Crea un NotificationService con canales configurados desde la base de datos.
+     * Creates a NotificationService with channels configured from the database.
      *
-     * Este método crea una nueva instancia de NotificationService cada vez que se llama,
-     * lo que permite tener configuración completamente dinámica.
+     * This method creates a new NotificationService instance each time it is called,
+     * allowing fully dynamic configuration.
+     *
+     * @return NotificationService
      */
     public function createNotificationService(): NotificationService
     {
@@ -47,11 +49,13 @@ class NotificationFactoryService
     }
 
     /**
-     * Crea canales adicionales personalizados.
+     * Creates a NotificationService with additional custom channels.
      *
-     * Útil para añadir canales que no están en la configuración de BD.
+     * Useful to add channels that are not in the database configuration.
      *
-     * @param array<NotificationChannelInterface> $additionalChannels Canales adicionales
+     * @param array<NotificationChannelInterface> $additionalChannels Additional channels
+     *
+     * @return NotificationService
      */
     public function createNotificationServiceWithAdditionalChannels(array $additionalChannels): NotificationService
     {

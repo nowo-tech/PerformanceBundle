@@ -10,35 +10,36 @@ use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Twig\Environment;
 
 /**
- * Ejemplo de servicio para configurar notificaciones dinámicamente desde la base de datos.
+ * Example service to configure notifications dynamically from the database.
  *
- * Este servicio demuestra cómo configurar los canales de notificación cuando las credenciales
- * (webhook URLs, emails, etc.) se almacenan en la base de datos en lugar del archivo YAML.
+ * This service demonstrates how to configure notification channels when credentials
+ * (webhook URLs, emails, etc.) are stored in the database instead of the YAML file.
  *
  * @example
- * Este servicio se puede usar de dos formas:
+ * This service can be used in two ways:
  *
- * 1. Como Compiler Pass (recomendado para configuración estática):
- *    - Crea un CompilerPass que registre los canales dinámicamente
- *    - Los canales se crean una vez al compilar el contenedor
+ * 1. As a Compiler Pass (recommended for static configuration):
+ *    - Create a CompilerPass that registers channels dynamically
+ *    - Channels are created once when the container is compiled
  *
- * 2. Como Factory Service (para configuración completamente dinámica):
- *    - Crea los canales bajo demanda cuando se necesitan
- *    - Útil cuando las credenciales cambian frecuentemente
+ * 2. As a Factory Service (for fully dynamic configuration):
+ *    - Creates channels on demand when needed
+ *    - Useful when credentials change frequently
  *
  * @see https://symfony.com/doc/current/service_container/compiler_passes.html
  */
 class DynamicNotificationConfiguration
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
-     * @param EntityManagerInterface   $entityManager Para acceder a la base de datos
-     * @param MailerInterface|null     $mailer        Symfony Mailer (opcional)
-     * @param HttpClientInterface|null $httpClient    Symfony HTTP Client (opcional)
-     * @param Environment|null         $twig          Twig Environment para renderizar templates (opcional)
+     * @param EntityManagerInterface    $entityManager Entity manager to access the database
+     * @param MailerInterface|null     $mailer        Symfony Mailer (optional)
+     * @param HttpClientInterface|null $httpClient    Symfony HTTP Client (optional)
+     * @param Environment|null         $twig          Twig environment for rendering templates (optional)
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -49,12 +50,12 @@ class DynamicNotificationConfiguration
     }
 
     /**
-     * Obtiene la configuración de notificaciones desde la base de datos.
+     * Returns the notification configuration from the database.
      *
-     * Este método asume que tienes una entidad o tabla que almacena la configuración.
-     * Ajusta según tu estructura de base de datos.
+     * This method assumes you have an entity or table that stores the configuration.
+     * Adjust according to your database structure.
      *
-     * @return array<string, mixed> Configuración de notificaciones
+     * @return array<string, mixed> Notification configuration
      *
      * @example
      * [
@@ -82,11 +83,11 @@ class DynamicNotificationConfiguration
      */
     private function getNotificationConfigFromDatabase(): array
     {
-        // Ejemplo: Obtener configuración desde una entidad Settings
-        // Ajusta según tu estructura de base de datos
+        // Example: get configuration from a Settings entity
+        // Adjust according to your database structure
 
         try {
-            // Opción 1: Desde una entidad Settings
+            // Option 1: From a Settings entity
             $settings = $this->entityManager
                 ->getRepository('App\Entity\NotificationSettings')
                 ->findOneBy(['key' => 'performance_notifications']);
@@ -95,21 +96,21 @@ class DynamicNotificationConfiguration
                 return json_decode($settings->getValue(), true) ?? [];
             }
 
-            // Opción 2: Desde una tabla de configuración simple
+            // Option 2: From a simple config table
             // $connection = $this->entityManager->getConnection();
             // $stmt = $connection->prepare('SELECT * FROM notification_config WHERE type = :type');
             // $stmt->execute(['type' => 'performance']);
             // $config = $stmt->fetchAssociative();
             // return $config ? json_decode($config['value'], true) ?? [] : [];
         } catch (\Exception $e) {
-            // Log error y retornar configuración por defecto
+            // Log error and return default configuration
             error_log(\sprintf(
                 'Error loading notification config from database: %s',
                 $e->getMessage()
             ));
         }
 
-        // Configuración por defecto si no hay datos en BD
+        // Default configuration when no data in DB
         return [
             'enabled' => false,
             'email' => ['enabled' => false],
@@ -120,18 +121,18 @@ class DynamicNotificationConfiguration
     }
 
     /**
-     * Crea los canales de notificación basados en la configuración de la base de datos.
+     * Creates notification channels from the database configuration.
      *
-     * Este método crea instancias de los canales con las credenciales obtenidas de la BD.
+     * This method creates channel instances with credentials fetched from the database.
      *
-     * @return array<NotificationChannelInterface> Array de canales configurados
+     * @return array<NotificationChannelInterface> Array of configured channels
      */
     public function createChannelsFromDatabase(): array
     {
         $config = $this->getNotificationConfigFromDatabase();
         $channels = [];
 
-        // Crear canal de Email si está habilitado
+        // Create Email channel if enabled
         if ($config['email']['enabled'] ?? false) {
             $channels[] = new EmailNotificationChannel(
                 $this->mailer,
@@ -142,7 +143,7 @@ class DynamicNotificationConfiguration
             );
         }
 
-        // Crear canal de Slack si está habilitado
+        // Create Slack channel if enabled
         if ($config['slack']['enabled'] ?? false && !empty($config['slack']['webhook_url'] ?? '')) {
             $channels[] = new WebhookNotificationChannel(
                 $this->httpClient,
@@ -153,7 +154,7 @@ class DynamicNotificationConfiguration
             );
         }
 
-        // Crear canal de Teams si está habilitado
+        // Create Teams channel if enabled
         if ($config['teams']['enabled'] ?? false && !empty($config['teams']['webhook_url'] ?? '')) {
             $channels[] = new WebhookNotificationChannel(
                 $this->httpClient,
@@ -164,7 +165,7 @@ class DynamicNotificationConfiguration
             );
         }
 
-        // Crear canal de Webhook genérico si está habilitado
+        // Create generic Webhook channel if enabled
         if ($config['webhook']['enabled'] ?? false && !empty($config['webhook']['url'] ?? '')) {
             $channels[] = new WebhookNotificationChannel(
                 $this->httpClient,
@@ -179,7 +180,9 @@ class DynamicNotificationConfiguration
     }
 
     /**
-     * Verifica si las notificaciones están habilitadas según la configuración de la BD.
+     * Returns whether notifications are enabled according to the database configuration.
+     *
+     * @return bool
      */
     public function areNotificationsEnabled(): bool
     {

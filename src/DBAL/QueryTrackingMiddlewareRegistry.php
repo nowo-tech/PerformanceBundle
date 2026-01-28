@@ -13,7 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * depending on the Doctrine version.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class QueryTrackingMiddlewareRegistry
 {

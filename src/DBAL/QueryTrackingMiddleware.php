@@ -19,7 +19,7 @@ use Doctrine\DBAL\Driver\Statement;
  * Compatible with DBAL 3.x (which removed SQLLogger).
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class QueryTrackingMiddleware implements Middleware
 {

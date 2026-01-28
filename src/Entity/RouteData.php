@@ -9,22 +9,24 @@ use Doctrine\ORM\Mapping as ORM;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 
 /**
- * Route performance data entity.
+ * Route identity and metadata entity (normalized).
  *
- * Stores performance metrics for routes including request time,
- * database query count, and query execution time.
+ * Stores only route identity (env, name, httpMethod, params) and usage/review metadata.
+ * All performance metrics (request time, query count, status codes, etc.) are derived
+ * from RouteDataRecord; use aggregates from records for listings and rankings.
+ *
+ * @see RouteDataRecord
+ * @see docs/ENTITY_NORMALIZATION_PLAN.md
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[ORM\Entity(repositoryClass: RouteDataRepository::class)]
 #[ORM\Table(name: 'routes_data')]
 #[ORM\Index(columns: ['name'], name: 'idx_route_name')]
 #[ORM\Index(columns: ['env'], name: 'idx_route_env')]
 #[ORM\Index(columns: ['env', 'name'], name: 'idx_route_env_name')]
-#[ORM\Index(columns: ['env', 'request_time'], name: 'idx_route_env_request_time')]
 #[ORM\Index(columns: ['created_at'], name: 'idx_route_created_at')]
-#[ORM\Index(columns: ['env', 'access_count'], name: 'idx_route_env_access_count')]
 class RouteData
 {
     /**
@@ -54,40 +56,10 @@ class RouteData
     private ?string $httpMethod = null;
 
     /**
-     * Total number of database queries executed.
-     */
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    private ?int $totalQueries = null;
-
-    /**
      * Route parameters as JSON array.
      */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $params = null;
-
-    /**
-     * Request execution time in seconds.
-     */
-    #[ORM\Column(type: Types::FLOAT, nullable: true)]
-    private ?float $requestTime = null;
-
-    /**
-     * Total database query execution time in seconds.
-     */
-    #[ORM\Column(type: Types::FLOAT, nullable: true)]
-    private ?float $queryTime = null;
-
-    /**
-     * Peak memory usage in bytes.
-     */
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    private ?int $memoryUsage = null;
-
-    /**
-     * Number of times this route has been accessed.
-     */
-    #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
-    private int $accessCount = 1;
 
     /**
      * Creation timestamp.
@@ -96,13 +68,7 @@ class RouteData
     private ?\DateTimeImmutable $createdAt = null;
 
     /**
-     * Last update timestamp.
-     */
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?\DateTimeImmutable $updatedAt = null;
-
-    /**
-     * Last access timestamp.
+     * Last access timestamp (updated when a RouteDataRecord is inserted or via command).
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $lastAccessedAt = null;
@@ -138,24 +104,13 @@ class RouteData
     private ?string $reviewedBy = null;
 
     /**
-     * HTTP status codes counts (e.g., ['200' => 100, '404' => 5, '500' => 2]).
-     *
-     * @var array<int, int>|null
-     */
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $statusCodes = null;
-
-    /**
-     * Constructor.
-     *
-     * Initializes creation and update timestamps.
+     * Creates a new instance.
      */
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->updatedAt = new \DateTimeImmutable();
         $this->lastAccessedAt = new \DateTimeImmutable();
-        $this->statusCodes = [];
+        $this->accessRecords = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     /**
@@ -235,28 +190,6 @@ class RouteData
     }
 
     /**
-     * Get the total number of database queries.
-     *
-     * @return int|null The query count
-     */
-    public function getTotalQueries(): ?int
-    {
-        return $this->totalQueries;
-    }
-
-    /**
-     * Set the total number of database queries.
-     *
-     * @param int|null $totalQueries The query count
-     */
-    public function setTotalQueries(?int $totalQueries): self
-    {
-        $this->totalQueries = $totalQueries;
-
-        return $this;
-    }
-
-    /**
      * Get the route parameters.
      *
      * @return array|null The route parameters as array
@@ -274,52 +207,6 @@ class RouteData
     public function setParams(?array $params): self
     {
         $this->params = $params;
-
-        return $this;
-    }
-
-    /**
-     * Get the request execution time in seconds.
-     *
-     * @return float|null The request time in seconds
-     */
-    public function getRequestTime(): ?float
-    {
-        return $this->requestTime;
-    }
-
-    /**
-     * Set the request execution time in seconds.
-     *
-     * @param float|null $requestTime The request time in seconds
-     */
-    public function setRequestTime(?float $requestTime): self
-    {
-        $this->requestTime = $requestTime;
-        $this->updatedAt = new \DateTimeImmutable();
-
-        return $this;
-    }
-
-    /**
-     * Get the total query execution time in seconds.
-     *
-     * @return float|null The query time in seconds
-     */
-    public function getQueryTime(): ?float
-    {
-        return $this->queryTime;
-    }
-
-    /**
-     * Set the total query execution time in seconds.
-     *
-     * @param float|null $queryTime The query time in seconds
-     */
-    public function setQueryTime(?float $queryTime): self
-    {
-        $this->queryTime = $queryTime;
-        $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
     }
@@ -347,86 +234,6 @@ class RouteData
     }
 
     /**
-     * Get the last update timestamp.
-     *
-     * @return \DateTimeImmutable|null The update date
-     */
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    /**
-     * Set the last update timestamp.
-     *
-     * @param \DateTimeImmutable|null $updatedAt The update date
-     */
-    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): self
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
-    /**
-     * Get the peak memory usage in bytes.
-     *
-     * @return int|null The memory usage in bytes
-     */
-    public function getMemoryUsage(): ?int
-    {
-        return $this->memoryUsage;
-    }
-
-    /**
-     * Set the peak memory usage in bytes.
-     *
-     * @param int|null $memoryUsage The memory usage in bytes
-     */
-    public function setMemoryUsage(?int $memoryUsage): self
-    {
-        $this->memoryUsage = $memoryUsage;
-        $this->updatedAt = new \DateTimeImmutable();
-
-        return $this;
-    }
-
-    /**
-     * Get the number of times this route has been accessed.
-     *
-     * @return int The access count
-     */
-    public function getAccessCount(): int
-    {
-        return $this->accessCount;
-    }
-
-    /**
-     * Set the number of times this route has been accessed.
-     *
-     * @param int $accessCount The access count
-     */
-    public function setAccessCount(int $accessCount): self
-    {
-        $this->accessCount = $accessCount;
-        $this->updatedAt = new \DateTimeImmutable();
-
-        return $this;
-    }
-
-    /**
-     * Increment the access count by one.
-     */
-    public function incrementAccessCount(): self
-    {
-        ++$this->accessCount;
-        $this->updatedAt = new \DateTimeImmutable();
-        $this->lastAccessedAt = new \DateTimeImmutable();
-
-        return $this;
-    }
-
-    /**
      * Get the last access timestamp.
      *
      * @return \DateTimeImmutable|null The last access date or null if not available
@@ -444,37 +251,8 @@ class RouteData
     public function setLastAccessedAt(?\DateTimeImmutable $lastAccessedAt): self
     {
         $this->lastAccessedAt = $lastAccessedAt;
-        $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
-    }
-
-    /**
-     * Check if this record should be updated based on worse performance metrics.
-     *
-     * Returns true if the new metrics indicate worse performance (higher request time
-     * or more queries) than the current stored values.
-     *
-     * @param float|null $newRequestTime  The new request time to compare
-     * @param int|null   $newTotalQueries The new query count to compare
-     *
-     * @return bool True if the record should be updated, false otherwise
-     */
-    public function shouldUpdate(?float $newRequestTime, ?int $newTotalQueries): bool
-    {
-        // Update if request time is worse (higher)
-        if (null !== $newRequestTime && null !== $this->requestTime && $newRequestTime > $this->requestTime) {
-            return true;
-        }
-
-        // Update if query count is worse (higher)
-        if (null !== $newTotalQueries && null !== $this->totalQueries && $newTotalQueries > $this->totalQueries) {
-            return true;
-        }
-
-        // Update if we have new data but no existing data
-        return (null === $this->requestTime && null !== $newRequestTime)
-            || (null === $this->totalQueries && null !== $newTotalQueries);
     }
 
     /**
@@ -589,8 +367,6 @@ class RouteData
             $this->reviewedBy = $reviewedBy;
         }
 
-        $this->updatedAt = new \DateTimeImmutable();
-
         return $this;
     }
 
@@ -639,112 +415,11 @@ class RouteData
             $parts[] = \sprintf('(%s)', $this->env);
         }
 
-        if (null !== $this->requestTime) {
-            $parts[] = \sprintf('%.2fms', $this->requestTime * 1000);
-        }
-
-        if (null !== $this->totalQueries) {
-            $parts[] = \sprintf('%dq', $this->totalQueries);
-        }
-
         if (empty($parts)) {
             return \sprintf('RouteData#%s', $this->id ?? 'new');
         }
 
         return implode(' ', $parts);
-    }
-
-    /**
-     * Get HTTP status codes counts.
-     *
-     * @return array<int, int>|null Status codes counts (e.g., [200 => 100, 404 => 5])
-     */
-    public function getStatusCodes(): ?array
-    {
-        return $this->statusCodes;
-    }
-
-    /**
-     * Set HTTP status codes counts.
-     *
-     * @param array<int, int>|null $statusCodes Status codes counts
-     */
-    public function setStatusCodes(?array $statusCodes): self
-    {
-        $this->statusCodes = $statusCodes;
-        $this->updatedAt = new \DateTimeImmutable();
-
-        return $this;
-    }
-
-    /**
-     * Increment count for a specific HTTP status code.
-     *
-     * @param int $statusCode The HTTP status code
-     */
-    public function incrementStatusCode(int $statusCode): self
-    {
-        if (null === $this->statusCodes) {
-            $this->statusCodes = [];
-        }
-
-        if (!isset($this->statusCodes[$statusCode])) {
-            $this->statusCodes[$statusCode] = 0;
-        }
-
-        ++$this->statusCodes[$statusCode];
-        $this->updatedAt = new \DateTimeImmutable();
-
-        return $this;
-    }
-
-    /**
-     * Get the count for a specific HTTP status code.
-     *
-     * @param int $statusCode The HTTP status code
-     *
-     * @return int The count for the status code (0 if not found)
-     */
-    public function getStatusCodeCount(int $statusCode): int
-    {
-        return $this->statusCodes[$statusCode] ?? 0;
-    }
-
-    /**
-     * Get the ratio (percentage) for a specific HTTP status code.
-     *
-     * @param int $statusCode The HTTP status code
-     *
-     * @return float The ratio as a percentage (0.0 to 100.0)
-     */
-    public function getStatusCodeRatio(int $statusCode): float
-    {
-        if (null === $this->statusCodes || empty($this->statusCodes)) {
-            return 0.0;
-        }
-
-        $total = array_sum($this->statusCodes);
-        if (0 === $total) {
-            return 0.0;
-        }
-
-        $count = $this->getStatusCodeCount($statusCode);
-
-        return ($count / $total) * 100.0;
-    }
-
-    /**
-     * Get total responses tracked (sum of all status code counts).
-     *
-     * @return int Total number of responses
-     */
-    public function getTotalResponses(): int
-    {
-        if (null === $this->statusCodes || empty($this->statusCodes)) {
-            return 0;
-        }
-
-        return array_sum($this->statusCodes);
     }
 
     /**

@@ -14,7 +14,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * Form type for reviewing route performance records.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class ReviewRouteDataType extends AbstractType
 {

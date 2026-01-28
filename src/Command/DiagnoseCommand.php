@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
  * Command to diagnose performance bundle configuration and status.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsCommand(
     name: 'nowo:performance:diagnose',
@@ -25,7 +25,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 final class DiagnoseCommand extends Command
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param ParameterBagInterface $parameterBag Parameter bag to check configuration
      */

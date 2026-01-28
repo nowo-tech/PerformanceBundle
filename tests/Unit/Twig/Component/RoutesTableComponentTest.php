@@ -20,6 +20,7 @@ final class RoutesTableComponentTest extends TestCase
         $this->assertFalse($component->enableRecordManagement);
         $this->assertFalse($component->enableReviewSystem);
         $this->assertSame([], $component->reviewForms);
+        $this->assertSame([], $component->deleteForms);
     }
 
     public function testComponentCanSetProperties(): void

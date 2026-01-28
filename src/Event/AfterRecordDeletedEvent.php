@@ -12,12 +12,12 @@ use Symfony\Contracts\EventDispatcher\Event;
  * This event allows listeners to perform actions after deletion.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class AfterRecordDeletedEvent extends Event
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param int    $recordId  The ID of the deleted record
      * @param string $routeName The route name of the deleted record

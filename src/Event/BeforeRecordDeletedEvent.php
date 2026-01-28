@@ -13,14 +13,14 @@ use Symfony\Contracts\EventDispatcher\Event;
  * This event allows listeners to prevent deletion or perform actions before deletion.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class BeforeRecordDeletedEvent extends Event
 {
     private bool $deletionPrevented = false;
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param RouteData $routeData The route data entity to be deleted
      */

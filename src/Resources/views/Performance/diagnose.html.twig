@@ -31,21 +31,22 @@
 
 {% block content %}
 {% if template == 'bootstrap' %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1>Diagnóstico del Bundle</h1>
-                        <p class="text-muted">Revisión completa de configuración y estado del sistema</p>
-                    </div>
-                    <div>
-                        <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
-                            ← Volver al Dashboard
-                        </a>
+        <div class="container mt-4">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1>Diagnóstico del Bundle</h1>
+                            <p class="text-muted">Revisión completa de configuración y estado del sistema</p>
+                        </div>
+                        <div>
+                            <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
+                                ← Volver al Dashboard
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         {# Issues Summary #}
         {% if diagnostic.issues|length > 0 %}
@@ -316,7 +317,16 @@
                                         <th>Columnas Faltantes</th>
                                         <td class="text-danger">
                                             <code>{{ diagnostic.table_status.missing_columns|join('</code>, <code>')|raw }}</code>
+                                            <div class="mt-2 text-muted small">
+                                                Ejecuta <code>php bin/console nowo:performance:create-table --update</code> para añadir estas columnas sin perder datos.
+                                            </div>
                                         </td>
+                                    </tr>
+                                {% endif %}
+                                {% if diagnostic.table_status.error is defined and diagnostic.table_status.error %}
+                                    <tr>
+                                        <th>Error al comprobar</th>
+                                        <td class="text-danger">{{ diagnostic.table_status.error }}</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
@@ -336,8 +346,40 @@
                                             <span class="status-badge {{ diagnostic.table_status.records_table_exists ? 'status-ok' : 'status-error' }}">
                                                 {{ diagnostic.table_status.records_table_exists ? '✓ Sí' : '✗ No' }}
                                             </span>
+                                            {% if not diagnostic.table_status.records_table_exists %}
+                                                <div class="mt-2 text-muted small">
+                                                    Ejecuta <code>php bin/console nowo:performance:create-records-table</code> para crear la tabla de registros.
+                                                </div>
+                                            {% endif %}
                                         </td>
                                     </tr>
+                                    {% if diagnostic.table_status.records_table_exists %}
+                                        <tr>
+                                            <th>Completa (según entidad)</th>
+                                            <td>
+                                                <span class="status-badge {{ diagnostic.table_status.records_table_complete|default(true) ? 'status-ok' : 'status-error' }}">
+                                                    {{ diagnostic.table_status.records_table_complete|default(true) ? '✓ Sí' : '✗ No' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% if diagnostic.table_status.records_missing_columns|default([])|length > 0 %}
+                                            <tr>
+                                                <th>Columnas faltantes</th>
+                                                <td class="text-danger">
+                                                    <code>{{ diagnostic.table_status.records_missing_columns|join('</code>, <code>')|raw }}</code>
+                                                    <div class="mt-2 text-muted small">
+                                                        Ejecuta <code>php bin/console nowo:performance:create-records-table --update</code> para añadir estas columnas sin perder datos.
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if diagnostic.table_status.records_table_error is defined and diagnostic.table_status.records_table_error %}
+                                        <tr>
+                                            <th>Error</th>
+                                            <td class="text-danger">{{ diagnostic.table_status.records_table_error }}</td>
+                                        </tr>
+                                    {% endif %}
                                 </tbody>
                             </table>
                         {% endif %}
@@ -394,6 +436,15 @@
                                                     <li><code>{{ env }}</code>: {{ count }} registros</li>
                                                 {% endfor %}
                                             </ul>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                                {% if diagnostic.data_status.has_data %}
+                                    <tr>
+                                        <th>Recalcular agregados</th>
+                                        <td class="text-muted small">
+                                            Si has modificado el esquema o importado datos manualmente, puedes reconstruir los campos agregados de <code>RouteData</code> a partir de los registros ejecutando:<br>
+                                            <code>php bin/console nowo:performance:rebuild-aggregates</code>
                                         </td>
                                     </tr>
                                 {% endif %}

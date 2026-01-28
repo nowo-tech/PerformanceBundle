@@ -17,7 +17,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * Command to set or update route performance metrics.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsCommand(
     name: 'nowo:performance:set-route',
@@ -26,7 +26,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class SetRouteMetricsCommand extends Command
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param PerformanceMetricsService $metricsService Service for recording metrics
      */
@@ -131,21 +131,27 @@ HELP
                 $memoryUsage
             );
 
-            // Get updated route data
             $routeData = $this->metricsService->getRouteData($routeName, $env);
-
             if (null !== $routeData) {
+                $routesWithAgg = $this->metricsService->getRoutesWithAggregates($env);
+                $display = null;
+                foreach ($routesWithAgg as $r) {
+                    if ($r->getName() === $routeName) {
+                        $display = $r;
+                        break;
+                    }
+                }
                 $io->success('Route metrics saved successfully!');
                 $io->table(
                     ['Metric', 'Value'],
                     [
                         ['Route Name', $routeData->getName() ?? 'N/A'],
                         ['Environment', $routeData->getEnv() ?? 'N/A'],
-                        ['Request Time', null !== $routeData->getRequestTime() ? \sprintf('%.4f s', $routeData->getRequestTime()) : 'N/A'],
-                        ['Total Queries', $routeData->getTotalQueries() ?? 'N/A'],
-                        ['Query Time', null !== $routeData->getQueryTime() ? \sprintf('%.4f s', $routeData->getQueryTime()) : 'N/A'],
-                        ['Memory Usage', null !== $routeData->getMemoryUsage() ? \sprintf('%s MB', number_format($routeData->getMemoryUsage() / 1024 / 1024, 2)) : 'N/A'],
-                        ['Updated At', $routeData->getUpdatedAt()?->format('Y-m-d H:i:s') ?? 'N/A'],
+                        ['Request Time', null !== $display?->getRequestTime() ? \sprintf('%.4f s', $display->getRequestTime()) : 'N/A (from records)'],
+                        ['Total Queries', $display?->getTotalQueries() ?? 'N/A'],
+                        ['Query Time', null !== $display?->getQueryTime() ? \sprintf('%.4f s', $display->getQueryTime()) : 'N/A'],
+                        ['Memory Usage', null !== $display?->getMemoryUsage() ? \sprintf('%s MB', number_format($display->getMemoryUsage() / 1024 / 1024, 2)) : 'N/A'],
+                        ['Last Accessed', $routeData->getLastAccessedAt()?->format('Y-m-d H:i:s') ?? 'N/A'],
                     ]
                 );
             }

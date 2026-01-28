@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * Command to check if required dependencies are installed.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsCommand(
     name: 'nowo:performance:check-dependencies',
@@ -24,7 +24,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class CheckDependenciesCommand extends Command
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param DependencyChecker $dependencyChecker Dependency checker service
      */

@@ -76,6 +76,16 @@ This will:
 php bin/console nowo:performance:create-table --force
 ```
 
+**Syncing both tables after entity changes**
+
+If you change entity mappings (add/remove/rename fields), sync the database with:
+
+```bash
+php bin/console nowo:performance:sync-schema
+```
+
+Use `--drop-obsolete` to also remove columns that no longer exist in the entity. See [Commands](COMMANDS.md#nowoperformancesync-schema).
+
 > **Note**: If you encounter the error "Field 'id' doesn't have a default value", run the command with `--update` to fix it automatically.
 
 ### Option B: Using Doctrine Schema Update
@@ -93,14 +103,19 @@ php bin/console doctrine:migrations:migrate
 
 ## Step 5: Verify Installation
 
-Check that the command is available:
+Check that the commands are available:
 
 ```bash
 php bin/console list nowo:performance
 ```
 
-You should see:
+You should see at least:
+- `nowo:performance:create-table` - Create or update the metrics table
 - `nowo:performance:set-route` - Set or update route performance metrics
+- `nowo:performance:sync-schema` - Sync database schema with entity metadata (both tables)
+- `nowo:performance:diagnose` - Diagnose configuration and tracking status
+
+See [Commands](COMMANDS.md) for full command documentation.
 
 ## That's It!
 
@@ -111,3 +126,5 @@ The bundle is now installed and will automatically track route performance metri
 - See [Configuration Guide](CONFIGURATION.md) for detailed configuration options
 - See [Usage Guide](USAGE.md) for usage examples
 - See [Commands](COMMANDS.md) for command documentation
+
+> **Upgrading to 2.0?** Version 2.0.0 (released 2026-01-28) introduces breaking changes (entity normalization). See [V2_MIGRATION.md](V2_MIGRATION.md) and [ENTITY_NORMALIZATION_PLAN.md](ENTITY_NORMALIZATION_PLAN.md).

@@ -13,14 +13,14 @@ use Symfony\Contracts\EventDispatcher\Event;
  * This event allows listeners to prevent review or modify review data.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 final class BeforeRecordReviewedEvent extends Event
 {
     private bool $reviewPrevented = false;
 
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param RouteData   $routeData       The route data entity to be reviewed
      * @param bool|null   $queriesImproved Whether queries improved

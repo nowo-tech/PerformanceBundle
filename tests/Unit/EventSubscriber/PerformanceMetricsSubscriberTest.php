@@ -197,6 +197,108 @@ final class PerformanceMetricsSubscriberTest extends TestCase
         $this->subscriber->onKernelRequest($event);
     }
 
+    public function testOnKernelRequestWhenRouteIsIgnoredByPrefix(): void
+    {
+        // Sub-routes of _wdt (e.g. _wdt_open_file) must be ignored when _wdt is in ignore_routes
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', '_wdt_open_file');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+
+        $this->dataCollector
+            ->expects($this->exactly(2))
+            ->method('setEnabled')
+            ->willReturnCallback(function ($enabled) {
+                static $callCount = 0;
+                ++$callCount;
+                if (1 === $callCount) {
+                    $this->assertTrue($enabled);
+                } else {
+                    $this->assertFalse($enabled);
+                }
+            });
+
+        $this->subscriber->onKernelRequest($event);
+    }
+
+    public function testOnKernelRequestWhenRouteMatchesIgnorePattern(): void
+    {
+        // Glob pattern admin_* should ignore admin_dashboard, admin_users, etc.
+        $subscriber = new PerformanceMetricsSubscriber(
+            $this->metricsService,
+            $this->registry,
+            'default',
+            $this->dataCollector,
+            true,
+            ['dev'],
+            ['admin_*'],  // pattern
+            true,
+            true,
+            false,
+            false,
+            1.0,
+            [200, 404, 500, 503],
+            true,
+            null,
+            null,
+            null
+        );
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', 'admin_dashboard');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+
+        $this->dataCollector
+            ->expects($this->exactly(2))
+            ->method('setEnabled')
+            ->willReturnCallback(function ($enabled) {
+                static $callCount = 0;
+                ++$callCount;
+                if (1 === $callCount) {
+                    $this->assertTrue($enabled);
+                } else {
+                    $this->assertFalse($enabled);
+                }
+            });
+
+        $subscriber->onKernelRequest($event);
+    }
+
+    public function testOnKernelRequestWhenLiteralDoesNotMatchSubstring(): void
+    {
+        // Literal "admin" must NOT ignore "my_admin_page" (only exact "admin" or prefix "admin_")
+        $subscriber = new PerformanceMetricsSubscriber(
+            $this->metricsService,
+            $this->registry,
+            'default',
+            $this->dataCollector,
+            true,
+            ['dev'],
+            ['admin'],  // literal, no wildcard
+            true,
+            true,
+            false,
+            false,
+            1.0,
+            [200, 404, 500, 503],
+            true,
+            null,
+            null,
+            null
+        );
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', 'my_admin_page');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+
+        $this->dataCollector
+            ->expects($this->once())
+            ->method('setEnabled')
+            ->with(true);
+
+        $subscriber->onKernelRequest($event);
+    }
+
     public function testOnKernelRequestSuccess(): void
     {
         $request = Request::create('/');

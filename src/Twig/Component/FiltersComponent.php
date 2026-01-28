@@ -11,7 +11,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * Filters component for the performance dashboard.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 #[AsTwigComponent('nowo_performance.Filters', template: '@NowoPerformanceBundle/components/Filters.html.twig')]
 final class FiltersComponent

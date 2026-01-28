@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- No changes yet.
+
+---
+
+## [2.0.0] - 2026-01-28
+
+**Breaking:** Entity normalization. See [V2_MIGRATION.md](V2_MIGRATION.md) and [ENTITY_NORMALIZATION_PLAN.md](ENTITY_NORMALIZATION_PLAN.md).
+
+### Removed (from RouteData)
+- `totalQueries`, `requestTime`, `queryTime`, `memoryUsage`, `accessCount`, `statusCodes`, `updatedAt` — metrics move to aggregates from `RouteDataRecord` or a dedicated aggregates layer.
+
+### Added (RouteDataRecord)
+- `totalQueries`, `queryTime`, `memoryUsage` per access record.
+
+### Added
+- **Export access records (CSV / JSON)** – On the Access Records page, export individual `RouteDataRecord` rows via **Export Records (CSV)** and **Export Records (JSON)**. Uses the same filters as the records view (env, date range, route, status code, query time, memory). Requires `enable_access_records: true`. New routes: `nowo_performance.export_records_csv`, `nowo_performance.export_records_json`.
+- **Access Records: query time, memory, filters** – Access Records page shows columns Queries, Query Time, Memory (formatted). Form filters: min/max query time (s), min/max memory (MB). Export and pagination preserve these filter params. RecordFilters and RouteDataRecordRepository support `minQueryTime`, `maxQueryTime`, `minMemoryUsage`, `maxMemoryUsage`.
+- **Index dashboard: Status Codes column** – Routes table shows status codes with percentage and total responses per code (descending), only codes that have records. Total responses and error-rate warning when >10% non-2xx.
+- **Schema sync command** – `nowo:performance:sync-schema` syncs both `routes_data` and `routes_data_records` with entity metadata (add missing, alter differing, optional drop with `--drop-obsolete`). Primary key `id` is never dropped.
+- **Drop obsolete option** – `--drop-obsolete` for `nowo:performance:create-table`, `nowo:performance:create-records-table`, and `nowo:performance:sync-schema`. Drops columns that exist in DB but not in the entity.
+- **Create-records-table column updates** – `--update` now also alters existing columns when type, nullable or default differ (previously only added missing columns).
+- **Translations** – New/updated keys for status codes, total responses, error rate, query time, memory usage, min/max query time and memory in all supported locales.
+
+### Changed
+- RouteData only holds identity (env, name, httpMethod, params) and metadata (createdAt, lastAccessedAt, reviewed, reviewedAt, reviewedBy, queriesImproved, timeImproved). Dashboard, API, notifications and exports use aggregated data or records instead of RouteData getters for metrics.
+- **Collector diagnostics when disabled** – Web Profiler Performance panel shows full diagnostics even when tracking is disabled (route, request time, query count, query time, environment, processing mode, table status, dependency status). Subscriber always sets `configured_environments`, `current_environment`, and `route_name` in the collector before any early return.
+- RebuildAggregatesCommand updates RouteData `lastAccessedAt` from RouteDataRecord; metrics live in records.
+
+### Fixed
+- **Advanced Performance Statistics** – Histograms not rendering: chart script moved to `scripts_extra` block so Chart.js is loaded before use; creation wrapped in IIFE with `typeof Chart !== 'undefined'` check.
+- **Access statistics with empty route filter** – When `route=` was present in the URL, the controller passed an empty string and no rows matched. Empty route is now normalized to `null` so statistics are returned for all routes.
+
+### Added (tests)
+- Models: `RecordFiltersTest` (query time/memory filters), `DeleteRecordsByFilterRequestTest` (min/max query time and memory), `StatisticsEnvFilterTest`, `ClearPerformanceDataRequestTest`.
+- Form types: `StatisticsEnvFilterTypeTest`, `ClearPerformanceDataTypeTest`, `DeleteRecordTypeTest`; extended `RecordFiltersTypeTest` and `DeleteRecordsByFilterTypeTest` for new fields.
+- Repository: `RouteDataRecordRepositoryAdvancedTest` – `getPaginatedRecords` and `deleteByFilter` with query time and memory filters; explicit calls with full parameter list.
+- DataCollector: `disabledReason`, `configuredEnvironments` / `currentEnvironment`, diagnostics when disabled, table/dependency status, `getProcessingMode`.
+- `PerformanceMetricsSubscriberCollectorDiagnosticsTest`, `RouteDataWithAggregatesTest`, `SyncSchemaCommandTest`.
+
+### Documentation
+- COMMANDS.md: `--drop-obsolete` and `nowo:performance:sync-schema`.
+- INSTALLATION.md: Step 5 lists main commands; note on sync-schema after entity changes.
+- UPGRADING.md: "Upgrading to 2.0.0" with migration steps; removed duplicate sections.
+- PHPDoc: all bundle PHP docblocks and comments in English (constructors, params, returns, form types, models, commands, examples).
+
+## [1.0.8] - 2026-01-27
+
+### Changed
+- **Default environments now include production** - Changed default value for `environments` configuration
+  - Default changed from `['dev', 'test']` to `['prod', 'dev', 'test']`
+  - Bundle now tracks performance in production by default
+  - This is more appropriate for a performance monitoring bundle
+  - Existing configurations are not affected (only applies when not explicitly configured)
+  - Fixes issue where production environments were not tracked by default
+
+### Fixed
+- **Demo environments configuration** - Fixed demo projects to allow `APP_ENV=prod`
+  - Updated `docker-compose.yml` in both Symfony 7 and Symfony 8 demos
+  - Changed from hardcoded `APP_ENV=dev` to `APP_ENV=${APP_ENV:-dev}`
+  - Added `APP_DEBUG=${APP_DEBUG:-0}` for better environment control
+  - Updated Makefiles to include `APP_DEBUG=1` in default `.env` creation
+  - Removed `when@dev:` condition from `nowo_performance.yaml` in demos
+  - Configuration now applies to all environments, not just `dev`
+
+### Added
+- **Comprehensive environment configuration tests** - Added extensive test coverage for environment handling
+  - 5 tests for `PerformanceExtension` environment defaults and configurations
+  - 6 tests for `Configuration` environment defaults and edge cases
+  - 4 tests for `PerformanceMetricsSubscriber` environment filtering
+  - 3 tests for `PerformanceController` diagnose suggestions
+  - All tests verify the new default includes `prod`
+  - Tests cover edge cases like empty configs, single environments, and custom environments
+  - Updated existing tests to reflect new default values
+
 ## [1.0.7] - 2026-01-27
 
 ### Added
@@ -102,28 +176,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Modal dependency display** - Fixed modal rendering issues in Bootstrap/Tailwind templates
-  - Modal de Tailwind ahora solo se incluye cuando `template == 'tailwind'`
-  - Modal de Bootstrap siempre disponible cuando se usa Bootstrap
-  - Mejorada la detección de Bootstrap vs Tailwind en JavaScript
-  - Previene que el modal de Tailwind aparezca desmaquetado en proyectos Bootstrap
-  - El modal correcto se muestra según el template activo
+  - Tailwind modal is now only included when `template == 'tailwind'`
+  - Bootstrap modal always available when using Bootstrap
+  - Improved Bootstrap vs Tailwind detection in JavaScript
+  - Prevents Tailwind modal from appearing broken in Bootstrap projects
+  - The correct modal is shown according to the active template
 - **Division by zero error** - Fixed `DivisionByZeroError` in `PerformanceAnalysisService::calculateCorrelation()`
-  - Verificación mejorada de varianzas antes de calcular `sqrt()`
-  - Verificación de `NaN` e `INF` en el denominador
-  - Verificación del resultado final de la correlación
-  - Retorna `null` cuando no se puede calcular la correlación de forma segura
-  - Previene errores cuando los datos tienen varianza cero o valores constantes
+  - Improved variance checks before computing `sqrt()`
+  - Check for `NaN` and `INF` in the denominator
+  - Check of the final correlation result
+  - Returns `null` when correlation cannot be computed safely
+  - Prevents errors when data has zero variance or constant values
 - **Data Collector "Unknown" status** - Fixed issue where "Data Saved to Database" showed "⚠ Unknown"
-  - `wasRecordNew()` y `wasRecordUpdated()` ahora leen primero de las propiedades (establecidas en `onKernelTerminate`)
-  - `setRecordOperation()` ahora actualiza tanto las propiedades como el array `$this->data`
-  - `wasUpdated` ahora siempre es `true` cuando se incrementa `accessCount` (porque actualiza `last_accessed_at`)
-  - El collector ahora muestra correctamente "✓ Saved (new record created)" o "✓ Saved (existing record updated)"
+  - `wasRecordNew()` and `wasRecordUpdated()` now read from the properties first (set in `onKernelTerminate`)
+  - `setRecordOperation()` now updates both the properties and the `$this->data` array
+  - `wasUpdated` is now always `true` when `accessCount` is incremented (because it updates `last_accessed_at`)
+  - The collector now correctly shows "✓ Saved (new record created)" or "✓ Saved (existing record updated)"
 
 ### Changed
 - **PerformanceMetricsService** - Improved `wasUpdated` logic
-  - `wasUpdated` ahora siempre es `true` cuando se actualiza un registro existente
-  - Esto es correcto porque `incrementAccessCount()` siempre actualiza `last_accessed_at`
-  - Mejora la precisión del estado mostrado en el Web Profiler
+  - `wasUpdated` is now always `true` when an existing record is updated
+  - This is correct because `incrementAccessCount()` always updates `last_accessed_at`
+  - Improves the accuracy of the status shown in the Web Profiler
 
 ## [1.0.1] - 2026-01-27
 
@@ -262,7 +336,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixes "Unrecognized option 'yamlMiddleware'" errors when installing the bundle
   - Updated documentation to reflect this change
 
-## [0.0.2] - 2025-01-27
+## [0.0.2] - 2026-01-27
 
 ### Added
 - **Comprehensive test coverage for CreateTableCommand** - Added 14+ new tests
@@ -293,7 +367,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Query INFORMATION_SCHEMA correctly using JOIN between KEY_COLUMN_USAGE and REFERENTIAL_CONSTRAINTS
   - Properly restores foreign keys with original UPDATE_RULE and DELETE_RULE after fixing AUTO_INCREMENT
 
-## [0.0.1] - 2025-01-26
+## [0.0.1] - 2026-01-26
 
 ### Added
 - Initial release

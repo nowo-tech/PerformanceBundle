@@ -13,12 +13,12 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * Event subscriber to dynamically set the table name for RouteData entity.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
- * @copyright 2025 Nowo.tech
+ * @copyright 2026 Nowo.tech
  */
 class TableNameSubscriber implements EventSubscriber
 {
     /**
-     * Constructor.
+     * Creates a new instance.
      *
      * @param string $tableName The configured table name for RouteData entity
      */
