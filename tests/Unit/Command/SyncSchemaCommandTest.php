@@ -170,4 +170,33 @@ final class SyncSchemaCommandTest extends TestCase
 
         $this->assertSame(Command::FAILURE, $exitCode);
     }
+
+    public function testExecutePassesUpdateOptionToBothCommands(): void
+    {
+        $this->createTableCommand
+            ->expects($this->once())
+            ->method('run')
+            ->with(
+                $this->callback(function (ArrayInput $input) {
+                    return $input->getOption('update') === true;
+                }),
+                $this->anything()
+            )
+            ->willReturn(Command::SUCCESS);
+
+        $this->createRecordsTableCommand
+            ->expects($this->once())
+            ->method('run')
+            ->with(
+                $this->callback(function (ArrayInput $input) {
+                    return $input->getOption('update') === true;
+                }),
+                $this->anything()
+            )
+            ->willReturn(Command::SUCCESS);
+
+        $exitCode = $this->command->run(new ArrayInput([]), new BufferedOutput());
+
+        $this->assertSame(Command::SUCCESS, $exitCode);
+    }
 }

@@ -29,6 +29,16 @@ final class RoutesTableComponent
     public string $template = 'bootstrap';
 
     /**
+     * Current sort field (for sortable column headers).
+     */
+    public string $sortBy = 'requestTime';
+
+    /**
+     * Current sort order (ASC or DESC).
+     */
+    public string $order = 'DESC';
+
+    /**
      * Performance thresholds for warning and critical levels.
      *
      * @var array<string, array<string, float|int>>

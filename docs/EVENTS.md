@@ -2,6 +2,37 @@
 
 The Performance Bundle dispatches custom events that allow you to extend its functionality by listening to these events in your application.
 
+## Internal event flow and priorities
+
+The bundle subscribes to **Symfony kernel events** to collect metrics. The order of execution is determined by **priority**: higher priority runs first. Documenting this helps avoid regressions if priorities are changed (e.g. for compatibility with other bundles).
+
+### Kernel events used
+
+| Event | Subscriber | Priority | Purpose |
+|-------|------------|----------|---------|
+| `KernelEvents::REQUEST` | `QueryTrackingConnectionSubscriber` | **4096** | Apply Doctrine query-tracking middleware to the connection as early as possible. |
+| `KernelEvents::REQUEST` | (Symfony) `RouterListener` | **32** | Resolve the current route and set `Request::attributes->get('_route')`. |
+| `KernelEvents::REQUEST` | `PerformanceMetricsSubscriber` | **31** | Read `_route`, check `ignore_routes`, environment, and start timing/query tracking. Must run **after** RouterListener so `_route` is set. |
+| `KernelEvents::TERMINATE` | `PerformanceMetricsSubscriber` | **-1024** | Persist metrics after the response has been sent. |
+
+### Why `PerformanceMetricsSubscriber` uses priority 31
+
+The `ignore_routes` option is applied in `PerformanceMetricsSubscriber::onKernelRequest()`. To decide if the current route is ignored, the subscriber needs `$request->attributes->get('_route')`. That attribute is set by Symfony’s **RouterListener**, which runs on `kernel.request` with priority **32**.
+
+- If `PerformanceMetricsSubscriber` ran with a **higher** priority than 32 (e.g. 1024), it would run **before** RouterListener, so `_route` would still be `null` and **no route would ever be considered ignored**.
+- Therefore the subscriber is registered with priority **31** (lower than 32), so it runs **after** RouterListener and `ignore_routes` works correctly.
+
+**If you change this priority** (e.g. to integrate with another listener): keep it **strictly lower than RouterListener’s 32**, or `ignore_routes` will stop working. See [CONFIGURATION.md](CONFIGURATION.md#ignore_routes) for `ignore_routes` options.
+
+### Summary
+
+1. **REQUEST (priority 4096)** – Query tracking middleware is applied to the DBAL connection.
+2. **REQUEST (priority 32)** – Symfony resolves the route and sets `_route`.
+3. **REQUEST (priority 31)** – Bundle reads `_route`, applies `ignore_routes` and environment checks, and starts collecting metrics when tracking is enabled.
+4. **TERMINATE (priority -1024)** – Bundle persists the collected metrics.
+
+Changing any of these priorities can affect `ignore_routes`, query tracking, or the moment metrics are written; document and test any change.
+
 ## Available Events
 
 ### Metrics Recording Events

@@ -106,11 +106,11 @@ class DependencyChecker
 
         if (!$this->isIconsAvailable()) {
             $missing['icons'] = [
-                'required' => false,
+                'required' => true,
                 'package' => 'symfony/ux-icons',
-                'message' => 'Symfony UX Icons is not installed. Icons will use fallback SVG.',
+                'message' => 'Symfony UX Icons is required. Install it to render icons in the Performance bundle.',
                 'install_command' => 'composer require symfony/ux-icons',
-                'feature' => 'UX Icons (better icon management)',
+                'feature' => 'UX Icons (required for icon rendering)',
             ];
         }
 
@@ -182,7 +182,7 @@ class DependencyChecker
             'icons' => [
                 'available' => $this->isIconsAvailable(),
                 'package' => 'symfony/ux-icons',
-                'required' => false,
+                'required' => true,
             ],
             'messenger' => [
                 'available' => $this->isMessengerAvailable(),

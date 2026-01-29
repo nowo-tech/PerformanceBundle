@@ -1,176 +1,218 @@
-# Translations for Nowo Performance Bundle (Türkçe)
-# Domain: nowo_performance
+# Nowo Performance Bundle çevirileri
+# Etki alanı: nowo_performance
 
 dashboard:
-  title: Performance Metrics Dashboard
-  subtitle: Monitor and analyze route performance metrics
-  advanced_statistics: Advanced Statistics
-  export_csv: Export CSV
-  export_json: Export JSON
-  clear_all_records: Clear All Records
-  back_to_dashboard: Back to Dashboard
-  no_routes_found: No routes found for the selected filters.
+    title: "Performans Metrikleri Paneli"
+    subtitle: "Rota performans metriklerini izleyin ve analiz edin"
+    advanced_statistics: "Gelişmiş İstatistikler"
+    export_csv: "CSV Dışa Aktar"
+    export_json: "JSON Dışa Aktar"
+    clear_all_records: "Tüm Kayıtları Temizle"
+    back_to_dashboard: "Panele Dön"
+    no_routes_found: "Seçilen filtreler için rota bulunamadı."
+
 statistics:
-  total_routes: Total Routes
-  total_queries: Total Queries
-  avg_request_time: Avg Request Time
-  max_request_time: Max Request Time
-  avg_query_time: Avg Query Time
-  max_query_time: Max Query Time
-  max_queries: Max Queries
-  not_available: N/A
+    total_routes: "Toplam Rota"
+    total_queries: "Toplam Sorgu"
+    avg_queries: "Ort. Sorgu"
+    max_queries: "Maks. Sorgu"
+    avg_request_time: "Ort. İstek Süresi"
+    max_request_time: "Maks. İstek Süresi"
+    avg_query_time: "Ort. Sorgu Süresi"
+    max_query_time: "Maks. Sorgu Süresi"
+    not_available: "Yok"
+
+paginator:
+    showing: "%total% rotadan %from% - %to% arası gösteriliyor"
+    previous: "Önceki"
+    next: "Sonraki"
+    page: "Sayfa %current% / %total%"
+
 routes_table:
-  title: Routes
-  route_name: Route Name
-  http_method: HTTP Method
-  status_codes: Status Codes
-  total_responses: Toplam yanıt
-  error_rate: Hata oranı
-  environment: Environment
-  request_time: Request Time
-  query_time: Query Time
-  total_queries: Total Queries
-  memory_usage: Memory Usage
-  access_count: Access Count
-  last_accessed_at: Last Accessed At
-  updated_at: Updated At
-  review_status: Review Status
-  actions: Actions
-  reviewed: Reviewed
-  not_reviewed: Not Reviewed
-  queries_improved: 'Queries: ✓ Improved'
-  queries_not_improved: 'Queries: ✗ Not Improved'
-  time_improved: 'Time: ✓ Improved'
-  time_not_improved: 'Time: ✗ Not Improved'
-  delete_record: Delete record
-  mark_as_reviewed: Mark as reviewed
-  delete: Delete
-  review: Review
-  cancel: Cancel
-  confirm_delete: Are you sure you want to delete this record?
+    title: "Rotalar"
+    route_name: "Rota Adı"
+    http_method: "HTTP Metodu"
+    status_codes: "Durum Kodları"
+    total_responses: "Toplam yanıt"
+    error_rate: "Hata oranı"
+    environment: "Ortam"
+    request_time: "İstek Süresi"
+    query_time: "Sorgu Süresi"
+    total_queries: "Toplam Sorgu"
+    memory_usage: "Bellek Kullanımı"
+    access_count: "Erişim Sayısı"
+    last_accessed_at: "Son Erişim"
+    updated_at: "Güncellendi"
+    review_status: "İnceleme Durumu"
+    queries_time: "Sorgular / Süre"
+    actions: "İşlemler"
+    reviewed: "İncelendi"
+    not_reviewed: "İncelenmedi"
+    queries_improved: "Sorgular: ✓ İyileştirildi"
+    queries_not_improved: "Sorgular: ✗ İyileştirilmedi"
+    time_improved: "Süre: ✓ İyileştirildi"
+    time_not_improved: "Süre: ✗ İyileştirilmedi"
+    delete_record: "Kaydı sil"
+    mark_as_reviewed: "İncelendi olarak işaretle"
+    edit_review: "İncelemeyi düzenle"
+    delete: "Sil"
+    review: "İncele"
+    cancel: "İptal"
+    confirm_delete: "Bu kaydı silmek istediğinize emin misiniz?"
+    sort_ascending: "Artan sırala"
+    sort_descending: "Azalan sırala"
+
 filters:
-  title: Filters
-  show_advanced: Show Advanced Filters
-  hide_advanced: Hide Advanced Filters
-  advanced_filters: Advanced Filters
-  environment: Environment
-  route_name: Route Name
-  sort_by: Sort By
-  order: Order
-  limit: Limit
-  min_request_time: Min Request Time (s)
-  max_request_time: Max Request Time (s)
-  min_query_count: Min Query Count
-  max_query_count: Max Query Count
-  date_from: Date From
-  date_to: Date To
-  apply_filters: Apply Filters
-  reset: Reset
-  placeholder_route: Filter by route name...
-  placeholder_time: '0.0000'
-  placeholder_count: '0'
-  request_time_range: Request Time Range (seconds)
-  query_count_range: Query Count Range
-  date_range: Date Range
-  min: Min
-  max: Max
+    title: "Filtreler"
+    show_advanced: "Gelişmiş Filtreleri Göster"
+    hide_advanced: "Gelişmiş Filtreleri Gizle"
+    advanced_filters: "Gelişmiş Filtreler"
+    environment: "Ortam"
+    route_name: "Rota Adı"
+    sort_by: "Sırala"
+    order: "Sıra"
+    limit: "Limit"
+    min_request_time: "Min. İstek Süresi (s)"
+    max_request_time: "Maks. İstek Süresi (s)"
+    min_query_count: "Min. Sorgu Sayısı"
+    max_query_count: "Maks. Sorgu Sayısı"
+    date_from: "Başlangıç Tarihi"
+    date_to: "Bitiş Tarihi"
+    apply_filters: "Filtreleri Uygula"
+    reset: "Sıfırla"
+    placeholder_route: "Rota adına göre filtrele..."
+    placeholder_time: "0.0000"
+    placeholder_count: "0"
+    request_time_range: "İstek Süresi Aralığı (saniye)"
+    query_count_range: "Sorgu Sayısı Aralığı"
+    date_range: "Tarih Aralığı"
+    min: "Min"
+    max: "Maks"
+
 review:
-  modal_title: Mark as Reviewed
-  queries_improved: Queries Improved?
-  time_improved: Time Improved?
-  not_specified: Not specified
-  'yes': 'Yes'
-  'no': 'No'
-  mark_as_reviewed: Mark as Reviewed
+    modal_title: "İncelendi Olarak İşaretle"
+    modal_title_edit: "İncelemeyi düzenle"
+    queries_improved: "Sorgular iyileştirildi mi?"
+    time_improved: "Süre iyileştirildi mi?"
+    not_specified: "Belirtilmedi"
+    yes: "Evet"
+    no: "Hayır"
+    mark_as_reviewed: "İncelendi Olarak İşaretle"
+    edit_review: "İncelemeyi güncelle"
+
 confirmations:
-  clear_all_records: Are you sure you want to delete all performance records? This
-    action cannot be undone.
-  delete_record: Are you sure you want to delete this record?
+    clear_all_records: "Tüm performans kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+    delete_record: "Bu kaydı silmek istediğinize emin misiniz?"
+
 flash:
-  records_cleared: All records have been successfully deleted.
-  record_deleted: The record has been successfully deleted.
-  record_reviewed: The record has been successfully marked as reviewed.
-  error: An error occurred while processing the request.
+    records_cleared: "Tüm kayıtlar başarıyla silindi."
+    record_deleted: "Kayıt başarıyla silindi."
+    record_reviewed: "Kayıt başarıyla incelendi olarak işaretlendi."
+    review_updated: "İnceleme başarıyla güncellendi."
+    error: "İstek işlenirken bir hata oluştu."
+
 statistics_page:
-  title: Advanced Performance Statistics
-  subtitle: Detailed statistical analysis to identify optimization targets
-  routes_needing_attention: Routes Needing Attention
-  routes_above_p95: Routes above 95th percentile
-  routes_with_outliers: Routes with outliers
-  metric: Metric
-  mean: Mean
-  median: Median
-  mode: Mode
-  std_deviation: Standard Deviation
-  min: Min
-  max: Max
-  range: Range
-  p25: P25
-  p50: P50
-  p75: P75
-  p90: P90
-  p95: P95
-  p99: P99
-  outliers: Outliers
-  histogram: Distribution Histogram
-  request_time: Request Time
-  query_time: Query Time
-  query_count: Query Count
-  memory_usage: Memory Usage
-  access_count: Access Count
+    title: "Gelişmiş Performans İstatistikleri"
+    subtitle: "Optimizasyon hedeflerini belirlemek için ayrıntılı istatistiksel analiz"
+    routes_needing_attention: "Dikkat Gerektiren Rotalar"
+    routes_above_p95: "95. yüzdelik dilimin üzerindeki rotalar"
+    routes_with_outliers: "Aykırı değerli rotalar"
+    metric: "Metrik"
+    mean: "Ortalama"
+    median: "Medyan"
+    mode: "Mod"
+    std_deviation: "Standart Sapma"
+    min: "Min"
+    max: "Maks"
+    range: "Aralık"
+    p25: "P25"
+    p50: "P50"
+    p75: "P75"
+    p90: "P90"
+    p95: "P95"
+    p99: "P99"
+    outliers: "Aykırı Değerler"
+    histogram: "Dağılım Histogramı"
+    request_time: "İstek Süresi"
+    query_time: "Sorgu Süresi"
+    query_count: "Sorgu Sayısı"
+    memory_usage: "Bellek Kullanımı"
+    access_count: "Erişim Sayısı"
+
 sort_options:
-  request_time: Request Time
-  query_time: Query Time
-  queries: Queries
-  access_count: Access Count
-  route_name: Route Name
-  created_at: Created At
-  last_accessed_at: Last Accessed At
+    request_time: "İstek Süresi"
+    query_time: "Sorgu Süresi"
+    queries: "Sorgular"
+    access_count: "Erişim Sayısı"
+    route_name: "Rota Adı"
+    created_at: "Oluşturulma"
+    last_accessed_at: "Son Erişim"
+
 order_options:
-  descending: Descending
-  ascending: Ascending
+    descending: "Azalan"
+    ascending: "Artan"
 
 access_statistics:
-  title: Access Statistics by Hour
-  date_range: Date Range Filter
-  start_date: Start Date
-  end_date: End Date
-  environment: Environment
-  filter: Filter
-  reset: Reset
-  summary: Summary
-  total_accesses: Total Accesses
-  period: Period
-  by_hour: Statistics by Hour of Day
-  by_day_of_week: Statistics by Day of Week
-  by_month: Statistics by Month
-  hour: Hour
-  access_count: Access Count
-  avg_response_time: Avg Response Time
-  status_codes: Status Codes
-  current_hour: Current
-  requests: requests
-  no_data: No access data available for the selected period.
-  chart_title: Access Pattern Visualization
-  avg_response_time_ms: Average Response Time (ms)
-  response_time_ms: Response Time (ms)
-  filters: Filters
-  route: Route
-  status_code: Status Code
-  all_routes: All Routes
-  all_status_codes: All Status Codes
-  filtered_route: Filtered Route
-  view_records: View Individual Records
-  back_to_statistics: Back to Statistics
-  records: Access Records
-  total_records: Total Records
-  timestamp: Timestamp
-  response_time: Response Time
-  no_records: No records found for the selected filters.
-  showing: Showing
-  of: of
-  previous: Previous
-  next: Next
-  heatmap: Access Heatmap (Day of Week vs Hour)
-  delete_records_matching_filter: Delete records matching filter
-  delete_records_confirm: Are you sure you want to delete all records matching the current filter? This cannot be undone.
+    title: "Saatlik Erişim İstatistikleri"
+    date_range: "Tarih Aralığı Filtresi"
+    start_date: "Başlangıç Tarihi"
+    end_date: "Bitiş Tarihi"
+    environment: "Ortam"
+    filter: "Filtrele"
+    reset: "Sıfırla"
+    summary: "Özet"
+    total_accesses: "Toplam Erişim"
+    period: "Dönem"
+    by_hour: "Günün Saatine Göre İstatistikler"
+    by_day_of_week: "Haftanın Gününe Göre İstatistikler"
+    by_month: "Aya Göre İstatistikler"
+    hour: "Saat"
+    access_count: "Erişim Sayısı"
+    avg_response_time: "Ort. Yanıt Süresi"
+    status_codes: "Durum Kodları"
+    current_hour: "Mevcut"
+    requests: "istek"
+    no_data: "Seçilen dönem için erişim verisi bulunamadı."
+    chart_title: "Erişim Deseni Görselleştirmesi"
+    avg_response_time_ms: "Ortalama Yanıt Süresi (ms)"
+    response_time_ms: "Yanıt Süresi (ms)"
+    filters: "Filtreler"
+    route: "Rota"
+    status_code: "Durum Kodu"
+    all_routes: "Tüm Rotalar"
+    all_status_codes: "Tüm Durum Kodları"
+    filtered_route: "Filtrelenmiş Rota"
+    view_records: "Tekil Kayıtları Görüntüle"
+    back_to_statistics: "İstatistiklere Dön"
+    export_records_csv: "Kayıtları Dışa Aktar (CSV)"
+    export_records_json: "Kayıtları Dışa Aktar (JSON)"
+    records: "Erişim Kayıtları"
+    total_records: "Toplam Kayıt"
+    timestamp: "Zaman Damgası"
+    response_time: "Yanıt Süresi"
+    total_queries: "Sorgular"
+    query_time: "Sorgu Süresi"
+    memory_usage: "Bellek"
+    min_query_time: "Min. sorgu süresi (s)"
+    max_query_time: "Maks. sorgu süresi (s)"
+    min_memory_mb: "Min. bellek (MB)"
+    max_memory_mb: "Maks. bellek (MB)"
+    no_records: "Seçilen filtreler için kayıt bulunamadı."
+    showing: "Gösterilen"
+    of: "/"
+    previous: "Önceki"
+    next: "Sonraki"
+    heatmap: "Erişim Isı Haritası (Haftanın Günü vs Saat)"
+    delete_records_matching_filter: "Filtreyle eşleşen kayıtları sil"
+    delete_records_confirm: "Mevcut filtreyle eşleşen tüm kayıtları silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+
+access_records: "Erişim Kayıtları"
+access_statistics: "Erişim İstatistikleri"
+api:
+    chart_data: "Grafik Verisi"
+clear: "Temizle"
+delete: "Sil"
+delete_records_by_filter: "Filtreye Göre Kayıtları Sil"
+diagnose: "Tanı"
+index: "Panel"
+statistics: "İstatistikler"

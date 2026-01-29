@@ -1,5 +1,7 @@
 # Installation Guide
 
+> 📑 **Índice de documentación**: [docs/README.md](README.md)
+
 ## Requirements
 
 - PHP >= 8.1, < 8.6
@@ -35,7 +37,7 @@ Create `config/packages/nowo_performance.yaml`:
 ```yaml
 nowo_performance:
     enabled: true
-    environments: ['dev', 'test']
+    environments: ['prod', 'dev', 'test']  # Or restrict to ['dev', 'test']
     connection: 'default'
     track_queries: true
     track_request_time: true
@@ -43,6 +45,7 @@ nowo_performance:
     ignore_routes:
         - '_wdt'
         - '_profiler'
+        - 'web_profiler*'
         - '_error'
 ```
 

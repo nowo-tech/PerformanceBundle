@@ -157,4 +157,34 @@ final class RouteDataWithAggregatesTest extends TestCase
 
         $this->assertSame(0, $dto->getTotalResponses());
     }
+
+    public function testGetMemoryUsageWithZero(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => 0,
+            'access_count' => 1,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0, $dto->getMemoryUsage());
+    }
+
+    public function testGetMemoryUsageWithLargeValue(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => 512 * 1024 * 1024,
+            'access_count' => 1,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(536870912, $dto->getMemoryUsage());
+    }
 }

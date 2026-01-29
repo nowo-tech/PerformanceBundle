@@ -20,4 +20,14 @@ final class AfterRecordReviewedEventTest extends TestCase
 
         $this->assertSame($routeData, $event->getRouteData());
     }
+
+    public function testGetRouteDataReturnsSameInstance(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('test_route');
+        $event = new AfterRecordReviewedEvent($routeData);
+
+        $this->assertSame($event->getRouteData(), $event->getRouteData());
+        $this->assertSame($routeData, $event->getRouteData());
+    }
 }

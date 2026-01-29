@@ -16,12 +16,20 @@ dashboard:
 statistics:
     total_routes: "Total de Rutas"
     total_queries: "Total de Consultas"
+    avg_queries: "Media de Consultas"
+    max_queries: "Máximo de Consultas"
     avg_request_time: "Tiempo Promedio de Solicitud"
     max_request_time: "Tiempo Máximo de Solicitud"
     avg_query_time: "Tiempo Promedio de Consulta"
     max_query_time: "Tiempo Máximo de Consulta"
-    max_queries: "Máximo de Consultas"
     not_available: "N/A"
+
+# Paginador (tabla de rutas del index)
+paginator:
+    showing: "Mostrando %from% a %to% de %total% rutas"
+    previous: "Anterior"
+    next: "Siguiente"
+    page: "Página %current% de %total%"
 
 # Componente RoutesTable
 routes_table:
@@ -40,6 +48,7 @@ routes_table:
     last_accessed_at: "Último Acceso"
     updated_at: "Actualizado"
     review_status: "Estado de Revisión"
+    queries_time: "Consultas / Tiempo"
     actions: "Acciones"
     reviewed: "Revisado"
     not_reviewed: "No Revisado"
@@ -49,10 +58,13 @@ routes_table:
     time_not_improved: "Tiempo: ✗ No Mejorado"
     delete_record: "Eliminar registro"
     mark_as_reviewed: "Marcar como revisado"
+    edit_review: "Editar revisión"
     delete: "Eliminar"
     review: "Revisar"
     cancel: "Cancelar"
     confirm_delete: "¿Está seguro de que desea eliminar este registro?"
+    sort_ascending: "Ordenar ascendente"
+    sort_descending: "Ordenar descendente"
 
 # Componente Filters
 filters:
@@ -85,12 +97,14 @@ filters:
 # Review Modal
 review:
     modal_title: "Marcar como Revisado"
+    modal_title_edit: "Editar revisión"
     queries_improved: "¿Consultas Mejoradas?"
     time_improved: "¿Tiempo Mejorado?"
     not_specified: "No especificado"
     yes: "Sí"
     no: "No"
     mark_as_reviewed: "Marcar como Revisado"
+    edit_review: "Actualizar revisión"
 
 # Mensajes de confirmación
 confirmations:
@@ -102,6 +116,7 @@ flash:
     records_cleared: "Todos los registros han sido eliminados correctamente."
     record_deleted: "El registro ha sido eliminado correctamente."
     record_reviewed: "El registro ha sido marcado como revisado correctamente."
+    review_updated: "La revisión se ha actualizado correctamente."
     error: "Ha ocurrido un error al procesar la solicitud."
 
 # Estadísticas avanzadas
@@ -202,3 +217,13 @@ access_statistics:
     heatmap: "Mapa de calor (día de semana vs hora)"
     delete_records_matching_filter: "Eliminar registros que coincidan con el filtro"
     delete_records_confirm: "¿Está seguro de que desea eliminar todos los registros que coincidan con el filtro actual? Esta acción no se puede deshacer."
+
+# Títulos de rutas / páginas (migas, navegación, mensajes)
+access_records: "Registros de Acceso"
+api:
+    chart_data: "Datos del Gráfico"
+clear: "Limpiar"
+delete: "Eliminar"
+delete_records_by_filter: "Eliminar Registros por Filtro"
+diagnose: "Diagnosticar"
+index: "Panel"

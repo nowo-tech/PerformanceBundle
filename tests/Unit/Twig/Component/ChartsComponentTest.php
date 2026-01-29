@@ -32,4 +32,22 @@ final class ChartsComponentTest extends TestCase
         $this->assertSame('/api/chart-data', $component->chartDataUrl);
         $this->assertSame('tailwind', $component->template);
     }
+
+    public function testChartDataUrlCanBeSet(): void
+    {
+        $component = new ChartsComponent();
+        $url = 'https://example.com/performance/api/chart-data';
+        $component->chartDataUrl = $url;
+        $this->assertSame($url, $component->chartDataUrl);
+    }
+
+    public function testCurrentRouteCanBeNull(): void
+    {
+        $component = new ChartsComponent();
+        $this->assertNull($component->currentRoute);
+        $component->currentRoute = 'some_route';
+        $this->assertSame('some_route', $component->currentRoute);
+        $component->currentRoute = null;
+        $this->assertNull($component->currentRoute);
+    }
 }

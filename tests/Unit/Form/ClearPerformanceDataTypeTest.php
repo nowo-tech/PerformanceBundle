@@ -68,4 +68,21 @@ final class ClearPerformanceDataTypeTest extends TypeTestCase
         $this->assertInstanceOf(ClearPerformanceDataRequest::class, $data);
         $this->assertSame('dev', $data->env);
     }
+
+    public function testFormSubmissionWithEmptyEnv(): void
+    {
+        $form = $this->factory->create(ClearPerformanceDataType::class, null, [
+            'csrf_protection' => false,
+        ]);
+
+        $form->submit([
+            'env' => '',
+            'submit' => '',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertInstanceOf(ClearPerformanceDataRequest::class, $data);
+        $this->assertSame('', $data->env);
+    }
 }

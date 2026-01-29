@@ -4,26 +4,20 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Twig;
 
-use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
 /**
- * Twig extension for icon rendering with fallback support.
+ * Twig extension for icon rendering using Symfony UX Icons.
  *
- * Provides a helper function to render icons using Symfony UX Icons
- * with automatic fallback to SVG if UX Icons is not available.
+ * Provides a thin wrapper around ux_icon() for backwards compatibility.
+ * Icons are rendered via symfony/ux-icons (required dependency).
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
 class IconExtension extends AbstractExtension
 {
-    public function __construct(
-        private readonly DependencyChecker $dependencyChecker,
-    ) {
-    }
-
     public function getFunctions(): array
     {
         return [
@@ -32,49 +26,22 @@ class IconExtension extends AbstractExtension
     }
 
     /**
-     * Render an icon using UX Icons or fallback SVG.
+     * Render an icon using UX Icons (ux_icon).
      *
-     * @param string               $name        Icon name (for UX Icons) or 'svg' for custom SVG
-     * @param array<string, mixed> $options     Options for the icon (class, size, etc.)
-     * @param string|null          $fallbackSvg Fallback SVG code if UX Icons is not available
+     * @param string               $name    Icon name with optional prefix (e.g. "bi:gear", "heroicons:check")
+     * @param array<string, mixed>  $options Attributes for the SVG (class, style, etc.)
      *
      * @return string Rendered icon HTML
      */
-    public function renderIcon(string $name, array $options = [], ?string $fallbackSvg = null): string
+    public function renderIcon(string $name, array $options = []): string
     {
-        // If UX Icons is available, use it
-        if ($this->dependencyChecker->isIconsAvailable() && \function_exists('ux_icon')) {
-            try {
-                // ux_icon is a global function provided by Symfony UX Icons
-                /** @var callable $uxIconFunction */
-                $uxIconFunction = 'ux_icon';
-
-                return (string) $uxIconFunction($name, $options);
-            } catch (\Throwable $e) {
-                // If icon doesn't exist in UX Icons, fall back to SVG
-            }
+        if (!\function_exists('ux_icon')) {
+            return '';
         }
 
-        // Otherwise, use fallback SVG if provided
-        if (null !== $fallbackSvg) {
-            // If fallback SVG already contains the SVG tag, return it directly
-            if (str_contains($fallbackSvg, '<svg')) {
-                return $fallbackSvg;
-            }
+        /** @var callable $uxIcon */
+        $uxIcon = 'ux_icon';
 
-            // Otherwise, wrap it in a span
-            $class = $options['class'] ?? '';
-            $style = $options['style'] ?? '';
-
-            return \sprintf(
-                '<span class="%s" style="%s">%s</span>',
-                $class,
-                $style,
-                $fallbackSvg
-            );
-        }
-
-        // No icon available
-        return '';
+        return (string) $uxIcon($name, $options);
     }
 }

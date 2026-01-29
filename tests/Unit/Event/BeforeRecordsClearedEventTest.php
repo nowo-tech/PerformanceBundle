@@ -34,4 +34,14 @@ final class BeforeRecordsClearedEventTest extends TestCase
 
         $this->assertTrue($event->isClearingPrevented());
     }
+
+    public function testPreventClearingCalledMultipleTimesRemainsPrevented(): void
+    {
+        $event = new BeforeRecordsClearedEvent(null);
+
+        $event->preventClearing();
+        $event->preventClearing();
+
+        $this->assertTrue($event->isClearingPrevented());
+    }
 }

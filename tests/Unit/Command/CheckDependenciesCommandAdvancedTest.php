@@ -32,7 +32,7 @@ final class CheckDependenciesCommandAdvancedTest extends TestCase
             ->method('getDependencyStatus')
             ->willReturn([
                 'twig_component' => ['available' => true, 'package' => 'symfony/ux-twig-component', 'required' => false],
-                'icons' => ['available' => true, 'package' => 'symfony/ux-icons', 'required' => false],
+                'icons' => ['available' => true, 'package' => 'symfony/ux-icons', 'required' => true],
                 'messenger' => ['available' => true, 'package' => 'symfony/messenger', 'required' => false],
                 'mailer' => ['available' => true, 'package' => 'symfony/mailer', 'required' => false],
                 'http_client' => ['available' => true, 'package' => 'symfony/http-client', 'required' => false],
@@ -56,7 +56,7 @@ final class CheckDependenciesCommandAdvancedTest extends TestCase
             ->method('getDependencyStatus')
             ->willReturn([
                 'twig_component' => ['available' => false, 'package' => 'symfony/ux-twig-component', 'required' => false],
-                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => false],
+                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => true],
                 'messenger' => ['available' => false, 'package' => 'symfony/messenger', 'required' => false],
                 'mailer' => ['available' => false, 'package' => 'symfony/mailer', 'required' => false],
                 'http_client' => ['available' => false, 'package' => 'symfony/http-client', 'required' => false],
@@ -97,7 +97,7 @@ final class CheckDependenciesCommandAdvancedTest extends TestCase
             ->method('getDependencyStatus')
             ->willReturn([
                 'twig_component' => ['available' => true, 'package' => 'symfony/ux-twig-component', 'required' => false],
-                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => false],
+                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => true],
                 'messenger' => ['available' => true, 'package' => 'symfony/messenger', 'required' => false],
                 'mailer' => ['available' => false, 'package' => 'symfony/mailer', 'required' => false],
                 'http_client' => ['available' => true, 'package' => 'symfony/http-client', 'required' => false],
@@ -157,7 +157,7 @@ final class CheckDependenciesCommandAdvancedTest extends TestCase
         $this->dependencyChecker
             ->method('getDependencyStatus')
             ->willReturn([
-                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => false],
+                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => true],
             ]);
 
         $this->dependencyChecker
@@ -185,7 +185,7 @@ final class CheckDependenciesCommandAdvancedTest extends TestCase
         $this->dependencyChecker
             ->method('getDependencyStatus')
             ->willReturn([
-                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => false],
+                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => true],
             ]);
 
         $this->dependencyChecker
@@ -212,7 +212,7 @@ final class CheckDependenciesCommandAdvancedTest extends TestCase
         $this->dependencyChecker
             ->method('getDependencyStatus')
             ->willReturn([
-                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => false],
+                'icons' => ['available' => false, 'package' => 'symfony/ux-icons', 'required' => true],
             ]);
 
         $this->dependencyChecker

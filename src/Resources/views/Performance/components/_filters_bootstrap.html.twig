@@ -44,9 +44,7 @@
                         <div class="col-12">
                             <hr class="my-4">
                             <div class="d-flex align-items-center mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-primary me-2" viewBox="0 0 16 16">
-                                    <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
-                                </svg>
+                                {{ ux_icon('bi:list-ul', {class: 'text-primary me-2', style: 'width: 20px; height: 20px;'}) }}
                                 <h6 class="mb-0 fw-bold">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h6>
                             </div>
                         </div>
@@ -56,10 +54,7 @@
                             <div class="card border-primary">
                                 <div class="card-header bg-primary bg-opacity-10 py-2">
                                     <small class="fw-semibold text-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16">
-                                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                                        </svg>
+                                        {{ ux_icon('bi:clock', {class: 'me-1', style: 'width: 14px; height: 14px;'}) }}
                                         {{ 'filters.request_time_range'|trans({}, 'nowo_performance') }}
                                     </small>
                                 </div>
@@ -95,10 +90,7 @@
                             <div class="card border-info">
                                 <div class="card-header bg-info bg-opacity-10 py-2">
                                     <small class="fw-semibold text-info">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16">
-                                            <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
-                                            <path d="M4.268 1H12a1 1 0 0 1 1 1v11.768l.223.148A.5.5 0 0 0 14 13.5V2a2 2 0 0 0-2-2H6a2 2 0 0 0-1.732 1z"/>
-                                        </svg>
+                                        {{ ux_icon('bi:bar-chart', {class: 'me-1', style: 'width: 14px; height: 14px;'}) }}
                                         {{ 'filters.query_count_range'|trans({}, 'nowo_performance') }}
                                     </small>
                                 </div>
@@ -134,9 +126,7 @@
                             <div class="card border-success">
                                 <div class="card-header bg-success bg-opacity-10 py-2">
                                     <small class="fw-semibold text-success">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16">
-                                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
-                                        </svg>
+                                        {{ ux_icon('bi:calendar', {class: 'me-1', style: 'width: 14px; height: 14px;'}) }}
                                         {{ 'filters.date_range'|trans({}, 'nowo_performance') }}
                                     </small>
                                 </div>
@@ -146,12 +136,7 @@
                                             {% if not form.date_from.isRendered %}
                                                 {{ form_label(form.date_from, null, {'attr': {'class': 'form-label small text-muted'}}) }}
                                                 <div class="input-group">
-                                                    <span class="input-group-text bg-light">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                                            <path d="M8 4a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4z"/>
-                                                            <path d="M8 0a5 5 0 0 0-5 5c0 .676.13 1.323.367 1.916l.01.03.01.03c.1.27.2.52.3.73a5.5 5.5 0 0 0 8.646 0l.01-.03.01-.03c.237-.593.367-1.24.367-1.916A5 5 0 0 0 8 0zM5 5a3 3 0 1 1 6 0c0 .314-.06.616-.17.9l-.01.03-.01.03a4.5 4.5 0 0 1-5.64 0l-.01-.03-.01-.03A2.9 2.9 0 0 1 5 5z"/>
-                                                        </svg>
-                                                    </span>
+                                                    <span class="input-group-text bg-light">{{ ux_icon('bi:calendar', {style: 'width: 14px; height: 14px;'}) }}</span>
                                                     {{ form_widget(form.date_from, {'attr': {'class': 'form-control'}}) }}
                                                 </div>
                                                 {{ form_errors(form.date_from) }}
@@ -161,12 +146,7 @@
                                             {% if not form.date_to.isRendered %}
                                                 {{ form_label(form.date_to, null, {'attr': {'class': 'form-label small text-muted'}}) }}
                                                 <div class="input-group">
-                                                    <span class="input-group-text bg-light">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                                            <path d="M8 4a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4z"/>
-                                                            <path d="M8 0a5 5 0 0 0-5 5c0 .676.13 1.323.367 1.916l.01.03.01.03c.1.27.2.52.3.73a5.5 5.5 0 0 0 8.646 0l.01-.03.01-.03c.237-.593.367-1.24.367-1.916A5 5 0 0 0 8 0zM5 5a3 3 0 1 1 6 0c0 .314-.06.616-.17.9l-.01.03-.01.03a4.5 4.5 0 0 1-5.64 0l-.01-.03-.01-.03A2.9 2.9 0 0 1 5 5z"/>
-                                                        </svg>
-                                                    </span>
+                                                    <span class="input-group-text bg-light">{{ ux_icon('bi:calendar', {style: 'width: 14px; height: 14px;'}) }}</span>
                                                     {{ form_widget(form.date_to, {'attr': {'class': 'form-control'}}) }}
                                                 </div>
                                                 {{ form_errors(form.date_to) }}

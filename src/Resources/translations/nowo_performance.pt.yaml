@@ -1,178 +1,228 @@
-# Translations for Nowo Performance Bundle (Português)
-# Domain: nowo_performance
+# Traduções do bundle Nowo Performance
+# Domínio: nowo_performance
 
+# Dashboard principal
 dashboard:
-  title: Painel de Métricas de Desempenho
-  subtitle: Monitorar e analisar métricas de desempenho de rotas
-  advanced_statistics: Estatísticas Avançadas
-  export_csv: Exportar CSV
-  export_json: Exportar JSON
-  clear_all_records: Limpar Todos os Registros
-  back_to_dashboard: Voltar ao Painel
-  no_routes_found: Nenhuma rota encontrada para os filtros selecionados.
-statistics:
-  total_routes: Total de Rotas
-  total_queries: Total de Consultas
-  avg_request_time: Tempo Médio de Solicitação
-  max_request_time: Tempo Máximo de Solicitação
-  avg_query_time: Tempo Médio de Consulta
-  max_query_time: Tempo Máximo de Consulta
-  max_queries: Máximo de Consultas
-  not_available: N/D
-routes_table:
-  title: Rotas
-  route_name: Nome da Rota
-  http_method: Método HTTP
-  status_codes: Códigos de status
-  total_responses: Total de respostas
-  error_rate: Taxa de erro
-  environment: Ambiente
-  request_time: Tempo de Solicitação
-  query_time: Tempo de Consulta
-  total_queries: Total de Consultas
-  memory_usage: Uso de Memória
-  access_count: Número de Acessos
-  last_accessed_at: Último Acesso
-  updated_at: Atualizado
-  review_status: Status de Revisão
-  actions: Ações
-  reviewed: Revisado
-  not_reviewed: Não Revisado
-  queries_improved: 'Consultas: ✓ Melhorado'
-  queries_not_improved: 'Consultas: ✗ Não Melhorado'
-  time_improved: 'Tempo: ✓ Melhorado'
-  time_not_improved: 'Tempo: ✗ Não Melhorado'
-  delete_record: Excluir registro
-  mark_as_reviewed: Marcar como revisado
-  delete: Excluir
-  review: Revisar
-  cancel: Cancelar
-  confirm_delete: Tem certeza de que deseja excluir este registro?
-filters:
-  title: Filtros
-  show_advanced: Mostrar Filtros Avançados
-  hide_advanced: Ocultar Filtros Avançados
-  advanced_filters: Filtros Avançados
-  environment: Ambiente
-  route_name: Nome da Rota
-  sort_by: Ordenar Por
-  order: Ordem
-  limit: Limite
-  min_request_time: Tempo Mín de Solicitação (s)
-  max_request_time: Tempo Máx de Solicitação (s)
-  min_query_count: Número Mín de Consultas
-  max_query_count: Número Máx de Consultas
-  date_from: Data De
-  date_to: Data Até
-  apply_filters: Aplicar Filtros
-  reset: Redefinir
-  placeholder_route: Filtrar por nome da rota...
-  placeholder_time: '0.0000'
-  placeholder_count: '0'
-  request_time_range: Intervalo de tempo de solicitação (segundos)
-  query_count_range: Intervalo de número de consultas
-  date_range: Intervalo de datas
-  min: Mín
-  max: Máx
-review:
-  modal_title: Marcar como Revisado
-  queries_improved: Consultas Melhoradas?
-  time_improved: Tempo Melhorado?
-  not_specified: Não especificado
-  'yes': Sim
-  'no': Não
-  mark_as_reviewed: Marcar como Revisado
-confirmations:
-  clear_all_records: Tem certeza de que deseja excluir todos os registros de desempenho?
-    Esta ação não pode ser desfeita.
-  delete_record: Tem certeza de que deseja excluir este registro?
-flash:
-  records_cleared: Todos os registros foram excluídos com sucesso.
-  record_deleted: O registro foi excluído com sucesso.
-  record_reviewed: O registro foi marcado como revisado com sucesso.
-  error: Ocorreu um erro ao processar a solicitação.
-statistics_page:
-  title: Estatísticas Avançadas de Desempenho
-  subtitle: Análise estatística detalhada para identificar alvos de otimização
-  routes_needing_attention: Rotas que Precisam de Atenção
-  routes_above_p95: Rotas acima do percentil 95
-  routes_with_outliers: Rotas com valores atípicos
-  metric: Métrica
-  mean: Média
-  median: Mediana
-  mode: Moda
-  std_deviation: Desvio Padrão
-  min: Min
-  max: Max
-  range: Intervalo
-  p25: P25
-  p50: P50
-  p75: P75
-  p90: P90
-  p95: P95
-  p99: P99
-  outliers: Valores Atípicos
-  histogram: Histograma de Distribuição
-  request_time: Tempo de Solicitação
-  query_time: Tempo de Consulta
-  query_count: Número de Consultas
-  memory_usage: Uso de Memória
-  access_count: Número de Acessos
-sort_options:
-  request_time: Tempo de Solicitação
-  query_time: Tempo de Consulta
-  queries: Consultas
-  access_count: Número de Acessos
-  route_name: Nome da Rota
-  created_at: Data de criação
-  last_accessed_at: Último acesso
-order_options:
-  descending: Decrescente
-  ascending: Crescente
+    title: "Painel de Métricas de Performance"
+    subtitle: "Monitorar e analisar métricas de performance das rotas"
+    advanced_statistics: "Estatísticas Avançadas"
+    export_csv: "Exportar CSV"
+    export_json: "Exportar JSON"
+    clear_all_records: "Limpar Todos os Registos"
+    back_to_dashboard: "Voltar ao Painel"
+    no_routes_found: "Nenhuma rota encontrada para os filtros selecionados."
 
+# Componente Statistics
+statistics:
+    total_routes: "Total de Rotas"
+    total_queries: "Total de Consultas"
+    avg_request_time: "Tempo Médio de Pedido"
+    max_request_time: "Tempo Máximo de Pedido"
+    avg_query_time: "Tempo Médio de Consulta"
+    max_query_time: "Tempo Máximo de Consulta"
+    max_queries: "Máximo de Consultas"
+    not_available: "N/D"
+
+# Paginador (tabela de rotas do index)
+paginator:
+    showing: "A mostrar %from% a %to% de %total% rotas"
+    previous: "Anterior"
+    next: "Seguinte"
+    page: "Página %current% de %total%"
+
+# Componente RoutesTable
+routes_table:
+    title: "Rotas"
+    route_name: "Nome da Rota"
+    http_method: "Método HTTP"
+    status_codes: "Códigos de Estado"
+    total_responses: "Total de respostas"
+    error_rate: "Taxa de erro"
+    environment: "Ambiente"
+    request_time: "Tempo de Pedido"
+    query_time: "Tempo de Consulta"
+    total_queries: "Total de Consultas"
+    memory_usage: "Uso de Memória"
+    access_count: "Número de Acessos"
+    last_accessed_at: "Último Acesso"
+    updated_at: "Atualizado"
+    review_status: "Estado de Revisão"
+    queries_time: "Consultas / Tempo"
+    actions: "Ações"
+    reviewed: "Revisado"
+    not_reviewed: "Não Revisado"
+    queries_improved: "Consultas: ✓ Melhoradas"
+    queries_not_improved: "Consultas: ✗ Não Melhoradas"
+    time_improved: "Tempo: ✓ Melhorado"
+    time_not_improved: "Tempo: ✗ Não Melhorado"
+    delete_record: "Eliminar registo"
+    mark_as_reviewed: "Marcar como revisado"
+    edit_review: "Editar revisão"
+    delete: "Eliminar"
+    review: "Rever"
+    cancel: "Cancelar"
+    confirm_delete: "Tem a certeza de que deseja eliminar este registo?"
+    sort_ascending: "Ordenar ascendente"
+    sort_descending: "Ordenar descendente"
+
+# Componente Filters
+filters:
+    title: "Filtros"
+    show_advanced: "Mostrar Filtros Avançados"
+    hide_advanced: "Ocultar Filtros Avançados"
+    advanced_filters: "Filtros Avançados"
+    environment: "Ambiente"
+    route_name: "Nome da Rota"
+    sort_by: "Ordenar Por"
+    order: "Ordem"
+    limit: "Limite"
+    min_request_time: "Tempo Mínimo de Pedido (s)"
+    max_request_time: "Tempo Máximo de Pedido (s)"
+    min_query_count: "Número Mínimo de Consultas"
+    max_query_count: "Número Máximo de Consultas"
+    date_from: "Data De"
+    date_to: "Data Até"
+    apply_filters: "Aplicar Filtros"
+    reset: "Repor"
+    placeholder_route: "Filtrar por nome da rota..."
+    placeholder_time: "0.0000"
+    placeholder_count: "0"
+    request_time_range: "Intervalo de tempo de pedido (segundos)"
+    query_count_range: "Intervalo de número de consultas"
+    date_range: "Intervalo de datas"
+    min: "Mín"
+    max: "Máx"
+
+# Modal de revisão
+review:
+    modal_title: "Marcar como Revisado"
+    modal_title_edit: "Editar revisão"
+    queries_improved: "Consultas Melhoradas?"
+    time_improved: "Tempo Melhorado?"
+    not_specified: "Não especificado"
+    yes: "Sim"
+    no: "Não"
+    mark_as_reviewed: "Marcar como Revisado"
+    edit_review: "Atualizar revisão"
+
+# Mensagens de confirmação
+confirmations:
+    clear_all_records: "Tem a certeza de que deseja eliminar todos os registos de performance? Esta ação não pode ser desfeita."
+    delete_record: "Tem a certeza de que deseja eliminar este registo?"
+
+# Mensagens flash
+flash:
+    records_cleared: "Todos os registos foram eliminados com sucesso."
+    record_deleted: "O registo foi eliminado com sucesso."
+    record_reviewed: "O registo foi marcado como revisado com sucesso."
+    review_updated: "A revisão foi atualizada com sucesso."
+    error: "Ocorreu um erro ao processar o pedido."
+
+# Estatísticas avançadas
+statistics_page:
+    title: "Estatísticas Avançadas de Performance"
+    subtitle: "Análise estatística detalhada para identificar objetivos de otimização"
+    routes_needing_attention: "Rotas que Necessitam de Atenção"
+    routes_above_p95: "Rotas acima do 95.º percentil"
+    routes_with_outliers: "Rotas com valores atípicos"
+    metric: "Métrica"
+    mean: "Média"
+    median: "Mediana"
+    mode: "Moda"
+    std_deviation: "Desvio Padrão"
+    min: "Mín"
+    max: "Máx"
+    range: "Intervalo"
+    p25: "P25"
+    p50: "P50"
+    p75: "P75"
+    p90: "P90"
+    p95: "P95"
+    p99: "P99"
+    outliers: "Valores Atípicos"
+    histogram: "Histograma de Distribuição"
+    request_time: "Tempo de Pedido"
+    query_time: "Tempo de Consulta"
+    query_count: "Número de Consultas"
+    memory_usage: "Uso de Memória"
+    access_count: "Número de Acessos"
+
+# Opções de ordenação
+sort_options:
+    request_time: "Tempo de Pedido"
+    query_time: "Tempo de Consulta"
+    queries: "Consultas"
+    access_count: "Número de Acessos"
+    route_name: "Nome da Rota"
+    created_at: "Data de Criação"
+    last_accessed_at: "Último Acesso"
+
+# Opções de ordem
+order_options:
+    descending: "Descendente"
+    ascending: "Ascendente"
+
+# Estatísticas de acesso
 access_statistics:
-  title: Estatísticas de acesso por hora
-  date_range: Filtro por intervalo de datas
-  start_date: Data de início
-  end_date: Data de fim
-  environment: Ambiente
-  filter: Filtrar
-  reset: Redefinir
-  summary: Resumo
-  total_accesses: Total de acessos
-  period: Período
-  by_hour: Estatísticas por hora do dia
-  by_day_of_week: Estatísticas por dia da semana
-  by_month: Estatísticas por mês
-  hour: Hora
-  access_count: Número de acessos
-  avg_response_time: Tempo médio de resposta
-  status_codes: Códigos de status
-  current_hour: Atual
-  requests: solicitações
-  no_data: Nenhum dado de acesso para o período selecionado.
-  chart_title: Visualização dos padrões de acesso
-  avg_response_time_ms: Tempo médio de resposta (ms)
-  response_time_ms: Tempo de resposta (ms)
-  filters: Filtros
-  route: Rota
-  status_code: Código de status
-  all_routes: Todas as rotas
-  all_status_codes: Todos os códigos de status
-  filtered_route: Rota filtrada
-  view_records: Ver registros individuais
-  back_to_statistics: Voltar às estatísticas
-  export_records_csv: "Exportar registros (CSV)"
-  export_records_json: "Exportar registros (JSON)"
-  records: Registros de acesso
-  total_records: Total de registros
-  timestamp: Data e hora
-  response_time: Tempo de resposta
-  no_records: Nenhum registro encontrado para os filtros selecionados.
-  showing: Mostrando
-  of: de
-  previous: Anterior
-  next: Próximo
-  heatmap: Mapa de calor (dia da semana vs hora)
-  delete_records_matching_filter: Excluir registros correspondentes ao filtro
-  delete_records_confirm: Tem certeza de que deseja excluir todos os registros correspondentes ao filtro atual? Esta ação não pode ser desfeita.
+    title: "Estatísticas de Acesso por Hora"
+    date_range: "Filtro por Intervalo de Datas"
+    start_date: "Data de Início"
+    end_date: "Data de Fim"
+    environment: "Ambiente"
+    filter: "Filtrar"
+    reset: "Repor"
+    summary: "Resumo"
+    total_accesses: "Total de Acessos"
+    period: "Período"
+    by_hour: "Estatísticas por hora do dia"
+    by_day_of_week: "Estatísticas por dia da semana"
+    by_month: "Estatísticas por mês"
+    hour: "Hora"
+    access_count: "Número de Acessos"
+    avg_response_time: "Tempo Médio de Resposta"
+    status_codes: "Códigos de Estado"
+    current_hour: "Atual"
+    requests: "pedidos"
+    no_data: "Nenhum dado de acesso disponível para o período selecionado."
+    chart_title: "Visualização de Padrões de Acesso"
+    avg_response_time_ms: "Tempo Médio de Resposta (ms)"
+    response_time_ms: "Tempo de Resposta (ms)"
+    filters: "Filtros"
+    route: "Rota"
+    status_code: "Código de Estado"
+    all_routes: "Todas as Rotas"
+    all_status_codes: "Todos os Códigos de Estado"
+    filtered_route: "Rota Filtrada"
+    view_records: "Ver Registos Individuais"
+    back_to_statistics: "Voltar às Estatísticas"
+    export_records_csv: "Exportar Registos (CSV)"
+    export_records_json: "Exportar Registos (JSON)"
+    records: "Registos de Acesso"
+    total_records: "Total de Registos"
+    timestamp: "Data e Hora"
+    response_time: "Tempo de Resposta"
+    total_queries: "Consultas"
+    query_time: "Tempo de Consulta"
+    memory_usage: "Memória"
+    min_query_time: "Tempo mínimo de consulta (s)"
+    max_query_time: "Tempo máximo de consulta (s)"
+    min_memory_mb: "Memória mín (MB)"
+    max_memory_mb: "Memória máx (MB)"
+    no_records: "Nenhum registo encontrado para os filtros selecionados."
+    showing: "A mostrar"
+    of: "de"
+    previous: "Anterior"
+    next: "Seguinte"
+    heatmap: "Mapa de Calor de Acessos (Dia da Semana vs Hora)"
+    delete_records_matching_filter: "Eliminar registos que correspondam ao filtro"
+    delete_records_confirm: "Tem a certeza de que deseja eliminar todos os registos que correspondem ao filtro atual? Esta ação não pode ser desfeita."
+
+# Títulos de rotas / páginas (migalhas, navegação, mensagens)
+access_records: "Registos de Acesso"
+api:
+    chart_data: "Dados do Gráfico"
+clear: "Limpar"
+delete: "Eliminar"
+delete_records_by_filter: "Eliminar Registos por Filtro"
+diagnose: "Diagnosticar"
+index: "Painel"

@@ -146,4 +146,23 @@ final class RouteDataRecordTest extends TestCase
 
         $this->assertSame($this->record, $result);
     }
+
+    public function testSetMemoryUsageWithZero(): void
+    {
+        $this->record->setMemoryUsage(0);
+        $this->assertSame(0, $this->record->getMemoryUsage());
+    }
+
+    public function testSetMemoryUsageWithLargeValue(): void
+    {
+        $bytes = 512 * 1024 * 1024;
+        $this->record->setMemoryUsage($bytes);
+        $this->assertSame($bytes, $this->record->getMemoryUsage());
+    }
+
+    public function testSetQueryTimeWithZero(): void
+    {
+        $this->record->setQueryTime(0.0);
+        $this->assertSame(0.0, $this->record->getQueryTime());
+    }
 }

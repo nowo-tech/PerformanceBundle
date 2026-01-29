@@ -97,4 +97,72 @@ final class RecordFiltersTypeTest extends TypeTestCase
         $this->assertSame(0.05, $data->minQueryTime);
         $this->assertSame(2.0, $data->maxQueryTime);
     }
+
+    public function testFormWithInitialMemoryDataShowsMbInFields(): void
+    {
+        $filterData = new RecordFilters(
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            10 * 1024 * 1024,  // 10 MB in bytes
+            100 * 1024 * 1024  // 100 MB in bytes
+        );
+
+        $form = $this->factory->create(RecordFiltersType::class, $filterData, [
+            'environments' => ['dev', 'test'],
+            'available_routes' => ['app_home'],
+            'all_routes_label' => 'All',
+            'all_status_label' => 'All statuses',
+        ]);
+
+        $this->assertSame(10.0, $form->get('min_memory_mb')->getData());
+        $this->assertSame(100.0, $form->get('max_memory_mb')->getData());
+    }
+
+    public function testFormWithEmptyInitialDataShowsNullForMemoryMb(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => [],
+            'all_routes_label' => 'All',
+            'all_status_label' => 'All',
+        ]);
+
+        $this->assertNull($form->get('min_memory_mb')->getData());
+        $this->assertNull($form->get('max_memory_mb')->getData());
+    }
+
+    public function testFormSubmissionWithMemoryMbFieldsPreservesSubmittedValues(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, null, [
+            'environments' => ['dev', 'prod'],
+            'available_routes' => ['app_home'],
+            'all_routes_label' => 'All',
+            'all_status_label' => 'All statuses',
+        ]);
+
+        $form->submit([
+            'start_date' => '',
+            'end_date' => '',
+            'env' => 'dev',
+            'route' => '',
+            'status_code' => '',
+            'min_query_time' => '',
+            'max_query_time' => '',
+            'min_memory_mb' => '5.5',
+            'max_memory_mb' => '128.25',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $this->assertSame(5.5, $form->get('min_memory_mb')->getData());
+        $this->assertSame(128.25, $form->get('max_memory_mb')->getData());
+        $data = $form->getData();
+        $this->assertInstanceOf(RecordFilters::class, $data);
+        $this->assertNull($data->minMemoryUsage);
+        $this->assertNull($data->maxMemoryUsage);
+    }
 }

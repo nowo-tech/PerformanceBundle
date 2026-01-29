@@ -62,6 +62,7 @@ nowo_performance:
         - '_profiler*'      # Route names starting with _profiler
         - 'web_profiler*'   # Symfony WebProfilerBundle routes (web_profiler_wdt, web_profiler_profiler)
         - '_error'          # Error pages
+        - 'nowo_performance.*'     # Default route
 
     # HTTP status codes to track and calculate ratios for
     # Only the configured status codes will be tracked and displayed in the dashboard
@@ -90,7 +91,7 @@ nowo_performance:
 
         # CSS framework to use for the dashboard interface
         # Options: 'bootstrap' or 'tailwind'
-        template: 'bootstrap'
+        template: 'tailwind'
 
         # Enable individual record deletion from dashboard
         # When enabled, a delete button appears for each record in the routes table

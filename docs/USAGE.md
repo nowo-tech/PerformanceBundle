@@ -280,13 +280,18 @@ When `enable_record_management` is enabled:
 When `enable_review_system` is enabled:
 
 **Mark Records as Reviewed:**
-- Review button appears for unreviewed records
+- Review button (check icon) appears for unreviewed records
 - Modal form to mark as reviewed
 - Options:
   - Queries Improved: Yes / No / Not specified
   - Time Improved: Yes / No / Not specified
 - Reviewer username is automatically recorded
 - Review date is automatically set
+
+**Edit Existing Review:**
+- Edit review button (pencil icon) appears for already reviewed records
+- Same modal opens with the form pre-filled with current values
+- Change "Queries improved" or "Time improved" and save; flash message "Review updated"
 
 **Review Status Display:**
 - "Reviewed" badge for reviewed records

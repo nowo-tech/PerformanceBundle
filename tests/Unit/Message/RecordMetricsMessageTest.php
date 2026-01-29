@@ -48,4 +48,33 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertNull($message->getMemoryUsage());
         $this->assertNull($message->getHttpMethod());
     }
+
+    public function testConstructorWithMinimalArgs(): void
+    {
+        $message = new RecordMetricsMessage('other_route', 'prod');
+
+        $this->assertSame('other_route', $message->getRouteName());
+        $this->assertSame('prod', $message->getEnv());
+        $this->assertNull($message->getRequestTime());
+        $this->assertNull($message->getMemoryUsage());
+        $this->assertNull($message->getHttpMethod());
+    }
+
+    public function testConstructorWithMemoryUsageOnly(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            null,
+            null,
+            null,
+            null,
+            2_097_152,
+            null
+        );
+
+        $this->assertSame(2_097_152, $message->getMemoryUsage());
+        $this->assertSame('app_home', $message->getRouteName());
+        $this->assertNull($message->getRequestTime());
+    }
 }

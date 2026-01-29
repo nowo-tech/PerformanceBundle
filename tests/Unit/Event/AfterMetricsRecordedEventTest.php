@@ -32,4 +32,32 @@ final class AfterMetricsRecordedEventTest extends TestCase
 
         $this->assertFalse($event->isNew());
     }
+
+    public function testOptionalMetricsReturnConstructorValues(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('app_home')->setEnv('dev');
+
+        $event = new AfterMetricsRecordedEvent(
+            $routeData,
+            true,
+            0.25,
+            12,
+            1048576
+        );
+
+        $this->assertSame(0.25, $event->getRequestTime());
+        $this->assertSame(12, $event->getTotalQueries());
+        $this->assertSame(1048576, $event->getMemoryUsage());
+    }
+
+    public function testOptionalMetricsDefaultToNull(): void
+    {
+        $routeData = new RouteData();
+        $event = new AfterMetricsRecordedEvent($routeData, true);
+
+        $this->assertNull($event->getRequestTime());
+        $this->assertNull($event->getTotalQueries());
+        $this->assertNull($event->getMemoryUsage());
+    }
 }

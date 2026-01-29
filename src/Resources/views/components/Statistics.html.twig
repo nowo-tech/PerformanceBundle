@@ -1,7 +1,7 @@
 {% if template == 'bootstrap' %}
     {# Bootstrap version #}
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{{ 'statistics.total_routes'|trans({}, 'nowo_performance') }}</h5>
@@ -9,15 +9,35 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">{{ 'statistics.total_queries'|trans({}, 'nowo_performance') }}</h5>
-                    <h2 class="text-info">{{ stats.total_queries }}</h2>
+                    <h5 class="card-title">{{ 'statistics.avg_queries'|trans({}, 'nowo_performance') }}</h5>
+                    <h2 class="text-info">
+                        {% if stats.avg_queries is defined and stats.avg_queries is not null %}
+                            {{ stats.avg_queries|number_format(1) }}
+                        {% else %}
+                            {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                        {% endif %}
+                    </h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ 'statistics.max_queries'|trans({}, 'nowo_performance') }}</h5>
+                    <h2 class="text-info">
+                        {% if stats.max_queries is defined and stats.max_queries is not null %}
+                            {{ stats.max_queries }}
+                        {% else %}
+                            {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                        {% endif %}
+                    </h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{{ 'statistics.avg_request_time'|trans({}, 'nowo_performance') }}</h5>
@@ -31,7 +51,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{{ 'statistics.max_request_time'|trans({}, 'nowo_performance') }}</h5>
@@ -48,7 +68,7 @@
     </div>
 {% else %}
     {# Tailwind version #}
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 mb-8">
         <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
                 <div class="flex items-center">
@@ -71,14 +91,40 @@
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                        </svg>
+                        {{ ux_icon('bi:bar-chart', {class: 'h-6 w-6 text-gray-400'}) }}
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.total_queries'|trans({}, 'nowo_performance') }}</dt>
-                            <dd class="text-lg font-semibold text-cyan-600">{{ stats.total_queries }}</dd>
+                            <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_queries'|trans({}, 'nowo_performance') }}</dt>
+                            <dd class="text-lg font-semibold text-cyan-600">
+                                {% if stats.avg_queries is defined and stats.avg_queries is not null %}
+                                    {{ stats.avg_queries|number_format(1) }}
+                                {% else %}
+                                    {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        {{ ux_icon('bi:bar-chart-fill', {class: 'h-6 w-6 text-gray-400'}) }}
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_queries'|trans({}, 'nowo_performance') }}</dt>
+                            <dd class="text-lg font-semibold text-cyan-600">
+                                {% if stats.max_queries is defined and stats.max_queries is not null %}
+                                    {{ stats.max_queries }}
+                                {% else %}
+                                    {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                                {% endif %}
+                            </dd>
                         </dl>
                     </div>
                 </div>

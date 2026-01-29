@@ -41,7 +41,7 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ Performance dashboard with filtering and sorting
 - ✅ **Data export** - CSV and JSON export functionality
 - ✅ **Record management** - Delete individual records (optional)
-- ✅ **Review system** - Mark records as reviewed with improvement tracking (optional)
+- ✅ **Review system** - Mark and edit records as reviewed with improvement tracking (optional)
 - ✅ **Bootstrap and Tailwind CSS support** - Choose your preferred CSS framework
 - ✅ Role-based access control for dashboard
 - ✅ WebProfiler integration with ranking information
@@ -74,13 +74,14 @@ return [
 # config/packages/nowo_performance.yaml
 nowo_performance:
     enabled: true
-    environments: ['dev', 'test']
+    environments: ['prod', 'dev', 'test']
     connection: 'default'
     track_queries: true
     track_request_time: true
     ignore_routes:
         - '_wdt'
         - '_profiler'
+        - 'web_profiler*'
         - '_error'
         dashboard:
             enabled: true
@@ -106,6 +107,8 @@ php bin/console doctrine:migrations:migrate
 ```
 
 3. **That's it!** The bundle will automatically track route performance metrics.
+
+For detailed installation steps (including sync-schema and migrations), see [Installation Guide](docs/INSTALLATION.md).
 
 ## Usage
 
@@ -158,32 +161,36 @@ $worstRoutes = $metricsService->getWorstPerformingRoutes('dev', 10);
 
 ## Configuration
 
-The bundle works with default settings. Create `config/packages/nowo_performance.yaml`:
+The bundle works with default settings. Create `config/packages/nowo_performance.yaml`. For the full reference and all options, see [Configuration Guide](docs/CONFIGURATION.md).
 
 ```yaml
 nowo_performance:
-    enabled: true                    # Enable/disable tracking
-    environments: ['dev', 'test']    # Environments to track
-    connection: 'default'            # Doctrine connection name
-    table_name: 'routes_data'        # Table name for metrics
-    track_queries: true              # Track database queries
-    track_request_time: true         # Track request time
-    track_sub_requests: false        # Track sub-requests (ESI, fragments, etc.)
-    ignore_routes:                   # Routes to ignore
+    enabled: true
+    environments: ['prod', 'dev', 'test']
+    connection: 'default'
+    table_name: 'routes_data'
+    track_queries: true
+    track_request_time: true
+    track_sub_requests: false
+    ignore_routes:
         - '_wdt'
         - '_profiler'
+        - 'web_profiler*'
         - '_error'
-    dashboard:                       # Performance dashboard
-        enabled: true                # Enable/disable dashboard
-        path: '/performance'         # Dashboard route path
-        template: 'bootstrap'        # CSS framework: 'bootstrap' or 'tailwind'
-        roles: []                    # Required roles (empty = unrestricted)
+    dashboard:
+        enabled: true
+        path: '/performance'
+        template: 'bootstrap'  # or 'tailwind'
+        roles: []  # empty = unrestricted
 ```
 
 ## Commands
 
+See [Commands](docs/COMMANDS.md) for full documentation. Main commands:
+
 - **`nowo:performance:set-route`** - Set or update route performance metrics
-- **`nowo:performance:create-table`** - Create the performance metrics database table
+- **`nowo:performance:create-table`** - Create or update the metrics table
+- **`nowo:performance:sync-schema`** - Sync database schema with entity metadata
 - **`nowo:performance:diagnose`** - Diagnostic report of bundle configuration and status
 - **`nowo:performance:check-dependencies`** - Check status of optional dependencies
 
@@ -240,15 +247,17 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 
 ## Documentation
 
-- [Installation Guide](docs/INSTALLATION.md) - Step-by-step installation
-- [Configuration Guide](docs/CONFIGURATION.md) - Detailed configuration options
-- [Usage Guide](docs/USAGE.md) - Complete usage examples
-- [Commands](docs/COMMANDS.md) - Command documentation
-- [**Compatibility Guide**](docs/COMPATIBILITY.md) - Doctrine and DBAL version compatibility and breaking changes
-- [Notifications](docs/NOTIFICATIONS.md) - Performance alert notifications (Email, Slack, Teams, Webhooks)
-- [CHANGELOG](docs/CHANGELOG.md) - Version history
-- [UPGRADING](docs/UPGRADING.md) - Upgrade instructions
-- [ROADMAP](docs/ROADMAP.md) - Future improvements and features
+- [**Documentation index**](docs/README.md) – Índice de toda la documentación con descripciones y referencias cruzadas
+- [Installation Guide](docs/INSTALLATION.md) – Step-by-step installation
+- [Configuration Guide](docs/CONFIGURATION.md) – Detailed configuration options (source of truth for defaults)
+- [Usage Guide](docs/USAGE.md) – Complete usage examples
+- [Commands](docs/COMMANDS.md) – Command documentation
+- [Events & priorities](docs/EVENTS.md) – Custom events and internal listener flow (relevant for `ignore_routes`)
+- [Compatibility Guide](docs/COMPATIBILITY.md) – Doctrine and DBAL version compatibility
+- [Notifications](docs/NOTIFICATIONS.md) – Performance alert notifications (Email, Slack, Teams, Webhooks)
+- [CHANGELOG](docs/CHANGELOG.md) – Version history
+- [UPGRADING](docs/UPGRADING.md) – Upgrade instructions
+- [ROADMAP](docs/ROADMAP.md) – Future improvements and features
 
 ## Testing
 

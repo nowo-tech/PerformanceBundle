@@ -50,4 +50,15 @@ final class DeleteRecordTypeTest extends TypeTestCase
     {
         $this->assertSame('delete_record', $this->formType->getBlockPrefix());
     }
+
+    public function testSubmitButtonUsesCustomAttrClassWhenProvided(): void
+    {
+        $form = $this->factory->create(DeleteRecordType::class, null, [
+            'csrf_token_id' => 'delete_performance_record',
+            'submit_attr_class' => 'custom-delete-class',
+        ]);
+
+        $submit = $form->get('submit');
+        $this->assertSame('custom-delete-class', $submit->getConfig()->getOption('attr')['class']);
+    }
 }

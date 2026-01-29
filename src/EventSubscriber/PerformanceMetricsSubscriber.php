@@ -140,9 +140,12 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * Initializes performance tracking for the current request if enabled
      * and the environment is configured for tracking.
      *
+     * Priority must be lower than RouterListener (32) so _route is set before we check ignore_routes.
+     * Otherwise _route is always null and ignore_routes never applies.
+     *
      * @param RequestEvent $event The request event
      */
-    #[AsEventListener(event: KernelEvents::REQUEST, priority: 1024)]
+    #[AsEventListener(event: KernelEvents::REQUEST, priority: 31)]
     public function onKernelRequest(RequestEvent $event): void
     {
         $request = $event->getRequest();

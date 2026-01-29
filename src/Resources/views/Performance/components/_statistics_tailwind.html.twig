@@ -1,17 +1,15 @@
 {# Statistics Cards Component (Tailwind) #}
 {# This component can be overridden by creating: templates/bundles/NowoPerformanceBundle/Performance/components/_statistics_tailwind.html.twig #}
-<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 mb-8">
     <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+                    {{ ux_icon('bi:diagram-3', {class: 'h-6 w-6 text-gray-400'}) }}
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Total Routes</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.total_routes'|trans({}, 'nowo_performance') }}</dt>
                         <dd class="text-lg font-semibold text-blue-600">{{ stats.total_routes }}</dd>
                     </dl>
                 </div>
@@ -23,14 +21,18 @@
         <div class="p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                    </svg>
+                    {{ ux_icon('bi:bar-chart', {class: 'h-6 w-6 text-gray-400'}) }}
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Total Queries</dt>
-                        <dd class="text-lg font-semibold text-cyan-600">{{ stats.total_queries }}</dd>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_queries'|trans({}, 'nowo_performance') }}</dt>
+                        <dd class="text-lg font-semibold text-cyan-600">
+                            {% if stats.avg_queries is defined and stats.avg_queries is not null %}
+                                {{ stats.avg_queries|number_format(1) }}
+                            {% else %}
+                                {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                            {% endif %}
+                        </dd>
                     </dl>
                 </div>
             </div>
@@ -41,13 +43,33 @@
         <div class="p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    {{ ux_icon('bi:bar-chart-fill', {class: 'h-6 w-6 text-gray-400'}) }}
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Avg Request Time</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_queries'|trans({}, 'nowo_performance') }}</dt>
+                        <dd class="text-lg font-semibold text-cyan-600">
+                            {% if stats.max_queries is defined and stats.max_queries is not null %}
+                                {{ stats.max_queries }}
+                            {% else %}
+                                {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    {{ ux_icon('bi:clock', {class: 'h-6 w-6 text-gray-400'}) }}
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_request_time'|trans({}, 'nowo_performance') }}</dt>
                         <dd class="text-lg font-semibold text-amber-600">{{ (stats.avg_request_time * 1000)|number_format(2) }} ms</dd>
                     </dl>
                 </div>
@@ -59,13 +81,11 @@
         <div class="p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                    {{ ux_icon('bi:lightning', {class: 'h-6 w-6 text-gray-400'}) }}
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Max Request Time</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_request_time'|trans({}, 'nowo_performance') }}</dt>
                         <dd class="text-lg font-semibold text-red-600">{{ (stats.max_request_time * 1000)|number_format(2) }} ms</dd>
                     </dl>
                 </div>

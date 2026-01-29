@@ -46,6 +46,7 @@
         "symfony/dependency-injection": "^6.1 || ^7.0 || ^8.0",
         "symfony/framework-bundle": "^6.1 || ^7.0 || ^8.0",
         "symfony/http-kernel": "^6.1 || ^7.0 || ^8.0",
+        "symfony/http-client": "^6.1 || ^7.0 || ^8.0",
         "symfony/security-bundle": "^6.1 || ^7.0 || ^8.0",
         "symfony/stopwatch": "^6.1 || ^7.0 || ^8.0",
         "symfony/translation": "^6.1 || ^7.0 || ^8.0",
@@ -60,7 +61,6 @@
         "phpunit/phpunit": "^10.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "rector/rector": "^0.14.8|^0.15",
-        "symfony/security-core": "^6.1 || ^7.0 || ^8.0",
         "symfony/form": "^6.1 || ^7.0 || ^8.0"
     },
     "autoload": {

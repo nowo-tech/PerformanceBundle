@@ -2,6 +2,26 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 2.0.1 (2026-01-28)
+
+Fixes, UI improvements, and review system enhancement; no breaking changes or configuration updates.
+
+**New:**
+- **Review system: edit existing review** – Routes already marked as reviewed now show an "Edit review" button. The same modal opens with the form pre-filled; you can change "Queries improved" and "Time improved" and save. Modal title and submit label differ when editing; flash message "Review updated" on save.
+
+**Fixes and changes:**
+- **Routes table** – Sort by Memory usage column now orders by the numeric value (bytes).
+- **Charts** – Chart.js initialization runs after the DOM is ready; no console errors from missing `Chart` or canvas.
+- **Routes table** – Status Codes column no longer shows "Total responses" (see Access Count); Status Codes and Access Count columns are placed next to each other.
+- **Routes table** – "View access records" link uses Symfony UX Icons (`bi:eye`) instead of an emoji.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.0 (2026-01-28)
 
 Version **2.0.0** introduces **breaking changes** due to entity normalization: `RouteData` no longer stores aggregate metrics (requestTime, totalQueries, queryTime, memoryUsage, accessCount, statusCodes, updatedAt); those are derived from `RouteDataRecord` or an aggregates layer. `RouteDataRecord` gains totalQueries, queryTime, memoryUsage per record.

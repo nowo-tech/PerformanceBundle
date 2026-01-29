@@ -143,6 +143,66 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $this->assertSame(100, $result);
     }
 
+    public function testGetSortValueWithMemoryUsage(): void
+    {
+        $route = $this->routeWithAggregates(null, null, null, 1, 2_097_152);
+
+        $result = $this->callPrivateMethod('getSortValue', $route, 'memoryUsage');
+        $this->assertSame(2_097_152, $result);
+    }
+
+    public function testGetSortValueWithMemoryUsageNullReturnsZero(): void
+    {
+        $route = $this->routeWithAggregates(null, null, null, 1, null);
+
+        $result = $this->callPrivateMethod('getSortValue', $route, 'memoryUsage');
+        $this->assertSame(0, $result);
+    }
+
+    public function testGetSortValueWithMemoryUsagePlainRouteDataReturnsZero(): void
+    {
+        $route = $this->createMock(RouteData::class);
+
+        $result = $this->callPrivateMethod('getSortValue', $route, 'memoryUsage');
+        $this->assertSame(0, $result);
+    }
+
+    public function testGetSortValueWithCreatedAt(): void
+    {
+        $routeData = $this->createMock(RouteData::class);
+        $createdAt = new \DateTimeImmutable('2025-01-15 10:00:00');
+        $routeData->method('getCreatedAt')->willReturn($createdAt);
+        $route = new RouteDataWithAggregates($routeData, [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 1,
+            'status_codes' => [],
+        ]);
+
+        $result = $this->callPrivateMethod('getSortValue', $route, 'createdAt');
+        $this->assertSame((float) $createdAt->getTimestamp(), $result);
+    }
+
+    public function testGetSortValueWithLastAccessedAt(): void
+    {
+        $routeData = $this->createMock(RouteData::class);
+        $lastAccessedAt = new \DateTimeImmutable('2025-01-20 14:30:00');
+        $routeData->method('getLastAccessedAt')->willReturn($lastAccessedAt);
+        $route = new RouteDataWithAggregates($routeData, [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 1,
+            'status_codes' => [],
+        ]);
+
+        $result = $this->callPrivateMethod('getSortValue', $route, 'lastAccessedAt');
+        $this->assertSame((float) $lastAccessedAt->getTimestamp(), $result);
+    }
+
     public function testGetSortValueWithEnv(): void
     {
         $route = $this->createMock(RouteData::class);
@@ -175,6 +235,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $this->assertSame(0.0, $this->callPrivateMethod('getSortValue', $route, 'queryTime'));
         $this->assertSame(0, $this->callPrivateMethod('getSortValue', $route, 'totalQueries'));
         $this->assertSame(1, $this->callPrivateMethod('getSortValue', $route, 'accessCount'));
+        $this->assertSame(0, $this->callPrivateMethod('getSortValue', $route, 'memoryUsage'));
         $this->assertSame('', $this->callPrivateMethod('getSortValue', $route, 'env'));
     }
 

@@ -1,178 +1,228 @@
-# Translations for Nowo Performance Bundle (Italiano)
-# Domain: nowo_performance
+# Traduzioni per il bundle Nowo Performance
+# Dominio: nowo_performance
 
+# Dashboard principale
 dashboard:
-  title: Dashboard Metriche di Prestazione
-  subtitle: Monitora e analizza le metriche di prestazione delle route
-  advanced_statistics: Statistiche Avanzate
-  export_csv: Esporta CSV
-  export_json: Esporta JSON
-  clear_all_records: Cancella Tutti i Record
-  back_to_dashboard: Torna al Dashboard
-  no_routes_found: Nessuna route trovata per i filtri selezionati.
-statistics:
-  total_routes: Route Totali
-  total_queries: Query Totali
-  avg_request_time: Tempo Medio Richiesta
-  max_request_time: Tempo Massimo Richiesta
-  avg_query_time: Tempo Medio Query
-  max_query_time: Tempo Massimo Query
-  max_queries: Query Massime
-  not_available: N/D
-routes_table:
-  title: Route
-  route_name: Nome Route
-  http_method: Metodo HTTP
-  status_codes: Codici di stato
-  total_responses: Totale risposte
-  error_rate: Tasso di errore
-  environment: Ambiente
-  request_time: Tempo Richiesta
-  query_time: Tempo Query
-  total_queries: Query Totali
-  memory_usage: Uso Memoria
-  access_count: Numero Accessi
-  last_accessed_at: Ultimo Accesso
-  updated_at: Aggiornato
-  review_status: Stato Revisione
-  actions: Azioni
-  reviewed: Revisionato
-  not_reviewed: Non Revisionato
-  queries_improved: 'Query: ✓ Migliorato'
-  queries_not_improved: 'Query: ✗ Non Migliorato'
-  time_improved: 'Tempo: ✓ Migliorato'
-  time_not_improved: 'Tempo: ✗ Non Migliorato'
-  delete_record: Elimina record
-  mark_as_reviewed: Segna come revisionato
-  delete: Elimina
-  review: Revisiona
-  cancel: Annulla
-  confirm_delete: Sei sicuro di voler eliminare questo record?
-filters:
-  title: Filtri
-  show_advanced: Mostra Filtri Avanzati
-  hide_advanced: Nascondi Filtri Avanzati
-  advanced_filters: Filtri Avanzati
-  environment: Ambiente
-  route_name: Nome Route
-  sort_by: Ordina Per
-  order: Ordine
-  limit: Limite
-  min_request_time: Tempo Min Richiesta (s)
-  max_request_time: Tempo Max Richiesta (s)
-  min_query_count: Numero Min Query
-  max_query_count: Numero Max Query
-  date_from: Data Da
-  date_to: Data A
-  apply_filters: Applica Filtri
-  reset: Reimposta
-  placeholder_route: Filtra per nome route...
-  placeholder_time: '0.0000'
-  placeholder_count: '0'
-  request_time_range: Intervallo tempo richiesta (secondi)
-  query_count_range: Intervallo numero query
-  date_range: Intervallo date
-  min: Min
-  max: Max
-review:
-  modal_title: Segna come Revisionato
-  queries_improved: Query Migliorate?
-  time_improved: Tempo Migliorato?
-  not_specified: Non specificato
-  'yes': Sì
-  'no': 'No'
-  mark_as_reviewed: Segna come Revisionato
-confirmations:
-  clear_all_records: Sei sicuro di voler eliminare tutti i record di prestazione?
-    Questa azione non può essere annullata.
-  delete_record: Sei sicuro di voler eliminare questo record?
-flash:
-  records_cleared: Tutti i record sono stati eliminati con successo.
-  record_deleted: Il record è stato eliminato con successo.
-  record_reviewed: Il record è stato segnato come revisionato con successo.
-  error: Si è verificato un errore durante l'elaborazione della richiesta.
-statistics_page:
-  title: Statistiche Avanzate di Prestazione
-  subtitle: Analisi statistica dettagliata per identificare obiettivi di ottimizzazione
-  routes_needing_attention: Route che Richiedono Attenzione
-  routes_above_p95: Route sopra il 95° percentile
-  routes_with_outliers: Route con valori anomali
-  metric: Metrica
-  mean: Media
-  median: Mediana
-  mode: Moda
-  std_deviation: Deviazione Standard
-  min: Min
-  max: Max
-  range: Intervallo
-  p25: P25
-  p50: P50
-  p75: P75
-  p90: P90
-  p95: P95
-  p99: P99
-  outliers: Valori Anomali
-  histogram: Istogramma di Distribuzione
-  request_time: Tempo Richiesta
-  query_time: Tempo Query
-  query_count: Numero Query
-  memory_usage: Uso Memoria
-  access_count: Numero Accessi
-sort_options:
-  request_time: Tempo Richiesta
-  query_time: Tempo Query
-  queries: Query
-  access_count: Numero Accessi
-  route_name: Nome Route
-  created_at: Data di creazione
-  last_accessed_at: Ultimo accesso
-order_options:
-  descending: Decrescente
-  ascending: Crescente
+    title: "Dashboard metriche di performance"
+    subtitle: "Monitora e analizza le metriche di performance delle route"
+    advanced_statistics: "Statistiche avanzate"
+    export_csv: "Esporta CSV"
+    export_json: "Esporta JSON"
+    clear_all_records: "Cancella tutti i record"
+    back_to_dashboard: "Torna al dashboard"
+    no_routes_found: "Nessuna route trovata per i filtri selezionati."
 
+# Componente Statistics
+statistics:
+    total_routes: "Totale route"
+    total_queries: "Totale query"
+    avg_request_time: "Tempo richiesta medio"
+    max_request_time: "Tempo richiesta max"
+    avg_query_time: "Tempo query DB medio"
+    max_query_time: "Tempo query DB max"
+    max_queries: "Query max"
+    not_available: "N/D"
+
+# Paginatore (tabella route index)
+paginator:
+    showing: "Visualizzazione da %from% a %to% di %total% route"
+    previous: "Precedente"
+    next: "Successivo"
+    page: "Pagina %current% di %total%"
+
+# Componente RoutesTable
+routes_table:
+    title: "Route"
+    route_name: "Nome route"
+    http_method: "Metodo HTTP"
+    status_codes: "Codici di stato"
+    total_responses: "Totale risposte"
+    error_rate: "Tasso di errore"
+    environment: "Ambiente"
+    request_time: "Tempo richiesta"
+    query_time: "Tempo query"
+    total_queries: "Totale query"
+    memory_usage: "Uso memoria"
+    access_count: "Numero accessi"
+    last_accessed_at: "Ultimo accesso"
+    updated_at: "Aggiornato"
+    review_status: "Stato revisione"
+    queries_time: "Query / Tempo"
+    actions: "Azioni"
+    reviewed: "Revisionato"
+    not_reviewed: "Non revisionato"
+    queries_improved: "Query: ✓ Migliorate"
+    queries_not_improved: "Query: ✗ Non migliorate"
+    time_improved: "Tempo: ✓ Migliorato"
+    time_not_improved: "Tempo: ✗ Non migliorato"
+    delete_record: "Elimina record"
+    mark_as_reviewed: "Segna come revisionato"
+    edit_review: "Modifica revisione"
+    delete: "Elimina"
+    review: "Revisiona"
+    cancel: "Annulla"
+    confirm_delete: "Sei sicuro di voler eliminare questo record?"
+    sort_ascending: "Ordina in ordine crescente"
+    sort_descending: "Ordina in ordine decrescente"
+
+# Componente Filters
+filters:
+    title: "Filtri"
+    show_advanced: "Mostra filtri avanzati"
+    hide_advanced: "Nascondi filtri avanzati"
+    advanced_filters: "Filtri avanzati"
+    environment: "Ambiente"
+    route_name: "Nome route"
+    sort_by: "Ordina per"
+    order: "Ordine"
+    limit: "Limite"
+    min_request_time: "Tempo richiesta min (s)"
+    max_request_time: "Tempo richiesta max (s)"
+    min_query_count: "Numero query min"
+    max_query_count: "Numero query max"
+    date_from: "Data da"
+    date_to: "Data a"
+    apply_filters: "Applica filtri"
+    reset: "Reimposta"
+    placeholder_route: "Filtra per nome route..."
+    placeholder_time: "0.0000"
+    placeholder_count: "0"
+    request_time_range: "Intervallo tempo richiesta (secondi)"
+    query_count_range: "Intervallo numero query"
+    date_range: "Intervallo date"
+    min: "Min"
+    max: "Max"
+
+# Modal revisione
+review:
+    modal_title: "Segna come revisionato"
+    modal_title_edit: "Modifica revisione"
+    queries_improved: "Query migliorate?"
+    time_improved: "Tempo migliorato?"
+    not_specified: "Non specificato"
+    yes: "Sì"
+    no: "No"
+    mark_as_reviewed: "Segna come revisionato"
+    edit_review: "Aggiorna revisione"
+
+# Messaggi di conferma
+confirmations:
+    clear_all_records: "Sei sicuro di voler eliminare tutti i record di performance? Questa azione non può essere annullata."
+    delete_record: "Sei sicuro di voler eliminare questo record?"
+
+# Messaggi flash
+flash:
+    records_cleared: "Tutti i record sono stati eliminati con successo."
+    record_deleted: "Il record è stato eliminato con successo."
+    record_reviewed: "Il record è stato segnato come revisionato con successo."
+    review_updated: "La revisione è stata aggiornata con successo."
+    error: "Si è verificato un errore durante l'elaborazione della richiesta."
+
+# Statistiche avanzate
+statistics_page:
+    title: "Statistiche avanzate di performance"
+    subtitle: "Analisi statistica dettagliata per identificare obiettivi di ottimizzazione"
+    routes_needing_attention: "Route che richiedono attenzione"
+    routes_above_p95: "Route sopra il 95° percentile"
+    routes_with_outliers: "Route con valori anomali"
+    metric: "Metrica"
+    mean: "Media"
+    median: "Mediana"
+    mode: "Moda"
+    std_deviation: "Deviazione standard"
+    min: "Min"
+    max: "Max"
+    range: "Intervallo"
+    p25: "P25"
+    p50: "P50"
+    p75: "P75"
+    p90: "P90"
+    p95: "P95"
+    p99: "P99"
+    outliers: "Valori anomali"
+    histogram: "Istogramma di distribuzione"
+    request_time: "Tempo richiesta"
+    query_time: "Tempo query"
+    query_count: "Numero query"
+    memory_usage: "Uso memoria"
+    access_count: "Numero accessi"
+
+# Opzioni di ordinamento
+sort_options:
+    request_time: "Tempo richiesta"
+    query_time: "Tempo query"
+    queries: "Query"
+    access_count: "Numero accessi"
+    route_name: "Nome route"
+    created_at: "Data creazione"
+    last_accessed_at: "Ultimo accesso"
+
+# Opzioni ordine
+order_options:
+    descending: "Decrescente"
+    ascending: "Crescente"
+
+# Statistiche accessi
 access_statistics:
-  title: Statistiche di accesso per ora
-  date_range: Filtro intervallo date
-  start_date: Data inizio
-  end_date: Data fine
-  environment: Ambiente
-  filter: Filtra
-  reset: Reimposta
-  summary: Riepilogo
-  total_accesses: Totale accessi
-  period: Periodo
-  by_hour: Statistiche per ora del giorno
-  by_day_of_week: Statistiche per giorno della settimana
-  by_month: Statistiche per mese
-  hour: Ora
-  access_count: Numero accessi
-  avg_response_time: Tempo medio di risposta
-  status_codes: Codici di stato
-  current_hour: Corrente
-  requests: richieste
-  no_data: Nessun dato di accesso per il periodo selezionato.
-  chart_title: Visualizzazione pattern di accesso
-  avg_response_time_ms: Tempo medio di risposta (ms)
-  response_time_ms: Tempo di risposta (ms)
-  filters: Filtri
-  route: Route
-  status_code: Codice di stato
-  all_routes: Tutte le route
-  all_status_codes: Tutti i codici di stato
-  filtered_route: Route filtrata
-  view_records: Visualizza record singoli
-  back_to_statistics: Torna alle statistiche
-  export_records_csv: "Esporta record (CSV)"
-  export_records_json: "Esporta record (JSON)"
-  records: Record di accesso
-  total_records: Totale record
-  timestamp: Data e ora
-  response_time: Tempo di risposta
-  no_records: Nessun record trovato per i filtri selezionati.
-  showing: Visualizzazione
-  of: di
-  previous: Precedente
-  next: Successivo
-  heatmap: Mappa di calore (giorno settimana vs ora)
-  delete_records_matching_filter: Elimina record corrispondenti al filtro
-  delete_records_confirm: Sei sicuro di voler eliminare tutti i record corrispondenti al filtro attuale? Questa azione non può essere annullata.
+    title: "Statistiche accessi per ora"
+    date_range: "Filtro intervallo date"
+    start_date: "Data inizio"
+    end_date: "Data fine"
+    environment: "Ambiente"
+    filter: "Filtra"
+    reset: "Reimposta"
+    summary: "Riepilogo"
+    total_accesses: "Totale accessi"
+    period: "Periodo"
+    by_hour: "Statistiche per ora del giorno"
+    by_day_of_week: "Statistiche per giorno della settimana"
+    by_month: "Statistiche per mese"
+    hour: "Ora"
+    access_count: "Numero accessi"
+    avg_response_time: "Tempo risposta medio"
+    status_codes: "Codici di stato"
+    current_hour: "Attuale"
+    requests: "richieste"
+    no_data: "Nessun dato di accesso disponibile per il periodo selezionato."
+    chart_title: "Visualizzazione pattern di accesso"
+    avg_response_time_ms: "Tempo risposta medio (ms)"
+    response_time_ms: "Tempo risposta (ms)"
+    filters: "Filtri"
+    route: "Route"
+    status_code: "Codice di stato"
+    all_routes: "Tutte le route"
+    all_status_codes: "Tutti i codici di stato"
+    filtered_route: "Route filtrata"
+    view_records: "Visualizza record singoli"
+    back_to_statistics: "Torna alle statistiche"
+    export_records_csv: "Esporta record (CSV)"
+    export_records_json: "Esporta record (JSON)"
+    records: "Record di accesso"
+    total_records: "Totale record"
+    timestamp: "Data e ora"
+    response_time: "Tempo risposta"
+    total_queries: "Query"
+    query_time: "Tempo query"
+    memory_usage: "Memoria"
+    min_query_time: "Tempo query min (s)"
+    max_query_time: "Tempo query max (s)"
+    min_memory_mb: "Memoria min (MB)"
+    max_memory_mb: "Memoria max (MB)"
+    no_records: "Nessun record trovato per i filtri selezionati."
+    showing: "Visualizzazione"
+    of: "di"
+    previous: "Precedente"
+    next: "Successivo"
+    heatmap: "Mappa di calore accessi (giorno settimana vs ora)"
+    delete_records_matching_filter: "Elimina record che corrispondono al filtro"
+    delete_records_confirm: "Sei sicuro di voler eliminare tutti i record che corrispondono al filtro attuale? Questa azione non può essere annullata."
+
+# Titoli route / pagine (breadcrumb, navigazione, messaggi)
+access_records: "Record di accesso"
+api:
+    chart_data: "Dati del grafico"
+clear: "Cancella"
+delete: "Elimina"
+delete_records_by_filter: "Elimina record per filtro"
+diagnose: "Diagnostica"
+index: "Dashboard"

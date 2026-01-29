@@ -27,10 +27,12 @@ class DeleteRecordType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        /*
         $builder->add('submit', SubmitType::class, [
             'label' => 'Delete',
             'attr' => ['class' => $options['submit_attr_class'] ?? 'btn btn-danger btn-sm'],
         ]);
+        */
     }
 
     /**

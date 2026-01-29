@@ -61,7 +61,9 @@
 {% endif %}
 
 <script>
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined') return;
+
     const env = '{{ environment }}';
     const routeName = '{{ currentRoute ?? '' }}';
     const chartDataUrl = '{{ chartDataUrl }}';
@@ -83,7 +85,9 @@
                     chart.destroy();
                 }
 
-                const ctx = document.getElementById('performanceChart').getContext('2d');
+                const canvas = document.getElementById('performanceChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: data,
@@ -117,14 +121,17 @@
     loadChartData('requestTime', 7);
 
     // Update on change
-    document.getElementById('chart-metric').addEventListener('change', function() {
-        const days = document.getElementById('chart-days').value;
-        loadChartData(this.value, days);
-    });
-
-    document.getElementById('chart-days').addEventListener('change', function() {
-        const metric = document.getElementById('chart-metric').value;
-        loadChartData(metric, this.value);
-    });
-})();
+    const chartMetric = document.getElementById('chart-metric');
+    const chartDays = document.getElementById('chart-days');
+    if (chartMetric) {
+        chartMetric.addEventListener('change', function() {
+            loadChartData(this.value, document.getElementById('chart-days')?.value || '7');
+        });
+    }
+    if (chartDays) {
+        chartDays.addEventListener('change', function() {
+            loadChartData(document.getElementById('chart-metric')?.value || 'requestTime', this.value);
+        });
+    }
+});
 </script>

@@ -91,4 +91,18 @@ final class BeforeMetricsRecordedEventTest extends TestCase
         $this->assertNull($event->getParams());
         $this->assertNull($event->getMemoryUsage());
     }
+
+    public function testSetMemoryUsageWithZero(): void
+    {
+        $event = new BeforeMetricsRecordedEvent('app_home', 'dev', null, null, null, null, 1048576);
+        $event->setMemoryUsage(0);
+        $this->assertSame(0, $event->getMemoryUsage());
+    }
+
+    public function testRouteNameAndEnvAreImmutable(): void
+    {
+        $event = new BeforeMetricsRecordedEvent('my_route', 'prod');
+        $this->assertSame('my_route', $event->getRouteName());
+        $this->assertSame('prod', $event->getEnv());
+    }
 }

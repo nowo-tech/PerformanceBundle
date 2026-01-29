@@ -16,6 +16,8 @@ final class RoutesTableComponentTest extends TestCase
         
         $this->assertSame([], $component->routes);
         $this->assertSame('bootstrap', $component->template);
+        $this->assertSame('requestTime', $component->sortBy);
+        $this->assertSame('DESC', $component->order);
         $this->assertSame([], $component->thresholds);
         $this->assertFalse($component->enableRecordManagement);
         $this->assertFalse($component->enableReviewSystem);
@@ -39,5 +41,17 @@ final class RoutesTableComponentTest extends TestCase
         $this->assertArrayHasKey('request_time', $component->thresholds);
         $this->assertTrue($component->enableRecordManagement);
         $this->assertTrue($component->enableReviewSystem);
+    }
+
+    public function testSortByAndOrderCanBeSet(): void
+    {
+        $component = new RoutesTableComponent();
+        $this->assertSame('requestTime', $component->sortBy);
+        $this->assertSame('DESC', $component->order);
+
+        $component->sortBy = 'memoryUsage';
+        $component->order = 'ASC';
+        $this->assertSame('memoryUsage', $component->sortBy);
+        $this->assertSame('ASC', $component->order);
     }
 }

@@ -15,24 +15,24 @@
                         </div>
                         <div class="d-flex gap-2">
                         <a href="{{ path('nowo_performance.diagnose') }}" class="btn btn-warning text-dark">
-                            {{ performance_icon('wrench', {class: 'me-1'}, '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><path d="M.102 2.223A3.004 3.004 0 0 0 3.78 5.897l6.341 6.252A3.003 3.003 0 0 0 13 16a3 3 0 0 0 1.102-5.777l-6.34-6.252A3.003 3.003 0 0 0 7 1a3 3 0 0 0-2.898 1.223zM7 2a2 2 0 0 1 1.897 1.383l-.384.19a1 1 0 0 0-.434.434l-.19.384A2 2 0 0 1 5.618 6.5l-.19-.384a1 1 0 0 0-.434-.434l-.384-.19A2 2 0 0 1 7 2zM13 7a2 2 0 0 1-1.383 1.897l-.19.384a1 1 0 0 0-.434.434l-.384.19A2 2 0 0 1 9.5 10.382l.19.384a1 1 0 0 0 .434.434l.384.19A2 2 0 0 1 13 14a2 2 0 0 1-1.897-1.383l.384-.19a1 1 0 0 0 .434-.434l.19-.384A2 2 0 0 1 13 7z"/></svg>') }}
+                            {{ ux_icon('bi:gear', {class: 'me-1'}) }}
                             Diagnose
                         </a>
                         <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="btn btn-info text-white">
-                            {{ performance_icon('chart-bar', {class: 'me-1'}, '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><path d="M4 11a1 1 0 1 1 2 0v1a1 1 0 1 1-2 0v-1zm6-4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V7zM7 9a1 1 0 0 1 2 0v3a1 1 0 1 1-2 0V9z"/><path d="M9 1.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zM5 1.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zM3.5 3A.5.5 0 0 0 3 3.5v.5A.5.5 0 0 0 3.5 4h.5a.5.5 0 0 0 .5-.5v-.5A.5.5 0 0 0 4 3h-.5zm9 0a.5.5 0 0 0-.5.5v.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5v-.5a.5.5 0 0 0-.5-.5h-.5zM4 4.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-7z"/></svg>') }}
+                            {{ ux_icon('bi:bar-chart', {class: 'me-1'}) }}
                             {{ 'dashboard.advanced_statistics'|trans({}, 'nowo_performance') }}
                         </a>
                         <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="btn btn-success">
-                            {{ performance_icon('arrow-down-tray', {class: 'me-1'}, '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><path d="M.5 9.9a.5.5 0 0 1 .5.5h2a.5.5 0 0 1 0 1h-2A1.5 1.5 0 0 1 0 10.5v-7A1.5 1.5 0 0 1 1.5 2h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5z"/><path d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>') }}
+                            {{ ux_icon('bi:download', {class: 'me-1'}) }}
                             {{ 'dashboard.export_csv'|trans({}, 'nowo_performance') }}
                         </a>
                         <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="btn btn-info text-white">
-                            {{ performance_icon('document-text', {class: 'me-1'}, '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A2 2 0 0 0 3 11.586l-2 2V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12.793a.5.5 0 0 0 .854.353l2.853-2.853A1 1 0 0 1 4.414 12H14a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M5 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>') }}
+                            {{ ux_icon('bi:file-text', {class: 'me-1'}) }}
                             {{ 'dashboard.export_json'|trans({}, 'nowo_performance') }}
                         </a>
                         {% if enableAccessRecords is defined and enableAccessRecords %}
                             <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="btn btn-outline-primary">
-                                {{ performance_icon('clock', {class: 'me-1'}, '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style=\"display: inline-block; vertical-align: middle; margin-right: 4px;\"><path d=\"M8 3.5a.5.5 0 0 1 .5.5v3.25l2.5 1.5a.5.5 0 1 1-.5.866l-3-1.8A.5.5 0 0 1 7 7.5V4a.5.5 0 0 1 .5-.5z\"/><path d=\"M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm0-1A7 7 0 1 1 8 1a7 7 0 0 1 0 14z\"/></svg>') }}
+                                {{ ux_icon('bi:clock', {class: 'me-1'}) }}
                                 {{ 'access_statistics.title'|trans({}, 'nowo_performance') }}
                             </a>
                         {% endif %}
@@ -52,24 +52,24 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{{ path('nowo_performance.diagnose') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                    {{ performance_icon('wrench', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>') }}
+                    {{ ux_icon('bi:gear', {class: 'w-4 h-4 mr-2'}) }}
                     Diagnose
                 </a>
                 <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    {{ performance_icon('chart-bar', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>') }}
+                    {{ ux_icon('bi:bar-chart', {class: 'w-4 h-4 mr-2'}) }}
                     {{ 'dashboard.advanced_statistics'|trans({}, 'nowo_performance') }}
                 </a>
                 <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    {{ performance_icon('arrow-down-tray', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>') }}
+                    {{ ux_icon('bi:download', {class: 'w-4 h-4 mr-2'}) }}
                     {{ 'dashboard.export_csv'|trans({}, 'nowo_performance') }}
                 </a>
                 <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                    {{ performance_icon('document-text', {class: 'w-4 h-4 mr-2'}, '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>') }}
+                    {{ ux_icon('bi:file-text', {class: 'w-4 h-4 mr-2'}) }}
                     {{ 'dashboard.export_json'|trans({}, 'nowo_performance') }}
                 </a>
                 {% if enableAccessRecords is defined and enableAccessRecords %}
                     <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        {{ performance_icon('clock', {class: 'w-4 h-4 mr-2'}, '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" viewBox=\"0 0 16 16\" style=\"display: inline-block; vertical-align: middle; margin-right: 4px;\"><path d=\"M8 3.5a.5.5 0 0 1 .5.5v3.25l2.5 1.5a.5.5 0 1 1-.5.866l-3-1.8A.5.5 0 0 1 7 7.5V4a.5.5 0 0 1 .5-.5z\"/><path d=\"M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm0-1A7 7 0 1 1 8 1a7 7 0 0 1 0 14z\"/></svg>') }}
+                        {{ ux_icon('bi:clock', {class: 'w-4 h-4 mr-2'}) }}
                         {{ 'access_statistics.title'|trans({}, 'nowo_performance') }}
                     </a>
                 {% endif %}
@@ -87,7 +87,7 @@
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Optional Dependencies Missing</h5>
+                        <h5 class="alert-heading">{{ ux_icon('bi:exclamation-triangle', {class: 'me-1'}) }} Optional Dependencies Missing</h5>
                         <p class="mb-2">Some features are using fallback mode. For better performance, consider installing:</p>
                         <ul class="mb-2">
                             {% for dep in missingDependencies %}
@@ -106,7 +106,7 @@
             <div class="mb-8 rounded-md bg-yellow-50 p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        {{ performance_icon('exclamation-triangle', {class: 'h-5 w-5 text-yellow-400'}, '<svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>') }}
+                        {{ ux_icon('bi:exclamation-triangle', {class: 'h-5 w-5 text-yellow-400'}) }}
                     </div>
                     <div class="ml-3 flex-1">
                         <h3 class="text-sm font-medium text-yellow-800">Optional Dependencies Missing</h3>
@@ -148,12 +148,17 @@
         {{ component('nowo_performance.RoutesTable', { 
             routes: routes, 
             template: template,
+            sortBy: sortBy|default('requestTime'),
+            order: order|default('DESC'),
             thresholds: thresholds|default({}),
             enableRecordManagement: enableRecordManagement,
             enableReviewSystem: enableReviewSystem,
             reviewForms: reviewForms|default({}),
             deleteForms: deleteForms|default({})
         }) }}
+        {% if paginator is defined and paginator.total_pages > 1 %}
+            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, template: template } %}
+        {% endif %}
     {% else %}
         {# Fallback to includes if components are not available #}
         {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ template ~ '.html.twig' %}
@@ -169,6 +174,9 @@
             reviewForms: reviewForms|default({}),
             deleteForms: deleteForms|default({})
         } %}
+        {% if paginator is defined and paginator.total_pages > 1 %}
+            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, template: template } %}
+        {% endif %}
     {% endif %}
     
     {# Include dependency modal #}

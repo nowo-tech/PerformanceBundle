@@ -195,6 +195,8 @@ class PerformanceController extends AbstractController
         $sortBy = $formData['sort'] ?? 'requestTime';
         $order = $formData['order'] ?? 'DESC';
         $limit = (int) ($formData['limit'] ?? 100);
+        $limit = $limit < 1 ? 100 : min($limit, 500);
+        $page = max(1, (int) $request->query->get('page', 1));
 
         // Build filters array for advanced filtering
         $filters = [];
@@ -220,11 +222,35 @@ class PerformanceController extends AbstractController
             $filters['date_to'] = $formData['date_to'];
         }
 
-        // Get routes with aggregates (normalized: metrics from RouteDataRecord)
+        // Get routes with aggregates (normalized: metrics from RouteDataRecord), then paginate
         try {
-            $routes = $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, $sortBy, $order, $limit);
+            $totalCount = $this->metricsService->getRepository()->countWithFilters($env, $filters);
+            $fetchLimit = $totalCount > 0 ? min($totalCount, 10_000) : 0;
+            $routesAll = $fetchLimit > 0
+                ? $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, $sortBy, $order, $fetchLimit)
+                : [];
+            $totalPages = $limit > 0 ? max(1, (int) ceil($totalCount / $limit)) : 1;
+            $page = min($page, $totalPages);
+            $offset = ($page - 1) * $limit;
+            $routes = \array_slice($routesAll, $offset, $limit);
+            $paginator = [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_count' => $totalCount,
+                'per_page' => $limit,
+                'from' => $totalCount > 0 ? $offset + 1 : 0,
+                'to' => $totalCount > 0 ? min($offset + $limit, $totalCount) : 0,
+            ];
         } catch (\Exception $e) {
             $routes = [];
+            $paginator = [
+                'current_page' => 1,
+                'total_pages' => 1,
+                'total_count' => 0,
+                'per_page' => $limit,
+                'from' => 0,
+                'to' => 0,
+            ];
         }
 
         // Calculate statistics (with caching)
@@ -258,13 +284,14 @@ class PerformanceController extends AbstractController
             $dependencyStatus = $this->dependencyChecker->getDependencyStatus();
         }
 
-        // Create review forms for each route if review system is enabled
+        // Create review forms for each route if review system is enabled (create and edit)
         $reviewForms = [];
         if ($this->enableReviewSystem) {
             foreach ($routes as $route) {
                 $routeData = $route instanceof RouteDataWithAggregates ? $route->getRouteData() : $route;
-                if ($routeData instanceof RouteData && !$routeData->isReviewed()) {
+                if ($routeData instanceof RouteData) {
                     $reviewForm = $this->createForm(ReviewRouteDataType::class, null, [
+                        'route_data' => $routeData,
                         'csrf_token_id' => 'review_performance_record_'.$routeData->getId(),
                     ]);
                     $reviewForms[$routeData->getId()] = $reviewForm->createView();
@@ -313,6 +340,7 @@ class PerformanceController extends AbstractController
         return $this->render('@NowoPerformanceBundle/Performance/index.html.twig', [
             'routes' => $routes,
             'stats' => $stats,
+            'paginator' => $paginator,
             'environment' => $env,
             'currentRoute' => $routeName,
             'sortBy' => $sortBy,
@@ -370,6 +398,7 @@ class PerformanceController extends AbstractController
             'env' => $route->getEnv() ?? '',
             'createdAt' => ($dt = $route->getCreatedAt()) ? (float) $dt->getTimestamp() : 0.0,
             'lastAccessedAt' => ($dt = $route->getLastAccessedAt()) ? (float) $dt->getTimestamp() : 0.0,
+            'memoryUsage' => $route instanceof RouteDataWithAggregates ? ($route->getMemoryUsage() ?? 0) : 0,
             default => $route instanceof RouteDataWithAggregates ? ($route->getRequestTime() ?? 0.0) : 0.0,
         };
     }
@@ -386,12 +415,12 @@ class PerformanceController extends AbstractController
         if (empty($routes)) {
             return [
                 'total_routes' => 0,
-                'total_queries' => 0,
+                'avg_queries' => 0.0,
+                'max_queries' => 0,
                 'avg_request_time' => 0.0,
                 'avg_query_time' => 0.0,
                 'max_request_time' => 0.0,
                 'max_query_time' => 0.0,
-                'max_queries' => 0,
             ];
         }
 
@@ -401,12 +430,12 @@ class PerformanceController extends AbstractController
 
         return [
             'total_routes' => \count($routes),
-            'total_queries' => array_sum($queryCounts),
+            'avg_queries' => $queryCounts !== [] ? array_sum($queryCounts) / \count($queryCounts) : 0.0,
+            'max_queries' => $queryCounts !== [] ? max($queryCounts) : 0,
             'avg_request_time' => $requestTimes !== [] ? array_sum($requestTimes) / \count($requestTimes) : 0.0,
             'avg_query_time' => $queryTimes !== [] ? array_sum($queryTimes) / \count($queryTimes) : 0.0,
             'max_request_time' => $requestTimes !== [] ? max($requestTimes) : 0.0,
             'max_query_time' => $queryTimes !== [] ? max($queryTimes) : 0.0,
-            'max_queries' => $queryCounts !== [] ? max($queryCounts) : 0,
         ];
     }
 
@@ -2120,6 +2149,7 @@ class PerformanceController extends AbstractController
                 $reviewedBy = $beforeEvent->getReviewedBy();
             }
 
+            $wasAlreadyReviewed = $routeData->isReviewed();
             $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy);
 
             if ($updated) {
@@ -2140,7 +2170,9 @@ class PerformanceController extends AbstractController
                     $this->cacheService->clearEnvironments();
                 }
 
-                $this->addFlash('success', 'Performance record marked as reviewed.');
+                $this->addFlash('success', $wasAlreadyReviewed
+                    ? $this->trans('flash.review_updated', [], 'nowo_performance')
+                    : $this->trans('flash.record_reviewed', [], 'nowo_performance'));
             } else {
                 $this->addFlash('error', 'Record not found.');
             }

@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- No changes yet.
+_Nothing yet._
+
+---
+
+## [2.0.1] - 2026-01-28
+
+### Added
+- **Review system: edit existing review** – Routes already marked as reviewed can now be edited. An "Edit review" button (pencil icon) appears for reviewed routes; the same modal opens with the form pre-filled with current values (Queries improved, Time improved). Modal title and submit button label differ when editing ("Edit Review" / "Update Review"). Flash message "Review updated" when saving an existing review. New translation keys in all locales: `routes_table.edit_review`, `review.modal_title_edit`, `review.edit_review`, `flash.review_updated`.
+
+### Fixed
+- **Routes table: sort by Memory usage** – Sorting by the Memory usage column now uses the numeric value (int bytes). `PerformanceController::getSortValue()` now includes a `memoryUsage` case so the table orders correctly instead of falling back to request time.
+- **Charts: initialization after DOM** – Chart scripts (dashboard Performance Trends, Statistics histograms, Charts component) run inside `DOMContentLoaded` and check for `Chart` and canvas before use. Avoids console errors when Chart.js is loaded in `{% block scripts %}` after the inline script in the content.
+
+### Changed
+- **Routes table: Status Codes and Access Count** – Removed the "Total responses" line from the Status Codes column (same value as Access Count). Status Codes and Access Count columns are now adjacent for easier reading.
+- **Routes table: View access records** – The link to access records now uses the Symfony UX Icons eye icon (`bi:eye`) instead of the 👁 emoji.
 
 ---
 

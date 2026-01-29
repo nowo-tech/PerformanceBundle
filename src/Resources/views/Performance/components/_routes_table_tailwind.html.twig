@@ -1,15 +1,14 @@
 {# Routes Table Component (Tailwind) #}
-{# This component can be overridden by creating: templates/bundles/NowoPerformanceBundle/Performance/components/_routes_table_tailwind.html.twig #}
+{# Expects: routes, sortBy, order (for sortable headers), paginator (optional). #}
+{% set _query = app.request.query.all|default({}) %}
 <div class="bg-white shadow rounded-lg">
     <div class="px-4 py-5 sm:p-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Routes ({{ routes|length }})</h3>
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ 'routes_table.title'|trans({}, 'nowo_performance') }} ({% if paginator is defined and paginator.total_count is defined %}{{ paginator.total_count }}{% else %}{{ routes|length }}{% endif %})</h3>
         {% if routes is empty %}
             <div class="rounded-md bg-blue-50 p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                        </svg>
+                        {{ ux_icon('bi:info-circle', {class: 'h-5 w-5 text-blue-400'}) }}
                     </div>
                     <div class="ml-3">
                         <p class="text-sm text-blue-700">No routes found for the selected filters.</p>
@@ -21,26 +20,27 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route Name</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HTTP Method</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><a href="{{ path('nowo_performance.index', _query|merge({sort: 'name', order: (sortBy|default('') == 'name' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-600 hover:text-gray-900">{{ 'routes_table.route_name'|trans({}, 'nowo_performance') }}{% if sortBy|default('') == 'name' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.http_method'|trans({}, 'nowo_performance') }}</th>
                             {% if trackStatusCodes is defined and trackStatusCodes is not empty %}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.status_codes'|trans({}, 'nowo_performance') }}</th>
                             {% endif %}
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Environment</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Time</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Query Time</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Queries</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Memory Usage</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Access Count</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Accessed At</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><a href="{{ path('nowo_performance.index', _query|merge({sort: 'accessCount', order: (sortBy|default('') == 'accessCount' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-600 hover:text-gray-900" title="{{ (sortBy|default('') == 'accessCount' and order|default('DESC') == 'ASC') ? 'routes_table.sort_descending'|trans({}, 'nowo_performance') : 'routes_table.sort_ascending'|trans({}, 'nowo_performance') }}">{{ 'routes_table.access_count'|trans({}, 'nowo_performance') }}{% if sortBy|default('') == 'accessCount' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.environment'|trans({}, 'nowo_performance') }}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><a href="{{ path('nowo_performance.index', _query|merge({sort: 'requestTime', order: (sortBy|default('') == 'requestTime' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-600 hover:text-gray-900" title="{{ (sortBy|default('') == 'requestTime' and order|default('DESC') == 'ASC') ? 'routes_table.sort_descending'|trans({}, 'nowo_performance') : 'routes_table.sort_ascending'|trans({}, 'nowo_performance') }}">{{ 'routes_table.request_time'|trans({}, 'nowo_performance') }}{% if sortBy|default('') == 'requestTime' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><a href="{{ path('nowo_performance.index', _query|merge({sort: 'queryTime', order: (sortBy|default('') == 'queryTime' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-600 hover:text-gray-900" title="{{ (sortBy|default('') == 'queryTime' and order|default('DESC') == 'ASC') ? 'routes_table.sort_descending'|trans({}, 'nowo_performance') : 'routes_table.sort_ascending'|trans({}, 'nowo_performance') }}">{{ 'routes_table.query_time'|trans({}, 'nowo_performance') }}{% if sortBy|default('') == 'queryTime' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><a href="{{ path('nowo_performance.index', _query|merge({sort: 'totalQueries', order: (sortBy|default('') == 'totalQueries' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-600 hover:text-gray-900" title="{{ (sortBy|default('') == 'totalQueries' and order|default('DESC') == 'ASC') ? 'routes_table.sort_descending'|trans({}, 'nowo_performance') : 'routes_table.sort_ascending'|trans({}, 'nowo_performance') }}">{{ 'routes_table.total_queries'|trans({}, 'nowo_performance') }}{% if sortBy|default('') == 'totalQueries' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><a href="{{ path('nowo_performance.index', _query|merge({sort: 'memoryUsage', order: (sortBy|default('') == 'memoryUsage' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-600 hover:text-gray-900" title="{{ (sortBy|default('') == 'memoryUsage' and order|default('DESC') == 'ASC') ? 'routes_table.sort_descending'|trans({}, 'nowo_performance') : 'routes_table.sort_ascending'|trans({}, 'nowo_performance') }}">{{ 'routes_table.memory_usage'|trans({}, 'nowo_performance') }}{% if sortBy|default('') == 'memoryUsage' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><a href="{{ path('nowo_performance.index', _query|merge({sort: 'lastAccessedAt', order: (sortBy|default('') == 'lastAccessedAt' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-600 hover:text-gray-900" title="{{ (sortBy|default('') == 'lastAccessedAt' and order|default('DESC') == 'ASC') ? 'routes_table.sort_descending'|trans({}, 'nowo_performance') : 'routes_table.sort_ascending'|trans({}, 'nowo_performance') }}">{{ 'routes_table.last_accessed_at'|trans({}, 'nowo_performance') }}{% if sortBy|default('') == 'lastAccessedAt' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
                             {% if enableAccessRecords is defined and enableAccessRecords %}
-                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Records</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'access_statistics.records'|trans({}, 'nowo_performance') }}</th>
                             {% endif %}
                             {% if enableReviewSystem is defined and enableReviewSystem %}
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review Status</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.review_status'|trans({}, 'nowo_performance') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.queries_time'|trans({}, 'nowo_performance') }}</th>
                             {% endif %}
                             {% if (enableRecordManagement is defined and enableRecordManagement) or (enableReviewSystem is defined and enableReviewSystem) %}
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'routes_table.actions'|trans({}, 'nowo_performance') }}</th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -93,12 +93,16 @@
                                                     </span>
                                                 {% endfor %}
                                             </div>
-                                            <p class="mt-1 text-xs text-gray-500">{{ 'routes_table.total_responses'|trans({}, 'nowo_performance') }}: {{ totalResponses }}</p>
                                         {% else %}
                                             <span class="text-sm text-gray-500">N/A</span>
                                         {% endif %}
                                     </td>
                                 {% endif %}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" title="Number of times this route has been accessed">
+                                        {{ route.getAccessCount()|default(1)|number_format(0) }}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                                         {{ route.env ?? 'N/A' }}
@@ -181,11 +185,6 @@
                                         <span class="text-sm text-gray-500">N/A</span>
                                     {% endif %}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" title="Number of times this route has been accessed">
-                                        {{ route.getAccessCount()|default(1)|number_format(0) }}
-                                    </span>
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {% if route.getLastAccessedAt() %}
                                         {{ route.getLastAccessedAt()|date(dateTimeFormat|default('Y-m-d H:i:s')) }}
@@ -202,7 +201,7 @@
                                             }) }}"
                                                class="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                                                title="View access records for this route">
-                                                👁
+                                                {{ ux_icon('bi:eye', {class: 'w-4 h-4'}) }}
                                             </a>
                                         {% else %}
                                             <span class="text-sm text-gray-400">-</span>
@@ -212,22 +211,28 @@
                                 {% if enableReviewSystem is defined and enableReviewSystem %}
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         {% if route.isReviewed() %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Reviewed</span>
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ 'routes_table.reviewed'|trans({}, 'nowo_performance') }}</span>
                                             {% if route.getReviewedAt() %}
                                                 <div class="mt-1 text-xs text-gray-500">{{ route.getReviewedAt()|date(dateFormat|default('Y-m-d H:i')) }}</div>
                                             {% endif %}
-                                            {% if route.getQueriesImproved() is not null %}
-                                                <div class="mt-1 text-xs {{ route.getQueriesImproved() ? 'text-green-600' : 'text-red-600' }}">
-                                                    Queries: {{ route.getQueriesImproved() ? '✓ Improved' : '✗ Not Improved' }}
-                                                </div>
-                                            {% endif %}
-                                            {% if route.getTimeImproved() is not null %}
-                                                <div class="mt-1 text-xs {{ route.getTimeImproved() ? 'text-green-600' : 'text-red-600' }}">
-                                                    Time: {{ route.getTimeImproved() ? '✓ Improved' : '✗ Not Improved' }}
-                                                </div>
-                                            {% endif %}
                                         {% else %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Not Reviewed</span>
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'routes_table.not_reviewed'|trans({}, 'nowo_performance') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        {% if route.getQueriesImproved() is not null %}
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ route.getQueriesImproved() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ route.getQueriesImproved() ? 'routes_table.queries_improved'|trans({}, 'nowo_performance') : 'routes_table.queries_not_improved'|trans({}, 'nowo_performance') }}
+                                            </span>
+                                            {% if route.getTimeImproved() is not null %}<br class="mt-1">{% endif %}
+                                        {% endif %}
+                                        {% if route.getTimeImproved() is not null %}
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ route.getTimeImproved() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ route.getTimeImproved() ? 'routes_table.time_improved'|trans({}, 'nowo_performance') : 'routes_table.time_not_improved'|trans({}, 'nowo_performance') }}
+                                            </span>
+                                        {% endif %}
+                                        {% if route.getQueriesImproved() is null and route.getTimeImproved() is null %}
+                                            <span class="text-gray-400">—</span>
                                         {% endif %}
                                     </td>
                                 {% endif %}
@@ -237,26 +242,24 @@
                                             {% if enableRecordManagement is defined and enableRecordManagement and deleteForms[route.id] is defined %}
                                                 {% set deleteForm = deleteForms[route.id] %}
                                                 {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.id}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ ('confirmations.delete_record'|trans({}, 'nowo_performance')) ~ "');"}}) }}
-                                                    {{ form_widget(deleteForm) }}
+                                                    {{ form_widget(deleteForm._token) }}
+                                                    <button type="submit" class="text-red-600 hover:text-red-900" title="{{ 'routes_table.delete'|trans({}, 'nowo_performance') }}">
+                                                        {{ ux_icon('bi:trash', {class: 'w-4 h-4'}) }}
+                                                    </button>
                                                 {{ form_end(deleteForm) }}
                                             {% endif %}
-                                            {% if enableReviewSystem is defined and enableReviewSystem %}
-                                                {% if not route.isReviewed() and reviewForms[route.id] is defined %}
-                                                    {% set reviewForm = reviewForms[route.id] %}
-                                                    <button type="button" class="text-blue-600 hover:text-blue-900" onclick="document.getElementById('reviewModal{{ route.id }}').classList.remove('hidden')" title="{{ 'routes_table.mark_as_reviewed'|trans({}, 'nowo_performance') }}">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <div id="reviewModal{{ route.id }}" class="hidden fixed inset-0 z-50 flex min-h-screen items-center justify-center overflow-y-auto bg-gray-600/50 p-4" onclick="if (event.target === this) this.classList.add('hidden')">
-                                                        <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-gray-200 bg-white p-5 shadow-lg" onclick="event.stopPropagation()">
-                                                            {{ form_start(reviewForm, {'action': path('nowo_performance.review', {id: route.id})}) }}
-                                                                <div class="flex justify-between items-center mb-4">
-                                                                    <h3 class="text-lg font-medium">{{ 'review.modal_title'|trans({}, 'nowo_performance') }}</h3>
+                                            {% if enableReviewSystem is defined and enableReviewSystem and reviewForms[route.id] is defined %}
+                                                {% set reviewForm = reviewForms[route.id] %}
+                                                <button type="button" class="text-blue-600 hover:text-blue-900" onclick="document.getElementById('reviewModal{{ route.id }}').classList.remove('hidden')" title="{{ route.isReviewed() ? 'routes_table.edit_review'|trans({}, 'nowo_performance') : 'routes_table.mark_as_reviewed'|trans({}, 'nowo_performance') }}">
+                                                    {{ ux_icon(route.isReviewed() ? 'bi:pencil-square' : 'bi:check-circle', {class: 'w-4 h-4'}) }}
+                                                </button>
+                                                <div id="reviewModal{{ route.id }}" class="hidden fixed inset-0 z-50 flex min-h-screen items-center justify-center overflow-y-auto bg-gray-600/50 p-4" onclick="if (event.target === this) this.classList.add('hidden')">
+                                                    <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-gray-200 bg-white p-5 shadow-lg" onclick="event.stopPropagation()">
+                                                        {{ form_start(reviewForm, {'action': path('nowo_performance.review', {id: route.id})}) }}
+                                                            <div class="flex justify-between items-center mb-4">
+                                                                <h3 class="text-lg font-medium">{{ (route.isReviewed() ? 'review.modal_title_edit' : 'review.modal_title')|trans({}, 'nowo_performance') }}</h3>
                                                                     <button type="button" onclick="document.getElementById('reviewModal{{ route.id }}').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
-                                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                                        </svg>
+                                                                        {{ ux_icon('bi:x-lg', {class: 'w-5 h-5'}) }}
                                                                     </button>
                                                                 </div>
                                                                 <div class="mb-4">
@@ -282,7 +285,6 @@
                                                             {{ form_end(reviewForm) }}
                                                         </div>
                                                     </div>
-                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </td>

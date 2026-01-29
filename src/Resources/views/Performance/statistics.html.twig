@@ -291,9 +291,7 @@
                             <div class="card-body">
                                 <div class="alert alert-light border mb-3">
                                     <h6 class="alert-heading">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lightbulb me-2" viewBox="0 0 16 16">
-                                            <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13h-5a.5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm3.8 1.6a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0zm2.4 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0zm2.4 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0z"/>
-                                        </svg>
+                                        {{ ux_icon('bi:lightbulb', {class: 'me-2', style: 'width: 16px; height: 16px;'}) }}
                                         Key Insights from {{ stats.label }} Statistics:
                                     </h6>
                                     <ul class="mb-0 small">
@@ -405,10 +403,7 @@
                                         <h6>Distribution Histogram</h6>
                                         <div class="alert alert-info mb-3">
                                             <h6 class="alert-heading">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle me-2" viewBox="0 0 16 16">
-                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-                                                </svg>
+                                                {{ ux_icon('bi:info-circle', {class: 'me-2', style: 'width: 16px; height: 16px;'}) }}
                                                 What this chart shows:
                                             </h6>
                                             <p class="mb-2"><strong>Distribution Histogram</strong> - This chart displays how {{ stats.label|lower }} values are distributed across all routes.</p>
@@ -548,10 +543,7 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ stats.label }} Statistics</h3>
                     <div class="mb-4 p-4 bg-gray-50 border-l-4 border-gray-400 rounded">
                         <h5 class="text-gray-900 font-semibold mb-2 flex items-center">
-                            <svg class="h-5 w-5 text-gray-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
-                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
-                            </svg>
+                            {{ ux_icon('bi:box-arrow-up-right', {class: 'h-5 w-5 text-gray-600 mr-2'}) }}
                             Key Insights from {{ stats.label }} Statistics:
                         </h5>
                         <ul class="text-gray-700 text-sm space-y-1">
@@ -640,9 +632,7 @@
                         <h4 class="font-medium text-gray-900 mb-2">Distribution Histogram</h4>
                         <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
                             <h5 class="text-blue-900 font-semibold mb-2 flex items-center">
-                                <svg class="h-5 w-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                                </svg>
+                                {{ ux_icon('bi:info-circle', {class: 'h-5 w-5 text-blue-500 mr-2'}) }}
                                 What this chart shows:
                             </h5>
                             <p class="text-blue-800 mb-2"><strong>Distribution Histogram</strong> - This chart displays how {{ stats.label|lower }} values are distributed across all routes.</p>
@@ -696,13 +686,16 @@
 
 {% block scripts_extra %}
 <script>
-// Create charts for each metric (histograms)
-{% for metricKey, stats in advanced_stats %}
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined') return;
+
+    // Create charts for each metric (histograms)
+    {% for metricKey, stats in advanced_stats %}
     {% if stats.count > 0 and stats.distribution is not empty %}
-        (function() {
-            const canvas = document.getElementById('chart_{{ metricKey }}');
-            if (canvas && typeof Chart !== 'undefined') {
-                new Chart(canvas, {
+    (function() {
+        const canvas = document.getElementById('chart_{{ metricKey }}');
+        if (canvas) {
+            new Chart(canvas, {
                     type: 'bar',
                     data: {
                         labels: {{ stats.bucket_labels|json_encode|raw }},
@@ -739,9 +732,10 @@
                         }
                     }
                 });
-            }
-        })();
+        }
+    })();
     {% endif %}
-{% endfor %}
+    {% endfor %}
+});
 </script>
 {% endblock %}

@@ -176,6 +176,41 @@ class RouteDataRepository extends ServiceEntityRepository
     }
 
     /**
+     * Count routes matching the same filters as findWithFilters (without sort/limit).
+     *
+     * @param string               $env     The environment (dev, test, prod)
+     * @param array<string, mixed> $filters Same filter options as findWithFilters
+     *
+     * @return int Number of matching routes
+     */
+    public function countWithFilters(string $env, array $filters = []): int
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('r.env = :env')
+            ->setParameter('env', $env);
+
+        if (!empty($filters['route_names']) && \is_array($filters['route_names'])) {
+            $qb->andWhere('r.name IN (:route_names)')
+                ->setParameter('route_names', $filters['route_names']);
+        }
+        if (!empty($filters['route_name_pattern']) && \is_string($filters['route_name_pattern'])) {
+            $qb->andWhere('r.name LIKE :route_pattern')
+                ->setParameter('route_pattern', '%'.$filters['route_name_pattern'].'%');
+        }
+        if (isset($filters['date_from']) && $filters['date_from'] instanceof \DateTimeImmutable) {
+            $qb->andWhere('r.createdAt >= :date_from')
+                ->setParameter('date_from', $filters['date_from']);
+        }
+        if (isset($filters['date_to']) && $filters['date_to'] instanceof \DateTimeImmutable) {
+            $qb->andWhere('r.createdAt <= :date_to')
+                ->setParameter('date_to', $filters['date_to']);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
      * Delete all route data records.
      *
      * Optionally filters by environment.

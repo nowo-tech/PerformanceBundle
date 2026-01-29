@@ -20,4 +20,17 @@ final class ClearPerformanceDataRequestTest extends TestCase
         $r = new ClearPerformanceDataRequest('dev');
         $this->assertSame('dev', $r->env);
     }
+
+    public function testEnvPropertyCanBeAssigned(): void
+    {
+        $r = new ClearPerformanceDataRequest();
+        $r->env = 'prod';
+        $this->assertSame('prod', $r->env);
+    }
+
+    public function testConstructorWithEmptyString(): void
+    {
+        $r = new ClearPerformanceDataRequest('');
+        $this->assertSame('', $r->env);
+    }
 }

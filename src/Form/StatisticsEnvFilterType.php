@@ -32,6 +32,7 @@ class StatisticsEnvFilterType extends AbstractType
         $builder->add('env', ChoiceType::class, [
             'label' => 'Environment',
             'choices' => $choices,
+            'choice_translation_domain' => false,
             'required' => true,
             'placeholder' => false,
             'attr' => array_merge(

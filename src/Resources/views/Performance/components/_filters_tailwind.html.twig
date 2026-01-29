@@ -61,18 +61,14 @@
             {# Advanced Filters (Collapsible) #}
             <div id="advancedFilters" class="hidden mt-6 pt-6 border-t border-gray-200">
                 <div class="flex items-center mb-6">
-                    <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                    </svg>
+                    {{ ux_icon('bi:sliders', {class: 'w-5 h-5 text-indigo-600 mr-2'}) }}
                     <h4 class="text-lg font-semibold text-gray-900">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h4>
                 </div>
                 
                 {# Request Time Range #}
                 <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div class="flex items-center mb-3">
-                        <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                        {{ ux_icon('bi:clock', {class: 'w-4 h-4 text-blue-600 mr-2'}) }}
                         <h5 class="text-sm font-semibold text-blue-900">{{ 'filters.request_time_range'|trans({}, 'nowo_performance') }}</h5>
                     </div>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -106,9 +102,7 @@
                 {# Query Count Range #}
                 <div class="mb-6 bg-cyan-50 border border-cyan-200 rounded-lg p-4">
                     <div class="flex items-center mb-3">
-                        <svg class="w-4 h-4 text-cyan-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
+                        {{ ux_icon('bi:bar-chart', {class: 'w-4 h-4 text-cyan-600 mr-2'}) }}
                         <h5 class="text-sm font-semibold text-cyan-900">{{ 'filters.query_count_range'|trans({}, 'nowo_performance') }}</h5>
                     </div>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -142,9 +136,7 @@
                 {# Date Range #}
                 <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
                     <div class="flex items-center mb-3">
-                        <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
+                        {{ ux_icon('bi:calendar', {class: 'w-4 h-4 text-green-600 mr-2'}) }}
                         <h5 class="text-sm font-semibold text-green-900">{{ 'filters.date_range'|trans({}, 'nowo_performance') }}</h5>
                     </div>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -153,9 +145,7 @@
                                 {{ form_label(form.date_from, null, {'attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
+                                        {{ ux_icon('bi:calendar', {class: 'h-5 w-5 text-gray-400'}) }}
                                     </div>
                                     {{ form_widget(form.date_from, {'attr': {'class': 'block w-full pl-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                                 </div>
@@ -167,9 +157,7 @@
                                 {{ form_label(form.date_to, null, {'attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
+                                        {{ ux_icon('bi:calendar', {class: 'h-5 w-5 text-gray-400'}) }}
                                     </div>
                                     {{ form_widget(form.date_to, {'attr': {'class': 'block w-full pl-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                                 </div>

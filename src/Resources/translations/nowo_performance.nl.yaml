@@ -1,176 +1,216 @@
-# Translations for Nowo Performance Bundle (Nederlands)
-# Domain: nowo_performance
+# Vertalingen voor het Nowo Performance Bundle
+# Domein: nowo_performance
 
 dashboard:
-  title: Performance Metrics Dashboard
-  subtitle: Monitor and analyze route performance metrics
-  advanced_statistics: Advanced Statistics
-  export_csv: Export CSV
-  export_json: Export JSON
-  clear_all_records: Clear All Records
-  back_to_dashboard: Back to Dashboard
-  no_routes_found: No routes found for the selected filters.
+    title: "Dashboard Prestatiemetrics"
+    subtitle: "Bewaken en analyseren van routeprestatiemetrics"
+    advanced_statistics: "Geavanceerde statistieken"
+    export_csv: "Exporteer CSV"
+    export_json: "Exporteer JSON"
+    clear_all_records: "Alle records wissen"
+    back_to_dashboard: "Terug naar dashboard"
+    no_routes_found: "Geen routes gevonden voor de geselecteerde filters."
+
 statistics:
-  total_routes: Total Routes
-  total_queries: Total Queries
-  avg_request_time: Avg Request Time
-  max_request_time: Max Request Time
-  avg_query_time: Avg Query Time
-  max_query_time: Max Query Time
-  max_queries: Max Queries
-  not_available: N/A
+    total_routes: "Totaal routes"
+    total_queries: "Totaal queries"
+    avg_queries: "Gem. queries"
+    max_queries: "Max. queries"
+    avg_request_time: "Gem. aanvraagtijd"
+    max_request_time: "Max. aanvraagtijd"
+    avg_query_time: "Gem. querytijd"
+    max_query_time: "Max. querytijd"
+    not_available: "N.v.t."
+
+paginator:
+    showing: "Toont %from% tot %to% van %total% routes"
+    previous: "Vorige"
+    next: "Volgende"
+    page: "Pagina %current% van %total%"
+
 routes_table:
-  title: Routes
-  route_name: Route Name
-  http_method: HTTP Method
-  status_codes: Status Codes
-  total_responses: Totaal antwoorden
-  error_rate: Foutpercentage
-  environment: Environment
-  request_time: Request Time
-  query_time: Query Time
-  total_queries: Total Queries
-  memory_usage: Memory Usage
-  access_count: Access Count
-  last_accessed_at: Last Accessed At
-  updated_at: Updated At
-  review_status: Review Status
-  actions: Actions
-  reviewed: Reviewed
-  not_reviewed: Not Reviewed
-  queries_improved: 'Queries: ✓ Improved'
-  queries_not_improved: 'Queries: ✗ Not Improved'
-  time_improved: 'Time: ✓ Improved'
-  time_not_improved: 'Time: ✗ Not Improved'
-  delete_record: Delete record
-  mark_as_reviewed: Mark as reviewed
-  delete: Delete
-  review: Review
-  cancel: Cancel
-  confirm_delete: Are you sure you want to delete this record?
+    title: "Routes"
+    route_name: "Routenaam"
+    http_method: "HTTP-methode"
+    status_codes: "Statuscodes"
+    total_responses: "Totaal antwoorden"
+    error_rate: "Foutpercentage"
+    environment: "Omgeving"
+    request_time: "Aanvraagtijd"
+    query_time: "Querytijd"
+    total_queries: "Totaal queries"
+    memory_usage: "Geheugengebruik"
+    access_count: "Aantal toegangen"
+    last_accessed_at: "Laatst geopend"
+    updated_at: "Bijgewerkt"
+    review_status: "Beoordelingsstatus"
+    queries_time: "Queries / Tijd"
+    actions: "Acties"
+    reviewed: "Beoordeeld"
+    not_reviewed: "Niet beoordeeld"
+    queries_improved: "Queries: ✓ Verbeterd"
+    queries_not_improved: "Queries: ✗ Niet verbeterd"
+    time_improved: "Tijd: ✓ Verbeterd"
+    time_not_improved: "Tijd: ✗ Niet verbeterd"
+    delete_record: "Record verwijderen"
+    mark_as_reviewed: "Markeer als beoordeeld"
+    edit_review: "Beoordeling bewerken"
+    delete: "Verwijderen"
+    review: "Beoordelen"
+    cancel: "Annuleren"
+    confirm_delete: "Weet u zeker dat u dit record wilt verwijderen?"
+    sort_ascending: "Oplopend sorteren"
+    sort_descending: "Aflopend sorteren"
+
 filters:
-  title: Filters
-  show_advanced: Show Advanced Filters
-  hide_advanced: Hide Advanced Filters
-  advanced_filters: Advanced Filters
-  environment: Environment
-  route_name: Route Name
-  sort_by: Sort By
-  order: Order
-  limit: Limit
-  min_request_time: Min Request Time (s)
-  max_request_time: Max Request Time (s)
-  min_query_count: Min Query Count
-  max_query_count: Max Query Count
-  date_from: Date From
-  date_to: Date To
-  apply_filters: Apply Filters
-  reset: Reset
-  placeholder_route: Filter by route name...
-  placeholder_time: '0.0000'
-  placeholder_count: '0'
-  request_time_range: Request Time Range (seconds)
-  query_count_range: Query Count Range
-  date_range: Date Range
-  min: Min
-  max: Max
+    title: "Filters"
+    show_advanced: "Geavanceerde filters tonen"
+    hide_advanced: "Geavanceerde filters verbergen"
+    advanced_filters: "Geavanceerde filters"
+    environment: "Omgeving"
+    route_name: "Routenaam"
+    sort_by: "Sorteren op"
+    order: "Volgorde"
+    limit: "Limiet"
+    min_request_time: "Min. aanvraagtijd (s)"
+    max_request_time: "Max. aanvraagtijd (s)"
+    min_query_count: "Min. aantal queries"
+    max_query_count: "Max. aantal queries"
+    date_from: "Datum van"
+    date_to: "Datum tot"
+    apply_filters: "Filters toepassen"
+    reset: "Resetten"
+    placeholder_route: "Filter op routenaam..."
+    placeholder_time: "0.0000"
+    placeholder_count: "0"
+    request_time_range: "Aanvraagtijdbereik (seconden)"
+    query_count_range: "Queryaantalbereik"
+    date_range: "Datumbereik"
+    min: "Min"
+    max: "Max"
+
 review:
-  modal_title: Mark as Reviewed
-  queries_improved: Queries Improved?
-  time_improved: Time Improved?
-  not_specified: Not specified
-  'yes': 'Yes'
-  'no': 'No'
-  mark_as_reviewed: Mark as Reviewed
+    modal_title: "Markeer als beoordeeld"
+    modal_title_edit: "Beoordeling bewerken"
+    queries_improved: "Queries verbeterd?"
+    time_improved: "Tijd verbeterd?"
+    not_specified: "Niet opgegeven"
+    yes: "Ja"
+    no: "Nee"
+    mark_as_reviewed: "Markeer als beoordeeld"
+    edit_review: "Beoordeling bijwerken"
+
 confirmations:
-  clear_all_records: Are you sure you want to delete all performance records? This
-    action cannot be undone.
-  delete_record: Are you sure you want to delete this record?
+    clear_all_records: "Weet u zeker dat u alle prestatierecords wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+    delete_record: "Weet u zeker dat u dit record wilt verwijderen?"
+
 flash:
-  records_cleared: All records have been successfully deleted.
-  record_deleted: The record has been successfully deleted.
-  record_reviewed: The record has been successfully marked as reviewed.
-  error: An error occurred while processing the request.
+    records_cleared: "Alle records zijn succesvol verwijderd."
+    record_deleted: "Het record is succesvol verwijderd."
+    record_reviewed: "Het record is succesvol als beoordeeld gemarkeerd."
+    review_updated: "De beoordeling is succesvol bijgewerkt."
+    error: "Er is een fout opgetreden bij het verwerken van het verzoek."
+
 statistics_page:
-  title: Advanced Performance Statistics
-  subtitle: Detailed statistical analysis to identify optimization targets
-  routes_needing_attention: Routes Needing Attention
-  routes_above_p95: Routes above 95th percentile
-  routes_with_outliers: Routes with outliers
-  metric: Metric
-  mean: Mean
-  median: Median
-  mode: Mode
-  std_deviation: Standard Deviation
-  min: Min
-  max: Max
-  range: Range
-  p25: P25
-  p50: P50
-  p75: P75
-  p90: P90
-  p95: P95
-  p99: P99
-  outliers: Outliers
-  histogram: Distribution Histogram
-  request_time: Request Time
-  query_time: Query Time
-  query_count: Query Count
-  memory_usage: Memory Usage
-  access_count: Access Count
+    title: "Geavanceerde prestatiestatistieken"
+    subtitle: "Gedetailleerde statistische analyse om optimalisatiedoelen te identificeren"
+    routes_needing_attention: "Routes die aandacht nodig hebben"
+    routes_above_p95: "Routes boven het 95e percentiel"
+    routes_with_outliers: "Routes met uitschieters"
+    metric: "Metric"
+    mean: "Gemiddelde"
+    median: "Mediaan"
+    mode: "Modus"
+    std_deviation: "Standaardafwijking"
+    min: "Min"
+    max: "Max"
+    range: "Bereik"
+    p25: "P25"
+    p50: "P50"
+    p75: "P75"
+    p90: "P90"
+    p95: "P95"
+    p99: "P99"
+    outliers: "Uitschieters"
+    histogram: "Verdelingshistogram"
+    request_time: "Aanvraagtijd"
+    query_time: "Querytijd"
+    query_count: "Aantal queries"
+    memory_usage: "Geheugengebruik"
+    access_count: "Aantal toegangen"
+
 sort_options:
-  request_time: Request Time
-  query_time: Query Time
-  queries: Queries
-  access_count: Access Count
-  route_name: Route Name
-  created_at: Created At
-  last_accessed_at: Last Accessed At
+    request_time: "Aanvraagtijd"
+    query_time: "Querytijd"
+    queries: "Queries"
+    access_count: "Aantal toegangen"
+    route_name: "Routenaam"
+    created_at: "Aangemaakt op"
+    last_accessed_at: "Laatst geopend"
+
 order_options:
-  descending: Descending
-  ascending: Ascending
+    descending: "Aflopend"
+    ascending: "Oplopend"
 
 access_statistics:
-  title: Access Statistics by Hour
-  date_range: Date Range Filter
-  start_date: Start Date
-  end_date: End Date
-  environment: Environment
-  filter: Filter
-  reset: Reset
-  summary: Summary
-  total_accesses: Total Accesses
-  period: Period
-  by_hour: Statistics by Hour of Day
-  by_day_of_week: Statistics by Day of Week
-  by_month: Statistics by Month
-  hour: Hour
-  access_count: Access Count
-  avg_response_time: Avg Response Time
-  status_codes: Status Codes
-  current_hour: Current
-  requests: requests
-  no_data: No access data available for the selected period.
-  chart_title: Access Pattern Visualization
-  avg_response_time_ms: Average Response Time (ms)
-  response_time_ms: Response Time (ms)
-  filters: Filters
-  route: Route
-  status_code: Status Code
-  all_routes: All Routes
-  all_status_codes: All Status Codes
-  filtered_route: Filtered Route
-  view_records: View Individual Records
-  back_to_statistics: Back to Statistics
-  records: Access Records
-  total_records: Total Records
-  timestamp: Timestamp
-  response_time: Response Time
-  no_records: No records found for the selected filters.
-  showing: Showing
-  of: of
-  previous: Previous
-  next: Next
-  heatmap: Access Heatmap (Day of Week vs Hour)
-  delete_records_matching_filter: Delete records matching filter
-  delete_records_confirm: Are you sure you want to delete all records matching the current filter? This cannot be undone.
+    title: "Toegangsstatistieken per uur"
+    date_range: "Datumbereikfilter"
+    start_date: "Startdatum"
+    end_date: "Einddatum"
+    environment: "Omgeving"
+    filter: "Filter"
+    reset: "Resetten"
+    summary: "Samenvatting"
+    total_accesses: "Totaal toegangen"
+    period: "Periode"
+    by_hour: "Statistieken per uur van de dag"
+    by_day_of_week: "Statistieken per weekdag"
+    by_month: "Statistieken per maand"
+    hour: "Uur"
+    access_count: "Aantal toegangen"
+    avg_response_time: "Gem. antwoordtijd"
+    status_codes: "Statuscodes"
+    current_hour: "Huidig"
+    requests: "verzoeken"
+    no_data: "Geen toegangsgegevens beschikbaar voor de geselecteerde periode."
+    chart_title: "Visualisatie van toegangspatronen"
+    avg_response_time_ms: "Gemiddelde antwoordtijd (ms)"
+    response_time_ms: "Antwoordtijd (ms)"
+    filters: "Filters"
+    route: "Route"
+    status_code: "Statuscode"
+    all_routes: "Alle routes"
+    all_status_codes: "Alle statuscodes"
+    filtered_route: "Gefilterde route"
+    view_records: "Individuele records bekijken"
+    back_to_statistics: "Terug naar statistieken"
+    export_records_csv: "Records exporteren (CSV)"
+    export_records_json: "Records exporteren (JSON)"
+    records: "Toegangsrecords"
+    total_records: "Totaal records"
+    timestamp: "Tijdstempel"
+    response_time: "Antwoordtijd"
+    total_queries: "Queries"
+    query_time: "Querytijd"
+    memory_usage: "Geheugen"
+    min_query_time: "Min. querytijd (s)"
+    max_query_time: "Max. querytijd (s)"
+    min_memory_mb: "Min. geheugen (MB)"
+    max_memory_mb: "Max. geheugen (MB)"
+    no_records: "Geen records gevonden voor de geselecteerde filters."
+    showing: "Toont"
+    of: "van"
+    previous: "Vorige"
+    next: "Volgende"
+    heatmap: "Toegangsheatmap (weekdag vs uur)"
+    delete_records_matching_filter: "Records verwijderen die overeenkomen met filter"
+    delete_records_confirm: "Weet u zeker dat u alle records wilt verwijderen die overeenkomen met het huidige filter? Deze actie kan niet ongedaan worden gemaakt."
+
+access_records: "Toegangsrecords"
+api:
+    chart_data: "Grafiekgegevens"
+clear: "Wissen"
+delete: "Verwijderen"
+delete_records_by_filter: "Records per filter verwijderen"
+diagnose: "Diagnosticeren"
+index: "Dashboard"

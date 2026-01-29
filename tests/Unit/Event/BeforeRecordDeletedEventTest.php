@@ -33,4 +33,15 @@ final class BeforeRecordDeletedEventTest extends TestCase
 
         $this->assertTrue($event->isDeletionPrevented());
     }
+
+    public function testPreventDeletionCalledMultipleTimesRemainsPrevented(): void
+    {
+        $routeData = new RouteData();
+        $event = new BeforeRecordDeletedEvent($routeData);
+
+        $event->preventDeletion();
+        $event->preventDeletion();
+
+        $this->assertTrue($event->isDeletionPrevented());
+    }
 }

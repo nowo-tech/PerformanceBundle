@@ -45,6 +45,7 @@ class PerformanceFiltersType extends AbstractType
                     array_map('strtoupper', $environments),
                     $environments
                 ),
+                'choice_translation_domain' => false,
                 'data' => $currentEnv,
                 'required' => false,
                 'placeholder' => false,

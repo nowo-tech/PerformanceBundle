@@ -1,5 +1,7 @@
 # Configuration Guide
 
+> 📑 **Índice de documentación**: [docs/README.md](README.md). Los valores por defecto que se indican aquí coinciden con `Configuration.php` (fuente de verdad).
+
 ## Default Configuration
 
 The bundle works with sensible defaults. You only need to configure it if you want to change the default behavior.
@@ -10,7 +12,7 @@ The bundle works with sensible defaults. You only need to configure it if you wa
 # config/packages/nowo_performance.yaml
 nowo_performance:
     enabled: true                    # Enable/disable performance tracking
-    environments: ['dev', 'test']    # Environments where tracking is enabled
+    environments: ['prod', 'dev', 'test']  # Environments where tracking is enabled
     connection: 'default'             # Doctrine connection name
     table_name: 'routes_data'        # Table name for storing metrics
     track_queries: true              # Track database query count and time
@@ -20,7 +22,8 @@ nowo_performance:
     ignore_routes:                   # Routes to ignore (not tracked)
         - '_wdt'                     # Web Debug Toolbar
         - '_profiler'                # Symfony Profiler
-        - '_error'                    # Error pages
+        - 'web_profiler*'            # Symfony WebProfilerBundle routes
+        - '_error'                   # Error pages
     track_status_codes: [200, 404, 500, 503]  # HTTP status codes to track
     dashboard:                       # Performance dashboard configuration
         enabled: true                # Enable/disable the dashboard
@@ -46,7 +49,7 @@ nowo_performance:
 ### `environments`
 
 **Type:** `array`  
-**Default:** `['dev', 'test']`
+**Default:** `['prod', 'dev', 'test']`
 
 List of environments where performance tracking is enabled.
 
@@ -169,9 +172,11 @@ nowo_performance:
 ### `ignore_routes`
 
 **Type:** `array`  
-**Default:** `['_wdt', '_profiler', '_error']`
+**Default:** `['_wdt', '_profiler', 'web_profiler*', '_error']`
 
 List of route names or patterns to ignore (not tracked). Each entry can be:
+
+**Important:** The check is done in `PerformanceMetricsSubscriber` on `kernel.request` with **priority 31**, so it runs *after* Symfony’s RouterListener (priority 32), which sets the current route name. If that subscriber’s priority were raised above 32, `_route` would still be null and `ignore_routes` would never apply. See [EVENTS.md – Internal event flow and priorities](EVENTS.md#internal-event-flow-and-priorities) for the full listener flow and priorities.
 
 - **Literal:** exact route name. Sub-routes are also ignored by prefix (e.g. `_wdt` ignores `_wdt`, `_wdt_open`, `_wdt_open_file`).
 - **Pattern (glob):** if the entry contains `*` or `?`, it is matched with [fnmatch](https://www.php.net/manual/en/function.fnmatch.php) (e.g. `_wdt*`, `*_profiler*`, `admin_*`).
@@ -301,7 +306,7 @@ Override them in: `templates/bundles/NowoPerformanceBundle/Performance/component
 **Type:** `boolean`  
 **Default:** `false`
 
-Enable individual record deletion from the dashboard. When enabled, a delete button appears for each record in the routes table.
+Enable deletion of individual **access records** (hits) from the dashboard. When enabled, a trash icon appears for each access record in the route's access records view (not in the main routes table).
 
 ```yaml
 nowo_performance:
@@ -319,7 +324,7 @@ nowo_performance:
 **Type:** `boolean`  
 **Default:** `false`
 
-Enable the record review system. When enabled, users can mark records as reviewed and indicate if queries or time improved.
+Enable the record review system. When enabled, users can mark records as reviewed, edit existing reviews, and indicate if queries or time improved.
 
 ```yaml
 nowo_performance:
@@ -328,7 +333,8 @@ nowo_performance:
 ```
 
 **Features:**
-- Review modal for each record
+- Review modal for each record (create and edit)
+- Mark as reviewed (unreviewed routes) or edit review (already reviewed routes; form pre-filled)
 - Track if queries improved (yes/no/not specified)
 - Track if time improved (yes/no/not specified)
 - Record reviewer username and review date

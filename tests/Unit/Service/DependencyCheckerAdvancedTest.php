@@ -153,12 +153,15 @@ final class DependencyCheckerAdvancedTest extends TestCase
         }
     }
 
-    public function testGetDependencyStatusAllRequiredFalse(): void
+    public function testGetDependencyStatusIconsRequiredOthersOptional(): void
     {
         $status = $this->checker->getDependencyStatus();
 
-        foreach ($status as $info) {
-            $this->assertFalse($info['required'], 'All dependencies should be optional');
+        $this->assertTrue($status['icons']['required'], 'Icons (symfony/ux-icons) should be required');
+        foreach ($status as $key => $info) {
+            if ($key !== 'icons') {
+                $this->assertFalse($info['required'], "Dependency {$key} should be optional");
+            }
         }
     }
 
