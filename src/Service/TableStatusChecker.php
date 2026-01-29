@@ -23,10 +23,10 @@ class TableStatusChecker
     /**
      * Creates a new instance.
      *
-     * @param ManagerRegistry $registry             Doctrine registry
-     * @param string          $connectionName       The name of the Doctrine connection to use
-     * @param string          $tableName            The configured table name
-     * @param bool            $enableAccessRecords  Whether access records (routes_data_records) are enabled
+     * @param ManagerRegistry $registry            Doctrine registry
+     * @param string          $connectionName      The name of the Doctrine connection to use
+     * @param string          $tableName           The configured table name
+     * @param bool            $enableAccessRecords Whether access records (routes_data_records) are enabled
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
