@@ -2,6 +2,18 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 2.0.3 (2026-01-29)
+
+Bugfix release. No schema or configuration changes.
+
+**Fixed:**
+- **Request ID on sub-requests** – Resolves "undefined method getMainRequest of Request" in environments where `Request::getMainRequest()` is not available. The bundle now uses `RequestStack` to obtain the main request when sharing the request ID with sub-requests.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.2 (2026-01-29)
 
 Deduplication of access records, translation validation, schema/collector/diagnose improvements. See [CHANGELOG](CHANGELOG.md#202---2026-01-29) for details.

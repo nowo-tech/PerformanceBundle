@@ -11,6 +11,13 @@ _Nothing yet._
 
 ---
 
+## [2.0.3] - 2026-01-29
+
+### Fixed
+- **Request ID on sub-requests** – Fixed "undefined method getMainRequest of Request" when running on Symfony or HttpFoundation versions where `Request::getMainRequest()` does not exist. The subscriber now uses `RequestStack::getMainRequest()` (or `getMasterRequest()` on older Symfony) to resolve the main request for sharing the request ID with sub-requests. No schema or config changes.
+
+---
+
 ## [2.0.2] - 2026-01-29
 
 ### Added
