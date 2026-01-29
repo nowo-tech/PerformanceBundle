@@ -195,6 +195,7 @@ access_statistics:
     query_time: "Время запросов"
     memory_usage: "Память"
     referer: "Referer"
+    user: "Пользователь"
     min_query_time: "Мин. время запроса (с)"
     max_query_time: "Макс. время запроса (с)"
     min_memory_mb: "Мин. память (МБ)"

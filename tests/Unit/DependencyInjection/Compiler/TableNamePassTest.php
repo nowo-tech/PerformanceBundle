@@ -34,4 +34,16 @@ final class TableNamePassTest extends TestCase
         
         $this->assertTrue(true);
     }
+
+    public function testProcessWithEmptyStringParameter(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter('nowo_performance.table_name', '');
+
+        $pass = new TableNamePass();
+
+        $pass->process($container);
+
+        $this->assertSame('', $container->getParameter('nowo_performance.table_name'));
+    }
 }

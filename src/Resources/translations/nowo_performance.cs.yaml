@@ -195,6 +195,7 @@ access_statistics:
     query_time: "Čas dotazu"
     memory_usage: "Paměť"
     referer: "Referer"
+    user: "Uživatel"
     min_query_time: "Min. čas dotazu (s)"
     max_query_time: "Max. čas dotazu (s)"
     min_memory_mb: "Min. paměť (MB)"

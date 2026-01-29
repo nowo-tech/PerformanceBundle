@@ -45,6 +45,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 'GET',
                 null,
                 [],
+                null,
                 null
             );
 
@@ -78,6 +79,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 [],
+                null,
                 null
             );
 
@@ -112,7 +114,44 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 'GET',
                 null,
                 [],
-                'req-abc123'
+                'req-abc123',
+                null
+            );
+
+        $handler = new RecordMetricsMessageHandler($this->metricsService);
+        $handler($message);
+    }
+
+    public function testInvokePassesRefererToRecordMetrics(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            null,
+            'https://referer.example/'
+        );
+
+        $this->metricsService->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'app_home',
+                'dev',
+                0.5,
+                10,
+                0.2,
+                null,
+                null,
+                'GET',
+                null,
+                [],
+                null,
+                'https://referer.example/'
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -136,6 +175,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 [],
+                null,
                 null
             );
 

@@ -19,6 +19,7 @@ nowo_performance:
     track_request_time: true         # Track request execution time
     track_sub_requests: false         # Track sub-requests (ESI, fragments, etc.)
     enable_access_records: false     # Enable temporal access records tracking
+    track_user: false                # Store logged-in user on access records (when enabled)
     ignore_routes:                   # Routes to ignore (not tracked)
         - '_wdt'                     # Web Debug Toolbar
         - '_profiler'                # Symfony Profiler
@@ -133,7 +134,7 @@ nowo_performance:
 **Type:** `boolean`  
 **Default:** `false`
 
-Enable temporal access records tracking. When enabled, creates individual records for each route access with timestamp, HTTP status code, response time, query time, memory usage, request ID, and HTTP Referer (when sent) in a separate `routes_data_records` table. Useful for analyzing access patterns by time of day, hour, or specific time periods. You can disable saving access records per route in the review/config modal (**Save access records for this route**).
+Enable temporal access records tracking. When enabled, creates individual records for each route access with timestamp, HTTP status code, response time, query time, memory usage, request ID, HTTP Referer (when sent), and optionally logged-in user (when `track_user` is true) in a separate `routes_data_records` table. Useful for analyzing access patterns by time of day, hour, or specific time periods. You can disable saving access records per route in the review/config modal (**Save access records for this route**).
 
 When this option is enabled, the `nowo:performance:create-table` command will automatically create the `routes_data_records` table along with the main `routes_data` table.
 
@@ -149,6 +150,26 @@ nowo_performance:
 - Identifying peak usage times
 
 **Note:** Enabling this feature will increase database storage requirements as it creates a record for every route access (subject to sampling_rate).
+
+### `track_user`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+When access records are enabled, store the logged-in user on each `RouteDataRecord`: `user_identifier` (e.g. username or email from `UserInterface::getUserIdentifier()`) and `user_id` (stringified ID from `User::getId()` if your User entity has it). Requires Symfony Security. Disabled by default for privacy.
+
+```yaml
+nowo_performance:
+    enable_access_records: true
+    track_user: true  # Store who made each request (when logged in)
+```
+
+**Use cases:**
+- Auditing which user triggered slow or error responses
+- Analyzing usage per user or per role
+- Correlating performance with authenticated sessions
+
+**Note:** Only applies when `enable_access_records` is true. Anonymous requests leave `user_identifier` and `user_id` null.
 
 ### `enable_logging`
 

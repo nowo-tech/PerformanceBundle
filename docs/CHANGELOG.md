@@ -7,8 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+---
+
+## [2.0.5] - 2026-01-28
+
 ### Added
-- _Nothing yet._
+- **Access records: logged-in user** – When access records and `track_user` are enabled, each `RouteDataRecord` can store the logged-in user: `user_identifier` (e.g. username, email from `UserInterface::getUserIdentifier()`) and `user_id` (stringified ID from `User::getId()` if present). New columns `user_identifier` (VARCHAR 255, nullable) and `user_id` (VARCHAR 64, nullable) on `routes_data_records`. Config: `nowo_performance.track_user` (default `false`). The Access Records UI shows a User column; CSV and JSON exports include both fields. Run `php bin/console nowo:performance:create-table --update` or `nowo:performance:sync-schema` after updating.
+- **Makefile: validate-translations** – New target `make validate-translations` runs the translation YAML validation script inside the PHP container (starts the container if needed).
+- **Translation validation: block-aware duplicate detection** – The script `scripts/validate-translations-yaml.php` now treats duplicate keys only when they appear in the same parent block. The same key under different parents (e.g. `statistics.max_queries` and `filters.max_queries`) is no longer reported as a duplicate.
+
+### Fixed
+- **Security autowiring (Symfony 7/8)** – Resolved "Cannot autowire service PerformanceMetricsSubscriber: argument $security has type Symfony\Component\Security\Core\Security but this class was not found." The Security dependency is now optional (`?security.helper`); the bundle works when SecurityBundle is not installed or when using Symfony 7+ where the old Security class was removed. User tracking is applied only when `track_user` is true and the security helper is available.
+
+### Added (tests)
+- **PerformanceMetricsSubscriberSecurityTest** – Tests for `track_user` with security null, with user (identifier/id), and user without `getId()`.
+- **ValidateTranslationsYamlTest** – Nested-block duplicate detection, three-level nesting, comments/blank lines, default dir when no argument, duplicate at root level.
+- **RecordMetricsMessageTest** – getUserIdentifier/getUserId getters; **RouteDataRecordTest** – userIdentifier/userId setters and getters.
+- **DeleteRecordsByFilterRequestTest**, **StatisticsEnvFilterTest**, **ArrayExtensionTest**, **PerformanceAlertTest**, **RecordFiltersTest**, **NowoPerformanceBundleTest**, **RouteDataWithAggregatesTest**, **Event/Twig component tests** – Additional edge-case and coverage tests.
+
+See [UPGRADING](UPGRADING.md#upgrading-to-205-2026-01-28) for migration steps.
 
 ---
 

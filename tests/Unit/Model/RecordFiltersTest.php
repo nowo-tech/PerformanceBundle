@@ -64,4 +64,36 @@ final class RecordFiltersTest extends TestCase
         $this->assertSame(10 * 1024 * 1024, $f->minMemoryUsage);
         $this->assertSame(100 * 1024 * 1024, $f->maxMemoryUsage);
     }
+
+    public function testAllNullFilters(): void
+    {
+        $f = new RecordFilters(null, null, null, null, null, null, null, null, null);
+
+        $this->assertNull($f->startDate);
+        $this->assertNull($f->endDate);
+        $this->assertNull($f->env);
+        $this->assertNull($f->route);
+        $this->assertNull($f->statusCode);
+        $this->assertNull($f->minQueryTime);
+        $this->assertNull($f->maxQueryTime);
+        $this->assertNull($f->minMemoryUsage);
+        $this->assertNull($f->maxMemoryUsage);
+    }
+
+    public function testPropertyAssignment(): void
+    {
+        $f = new RecordFilters();
+        $start = new \DateTimeImmutable('2026-02-01');
+        $end = new \DateTimeImmutable('2026-02-28');
+
+        $f->startDate = $start;
+        $f->endDate = $end;
+        $f->env = 'stage';
+        $f->route = 'api_bar';
+
+        $this->assertSame($start, $f->startDate);
+        $this->assertSame($end, $f->endDate);
+        $this->assertSame('stage', $f->env);
+        $this->assertSame('api_bar', $f->route);
+    }
 }

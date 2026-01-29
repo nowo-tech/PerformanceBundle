@@ -66,4 +66,25 @@ final class DeleteRecordsByFilterRequestTest extends TestCase
         $this->assertSame('1048576', $r->minMemoryUsage);
         $this->assertSame('52428800', $r->maxMemoryUsage);
     }
+
+    public function testFromAccessStatistics(): void
+    {
+        $r = new DeleteRecordsByFilterRequest(
+            env: 'dev',
+            from: 'access_statistics',
+            startDate: null,
+            endDate: null,
+        );
+        $this->assertSame('access_statistics', $r->from);
+        $this->assertSame('dev', $r->env);
+    }
+
+    public function testEmptyEnvAndRoute(): void
+    {
+        $r = new DeleteRecordsByFilterRequest();
+        $this->assertSame('', $r->env);
+        $this->assertSame('access_records', $r->from);
+        $this->assertNull($r->route);
+        $this->assertNull($r->statusCode);
+    }
 }

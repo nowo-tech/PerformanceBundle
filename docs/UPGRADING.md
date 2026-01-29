@@ -2,6 +2,45 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to next release (Unreleased)
+
+_No changes yet._
+
+## Upgrading to 2.0.5 (2026-01-28)
+
+New feature: store logged-in user on access records when `track_user` is enabled. Fixes: Security autowiring on Symfony 7/8; translation validation no longer reports false positives for the same key in different YAML blocks. See [CHANGELOG](CHANGELOG.md#205---2026-01-28) for details.
+
+**New:**
+- **Access records: logged-in user** – When access records and `track_user` are enabled, each `RouteDataRecord` can store the logged-in user: `user_identifier` (e.g. username, email from `UserInterface::getUserIdentifier()`) and `user_id` (stringified ID from `User::getId()` if present). The Access Records UI shows a User column; CSV and JSON exports include both fields.
+- **Makefile** – `make validate-translations` runs translation validation in the PHP container.
+- **Translation validation** – Duplicate-key check is now block-aware (same key in different parent blocks is allowed).
+
+**Fixed:**
+- **Security autowiring** – The bundle no longer requires `Symfony\Component\Security\Core\Security`; the security helper is injected optionally. Fixes "class was not found" on Symfony 7/8.
+
+**Configuration:**
+- **`nowo_performance.track_user`** – New option (boolean, default `false`). When `true` and access records are enabled, the bundle stores user identifier and user ID on each record. Disabled by default for privacy. Requires Symfony Security when enabled.
+
+**Schema:**
+- **`routes_data_records`** – New columns `user_identifier` (VARCHAR 255, nullable) and `user_id` (VARCHAR 64, nullable).
+
+Run schema update after upgrading:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+php bin/console nowo:performance:create-table --update
+# or: php bin/console nowo:performance:sync-schema
+```
+
+To enable user tracking, set in your config:
+
+```yaml
+nowo_performance:
+    enable_access_records: true
+    track_user: true
+```
+
 ## Upgrading to 2.0.4 (2026-01-28)
 
 New features: HTTP Referer on access records and per-route option to disable saving access records. See [CHANGELOG](CHANGELOG.md#204---2026-01-28) for details.

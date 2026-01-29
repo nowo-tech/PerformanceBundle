@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Event;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent;
 use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\EventDispatcher\Event;
 
 final class AfterRecordReviewedEventTest extends TestCase
 {
@@ -29,5 +30,13 @@ final class AfterRecordReviewedEventTest extends TestCase
 
         $this->assertSame($event->getRouteData(), $event->getRouteData());
         $this->assertSame($routeData, $event->getRouteData());
+    }
+
+    public function testExtendsSymfonyEvent(): void
+    {
+        $routeData = new RouteData();
+        $event = new AfterRecordReviewedEvent($routeData);
+
+        $this->assertInstanceOf(Event::class, $event);
     }
 }

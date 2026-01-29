@@ -48,6 +48,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 'POST',
                 null,
                 [],
+                null,
                 null
             );
 
@@ -72,6 +73,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 [],
+                null,
                 null
             );
 
@@ -105,6 +107,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 'GET',
                 null,
                 [],
+                null,
                 null
             );
 
@@ -129,6 +132,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 [],
+                null,
                 null
             );
 
@@ -153,6 +157,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 [],
+                null,
                 null
             );
 
@@ -190,6 +195,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 [],
+                null,
                 null
             );
 
@@ -223,6 +229,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 'GET',
                 null,
                 [],
+                null,
                 null
             );
 
@@ -256,6 +263,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 'GET',
                 null,
                 [],
+                null,
                 null
             );
 
@@ -292,6 +300,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                     $method,
                     null,
                     [],
+                    null,
                     null
                 );
 
@@ -320,6 +329,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                     null,
                     null,
                     [],
+                    null,
                     null
                 );
 
@@ -390,6 +400,7 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 'GET',
                 null,
                 [],
+                null,
                 null
             );
 

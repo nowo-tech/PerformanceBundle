@@ -26,8 +26,10 @@ final class RecordMetricsMessage
      * @param array|null  $params       Route parameters
      * @param int|null    $memoryUsage  Peak memory usage in bytes
      * @param string|null $httpMethod   HTTP method (GET, POST, PUT, DELETE, etc.)
-     * @param string|null $requestId    Unique request ID for deduplication of access records
-     * @param string|null $referer      HTTP Referer header (page that linked to this request)
+     * @param string|null $requestId      Unique request ID for deduplication of access records
+     * @param string|null $referer        HTTP Referer header (page that linked to this request)
+     * @param string|null $userIdentifier Logged-in user identifier (e.g. username, email)
+     * @param string|null $userId         Logged-in user ID (stringified, if available)
      */
     public function __construct(
         private readonly string $routeName,
@@ -40,6 +42,8 @@ final class RecordMetricsMessage
         private readonly ?string $httpMethod = null,
         private readonly ?string $requestId = null,
         private readonly ?string $referer = null,
+        private readonly ?string $userIdentifier = null,
+        private readonly ?string $userId = null,
     ) {
     }
 
@@ -101,5 +105,17 @@ final class RecordMetricsMessage
     public function getReferer(): ?string
     {
         return $this->referer;
+    }
+
+    /** @return string|null Logged-in user identifier (username, email, etc.) */
+    public function getUserIdentifier(): ?string
+    {
+        return $this->userIdentifier;
+    }
+
+    /** @return string|null Logged-in user ID (stringified) */
+    public function getUserId(): ?string
+    {
+        return $this->userId;
     }
 }

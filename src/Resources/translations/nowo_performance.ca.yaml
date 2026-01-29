@@ -195,6 +195,7 @@ access_statistics:
     query_time: "Temps de consulta"
     memory_usage: "Memòria"
     referer: "Referer"
+    user: "Usuari"
     min_query_time: "Temps mín. de consulta (s)"
     max_query_time: "Temps màx. de consulta (s)"
     min_memory_mb: "Memòria mín. (MB)"

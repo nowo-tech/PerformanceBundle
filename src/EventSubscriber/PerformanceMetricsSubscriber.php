@@ -111,7 +111,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         private readonly array $trackStatusCodes = [200, 404, 500, 503],
         #[Autowire('%nowo_performance.enable_logging%')]
         private readonly bool $enableLogging = true,
+        #[Autowire('%nowo_performance.track_user%')]
+        private readonly bool $trackUser = false,
         private readonly ?RequestStack $requestStack = null,
+        #[Autowire(service: '?security.helper')]
+        private readonly ?object $security = null,
         #[Autowire(service: '?stopwatch')]
         ?Stopwatch $stopwatch = null,
         #[Autowire(service: '?kernel')]
@@ -155,7 +159,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     {
         $request = $event->getRequest();
 
-        // Always set env + configured environments in collector first (for diagnostics when disabled)
+        // Minimal setup for collector (route + env) so toolbar can show "disabled" with context
         $env = null;
         if (null !== $this->kernel) {
             $env = $this->kernel->getEnvironment();
@@ -170,20 +174,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
         $this->dataCollector->setConfiguredEnvironments($this->environments);
         $this->dataCollector->setCurrentEnvironment($env);
-
-        // Set route name early so it's always available in collector (even when disabled)
         $this->routeName = $request->attributes->get('_route');
         $this->dataCollector->setRouteName($this->routeName);
 
+        // When bundle is disabled: avoid any further work (no metrics, no query tracking, no DB)
         if (!$this->enabled) {
             LogHelper::log('[PerformanceBundle] Tracking disabled: enabled=false', $this->enableLogging);
             $this->dataCollector->setEnabled(false);
             $this->dataCollector->setDisabledReason('Bundle is disabled in configuration (nowo_performance.enabled: false)');
-            LogHelper::logf(
-                '[PerformanceBundle] DataCollector setEnabled(false) - reason: Bundle disabled, isEnabled()=%s',
-                $this->enableLogging,
-                $this->dataCollector->isEnabled() ? 'true' : 'false'
-            );
 
             return;
         }
@@ -238,17 +236,10 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->trackSubRequests ? 'true' : 'false'
         );
 
-        // Skip ignored routes (exact match or prefix match, e.g. _wdt ignores _wdt, _wdt_open, _wdt_open_file)
+        // When route is ignored: stop all tracking for this request (no metrics, no query tracking, no DB)
         if (null !== $this->routeName && $this->isRouteIgnored($this->routeName)) {
-            LogHelper::logf('[PerformanceBundle] Tracking disabled: route "%s" is in ignore_routes list', $this->enableLogging, $this->routeName);
             $this->dataCollector->setEnabled(false);
             $this->dataCollector->setDisabledReason(\sprintf('Route "%s" is in ignore_routes list', $this->routeName));
-            LogHelper::logf(
-                '[PerformanceBundle] DataCollector setEnabled(false) - reason: Route ignored, isEnabled()=%s',
-                $this->enableLogging,
-                $this->dataCollector->isEnabled() ? 'true' : 'false'
-            );
-            // Inform collector that route is ignored
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
@@ -310,54 +301,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     #[AsEventListener(event: KernelEvents::TERMINATE, priority: -1024)]
     public function onKernelTerminate(TerminateEvent $event): void
     {
-        // Check collector state before logging
-        $collectorEnabled = $this->dataCollector->isEnabled();
-        $disabledReason = $this->dataCollector->getDisabledReason();
-
-        LogHelper::logf(
-            '[PerformanceBundle] onKernelTerminate: START - enabled=%s, collectorEnabled=%s, route=%s, disabledReason=%s',
-            $this->enableLogging,
-            $this->enabled ? 'true' : 'false',
-            $collectorEnabled ? 'true' : 'false',
-            $this->routeName ?? 'null',
-            $disabledReason ?? 'null'
-        );
-
+        // When bundle is disabled: exit immediately without any work (no DB, no reflection, no logging)
         if (!$this->enabled) {
-            if (\function_exists('error_log')) {
-                error_log('[PerformanceBundle] onKernelTerminate: enabled=false, skipping');
-            }
-            // Inform collector that tracking is disabled
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
         }
 
         if (!$this->dataCollector->isEnabled()) {
-            // Log why collector is disabled (for debugging)
-            $disabledReason = $this->dataCollector->getDisabledReason();
-
-            // Use reflection to check the actual property value vs what isEnabled() returns
-            $reflection = new \ReflectionClass($this->dataCollector);
-            $enabledProperty = $reflection->getProperty('enabled');
-            $enabledProperty->setAccessible(true);
-            $enabledPropertyValue = $enabledProperty->getValue($this->dataCollector);
-
-            $dataProperty = $reflection->getProperty('data');
-            $dataProperty->setAccessible(true);
-            $dataArray = $dataProperty->getValue($this->dataCollector);
-            $dataArrayEnabled = $dataArray['enabled'] ?? null;
-
-            LogHelper::logf(
-                '[PerformanceBundle] onKernelTerminate: dataCollector not enabled, skipping. Reason: %s, route=%s, enabledProperty=%s, dataArrayEnabled=%s, isEnabled()=%s',
-                $this->enableLogging,
-                $disabledReason ?? 'Unknown',
-                $this->routeName ?? 'null',
-                $enabledPropertyValue ? 'true' : 'false',
-                null !== $dataArrayEnabled ? ($dataArrayEnabled ? 'true' : 'false') : 'null',
-                $this->dataCollector->isEnabled() ? 'true' : 'false'
-            );
-            // Inform collector that collector is disabled
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
@@ -522,6 +473,19 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
             $referer = $request->headers->get('Referer');
 
+            $userIdentifier = null;
+            $userId = null;
+            if ($this->trackUser && null !== $this->security) {
+                $user = $this->security->getUser();
+                if (null !== $user) {
+                    $userIdentifier = $user->getUserIdentifier();
+                    if (method_exists($user, 'getId')) {
+                        $id = $user->getId();
+                        $userId = null !== $id ? (string) $id : null;
+                    }
+                }
+            }
+
             $result = $this->metricsService->recordMetrics(
                 $this->routeName,
                 $env,
@@ -534,7 +498,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $statusCode,
                 $this->trackStatusCodes,
                 $this->requestId,
-                $referer
+                $referer,
+                $userIdentifier,
+                $userId
             );
 
             LogHelper::logf(

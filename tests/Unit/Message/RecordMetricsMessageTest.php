@@ -75,6 +75,31 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertNull($message->getRequestId());
     }
 
+    public function testGetRefererReturnsValueWhenProvided(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            'req-abc',
+            'https://referer.example/page'
+        );
+
+        $this->assertSame('https://referer.example/page', $message->getReferer());
+    }
+
+    public function testGetRefererReturnsNullWhenNotProvided(): void
+    {
+        $message = new RecordMetricsMessage('app_home', 'dev', 0.5, 5);
+
+        $this->assertNull($message->getReferer());
+    }
+
     public function testConstructorWithMinimalArgs(): void
     {
         $message = new RecordMetricsMessage('other_route', 'prod');
@@ -102,5 +127,57 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertSame(2_097_152, $message->getMemoryUsage());
         $this->assertSame('app_home', $message->getRouteName());
         $this->assertNull($message->getRequestTime());
+    }
+
+    public function testGetUserIdentifierReturnsValueWhenProvided(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            null,
+            null,
+            null,
+            null,
+            'GET',
+            null,
+            null,
+            'john@example.com',
+            'uuid-42'
+        );
+
+        $this->assertSame('john@example.com', $message->getUserIdentifier());
+        $this->assertSame('uuid-42', $message->getUserId());
+    }
+
+    public function testGetUserIdentifierAndUserIdReturnNullWhenNotProvided(): void
+    {
+        $message = new RecordMetricsMessage('app_home', 'dev');
+
+        $this->assertNull($message->getUserIdentifier());
+        $this->assertNull($message->getUserId());
+    }
+
+    public function testConstructorWithAllOptionalUserFields(): void
+    {
+        $message = new RecordMetricsMessage(
+            'api_foo',
+            'prod',
+            0.1,
+            3,
+            0.05,
+            ['id' => 1],
+            524288,
+            'POST',
+            'req-xyz',
+            'https://example.com/from',
+            'admin@example.com',
+            '12345'
+        );
+
+        $this->assertSame('admin@example.com', $message->getUserIdentifier());
+        $this->assertSame('12345', $message->getUserId());
+        $this->assertSame('https://example.com/from', $message->getReferer());
+        $this->assertSame('req-xyz', $message->getRequestId());
     }
 }

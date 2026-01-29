@@ -1073,6 +1073,8 @@ class PerformanceController extends AbstractController
                 'Query Time (s)',
                 'Memory Usage (bytes)',
                 'Referer',
+                'User Identifier',
+                'User ID',
             ]);
             foreach ($records as $r) {
                 $rd = $r->getRouteData();
@@ -1087,6 +1089,8 @@ class PerformanceController extends AbstractController
                     $r->getQueryTime() ?? '',
                     $r->getMemoryUsage() ?? '',
                     $r->getReferer() ?? '',
+                    $r->getUserIdentifier() ?? '',
+                    $r->getUserId() ?? '',
                 ]);
             }
             fclose($handle);
@@ -1185,6 +1189,8 @@ class PerformanceController extends AbstractController
                 'query_time' => $r->getQueryTime(),
                 'memory_usage' => $r->getMemoryUsage(),
                 'referer' => $r->getReferer(),
+                'user_identifier' => $r->getUserIdentifier(),
+                'user_id' => $r->getUserId(),
             ];
         }, $result['records']);
 

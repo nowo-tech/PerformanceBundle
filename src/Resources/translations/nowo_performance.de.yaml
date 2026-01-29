@@ -206,6 +206,7 @@ access_statistics:
     query_time: "Abfragezeit"
     memory_usage: "Speicher"
     referer: "Referer"
+    user: "Benutzer"
     min_query_time: "Min. Abfragezeit (s)"
     max_query_time: "Max. Abfragezeit (s)"
     min_memory_mb: "Min. Speicher (MB)"

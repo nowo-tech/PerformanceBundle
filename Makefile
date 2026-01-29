@@ -26,6 +26,7 @@ help:
 	@echo "  qa            Run all QA checks (cs-check + test)"
 	@echo "  clean         Remove vendor and cache"
 	@echo "  setup-hooks   Install git pre-commit hooks"
+	@echo "  validate-translations  Validate YAML translation files in PHP container (starts container if needed)"
 	@echo ""
 
 # Build and start container
@@ -107,6 +108,11 @@ clean:
 	rm -rf coverage
 	rm -f coverage.xml
 	rm -f .php-cs-fixer.cache
+
+# Validate YAML translation files (duplicate keys, syntax if ext-yaml available). Starts PHP container if needed.
+validate-translations:
+	docker-compose up -d
+	docker-compose exec -T php php scripts/validate-translations-yaml.php src/Resources/translations
 
 # Setup git hooks for pre-commit checks
 setup-hooks:

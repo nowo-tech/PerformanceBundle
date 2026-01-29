@@ -496,7 +496,11 @@ final class PerformanceMetricsSubscriberEdgeCasesTest extends TestCase
                     $this->anything(),
                     $this->anything(),
                     $this->anything(),
-                    $method
+                    $method,
+                    200,
+                    [200, 404, 500, 503],
+                    $this->isType('string'),
+                    $this->anything()
                 )
                 ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -585,7 +589,10 @@ final class PerformanceMetricsSubscriberEdgeCasesTest extends TestCase
                     $this->anything(),
                     $this->anything(),
                     'GET',
-                    $statusCode
+                    $statusCode,
+                    [200, 404, 500, 503],
+                    $this->isType('string'),
+                    $this->anything()
                 )
                 ->willReturn(['is_new' => true, 'was_updated' => false]);
 

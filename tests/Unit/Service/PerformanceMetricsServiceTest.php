@@ -674,6 +674,138 @@ final class PerformanceMetricsServiceTest extends TestCase
         $this->assertTrue($result['is_new']);
     }
 
+    public function testRecordMetricsSetsRefererOnAccessRecordWhenProvided(): void
+    {
+        $service = new PerformanceMetricsService($this->registry, 'default', false, true, true);
+        $refererUrl = 'https://referer.example/page';
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $capturedRecord = null;
+        $this->entityManager
+            ->expects($this->exactly(2))
+            ->method('persist')
+            ->willReturnCallback(function ($entity) use (&$capturedRecord) {
+                if ($entity instanceof RouteDataRecord) {
+                    $capturedRecord = $entity;
+                }
+            });
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $result = $service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            200,
+            [200, 404, 500, 503],
+            null,
+            $refererUrl
+        );
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
+        $this->assertInstanceOf(RouteDataRecord::class, $capturedRecord);
+        $this->assertSame($refererUrl, $capturedRecord->getReferer());
+    }
+
+    public function testRecordMetricsDoesNotSetRefererOnAccessRecordWhenNull(): void
+    {
+        $service = new PerformanceMetricsService($this->registry, 'default', false, true, true);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $capturedRecord = null;
+        $this->entityManager
+            ->expects($this->exactly(2))
+            ->method('persist')
+            ->willReturnCallback(function ($entity) use (&$capturedRecord) {
+                if ($entity instanceof RouteDataRecord) {
+                    $capturedRecord = $entity;
+                }
+            });
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            200,
+            [200, 404, 500, 503],
+            null,
+            null
+        );
+
+        $this->assertInstanceOf(RouteDataRecord::class, $capturedRecord);
+        $this->assertNull($capturedRecord->getReferer());
+    }
+
+    public function testRecordMetricsDoesNotSetRefererOnAccessRecordWhenEmptyString(): void
+    {
+        $service = new PerformanceMetricsService($this->registry, 'default', false, true, true);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $capturedRecord = null;
+        $this->entityManager
+            ->expects($this->exactly(2))
+            ->method('persist')
+            ->willReturnCallback(function ($entity) use (&$capturedRecord) {
+                if ($entity instanceof RouteDataRecord) {
+                    $capturedRecord = $entity;
+                }
+            });
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('flush');
+
+        $service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            200,
+            [200, 404, 500, 503],
+            null,
+            ''
+        );
+
+        $this->assertInstanceOf(RouteDataRecord::class, $capturedRecord);
+        $this->assertNull($capturedRecord->getReferer());
+    }
+
     public function testRecordMetricsDoesNotCreateRouteDataRecordWhenDisabled(): void
     {
         $this->repository

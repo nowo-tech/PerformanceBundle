@@ -187,3 +187,88 @@ final class RouteDataRecordTest extends TestCase
         $result = $this->record->setRequestId('req-xyz');
         $this->assertSame($this->record, $result);
     }
+
+    public function testRefererIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getReferer());
+    }
+
+    public function testSetAndGetReferer(): void
+    {
+        $url = 'https://example.com/page';
+        $this->record->setReferer($url);
+        $this->assertSame($url, $this->record->getReferer());
+
+        $this->record->setReferer(null);
+        $this->assertNull($this->record->getReferer());
+    }
+
+    public function testSetRefererReturnsSelf(): void
+    {
+        $result = $this->record->setReferer('https://other.com');
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testFluentInterfaceIncludesReferer(): void
+    {
+        $routeData = new RouteData();
+        $date = new \DateTimeImmutable();
+
+        $result = $this->record
+            ->setRouteData($routeData)
+            ->setAccessedAt($date)
+            ->setStatusCode(200)
+            ->setResponseTime(0.5)
+            ->setTotalQueries(10)
+            ->setQueryTime(0.2)
+            ->setMemoryUsage(2048)
+            ->setRequestId('req-fluent')
+            ->setReferer('https://referer.example/');
+
+        $this->assertSame($this->record, $result);
+        $this->assertSame('https://referer.example/', $this->record->getReferer());
+    }
+
+    public function testUserIdentifierIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getUserIdentifier());
+    }
+
+    public function testSetAndGetUserIdentifier(): void
+    {
+        $this->record->setUserIdentifier('john@example.com');
+        $this->assertSame('john@example.com', $this->record->getUserIdentifier());
+
+        $this->record->setUserIdentifier(null);
+        $this->assertNull($this->record->getUserIdentifier());
+    }
+
+    public function testSetUserIdentifierReturnsSelf(): void
+    {
+        $result = $this->record->setUserIdentifier('admin@example.com');
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testUserIdIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getUserId());
+    }
+
+    public function testSetAndGetUserId(): void
+    {
+        $this->record->setUserId('uuid-42');
+        $this->assertSame('uuid-42', $this->record->getUserId());
+
+        $this->record->setUserId('12345');
+        $this->assertSame('12345', $this->record->getUserId());
+
+        $this->record->setUserId(null);
+        $this->assertNull($this->record->getUserId());
+    }
+
+    public function testSetUserIdReturnsSelf(): void
+    {
+        $result = $this->record->setUserId('user-1');
+        $this->assertSame($this->record, $result);
+    }
+}

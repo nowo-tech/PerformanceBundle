@@ -207,6 +207,7 @@ access_statistics:
     query_time: "Query Time"
     memory_usage: "Memory"
     referer: "Referer"
+    user: "User"
     min_query_time: "Min query time (s)"
     max_query_time: "Max query time (s)"
     min_memory_mb: "Min memory (MB)"
@@ -218,9 +219,7 @@ access_statistics:
     next: "Next"
     heatmap: "Access Heatmap (Day of Week vs Hour)"
     delete_records_matching_filter: "Delete records matching filter"
-    delete_records_confirm: "Are you sure you want to delete all records matching the current filter? This cannot be undone."
-
-# Route / page titles (for breadcrumbs, nav, messages)
+    delete_records_confirm: "Are you sure you want to delete all records matching the current filter? This cannot be undone."# Route / page titles (for breadcrumbs, nav, messages)
 access_records: "Access Records"
 api:
     chart_data: "Chart Data"

@@ -29,4 +29,16 @@ final class AfterRecordDeletedEventTest extends TestCase
         $event = new AfterRecordDeletedEvent(0, 'route', 'test');
         $this->assertSame(0, $event->getRecordId());
     }
+
+    public function testGettersReturnSameValueOnMultipleCalls(): void
+    {
+        $event = new AfterRecordDeletedEvent(10, 'api_foo', 'prod');
+
+        $this->assertSame($event->getRecordId(), $event->getRecordId());
+        $this->assertSame($event->getRouteName(), $event->getRouteName());
+        $this->assertSame($event->getEnv(), $event->getEnv());
+        $this->assertSame(10, $event->getRecordId());
+        $this->assertSame('api_foo', $event->getRouteName());
+        $this->assertSame('prod', $event->getEnv());
+    }
 }

@@ -195,6 +195,7 @@ access_statistics:
     query_time: "Sorgu Süresi"
     memory_usage: "Bellek"
     referer: "Referer"
+    user: "Kullanıcı"
     min_query_time: "Min. sorgu süresi (s)"
     max_query_time: "Maks. sorgu süresi (s)"
     min_memory_mb: "Min. bellek (MB)"

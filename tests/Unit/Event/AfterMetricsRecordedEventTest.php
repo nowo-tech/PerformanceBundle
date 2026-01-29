@@ -60,4 +60,14 @@ final class AfterMetricsRecordedEventTest extends TestCase
         $this->assertNull($event->getTotalQueries());
         $this->assertNull($event->getMemoryUsage());
     }
+
+    public function testGetRouteDataReturnsSameInstanceOnMultipleCalls(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_foo')->setEnv('prod');
+        $event = new AfterMetricsRecordedEvent($routeData, true);
+
+        $this->assertSame($event->getRouteData(), $event->getRouteData());
+        $this->assertSame($routeData, $event->getRouteData());
+    }
 }

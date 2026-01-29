@@ -88,6 +88,13 @@ final class CheckDependenciesCommandTest extends TestCase
         $this->assertStringContainsString('symfony/ux-twig-component', $tester->getDisplay());
     }
 
+    public function testCommandHelpMentionsDependencies(): void
+    {
+        $help = $this->command->getHelp();
+        $this->assertStringContainsString('check-dependencies', $help);
+        $this->assertStringContainsString('dependencies', $help);
+    }
+
     public function testExecuteShowsStatusForEachFeature(): void
     {
         $this->dependencyChecker->method('getDependencyStatus')->willReturn([

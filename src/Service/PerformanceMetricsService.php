@@ -163,6 +163,8 @@ class PerformanceMetricsService
      * @param array<int>  $trackStatusCodes List of status codes to track
      * @param string|null $requestId        Unique request ID to avoid duplicate access records for the same request
      * @param string|null $referer          HTTP Referer header (page that linked to this request)
+     * @param string|null $userIdentifier   Logged-in user identifier (e.g. username, email)
+     * @param string|null $userId           Logged-in user ID (stringified, if available)
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -179,6 +181,8 @@ class PerformanceMetricsService
         array $trackStatusCodes = [],
         ?string $requestId = null,
         ?string $referer = null,
+        ?string $userIdentifier = null,
+        ?string $userId = null,
     ): array {
         LogHelper::logf(
             '[PerformanceBundle] recordMetrics: START - route=%s, env=%s, async=%s, requestTime=%s, totalQueries=%s',
@@ -226,7 +230,9 @@ class PerformanceMetricsService
                 $memoryUsage,
                 $httpMethod,
                 $requestId,
-                $referer
+                $referer,
+                $userIdentifier,
+                $userId
             );
             $this->messageBus->dispatch($message);
 
@@ -237,7 +243,7 @@ class PerformanceMetricsService
         // Otherwise, record synchronously
         LogHelper::log('[PerformanceBundle] recordMetrics: Recording synchronously', $this->enableLogging);
 
-        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes, $requestId, $referer);
+        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes, $requestId, $referer, $userIdentifier, $userId);
     }
 
     /**
@@ -255,6 +261,8 @@ class PerformanceMetricsService
      * @param array<int>  $trackStatusCodes List of status codes to track
      * @param string|null $requestId        Unique request ID to avoid duplicate access records for the same request
      * @param string|null $referer          HTTP Referer header
+     * @param string|null $userIdentifier   Logged-in user identifier (e.g. username, email)
+     * @param string|null $userId           Logged-in user ID (stringified, if available)
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -271,6 +279,8 @@ class PerformanceMetricsService
         array $trackStatusCodes = [],
         ?string $requestId = null,
         ?string $referer = null,
+        ?string $userIdentifier = null,
+        ?string $userId = null,
     ): array {
         $isNew = false;
         $wasUpdated = false;
@@ -377,6 +387,12 @@ class PerformanceMetricsService
                     }
                     if (null !== $referer && '' !== $referer) {
                         $accessRecord->setReferer($referer);
+                    }
+                    if (null !== $userIdentifier && '' !== $userIdentifier) {
+                        $accessRecord->setUserIdentifier($userIdentifier);
+                    }
+                    if (null !== $userId && '' !== $userId) {
+                        $accessRecord->setUserId($userId);
                     }
 
                     $this->entityManager->persist($accessRecord);

@@ -103,6 +103,13 @@ final class RebuildAggregatesCommandTest extends TestCase
         $this->assertStringContainsString('No RouteData records found', $out->fetch());
     }
 
+    public function testCommandHelpMentionsRebuildAggregates(): void
+    {
+        $help = $this->createCommand()->getHelp();
+        $this->assertStringContainsString('rebuild-aggregates', $help);
+        $this->assertStringContainsString('RouteData', $help);
+    }
+
     public function testExecuteUsesBatchSizeOption(): void
     {
         $route = new \Nowo\PerformanceBundle\Entity\RouteData();

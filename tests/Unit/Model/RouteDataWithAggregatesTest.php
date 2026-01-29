@@ -187,4 +187,36 @@ final class RouteDataWithAggregatesTest extends TestCase
 
         $this->assertSame(536870912, $dto->getMemoryUsage());
     }
+
+    public function testAggregateGettersWithMinimalAggregatesArray(): void
+    {
+        $aggregates = ['access_count' => 3, 'status_codes' => [200 => 3]];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertNull($dto->getRequestTime());
+        $this->assertNull($dto->getQueryTime());
+        $this->assertNull($dto->getTotalQueries());
+        $this->assertNull($dto->getMemoryUsage());
+        $this->assertSame(3, $dto->getAccessCount());
+        $this->assertSame([200 => 3], $dto->getStatusCodes());
+        $this->assertSame(3, $dto->getTotalResponses());
+        $this->assertSame(100.0, $dto->getStatusCodeRatio(200));
+    }
+
+    public function testGetStatusCodeRatioWithZeroTotalReturnsZero(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 0,
+            'status_codes' => [200 => 0, 404 => 0],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0.0, $dto->getStatusCodeRatio(200));
+        $this->assertSame(0.0, $dto->getStatusCodeRatio(404));
+        $this->assertSame(0, $dto->getTotalResponses());
+    }
 }

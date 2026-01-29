@@ -107,4 +107,18 @@ final class ArrayExtensionTest extends TestCase
         // Sum of 1 to 100 = 5050
         $this->assertSame(5050, $result);
     }
+
+    public function testSumWithAssociativeArray(): void
+    {
+        $result = $this->extension->sum(['a' => 10, 'b' => 20, 'c' => 30]);
+
+        $this->assertSame(60, $result);
+    }
+
+    public function testSumWithStringKeysAndFloatValues(): void
+    {
+        $result = $this->extension->sum(['x' => 1.5, 'y' => 2.5]);
+
+        $this->assertSame(4.0, $result);
+    }
 }

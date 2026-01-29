@@ -54,4 +54,22 @@ final class RoutesTableComponentTest extends TestCase
         $this->assertSame('memoryUsage', $component->sortBy);
         $this->assertSame('ASC', $component->order);
     }
+
+    public function testReviewFormsAndDeleteFormsDefaultEmpty(): void
+    {
+        $component = new RoutesTableComponent();
+
+        $this->assertSame([], $component->reviewForms);
+        $this->assertSame([], $component->deleteForms);
+        $this->assertIsArray($component->reviewForms);
+        $this->assertIsArray($component->deleteForms);
+    }
+
+    public function testEnableRecordManagementAndReviewSystemDefaults(): void
+    {
+        $component = new RoutesTableComponent();
+
+        $this->assertFalse($component->enableRecordManagement);
+        $this->assertFalse($component->enableReviewSystem);
+    }
 }

@@ -92,6 +92,18 @@ class RouteDataRecord
     private ?string $referer = null;
 
     /**
+     * Logged-in user identifier (e.g. username, email from UserInterface::getUserIdentifier()).
+     */
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $userIdentifier = null;
+
+    /**
+     * Logged-in user ID (stringified, from User entity getId() if present).
+     */
+    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
+    private ?string $userId = null;
+
+    /**
      * Creates a new instance.
      */
     public function __construct()
@@ -303,6 +315,50 @@ class RouteDataRecord
     public function setReferer(?string $referer): self
     {
         $this->referer = $referer !== null && \strlen($referer) > 2048 ? substr($referer, 0, 2048) : $referer;
+
+        return $this;
+    }
+
+    /**
+     * Get the logged-in user identifier (username, email, etc.).
+     *
+     * @return string|null The user identifier or null if not logged in
+     */
+    public function getUserIdentifier(): ?string
+    {
+        return $this->userIdentifier;
+    }
+
+    /**
+     * Set the logged-in user identifier.
+     *
+     * @param string|null $userIdentifier The user identifier (max 255 chars)
+     */
+    public function setUserIdentifier(?string $userIdentifier): self
+    {
+        $this->userIdentifier = $userIdentifier !== null && \strlen($userIdentifier) > 255 ? substr($userIdentifier, 0, 255) : $userIdentifier;
+
+        return $this;
+    }
+
+    /**
+     * Get the logged-in user ID (stringified).
+     *
+     * @return string|null The user ID or null if not available
+     */
+    public function getUserId(): ?string
+    {
+        return $this->userId;
+    }
+
+    /**
+     * Set the logged-in user ID (stringified, e.g. int or UUID).
+     *
+     * @param string|null $userId The user ID (max 64 chars)
+     */
+    public function setUserId(?string $userId): self
+    {
+        $this->userId = $userId !== null && \strlen($userId) > 64 ? substr($userId, 0, 64) : $userId;
 
         return $this;
     }

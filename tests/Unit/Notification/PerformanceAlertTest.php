@@ -75,6 +75,19 @@ final class PerformanceAlertTest extends TestCase
         $this->assertSame('default', $alert->getContextValue('nonexistent', 'default'));
     }
 
+    public function testGetContextDefaultsToEmptyArray(): void
+    {
+        $alert = new PerformanceAlert(
+            PerformanceAlert::TYPE_QUERY_COUNT,
+            PerformanceAlert::SEVERITY_WARNING,
+            'No context passed'
+        );
+
+        $this->assertSame([], $alert->getContext());
+        $this->assertNull($alert->getContextValue('any'));
+        $this->assertSame('fallback', $alert->getContextValue('any', 'fallback'));
+    }
+
     public function testAlertTypes(): void
     {
         $types = [

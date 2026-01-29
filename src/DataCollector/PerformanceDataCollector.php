@@ -258,6 +258,44 @@ class PerformanceDataCollector extends DataCollector
 
     public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
     {
+        $routeName = $this->routeName ?? $request->attributes->get('_route');
+        $env = $this->kernel?->getEnvironment() ?? 'dev';
+
+        // When tracking is disabled (bundle disabled or route ignored): avoid any expensive work
+        // (no DB, no QueryTrackingMiddleware, no table/repository/dependency checks)
+        if (!$this->enabled) {
+            $this->data = [
+                'enabled' => false,
+                'route_name' => $routeName,
+                'request_time' => null,
+                'query_count' => 0,
+                'query_time' => 0.0,
+                'access_count' => null,
+                'ranking_by_request_time' => null,
+                'ranking_by_query_count' => null,
+                'total_routes' => null,
+                'async' => false,
+                'table_exists' => false,
+                'table_is_complete' => false,
+                'table_name' => null,
+                'missing_columns' => [],
+                'records_table_exists' => null,
+                'records_table_is_complete' => null,
+                'records_table_name' => null,
+                'missing_columns_records' => [],
+                'enable_access_records' => false,
+                'record_was_new' => null,
+                'record_was_updated' => null,
+                'configured_environments' => $this->configuredEnvironments,
+                'current_environment' => $this->currentEnvironment ?? $env,
+                'disabled_reason' => $this->disabledReason,
+                'missing_dependencies' => [],
+                'dependency_status' => [],
+            ];
+
+            return;
+        }
+
         $requestTime = null;
         if (null !== $this->startTime) {
             $requestTime = microtime(true) - $this->startTime;
@@ -278,9 +316,6 @@ class PerformanceDataCollector extends DataCollector
                 $queryTime = $queryTime ?? 0.0;
             }
         }
-
-        $routeName = $this->routeName ?? $request->attributes->get('_route');
-        $env = $this->kernel?->getEnvironment() ?? 'dev';
 
         // Check if table exists and is complete
         $tableExists = false;

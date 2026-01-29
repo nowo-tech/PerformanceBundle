@@ -242,6 +242,79 @@ final class PerformanceControllerExportRecordsTest extends TestCase
         self::assertStringContainsString('performance_access_records', $response->headers->get('Content-Disposition'));
     }
 
+    public function testExportRecordsCsvIncludesRefererColumnAndValue(): void
+    {
+        $controller = $this->getMockBuilder(PerformanceController::class)
+            ->setConstructorArgs([
+                $this->metricsService,
+                null,
+                true,
+                [],
+                'bootstrap',
+                null,
+                null,
+                null,
+                false,
+                false,
+                null,
+                0.5,
+                1.0,
+                20,
+                50,
+                20.0,
+                50.0,
+                'Y-m-d H:i:s',
+                'Y-m-d H:i',
+                0,
+                [200, 404, 500, 503],
+                $this->recordRepository,
+                true,
+                true,
+                ['dev', 'test', 'prod'],
+                'default',
+                true,
+                true,
+                false,
+                [],
+                false,
+                1.0,
+                true,
+            ])
+            ->onlyMethods(['getParameter'])
+            ->getMock();
+
+        $controller->method('getParameter')->willReturnCallback(static fn (string $k) => $k === 'kernel.environment' ? 'dev' : null);
+
+        $routeData = new RouteData();
+        $routeData->setName('app_show');
+        $routeData->setEnv('dev');
+
+        $record = new RouteDataRecord();
+        $record->setRouteData($routeData);
+        $record->setAccessedAt(new \DateTimeImmutable('2026-01-22 09:00:00'));
+        $record->setStatusCode(200);
+        $record->setResponseTime(0.1);
+        $record->setReferer('https://external.site/landing');
+
+        $this->recordRepository
+            ->expects(self::once())
+            ->method('getRecordsForExport')
+            ->with('dev', null, null, null, null)
+            ->willReturn(['records' => [$record], 'total' => 1]);
+
+        $request = new Request();
+        $request->query->set('env', 'dev');
+
+        $response = $controller->exportRecordsCsv($request);
+
+        self::assertInstanceOf(StreamedResponse::class, $response);
+        ob_start();
+        $response->sendContent();
+        $content = ob_get_clean();
+        self::assertStringContainsString('Referer', $content);
+        self::assertStringContainsString('https://external.site/landing', $content);
+    }
+
     public function testExportRecordsCsvHandlesRepositoryException(): void
     {
         $controller = $this->getMockBuilder(PerformanceController::class)
@@ -450,6 +523,79 @@ final class PerformanceControllerExportRecordsTest extends TestCase
         self::assertSame('prod', $data['data'][0]['environment']);
         self::assertSame(201, $data['data'][0]['status_code']);
         self::assertSame(0.2, $data['data'][0]['response_time']);
+        self::assertArrayHasKey('referer', $data['data'][0]);
+        self::assertNull($data['data'][0]['referer']);
+    }
+
+    public function testExportRecordsJsonIncludesRefererWhenRecordHasReferer(): void
+    {
+        $controller = $this->getMockBuilder(PerformanceController::class)
+            ->setConstructorArgs([
+                $this->metricsService,
+                null,
+                true,
+                [],
+                'bootstrap',
+                null,
+                null,
+                null,
+                false,
+                false,
+                null,
+                0.5,
+                1.0,
+                20,
+                50,
+                20.0,
+                50.0,
+                'Y-m-d H:i:s',
+                'Y-m-d H:i',
+                0,
+                [200, 404, 500, 503],
+                $this->recordRepository,
+                true,
+                true,
+                ['dev', 'test', 'prod'],
+                'default',
+                true,
+                true,
+                false,
+                [],
+                false,
+                1.0,
+                true,
+            ])
+            ->onlyMethods(['getParameter'])
+            ->getMock();
+
+        $controller->method('getParameter')->willReturnCallback(static fn (string $k) => $k === 'kernel.environment' ? 'dev' : null);
+
+        $routeData = new RouteData();
+        $routeData->setName('app_show');
+        $routeData->setEnv('dev');
+
+        $record = new RouteDataRecord();
+        $record->setRouteData($routeData);
+        $record->setAccessedAt(new \DateTimeImmutable('2026-01-21 10:00:00'));
+        $record->setStatusCode(200);
+        $record->setResponseTime(0.15);
+        $record->setReferer('https://search.example/q=performance');
+
+        $this->recordRepository
+            ->expects(self::once())
+            ->method('getRecordsForExport')
+            ->with('dev', null, null, null, null)
+            ->willReturn(['records' => [$record], 'total' => 1]);
+
+        $request = new Request();
+        $request->query->set('env', 'dev');
+
+        $response = $controller->exportRecordsJson($request);
+
+        $data = json_decode($response->getContent(), true);
+        self::assertCount(1, $data['data']);
+        self::assertArrayHasKey('referer', $data['data'][0]);
+        self::assertSame('https://search.example/q=performance', $data['data'][0]['referer']);
     }
 
     public function testExportRecordsJsonHandlesRepositoryException(): void

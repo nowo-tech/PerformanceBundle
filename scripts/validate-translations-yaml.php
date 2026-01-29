@@ -69,7 +69,8 @@ echo "All translation YAML files are valid (no syntax errors, no duplicate keys)
 exit(0);
 
 /**
- * Find duplicate keys in YAML content (same key at same indent level).
+ * Find duplicate keys in YAML content (same key at same indent level AND under the same parent block).
+ * Same key name under different parents (e.g. statistics.max_queries vs filters.max_queries) is valid and not reported.
  *
  * @return list<array{line: int, key: string}>
  */
@@ -77,8 +78,10 @@ function findDuplicateKeys(string $content): array
 {
     $duplicates = [];
     $lines = explode("\n", $content);
-    /** @var array<int, array<string, true>> keys seen per indent level */
-    $keysByIndent = [];
+    /** @var array<int, string> last key seen at each indent level (defines current "block" for deeper levels) */
+    $lastKeyByIndent = [];
+    /** @var array<int, array<string, array<string, true>>> keys seen per indent level and parent block */
+    $keysByIndentAndBlock = [];
 
     foreach ($lines as $zeroBased => $line) {
         $lineNum = $zeroBased + 1;
@@ -94,7 +97,7 @@ function findDuplicateKeys(string $content): array
         // Multi-line value continuation (line that doesn't look like a new key)
         if (preg_match('#^\s+\S#', $line) && !preg_match('#^\s*[^\s:]+:\s*#', $line) && !preg_match('#^\s*[^\s:]+:\s*\S#', $line)) {
             $prevIndent = null;
-            foreach (array_keys($keysByIndent) as $i) {
+            foreach (array_keys($lastKeyByIndent) as $i) {
                 if ($i < $indent) {
                     $prevIndent = $i;
                 }
@@ -112,20 +115,39 @@ function findDuplicateKeys(string $content): array
         $key = $m[2];
 
         // When going to a lower indent, forget deeper levels
-        foreach (array_keys($keysByIndent) as $i) {
+        foreach (array_keys($lastKeyByIndent) as $i) {
             if ($i > $indent) {
-                unset($keysByIndent[$i]);
+                unset($lastKeyByIndent[$i]);
+            }
+        }
+        foreach (array_keys($keysByIndentAndBlock) as $i) {
+            if ($i > $indent) {
+                unset($keysByIndentAndBlock[$i]);
             }
         }
 
-        if (isset($keysByIndent[$indent][$key])) {
+        // Parent block = key at the immediate parent indent (largest j < indent); same key in different blocks is valid
+        $blockKey = '';
+        $parentIndent = -1;
+        foreach (array_keys($lastKeyByIndent) as $i) {
+            if ($i < $indent && $i > $parentIndent) {
+                $parentIndent = $i;
+                $blockKey = $lastKeyByIndent[$i];
+            }
+        }
+
+        if (isset($keysByIndentAndBlock[$indent][$blockKey][$key])) {
             $duplicates[] = ['line' => $lineNum, 'key' => $key];
         } else {
-            if (!isset($keysByIndent[$indent])) {
-                $keysByIndent[$indent] = [];
+            if (!isset($keysByIndentAndBlock[$indent])) {
+                $keysByIndentAndBlock[$indent] = [];
             }
-            $keysByIndent[$indent][$key] = true;
+            if (!isset($keysByIndentAndBlock[$indent][$blockKey])) {
+                $keysByIndentAndBlock[$indent][$blockKey] = [];
+            }
+            $keysByIndentAndBlock[$indent][$blockKey][$key] = true;
         }
+        $lastKeyByIndent[$indent] = $key;
     }
 
     return $duplicates;

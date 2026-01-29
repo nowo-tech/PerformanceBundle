@@ -53,6 +53,10 @@ nowo_performance:
     # Note: Enabling this will increase database storage requirements
     enable_access_records: true
 
+    # Store logged-in user on each access record (user identifier and user ID if available)
+    # Requires Symfony Security. Disabled by default for privacy.
+    track_user: false
+
     # List of route names to ignore (not tracked)
     # Routes in this list will not have their performance metrics recorded
     # Supports exact names, prefix (e.g. _wdt also ignores _wdt_open) and glob patterns (_wdt*, web_profiler*)

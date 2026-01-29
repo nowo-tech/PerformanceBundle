@@ -263,7 +263,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 $this->anything(),
                 $this->anything(),
                 $this->anything(),
-                $this->anything()
+                $this->anything(),
+                $this->anything(), // requestId
+                $this->anything()  // referer
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -338,7 +340,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 null, // memoryUsage is null because startMemory was null
                 $this->anything(),
                 $this->anything(),
-                $this->anything()
+                $this->anything(),
+                $this->anything(), // requestId
+                $this->anything()  // referer
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -399,7 +403,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 null, // memoryUsage
                 'GET', // httpMethod
                 200,   // statusCode
-                [200, 404, 500, 503] // trackStatusCodes
+                [200, 404, 500, 503], // trackStatusCodes
+                $this->isType('string'), // requestId (set in onKernelRequest)
+                null   // referer (no Referer header)
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 

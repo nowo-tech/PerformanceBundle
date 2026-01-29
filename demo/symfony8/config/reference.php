@@ -1236,6 +1236,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     sampling_rate?: float|Param, // Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking). Reduces database load for frequently accessed routes. // Default: 1.0
  *     query_tracking_threshold?: int|Param, // Minimum query count to track query execution time. Queries below this threshold are counted but not timed individually. // Default: 0
  *     enable_access_records?: bool|Param, // Enable temporal access records tracking. Creates individual records for each route access with timestamp, status code, and response time. Useful for analyzing access patterns by time of day. // Default: false
+ *     track_user?: bool|Param, // When access records are enabled, store the logged-in user identifier and user ID (if available) on each record. Requires Symfony Security. Disabled by default for privacy. // Default: false
  *     enable_logging?: bool|Param, // Enable or disable bundle logging. When disabled, no error_log() calls will be made. Recommended to disable in production for better performance. // Default: true
  *     thresholds?: array{ // Performance thresholds for warning and critical levels
  *         request_time?: array{ // Request time thresholds in seconds

@@ -158,5 +158,35 @@ final class RouteDataRecordEdgeCasesTest extends TestCase
         $this->assertSame($record, $record->setQueryTime(0.2));
         $this->assertSame($record, $record->setMemoryUsage(1024));
         $this->assertSame($record, $record->setRequestId('req-fluent'));
+        $this->assertSame($record, $record->setReferer('https://ref.example/'));
+    }
+
+    public function testSetRefererWithEmptyString(): void
+    {
+        $record = new RouteDataRecord();
+        $record->setReferer('');
+
+        $this->assertSame('', $record->getReferer());
+    }
+
+    public function testSetRefererWithLongStringTruncatesTo2048(): void
+    {
+        $record = new RouteDataRecord();
+        $long = str_repeat('a', 3000);
+
+        $record->setReferer($long);
+
+        $this->assertSame(2048, \strlen($record->getReferer()));
+        $this->assertSame(substr($long, 0, 2048), $record->getReferer());
+    }
+
+    public function testSetRefererWithExactly2048Characters(): void
+    {
+        $record = new RouteDataRecord();
+        $exact = str_repeat('b', 2048);
+
+        $record->setReferer($exact);
+
+        $this->assertSame($exact, $record->getReferer());
     }
 }

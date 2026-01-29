@@ -504,7 +504,68 @@ final class PerformanceMetricsSubscriberTest extends TestCase
                 $this->isType('float'),
                 0,
                 0.0,
-                []
+                [],
+                null,
+                'GET',
+                200,
+                [200, 404, 500, 503],
+                $this->isType('string'),
+                $this->anything()
+            );
+
+        $terminateEvent = new TerminateEvent($this->kernel, $request, new \Symfony\Component\HttpFoundation\Response());
+        $this->subscriber->onKernelTerminate($terminateEvent);
+    }
+
+    public function testOnKernelTerminatePassesRefererHeaderToRecordMetrics(): void
+    {
+        $request = Request::create('/');
+        $request->server->set('APP_ENV', 'dev');
+        $request->attributes->set('_route', 'app_home');
+        $request->headers->set('Referer', 'https://referer.example/page');
+        $requestEvent = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+
+        $this->dataCollector
+            ->method('setEnabled')
+            ->willReturnSelf();
+        $this->dataCollector
+            ->method('setRouteName')
+            ->willReturnSelf();
+        $this->dataCollector
+            ->method('setStartTime')
+            ->willReturnSelf();
+
+        $this->subscriber->onKernelRequest($requestEvent);
+
+        $this->dataCollector
+            ->method('isEnabled')
+            ->willReturn(true);
+        $this->dataCollector
+            ->method('setRequestTime')
+            ->with($this->anything());
+        $this->dataCollector
+            ->method('setQueryCount')
+            ->with($this->anything());
+        $this->dataCollector
+            ->method('setQueryTime')
+            ->with($this->anything());
+
+        $this->metricsService
+            ->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'app_home',
+                'dev',
+                $this->isType('float'),
+                0,
+                0.0,
+                [],
+                null,
+                'GET',
+                200,
+                [200, 404, 500, 503],
+                $this->isType('string'),
+                'https://referer.example/page'
             );
 
         $terminateEvent = new TerminateEvent($this->kernel, $request, new \Symfony\Component\HttpFoundation\Response());

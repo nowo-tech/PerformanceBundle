@@ -195,6 +195,7 @@ access_statistics:
     query_time: "Querytijd"
     memory_usage: "Geheugen"
     referer: "Referer"
+    user: "Gebruiker"
     min_query_time: "Min. querytijd (s)"
     max_query_time: "Max. querytijd (s)"
     min_memory_mb: "Min. geheugen (MB)"

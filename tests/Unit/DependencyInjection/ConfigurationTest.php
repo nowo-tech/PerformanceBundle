@@ -102,4 +102,30 @@ final class ConfigurationTest extends TestCase
         $this->assertTrue($config['dashboard']['enabled']); // Default
         $this->assertSame('/performance', $config['dashboard']['path']); // Default
     }
+
+    public function testTrackUserDefaultIsFalse(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['track_user']);
+    }
+
+    public function testEnableAccessRecordsDefaultIsFalse(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['enable_access_records']);
+    }
+
+    public function testTrackUserCanBeEnabled(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, [[
+            'track_user' => true,
+        ]]);
+
+        $this->assertTrue($config['track_user']);
+    }
 }

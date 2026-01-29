@@ -48,4 +48,14 @@ final class BeforeRecordReviewedEventTest extends TestCase
 
         $this->assertTrue($event->isReviewPrevented());
     }
+
+    public function testGetRouteDataReturnsSameInstanceOnMultipleCalls(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('test_route');
+        $event = new BeforeRecordReviewedEvent($routeData, true, false, 'reviewer');
+
+        $this->assertSame($event->getRouteData(), $event->getRouteData());
+        $this->assertSame($routeData, $event->getRouteData());
+    }
 }

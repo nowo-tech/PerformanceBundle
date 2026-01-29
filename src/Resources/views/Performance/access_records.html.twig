@@ -83,6 +83,7 @@
                                     <th>{{ 'access_statistics.query_time'|trans({}, 'nowo_performance') }}</th>
                                     <th>{{ 'access_statistics.memory_usage'|trans({}, 'nowo_performance') }}</th>
                                     <th>{{ 'access_statistics.referer'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.user'|trans({}, 'nowo_performance') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -146,6 +147,13 @@
                                         <td>
                                             {% if record.referer %}
                                                 <a href="{{ record.referer }}" target="_blank" rel="noopener noreferrer" class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record.referer }}">{{ record.referer }}</a>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.userIdentifier or record.userId %}
+                                                <span class="text-truncate d-inline-block" style="max-width: 180px;" title="{{ record.userIdentifier ?? record.userId }}">{{ record.userIdentifier ?? record.userId }}</span>
                                             {% else %}
                                                 <span class="text-muted">—</span>
                                             {% endif %}
@@ -313,6 +321,7 @@
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.query_time'|trans({}, 'nowo_performance') }}</th>
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.memory_usage'|trans({}, 'nowo_performance') }}</th>
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.referer'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.user'|trans({}, 'nowo_performance') }}</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -345,6 +354,11 @@
                         <td class="px-4 py-3 text-sm">
                             {% if record.referer %}
                                 <a href="{{ record.referer }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 truncate max-w-xs inline-block" title="{{ record.referer }}">{{ record.referer }}</a>
+                            {% else %}<span class="text-gray-400">—</span>{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if record.userIdentifier or record.userId %}
+                                <span class="truncate max-w-xs inline-block" title="{{ record.userIdentifier ?? record.userId }}">{{ record.userIdentifier ?? record.userId }}</span>
                             {% else %}<span class="text-gray-400">—</span>{% endif %}
                         </td>
                     </tr>

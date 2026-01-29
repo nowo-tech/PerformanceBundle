@@ -53,7 +53,9 @@ final class RecordMetricsMessageHandler
             null,
             [],
             $message->getRequestId(),
-            $message->getReferer()
+            $message->getReferer(),
+            $message->getUserIdentifier(),
+            $message->getUserId()
         );
     }
 }

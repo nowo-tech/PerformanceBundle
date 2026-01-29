@@ -24,4 +24,20 @@ final class AfterRecordsClearedEventTest extends TestCase
         $this->assertSame(10, $event->getDeletedCount());
         $this->assertNull($event->getEnv());
     }
+
+    public function testGetDeletedCountWithZero(): void
+    {
+        $event = new AfterRecordsClearedEvent(0, 'dev');
+
+        $this->assertSame(0, $event->getDeletedCount());
+        $this->assertSame('dev', $event->getEnv());
+    }
+
+    public function testGetEnvWithEmptyString(): void
+    {
+        $event = new AfterRecordsClearedEvent(5, '');
+
+        $this->assertSame(5, $event->getDeletedCount());
+        $this->assertSame('', $event->getEnv());
+    }
 }
