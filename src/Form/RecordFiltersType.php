@@ -116,7 +116,7 @@ class RecordFiltersType extends AbstractType
                 'translation_domain' => 'nowo_performance',
                 'required' => false,
                 'mapped' => false,
-                'data' => isset($options['data']) && $options['data']->minMemoryUsage !== null
+                'data' => isset($options['data']) && null !== $options['data']->minMemoryUsage
                     ? round($options['data']->minMemoryUsage / 1024 / 1024, 2) : null,
                 'attr' => ['class' => 'form-control', 'placeholder' => '0', 'step' => '0.1'],
             ])
@@ -125,17 +125,17 @@ class RecordFiltersType extends AbstractType
                 'translation_domain' => 'nowo_performance',
                 'required' => false,
                 'mapped' => false,
-                'data' => isset($options['data']) && $options['data']->maxMemoryUsage !== null
+                'data' => isset($options['data']) && null !== $options['data']->maxMemoryUsage
                     ? round($options['data']->maxMemoryUsage / 1024 / 1024, 2) : null,
                 'attr' => ['class' => 'form-control', 'placeholder' => '100', 'step' => '0.1'],
             ])
         ;
         $builder->get('status_code')->addModelTransformer(new CallbackTransformer(
             static function (?int $value): string {
-                return $value !== null ? (string) $value : '';
+                return null !== $value ? (string) $value : '';
             },
             static function (mixed $value): ?int {
-                if ($value === null || $value === '') {
+                if (null === $value || '' === $value) {
                     return null;
                 }
 
@@ -147,7 +147,7 @@ class RecordFiltersType extends AbstractType
                 'label' => 'access_statistics.filter',
                 'translation_domain' => 'nowo_performance',
                 'attr' => ['class' => 'btn btn-primary'],
-            ]        );
+            ]);
     }
 
     /**

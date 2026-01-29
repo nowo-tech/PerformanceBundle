@@ -35,8 +35,8 @@ class NotificationService
     /**
      * Send a performance alert to all enabled channels.
      *
-     * @param PerformanceAlert                     $alert   The alert to send
-     * @param RouteData|AfterMetricsRecordedEvent  $context The route data or event (event carries just-recorded metrics)
+     * @param PerformanceAlert                    $alert   The alert to send
+     * @param RouteData|AfterMetricsRecordedEvent $context The route data or event (event carries just-recorded metrics)
      *
      * @return array<string, bool> Results for each channel (channel name => success)
      */

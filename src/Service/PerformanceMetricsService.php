@@ -9,10 +9,10 @@ use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Event\BeforeMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
+use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -445,7 +445,7 @@ class PerformanceMetricsService
         if (empty($routes)) {
             return [];
         }
-        $ids = array_map(fn (RouteData $r) => $r->getId(), array_filter($routes, fn (RouteData $r) => null !== $r->getId()));
+        $ids = array_map(static fn (RouteData $r) => $r->getId(), array_filter($routes, static fn (RouteData $r) => null !== $r->getId()));
         if (empty($ids)) {
             return [];
         }
@@ -466,11 +466,13 @@ class PerformanceMetricsService
             ];
             $withAggregates[] = new RouteDataWithAggregates($route, $agg);
         }
-        usort($withAggregates, function (RouteDataWithAggregates $a, RouteDataWithAggregates $b): int {
+        usort($withAggregates, static function (RouteDataWithAggregates $a, RouteDataWithAggregates $b): int {
             $at = $a->getRequestTime() ?? 0.0;
             $bt = $b->getRequestTime() ?? 0.0;
+
             return $bt <=> $at;
         });
+
         return $withAggregates;
     }
 
@@ -496,7 +498,7 @@ class PerformanceMetricsService
         if (empty($routes)) {
             return [];
         }
-        $ids = array_map(fn (RouteData $r) => $r->getId(), array_filter($routes, fn (RouteData $r) => null !== $r->getId()));
+        $ids = array_map(static fn (RouteData $r) => $r->getId(), array_filter($routes, static fn (RouteData $r) => null !== $r->getId()));
         if (empty($ids)) {
             return [];
         }
@@ -519,7 +521,7 @@ class PerformanceMetricsService
         }
         if (!\in_array($sortBy, $entitySortFields, true)) {
             $desc = 'DESC' === strtoupper($order);
-            usort($withAggregates, function (RouteDataWithAggregates $a, RouteDataWithAggregates $b) use ($sortBy, $desc): int {
+            usort($withAggregates, static function (RouteDataWithAggregates $a, RouteDataWithAggregates $b) use ($sortBy, $desc): int {
                 $av = match ($sortBy) {
                     'requestTime' => $a->getRequestTime() ?? 0.0,
                     'totalQueries' => $a->getTotalQueries() ?? 0,
@@ -536,9 +538,11 @@ class PerformanceMetricsService
                     'memoryUsage' => $b->getMemoryUsage() ?? 0,
                     default => 0,
                 };
+
                 return $desc ? (int) ($bv <=> $av) : (int) ($av <=> $bv);
             });
         }
+
         return $withAggregates;
     }
 

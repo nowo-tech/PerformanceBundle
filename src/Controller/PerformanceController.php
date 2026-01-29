@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Controller;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
-use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordsClearedEvent;
@@ -13,8 +12,8 @@ use Nowo\PerformanceBundle\Event\BeforeRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
 use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
-use Nowo\PerformanceBundle\Form\DeleteRecordType;
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
+use Nowo\PerformanceBundle\Form\DeleteRecordType;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
 use Nowo\PerformanceBundle\Form\RecordFiltersType;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
@@ -22,6 +21,7 @@ use Nowo\PerformanceBundle\Form\StatisticsEnvFilterType;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
 use Nowo\PerformanceBundle\Model\RecordFilters;
+use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
@@ -311,7 +311,7 @@ class PerformanceController extends AbstractController
                 if (null !== $routeId) {
                     $deleteForm = $this->createForm(DeleteRecordType::class, null, [
                         'csrf_token_id' => 'delete_performance_record_'.$routeId,
-                        'submit_attr_class' => $this->template === 'tailwind' ? 'inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200' : 'btn btn-danger btn-sm',
+                        'submit_attr_class' => 'tailwind' === $this->template ? 'inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200' : 'btn btn-danger btn-sm',
                     ]);
                     $deleteForms[$routeId] = $deleteForm->createView();
                 }
@@ -424,9 +424,9 @@ class PerformanceController extends AbstractController
             ];
         }
 
-        $requestTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getRequestTime(), $routes), static fn ($v) => $v !== null));
-        $queryTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getQueryTime(), $routes), static fn ($v) => $v !== null));
-        $queryCounts = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getTotalQueries(), $routes), static fn ($v) => $v !== null));
+        $requestTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getRequestTime(), $routes), static fn ($v) => null !== $v));
+        $queryTimes = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getQueryTime(), $routes), static fn ($v) => null !== $v));
+        $queryCounts = array_values(array_filter(array_map(static fn (RouteDataWithAggregates $r) => $r->getTotalQueries(), $routes), static fn ($v) => null !== $v));
 
         return [
             'total_routes' => \count($routes),
@@ -643,7 +643,7 @@ class PerformanceController extends AbstractController
         $envFilter = new StatisticsEnvFilter($request->query->get('env') ?? $this->getParameter('kernel.environment'));
         $envForm = $this->createForm(StatisticsEnvFilterType::class, $envFilter, [
             'environments' => $environments,
-            'attr_class' => $this->template === 'tailwind' ? 'mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500' : 'form-select',
+            'attr_class' => 'tailwind' === $this->template ? 'mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500' : 'form-select',
         ]);
         $envForm->handleRequest($request);
         $env = $envForm->getData()->env ?? $this->getParameter('kernel.environment');
@@ -1028,17 +1028,17 @@ class PerformanceController extends AbstractController
         $startDate = $request->query->get('start_date') ? new \DateTimeImmutable($request->query->get('start_date')) : null;
         $endDate = $request->query->get('end_date') ? new \DateTimeImmutable($request->query->get('end_date')) : null;
         $routeName = $request->query->get('route');
-        $routeName = \is_string($routeName) && $routeName !== '' ? $routeName : null;
+        $routeName = \is_string($routeName) && '' !== $routeName ? $routeName : null;
         $sc = $request->query->get('status_code');
-        $statusCode = $sc !== null && $sc !== '' ? (int) $sc : null;
+        $statusCode = null !== $sc && '' !== $sc ? (int) $sc : null;
         $minQt = $request->query->get('min_query_time');
         $maxQt = $request->query->get('max_query_time');
         $minMb = $request->query->get('min_memory_mb');
         $maxMb = $request->query->get('max_memory_mb');
-        $minQueryTime = $minQt !== null && $minQt !== '' ? (float) $minQt : null;
-        $maxQueryTime = $maxQt !== null && $maxQt !== '' ? (float) $maxQt : null;
-        $minMemoryUsage = $minMb !== null && $minMb !== '' ? (int) round((float) $minMb * 1024 * 1024) : null;
-        $maxMemoryUsage = $maxMb !== null && $maxMb !== '' ? (int) round((float) $maxMb * 1024 * 1024) : null;
+        $minQueryTime = null !== $minQt && '' !== $minQt ? (float) $minQt : null;
+        $maxQueryTime = null !== $maxQt && '' !== $maxQt ? (float) $maxQt : null;
+        $minMemoryUsage = null !== $minMb && '' !== $minMb ? (int) round((float) $minMb * 1024 * 1024) : null;
+        $maxMemoryUsage = null !== $maxMb && '' !== $maxMb ? (int) round((float) $maxMb * 1024 * 1024) : null;
 
         try {
             $result = $this->recordRepository->getRecordsForExport(
@@ -1058,7 +1058,7 @@ class PerformanceController extends AbstractController
 
         $records = $result['records'];
 
-        $response = new StreamedResponse(function () use ($records) {
+        $response = new StreamedResponse(static function () use ($records) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, "\xEF\xBB\xBF");
             fputcsv($handle, [
@@ -1140,17 +1140,17 @@ class PerformanceController extends AbstractController
         $startDate = $request->query->get('start_date') ? new \DateTimeImmutable($request->query->get('start_date')) : null;
         $endDate = $request->query->get('end_date') ? new \DateTimeImmutable($request->query->get('end_date')) : null;
         $routeName = $request->query->get('route');
-        $routeName = \is_string($routeName) && $routeName !== '' ? $routeName : null;
+        $routeName = \is_string($routeName) && '' !== $routeName ? $routeName : null;
         $sc = $request->query->get('status_code');
-        $statusCode = $sc !== null && $sc !== '' ? (int) $sc : null;
+        $statusCode = null !== $sc && '' !== $sc ? (int) $sc : null;
         $minQt = $request->query->get('min_query_time');
         $maxQt = $request->query->get('max_query_time');
         $minMb = $request->query->get('min_memory_mb');
         $maxMb = $request->query->get('max_memory_mb');
-        $minQueryTime = $minQt !== null && $minQt !== '' ? (float) $minQt : null;
-        $maxQueryTime = $maxQt !== null && $maxQt !== '' ? (float) $maxQt : null;
-        $minMemoryUsage = $minMb !== null && $minMb !== '' ? (int) round((float) $minMb * 1024 * 1024) : null;
-        $maxMemoryUsage = $maxMb !== null && $maxMb !== '' ? (int) round((float) $maxMb * 1024 * 1024) : null;
+        $minQueryTime = null !== $minQt && '' !== $minQt ? (float) $minQt : null;
+        $maxQueryTime = null !== $maxQt && '' !== $maxQt ? (float) $maxQt : null;
+        $minMemoryUsage = null !== $minMb && '' !== $minMb ? (int) round((float) $minMb * 1024 * 1024) : null;
+        $maxMemoryUsage = null !== $maxMb && '' !== $maxMb ? (int) round((float) $maxMb * 1024 * 1024) : null;
 
         try {
             $result = $this->recordRepository->getRecordsForExport(
@@ -1170,6 +1170,7 @@ class PerformanceController extends AbstractController
 
         $data = array_map(static function ($r) {
             $rd = $r->getRouteData();
+
             return [
                 'id' => $r->getId(),
                 'route_name' => $rd?->getName(),
@@ -2369,7 +2370,7 @@ class PerformanceController extends AbstractController
         $endDate = $filterData->endDate ?? new \DateTimeImmutable();
         $env = $filterData->env ?? $this->getParameter('kernel.environment');
         $routeName = $filterData->route;
-        if ($routeName === '' || $routeName === null) {
+        if ('' === $routeName || null === $routeName) {
             $routeName = null;
         }
         $statusCode = $filterData->statusCode;
@@ -2405,7 +2406,7 @@ class PerformanceController extends AbstractController
             $startDate->format('Y-m-d\TH:i'),
             $endDate->format('Y-m-d\TH:i'),
             $routeName ?? '',
-            $statusCode !== null ? (string) $statusCode : null
+            null !== $statusCode ? (string) $statusCode : null
         );
         $deleteByFilterForm = $this->createForm(DeleteRecordsByFilterType::class, $deleteByFilterData, [
             'from_value' => 'access_statistics',
@@ -2503,10 +2504,10 @@ class PerformanceController extends AbstractController
             $env,
             $request->query->get('route'),
             $request->query->get('status_code') ? (int) $request->query->get('status_code') : null,
-            $minQt !== null && $minQt !== '' ? (float) $minQt : null,
-            $maxQt !== null && $maxQt !== '' ? (float) $maxQt : null,
-            $minMb !== null && $minMb !== '' ? (int) round((float) $minMb * 1024 * 1024) : null,
-            $maxMb !== null && $maxMb !== '' ? (int) round((float) $maxMb * 1024 * 1024) : null,
+            null !== $minQt && '' !== $minQt ? (float) $minQt : null,
+            null !== $maxQt && '' !== $maxQt ? (float) $maxQt : null,
+            null !== $minMb && '' !== $minMb ? (int) round((float) $minMb * 1024 * 1024) : null,
+            null !== $maxMb && '' !== $maxMb ? (int) round((float) $maxMb * 1024 * 1024) : null,
         );
         $filterForm = $this->createForm(RecordFiltersType::class, $filterData, [
             'environments' => $environments,
@@ -2519,8 +2520,8 @@ class PerformanceController extends AbstractController
         // Sync memory MB fields (not mapped) into filterData
         $minMbData = $filterForm->get('min_memory_mb')->getData();
         $maxMbData = $filterForm->get('max_memory_mb')->getData();
-        $filterData->minMemoryUsage = $minMbData !== null && $minMbData !== '' ? (int) round((float) $minMbData * 1024 * 1024) : null;
-        $filterData->maxMemoryUsage = $maxMbData !== null && $maxMbData !== '' ? (int) round((float) $maxMbData * 1024 * 1024) : null;
+        $filterData->minMemoryUsage = null !== $minMbData && '' !== $minMbData ? (int) round((float) $minMbData * 1024 * 1024) : null;
+        $filterData->maxMemoryUsage = null !== $maxMbData && '' !== $maxMbData ? (int) round((float) $maxMbData * 1024 * 1024) : null;
         $startDate = $filterData->startDate;
         $endDate = $filterData->endDate;
         $env = $filterData->env ?? $this->getParameter('kernel.environment');
@@ -2564,11 +2565,11 @@ class PerformanceController extends AbstractController
             $startDate?->format('Y-m-d\TH:i'),
             $endDate?->format('Y-m-d\TH:i'),
             $routeName ?? '',
-            $statusCode !== null ? (string) $statusCode : null,
-            $filterData->minQueryTime !== null ? (string) $filterData->minQueryTime : null,
-            $filterData->maxQueryTime !== null ? (string) $filterData->maxQueryTime : null,
-            $filterData->minMemoryUsage !== null ? (string) $filterData->minMemoryUsage : null,
-            $filterData->maxMemoryUsage !== null ? (string) $filterData->maxMemoryUsage : null,
+            null !== $statusCode ? (string) $statusCode : null,
+            null !== $filterData->minQueryTime ? (string) $filterData->minQueryTime : null,
+            null !== $filterData->maxQueryTime ? (string) $filterData->maxQueryTime : null,
+            null !== $filterData->minMemoryUsage ? (string) $filterData->minMemoryUsage : null,
+            null !== $filterData->maxMemoryUsage ? (string) $filterData->maxMemoryUsage : null,
         );
         $deleteByFilterForm = $this->createForm(DeleteRecordsByFilterType::class, $deleteByFilterData, [
             'from_value' => 'access_records',
@@ -2645,6 +2646,7 @@ class PerformanceController extends AbstractController
         $env = $data->env;
         if ('' === $env || !\is_string($env)) {
             $this->addFlash('error', 'Environment is required.');
+
             return $this->redirectToRoute('nowo_performance.access_records');
         }
 
@@ -2677,6 +2679,7 @@ class PerformanceController extends AbstractController
 
         if (null === $this->recordRepository) {
             $this->addFlash('error', 'Access records repository is not available.');
+
             return $this->redirectToRoute('nowo_performance.access_records', ['env' => $env]);
         }
 
@@ -2861,7 +2864,7 @@ class PerformanceController extends AbstractController
             if ($routeName === $ignored) {
                 return true;
             }
-            if (str_starts_with($routeName, $ignored . '_')) {
+            if (str_starts_with($routeName, $ignored.'_')) {
                 return true;
             }
         }

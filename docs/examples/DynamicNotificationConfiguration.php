@@ -36,7 +36,7 @@ class DynamicNotificationConfiguration
     /**
      * Creates a new instance.
      *
-     * @param EntityManagerInterface    $entityManager Entity manager to access the database
+     * @param EntityManagerInterface   $entityManager Entity manager to access the database
      * @param MailerInterface|null     $mailer        Symfony Mailer (optional)
      * @param HttpClientInterface|null $httpClient    Symfony HTTP Client (optional)
      * @param Environment|null         $twig          Twig environment for rendering templates (optional)
@@ -181,8 +181,6 @@ class DynamicNotificationConfiguration
 
     /**
      * Returns whether notifications are enabled according to the database configuration.
-     *
-     * @return bool
      */
     public function areNotificationsEnabled(): bool
     {

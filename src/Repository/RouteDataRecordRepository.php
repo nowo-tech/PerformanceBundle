@@ -294,15 +294,15 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Apply common record filters to a query builder.
      *
-     * @param \Doctrine\ORM\QueryBuilder $qb            Query builder
-     * @param \DateTimeImmutable|null   $startDate     Optional start date
-     * @param \DateTimeImmutable|null   $endDate      Optional end date
-     * @param string|null               $routeName    Optional route name
-     * @param int|null                  $statusCode   Optional status code
-     * @param float|null                $minQueryTime Optional min query time (s)
-     * @param float|null                $maxQueryTime Optional max query time (s)
-     * @param int|null                  $minMemoryUsage Optional min memory (bytes)
-     * @param int|null                  $maxMemoryUsage Optional max memory (bytes)
+     * @param \Doctrine\ORM\QueryBuilder $qb             Query builder
+     * @param \DateTimeImmutable|null    $startDate      Optional start date
+     * @param \DateTimeImmutable|null    $endDate        Optional end date
+     * @param string|null                $routeName      Optional route name
+     * @param int|null                   $statusCode     Optional status code
+     * @param float|null                 $minQueryTime   Optional min query time (s)
+     * @param float|null                 $maxQueryTime   Optional max query time (s)
+     * @param int|null                   $minMemoryUsage Optional min memory (bytes)
+     * @param int|null                   $maxMemoryUsage Optional max memory (bytes)
      */
     private function applyRecordFilters(
         \Doctrine\ORM\QueryBuilder $qb,
@@ -634,14 +634,14 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * Get paginated access records.
      *
      * @param string                  $env            The environment
-     * @param int                     $page          Page number (1-based)
-     * @param int                     $perPage       Records per page
-     * @param \DateTimeImmutable|null $startDate     Optional start date filter
-     * @param \DateTimeImmutable|null $endDate       Optional end date filter
+     * @param int                     $page           Page number (1-based)
+     * @param int                     $perPage        Records per page
+     * @param \DateTimeImmutable|null $startDate      Optional start date filter
+     * @param \DateTimeImmutable|null $endDate        Optional end date filter
      * @param string|null             $routeName      Optional route name filter
-     * @param int|null                $statusCode    Optional status code filter
-     * @param float|null              $minQueryTime  Optional min query time (s)
-     * @param float|null              $maxQueryTime  Optional max query time (s)
+     * @param int|null                $statusCode     Optional status code filter
+     * @param float|null              $minQueryTime   Optional min query time (s)
+     * @param float|null              $maxQueryTime   Optional max query time (s)
      * @param int|null                $minMemoryUsage Optional min memory (bytes)
      * @param int|null                $maxMemoryUsage Optional max memory (bytes)
      *
@@ -757,9 +757,9 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         $platform = $conn->getDatabasePlatform();
         $idsPlaceholder = implode(',', array_fill(0, \count($routeDataIds), '?'));
 
-        $sql = "SELECT route_data_id, " .
-            "MAX(response_time) AS request_time, MAX(total_queries) AS total_queries, " .
-            "MAX(query_time) AS query_time, MAX(memory_usage) AS memory_usage, COUNT(*) AS access_count " .
+        $sql = 'SELECT route_data_id, '.
+            'MAX(response_time) AS request_time, MAX(total_queries) AS total_queries, '.
+            'MAX(query_time) AS query_time, MAX(memory_usage) AS memory_usage, COUNT(*) AS access_count '.
             "FROM {$platform->quoteIdentifier($table)} WHERE route_data_id IN ({$idsPlaceholder}) GROUP BY route_data_id";
         $result = $conn->executeQuery($sql, $routeDataIds, array_fill(0, \count($routeDataIds), ParameterType::INTEGER));
         $rows = $result->fetchAllAssociative();
@@ -777,7 +777,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ];
         }
 
-        $sqlStatus = "SELECT route_data_id, status_code, COUNT(*) AS cnt FROM {$platform->quoteIdentifier($table)} " .
+        $sqlStatus = "SELECT route_data_id, status_code, COUNT(*) AS cnt FROM {$platform->quoteIdentifier($table)} ".
             "WHERE route_data_id IN ({$idsPlaceholder}) AND status_code IS NOT NULL GROUP BY route_data_id, status_code";
         $resultStatus = $conn->executeQuery($sqlStatus, $routeDataIds, array_fill(0, \count($routeDataIds), ParameterType::INTEGER));
         foreach ($resultStatus->fetchAllAssociative() as $row) {

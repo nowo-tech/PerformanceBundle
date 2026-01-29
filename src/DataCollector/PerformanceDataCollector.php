@@ -105,11 +105,11 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Creates a new instance.
      *
-     * @param RouteDataRepository|null         $repository         The route data repository (optional)
-     * @param KernelInterface|null            $kernel             The kernel interface (optional)
-     * @param TableStatusChecker|null         $tableStatusChecker The table status checker (optional)
-     * @param DependencyChecker|null          $dependencyChecker  The dependency checker (optional)
-     * @param RouteDataRecordRepository|null  $recordRepository   The route data record repository (optional)
+     * @param RouteDataRepository|null       $repository         The route data repository (optional)
+     * @param KernelInterface|null           $kernel             The kernel interface (optional)
+     * @param TableStatusChecker|null        $tableStatusChecker The table status checker (optional)
+     * @param DependencyChecker|null         $dependencyChecker  The dependency checker (optional)
+     * @param RouteDataRecordRepository|null $recordRepository   The route data record repository (optional)
      */
     public function __construct(
         ?RouteDataRepository $repository = null,

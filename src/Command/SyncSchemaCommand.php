@@ -30,8 +30,8 @@ final class SyncSchemaCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param CreateTableCommand         $createTableCommand         Command to create/update the main table
-     * @param CreateRecordsTableCommand  $createRecordsTableCommand  Command to create/update the records table
+     * @param CreateTableCommand        $createTableCommand        Command to create/update the main table
+     * @param CreateRecordsTableCommand $createRecordsTableCommand Command to create/update the records table
      */
     public function __construct(
         private readonly CreateTableCommand $createTableCommand,

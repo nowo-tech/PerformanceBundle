@@ -37,8 +37,6 @@ class NotificationFactoryService
      *
      * This method creates a new NotificationService instance each time it is called,
      * allowing fully dynamic configuration.
-     *
-     * @return NotificationService
      */
     public function createNotificationService(): NotificationService
     {
@@ -54,8 +52,6 @@ class NotificationFactoryService
      * Useful to add channels that are not in the database configuration.
      *
      * @param array<NotificationChannelInterface> $additionalChannels Additional channels
-     *
-     * @return NotificationService
      */
     public function createNotificationServiceWithAdditionalChannels(array $additionalChannels): NotificationService
     {
