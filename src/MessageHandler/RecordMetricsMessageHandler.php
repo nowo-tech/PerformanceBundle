@@ -49,7 +49,10 @@ final class RecordMetricsMessageHandler
             $message->getQueryTime(),
             $message->getParams(),
             $message->getMemoryUsage(),
-            $message->getHttpMethod()
+            $message->getHttpMethod(),
+            null,
+            [],
+            $message->getRequestId()
         );
     }
 }

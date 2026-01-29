@@ -3,6 +3,7 @@
 {% block title %}{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}{% endblock %}
 
 {% block content %}
+{% if template == 'bootstrap' %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}</h1>
@@ -16,7 +17,7 @@
             </div>
         </div>
 
-        {# Filters – FormType (RecordFiltersType) #}
+        {# Filters #}
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h5>
@@ -41,7 +42,6 @@
             </div>
         </div>
 
-        {# Summary Statistics #}
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="card">
@@ -74,9 +74,7 @@
             </div>
         </div>
 
-        {# Charts Row #}
         <div class="row mb-4">
-            {# Hourly Chart #}
             <div class="col-md-12 mb-4">
                 <div class="card">
                     <div class="card-header">
@@ -87,8 +85,6 @@
                     </div>
                 </div>
             </div>
-
-            {# Day of Week Chart #}
             <div class="col-md-6 mb-4">
                 <div class="card">
                     <div class="card-header">
@@ -99,8 +95,6 @@
                     </div>
                 </div>
             </div>
-
-            {# Monthly Chart #}
             <div class="col-md-6 mb-4">
                 <div class="card">
                     <div class="card-header">
@@ -113,7 +107,6 @@
             </div>
         </div>
 
-        {# Heatmap #}
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">{{ 'access_statistics.heatmap'|trans({}, 'nowo_performance') }}</h5>
@@ -123,7 +116,6 @@
             </div>
         </div>
 
-        {# Statistics by Hour Table #}
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h5>
@@ -197,6 +189,168 @@
             </div>
         </div>
     </div>
+{% else %}
+    {# Tailwind #}
+    <div class="mb-6 flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}</h1>
+        <div class="flex gap-2">
+            <a href="{{ path('nowo_performance.access_records', {env: environment, start_date: start_date|date('Y-m-d\\TH:i'), end_date: end_date|date('Y-m-d\\TH:i'), route: selected_route, status_code: selected_status_code}) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                {{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}
+            </a>
+            <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                {{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h2>
+        {{ form_start(filterForm, {'action': path('nowo_performance.access_statistics'), 'attr': {'class': 'space-y-4'}}) }}
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <div>
+                    {{ form_label(filterForm.start_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.start_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.start_date) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.end_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.end_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.end_date) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.env, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.env, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.env) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.route, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.route, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.route) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.status_code, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.status_code, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.status_code) }}
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 pt-2">
+                {{ form_widget(filterForm.filter, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}
+                <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
+            </div>
+        {{ form_end(filterForm, {'render_rest': false}) }}
+        {% if enable_record_management|default(false) %}
+            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                {{ form_widget(deleteByFilterForm, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700'}}) }}
+            {{ form_end(deleteByFilterForm) }}
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.summary'|trans({}, 'nowo_performance') }}</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+                <p class="text-sm text-gray-500">{{ 'access_statistics.total_accesses'|trans({}, 'nowo_performance') }}</p>
+                <p class="text-xl font-semibold"><span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800">{{ total_access_count|number_format }}</span></p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">{{ 'access_statistics.period'|trans({}, 'nowo_performance') }}</p>
+                <p class="text-gray-900">{{ start_date|date(dateFormat) }} — {{ end_date|date(dateFormat) }}</p>
+            </div>
+            {% if selected_route %}
+            <div>
+                <p class="text-sm text-gray-500">{{ 'access_statistics.filtered_route'|trans({}, 'nowo_performance') }}</p>
+                <p><code class="text-sm bg-gray-100 px-1 rounded">{{ selected_route }}</code></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="space-y-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h2>
+            <div style="height: 300px;"><canvas id="hourlyChart"></canvas></div>
+        </div>
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_day_of_week'|trans({}, 'nowo_performance') }}</h2>
+                <div style="height: 300px;"><canvas id="dayOfWeekChart"></canvas></div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_month'|trans({}, 'nowo_performance') }}</h2>
+                <div style="height: 300px;"><canvas id="monthlyChart"></canvas></div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.heatmap'|trans({}, 'nowo_performance') }}</h2>
+            <div style="height: 400px;"><canvas id="heatmapChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.hour'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.avg_response_time'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.status_codes'|trans({}, 'nowo_performance') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for stat in statistics_by_hour %}
+                    <tr>
+                        <td class="px-4 py-3 text-sm">
+                            <strong>{{ '%02d'|format(stat.hour) }}:00</strong>
+                            {% if stat.hour == "now"|date('G') %}
+                                <span class="ml-1 inline-flex px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ 'access_statistics.current_hour'|trans({}, 'nowo_performance') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800">{{ stat.count|number_format }}</span>
+                            {% if total_access_count > 0 %}
+                                <span class="text-gray-500 text-xs">({{ ((stat.count / total_access_count) * 100)|number_format(1) }}%)</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if stat.avg_response_time > 0 %}
+                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ stat.avg_response_time > 1.0 ? 'bg-red-100 text-red-800' : (stat.avg_response_time > 0.5 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800') }}">
+                                    {{ (stat.avg_response_time * 1000)|number_format(0) }}ms
+                                </span>
+                            {% else %}
+                                <span class="text-gray-400">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if stat.status_codes is not empty %}
+                                <div class="flex flex-wrap gap-1">
+                                    {% for statusCode, count in stat.status_codes %}
+                                        {% set badgeClass = 'bg-gray-100 text-gray-800' %}
+                                        {% if statusCode >= 200 and statusCode < 300 %}{% set badgeClass = 'bg-green-100 text-green-800' %}
+                                        {% elseif statusCode >= 400 and statusCode < 500 %}{% set badgeClass = 'bg-amber-100 text-amber-800' %}
+                                        {% elseif statusCode >= 500 %}{% set badgeClass = 'bg-red-100 text-red-800' %}
+                                        {% endif %}
+                                        <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ badgeClass }}" title="{{ count }} {{ 'access_statistics.requests'|trans({}, 'nowo_performance') }}">{{ statusCode }}: {{ count }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-gray-400">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ 'access_statistics.no_data'|trans({}, 'nowo_performance') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>

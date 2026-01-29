@@ -308,7 +308,7 @@ Provides a comprehensive diagnostic report including:
 - Doctrine Bundle version detection
 - Query tracking method (middleware registration strategy)
 - Database connection status
-- Table existence check
+- **Database tables** – Main table and access records table (when `enable_access_records` is true): exists, complete, missing columns (e.g. `request_id`). Suggests `sync-schema` or `create-records-table --update` when columns are missing.
 - Query tracking status and troubleshooting tips
 
 ### Use Cases

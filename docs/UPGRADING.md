@@ -2,6 +2,26 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 2.0.2 (2026-01-29)
+
+Deduplication of access records, translation validation, schema/collector/diagnose improvements. See [CHANGELOG](CHANGELOG.md#202---2026-01-29) for details.
+
+**New:**
+- **Request ID deduplication** – The bundle assigns a unique `request_id` per HTTP request (shared between main and sub-requests). When access records are enabled, at most one `RouteDataRecord` is created per logical request, avoiding duplicate entries when multiple `TERMINATE` events fire (e.g. main request + fragment).
+- **Translation YAML validation** – Run `composer validate-translations` (or `php scripts/validate-translations-yaml.php src/Resources/translations`) to check translation files for syntax and duplicate keys. CI runs this automatically.
+- **Collector & diagnose** – Web Profiler and CLI diagnose now report when the access records table is incomplete (e.g. missing `request_id`) and suggest running `sync-schema` or `create-records-table --update`.
+
+**Schema:**
+- **`routes_data_records`** – New optional column `request_id` (VARCHAR 64, nullable, unique). Existing records keep `request_id = NULL`. Run `php bin/console nowo:performance:sync-schema` or your Doctrine migrations after updating.
+
+No configuration changes. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+php bin/console nowo:performance:sync-schema
+```
+
 ## Upgrading to 2.0.1 (2026-01-28)
 
 Fixes, UI improvements, and review system enhancement; no breaking changes or configuration updates.
@@ -538,9 +558,9 @@ This version adds significant performance optimizations, dependency detection, a
 
 **After (v1.0.1)**:
 - 0 queries to `information_schema` (cached for 5 minutes)
-- 0-3 queries for ranking (configurable, disabled by default if `enable_ranking_queries: false`)
+- 0–3 queries for ranking (optional; set `enable_ranking_queries: false` to disable)
 - 1 query to get/update route data
-- **Total: 1-4 queries per request (90-95% reduction)**
+- **Total: 1–4 queries per request (90–95% reduction)**
 
 #### Troubleshooting
 

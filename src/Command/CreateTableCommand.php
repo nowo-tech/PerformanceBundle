@@ -1349,7 +1349,7 @@ HELP
     {
         $connection = $entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
-        $schemaManager = $connection->createSchemaManager();
+        $schemaManager = $this->getSchemaManager($connection);
 
         // Get expected indexes from entity metadata
         $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');

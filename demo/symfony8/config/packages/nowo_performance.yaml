@@ -91,7 +91,7 @@ nowo_performance:
 
         # CSS framework to use for the dashboard interface
         # Options: 'bootstrap' or 'tailwind'
-        template: 'tailwind'
+        template: 'bootstrap'
 
         # Enable individual record deletion from dashboard
         # When enabled, a delete button appears for each record in the routes table

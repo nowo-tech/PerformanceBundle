@@ -237,6 +237,24 @@ HELP
         $platform = $connection->getDatabasePlatform();
 
         foreach ($sql as $statement) {
+            // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
+            $platformClass = $platform::class;
+            $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+                || str_contains(strtolower($platformClass), 'mysql')
+                || str_contains(strtolower($platformClass), 'mariadb');
+
+            if ($isMySQL) {
+                if (preg_match('/CREATE\s+TABLE/i', $statement)
+                    && preg_match('/`?id`?\s+INT/i', $statement)
+                    && !preg_match('/AUTO_INCREMENT/i', $statement)) {
+                    $statement = preg_replace(
+                        '/([`]?id[`]?\s+INT(?:EGER)?[^,)]*?)(\s+NOT\s+NULL)(?=\s*[,)]|$)/i',
+                        '$1$2 AUTO_INCREMENT',
+                        $statement
+                    );
+                }
+            }
+
             // Fix invalid datetime defaults that MySQL might generate
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00\s+00:00:00'/i",
@@ -415,7 +433,7 @@ HELP
         $io->text(\sprintf('Using table name: <info>%s</info>', $actualTableName));
         $io->newLine();
 
-        // Drop obsolete columns first
+        // Drop obsolete columns first (same order as CreateTableCommand)
         if (!empty($columnsToDrop)) {
             $io->section(\sprintf('Dropping <info>%d</info> obsolete column(s):', \count($columnsToDrop)));
             foreach ($columnsToDrop as $columnName) {
@@ -442,31 +460,7 @@ HELP
             }
         }
 
-        // Update existing columns
-        if (!empty($columnsToUpdate)) {
-            $io->section(\sprintf('Updating <info>%d</info> column(s) with differences:', \count($columnsToUpdate)));
-            foreach ($columnsToUpdate as $columnName => $columnData) {
-                $expected = $columnData['expected'];
-                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
-                $columnDefinition = $this->getColumnDefinition($expected, $platform);
-                $sql = \sprintf(
-                    'ALTER TABLE %s MODIFY COLUMN %s %s',
-                    $this->quoteIdentifier($platform, $actualTableName),
-                    $this->quoteIdentifier($platform, $columnName),
-                    $columnDefinition
-                );
-                try {
-                    $connection->executeStatement($sql);
-                    $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
-                } catch (\Exception $e) {
-                    $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
-                    throw $e;
-                }
-            }
-            $io->newLine();
-        }
-
-        // Add missing columns
+        // Add missing columns (before Update, same order as CreateTableCommand)
         if (!empty($columnsToAdd)) {
             $io->section(\sprintf('Adding <info>%d</info> missing column(s):', \count($columnsToAdd)));
             foreach ($columnsToAdd as $columnName => $columnInfo) {
@@ -485,6 +479,30 @@ HELP
                     $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
                 } catch (\Exception $e) {
                     $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
+                    throw $e;
+                }
+            }
+            $io->newLine();
+        }
+
+        // Update existing columns
+        if (!empty($columnsToUpdate)) {
+            $io->section(\sprintf('Updating <info>%d</info> column(s) with differences:', \count($columnsToUpdate)));
+            foreach ($columnsToUpdate as $columnName => $columnData) {
+                $expected = $columnData['expected'];
+                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
+                $columnDefinition = $this->getColumnDefinition($expected, $platform);
+                $sql = \sprintf(
+                    'ALTER TABLE %s MODIFY COLUMN %s %s',
+                    $this->quoteIdentifier($platform, $actualTableName),
+                    $this->quoteIdentifier($platform, $columnName),
+                    $columnDefinition
+                );
+                try {
+                    $connection->executeStatement($sql);
+                    $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                } catch (\Exception $e) {
+                    $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
@@ -714,7 +732,7 @@ HELP
             foreach ($metadata->table['indexes'] as $indexName => $indexDefinition) {
                 $columns = $indexDefinition['columns'] ?? [];
                 if (!empty($columns)) {
-                    $expectedIndexes[$indexName] = $columns;
+                    $expectedIndexes[$indexName] = ['columns' => $columns, 'unique' => false];
                 }
             }
         }
@@ -729,12 +747,50 @@ HELP
                     $indexName = $index->name ?? null;
                     $columns = $index->columns ?? [];
                     if ($indexName && !empty($columns)) {
-                        $expectedIndexes[$indexName] = $columns;
+                        $expectedIndexes[$indexName] = ['columns' => $columns, 'unique' => false];
                     }
                 }
             } catch (\ReflectionException $e) {
                 // Ignore reflection errors
             }
+        }
+
+        // Normalize expectedIndexes to array with 'columns' and 'unique'
+        $normalizedExpected = [];
+        foreach ($expectedIndexes as $indexName => $columns) {
+            $normalizedExpected[$indexName] = \is_array($columns) && isset($columns['columns'])
+                ? $columns
+                : ['columns' => \is_array($columns) ? $columns : [], 'unique' => false];
+        }
+
+        // Get unique constraints from entity metadata
+        $expectedUniqueConstraints = [];
+        if (isset($metadata->table['uniqueConstraints']) && \is_array($metadata->table['uniqueConstraints'])) {
+            foreach ($metadata->table['uniqueConstraints'] as $constraintName => $def) {
+                $columns = $def['columns'] ?? [];
+                if (!empty($columns)) {
+                    $expectedUniqueConstraints[$constraintName] = $columns;
+                }
+            }
+        }
+        if (\PHP_VERSION_ID >= 80000) {
+            try {
+                $reflection = new \ReflectionClass('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+                $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\UniqueConstraint::class);
+                foreach ($attributes as $attribute) {
+                    $constraint = $attribute->newInstance();
+                    $constraintName = $constraint->name ?? null;
+                    $columns = $constraint->columns ?? [];
+                    if ($constraintName && !empty($columns)) {
+                        $expectedUniqueConstraints[$constraintName] = $columns;
+                    }
+                }
+            } catch (\ReflectionException $e) {
+                // Ignore reflection errors
+            }
+        }
+        foreach ($expectedUniqueConstraints as $constraintName => $columns) {
+            $normalizedExpected[$constraintName] = ['columns' => $columns, 'unique' => true];
         }
 
         $existingIndexes = [];
@@ -743,7 +799,9 @@ HELP
         }
 
         $indexesToAdd = [];
-        foreach ($expectedIndexes as $indexName => $columns) {
+        foreach ($normalizedExpected as $indexName => $data) {
+            $columns = $data['columns'];
+            $isUnique = $data['unique'] ?? false;
             if (!isset($existingIndexes[strtolower($indexName)])) {
                 // Check if all columns exist in the current table schema
                 $allColumnsExist = true;
@@ -755,7 +813,7 @@ HELP
                 }
 
                 if ($allColumnsExist) {
-                    $indexesToAdd[$indexName] = $columns;
+                    $indexesToAdd[$indexName] = ['columns' => $columns, 'unique' => $isUnique];
                 }
             }
         }
@@ -766,7 +824,9 @@ HELP
 
         $io->text(\sprintf('Adding <info>%d</info> missing index(es):', \count($indexesToAdd)));
 
-        foreach ($indexesToAdd as $indexName => $columns) {
+        foreach ($indexesToAdd as $indexName => $data) {
+            $columns = $data['columns'];
+            $isUnique = $data['unique'] ?? false;
             $quotedColumns = array_map(fn ($col) => $this->quoteIdentifier($platform, $col), $columns);
 
             // Get the actual table name from entity metadata
@@ -774,8 +834,10 @@ HELP
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->mainTableName.'_records');
 
+            $indexType = $isUnique ? 'UNIQUE INDEX' : 'INDEX';
             $sql = \sprintf(
-                'CREATE INDEX %s ON %s (%s)',
+                'CREATE %s %s ON %s (%s)',
+                $indexType,
                 $this->quoteIdentifier($platform, $indexName),
                 $this->quoteIdentifier($platform, $actualTableName),
                 implode(', ', $quotedColumns)
@@ -783,7 +845,7 @@ HELP
 
             try {
                 $connection->executeStatement($sql);
-                $io->text(\sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
+                $io->text(\sprintf('  ✓ Created %s <info>%s</info> on columns: %s', $isUnique ? 'unique index' : 'index', $indexName, implode(', ', $columns)));
             } catch (\Exception $e) {
                 $io->warning(\sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }

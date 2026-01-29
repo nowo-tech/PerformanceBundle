@@ -161,6 +161,7 @@ class PerformanceMetricsService
      * @param string|null $httpMethod       HTTP method (GET, POST, PUT, DELETE, etc.)
      * @param int|null    $statusCode       HTTP status code (200, 404, 500, etc.)
      * @param array<int>  $trackStatusCodes List of status codes to track
+     * @param string|null $requestId        Unique request ID to avoid duplicate access records for the same request
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -175,6 +176,7 @@ class PerformanceMetricsService
         ?string $httpMethod = null,
         ?int $statusCode = null,
         array $trackStatusCodes = [],
+        ?string $requestId = null,
     ): array {
         LogHelper::logf(
             '[PerformanceBundle] recordMetrics: START - route=%s, env=%s, async=%s, requestTime=%s, totalQueries=%s',
@@ -220,7 +222,8 @@ class PerformanceMetricsService
                 $queryTime,
                 $params,
                 $memoryUsage,
-                $httpMethod
+                $httpMethod,
+                $requestId
             );
             $this->messageBus->dispatch($message);
 
@@ -231,7 +234,7 @@ class PerformanceMetricsService
         // Otherwise, record synchronously
         LogHelper::log('[PerformanceBundle] recordMetrics: Recording synchronously', $this->enableLogging);
 
-        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes);
+        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes, $requestId);
     }
 
     /**
@@ -247,6 +250,7 @@ class PerformanceMetricsService
      * @param string|null $httpMethod       HTTP method (GET, POST, PUT, DELETE, etc.)
      * @param int|null    $statusCode       HTTP status code (200, 404, 500, etc.)
      * @param array<int>  $trackStatusCodes List of status codes to track
+     * @param string|null $requestId        Unique request ID to avoid duplicate access records for the same request
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -261,6 +265,7 @@ class PerformanceMetricsService
         ?string $httpMethod = null,
         ?int $statusCode = null,
         array $trackStatusCodes = [],
+        ?string $requestId = null,
     ): array {
         $isNew = false;
         $wasUpdated = false;
@@ -335,26 +340,39 @@ class PerformanceMetricsService
                 $this->cacheService->invalidateStatistics($env);
             }
 
-            // Create access record if enabled
+            // Create access record if enabled (one per request when requestId is set)
             if ($this->enableAccessRecords) {
-                $accessRecord = new RouteDataRecord();
-                $accessRecord->setRouteData($routeData);
-                $accessRecord->setAccessedAt(new \DateTimeImmutable());
-                $accessRecord->setStatusCode($statusCode);
+                $skipAccessRecord = false;
+                if (null !== $requestId && '' !== $requestId) {
+                    $existing = $this->recordRepository->findOneByRequestId($requestId);
+                    if (null !== $existing) {
+                        $skipAccessRecord = true;
+                    }
+                }
 
-                // responseTime in RouteDataRecord is the per-request duration,
-                // while RouteData::requestTime is an aggregate/representative value.
-                // We store the raw per-request time here for temporal analysis.
-                $accessRecord->setResponseTime($requestTime);
-                $accessRecord->setTotalQueries($totalQueries);
-                $accessRecord->setQueryTime($queryTime);
-                $accessRecord->setMemoryUsage($memoryUsage);
+                if (!$skipAccessRecord) {
+                    $accessRecord = new RouteDataRecord();
+                    $accessRecord->setRouteData($routeData);
+                    $accessRecord->setAccessedAt(new \DateTimeImmutable());
+                    $accessRecord->setStatusCode($statusCode);
 
-                $this->entityManager->persist($accessRecord);
+                    // responseTime in RouteDataRecord is the per-request duration,
+                    // while RouteData::requestTime is an aggregate/representative value.
+                    // We store the raw per-request time here for temporal analysis.
+                    $accessRecord->setResponseTime($requestTime);
+                    $accessRecord->setTotalQueries($totalQueries);
+                    $accessRecord->setQueryTime($queryTime);
+                    $accessRecord->setMemoryUsage($memoryUsage);
+                    if (null !== $requestId && '' !== $requestId) {
+                        $accessRecord->setRequestId($requestId);
+                    }
 
-                $err = error_reporting(0);
-                $this->entityManager->flush();
-                error_reporting($err);
+                    $this->entityManager->persist($accessRecord);
+
+                    $err = error_reporting(0);
+                    $this->entityManager->flush();
+                    error_reporting($err);
+                }
             }
 
             if (null !== $this->eventDispatcher) {

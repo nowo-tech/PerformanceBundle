@@ -23,9 +23,10 @@ class TableStatusChecker
     /**
      * Creates a new instance.
      *
-     * @param ManagerRegistry $registry       Doctrine registry
-     * @param string          $connectionName The name of the Doctrine connection to use
-     * @param string          $tableName      The configured table name
+     * @param ManagerRegistry $registry             Doctrine registry
+     * @param string          $connectionName       The name of the Doctrine connection to use
+     * @param string          $tableName            The configured table name
+     * @param bool            $enableAccessRecords  Whether access records (routes_data_records) are enabled
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
@@ -33,6 +34,8 @@ class TableStatusChecker
         private readonly string $connectionName,
         #[Autowire('%nowo_performance.table_name%')]
         private readonly string $tableName,
+        #[Autowire('%nowo_performance.enable_access_records%')]
+        private readonly bool $enableAccessRecords = false,
     ) {
     }
 
@@ -125,6 +128,16 @@ class TableStatusChecker
     public function getTableName(): string
     {
         return $this->tableName;
+    }
+
+    /**
+     * Whether access records (routes_data_records) are enabled.
+     *
+     * @return bool True if enable_access_records is true
+     */
+    public function isAccessRecordsEnabled(): bool
+    {
+        return $this->enableAccessRecords;
     }
 
     /**
@@ -237,5 +250,110 @@ class TableStatusChecker
         }
 
         return $expectedColumns;
+    }
+
+    /**
+     * Check if the access records table exists (only when enable_access_records is true).
+     *
+     * @return bool True if the table exists or access records are disabled, false otherwise
+     */
+    public function recordsTableExists(): bool
+    {
+        if (!$this->enableAccessRecords) {
+            return true; // N/A, consider "ok"
+        }
+
+        try {
+            $connection = $this->registry->getConnection($this->connectionName);
+            $schemaManager = $this->getSchemaManager($connection);
+            $recordsTableName = $this->getRecordsTableName();
+
+            return $schemaManager->tablesExist([$recordsTableName]);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the access records table is complete (exists and has all entity columns).
+     *
+     * @return bool True if table exists and has all required columns (or access records disabled)
+     */
+    public function recordsTableIsComplete(): bool
+    {
+        if (!$this->enableAccessRecords) {
+            return true;
+        }
+        if (!$this->recordsTableExists()) {
+            return false;
+        }
+
+        return empty($this->getRecordsMissingColumns());
+    }
+
+    /**
+     * Get list of missing columns in the access records table.
+     *
+     * @return array<string> List of missing column names (empty if access records disabled or table missing)
+     */
+    public function getRecordsMissingColumns(): array
+    {
+        if (!$this->enableAccessRecords) {
+            return [];
+        }
+
+        try {
+            $connection = $this->registry->getConnection($this->connectionName);
+            $schemaManager = $this->getSchemaManager($connection);
+            $entityManager = $this->registry->getManager($this->connectionName);
+            /** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+            $recordsTableName = $this->getRecordsTableName();
+
+            if (!$schemaManager->tablesExist([$recordsTableName])) {
+                return $this->getExpectedColumns($metadata);
+            }
+
+            $table = $schemaManager->introspectTable($recordsTableName);
+            $existingColumns = [];
+            foreach ($table->getColumns() as $column) {
+                $columnName = method_exists($column, 'getName') ? $column->getName() : '';
+                $columnName = \is_string($columnName) ? $columnName : (string) $columnName;
+                $columnName = trim($columnName, '`"\'');
+                $existingColumns[strtolower($columnName)] = true;
+            }
+
+            $expectedColumns = $this->getExpectedColumns($metadata);
+            $missingColumns = [];
+            foreach ($expectedColumns as $columnName) {
+                if (!isset($existingColumns[strtolower($columnName)])) {
+                    $missingColumns[] = $columnName;
+                }
+            }
+
+            return $missingColumns;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get the access records table name (from RouteDataRecord entity metadata).
+     *
+     * @return string Table name (e.g. routes_data_records)
+     */
+    public function getRecordsTableName(): string
+    {
+        try {
+            $entityManager = $this->registry->getManager($this->connectionName);
+            /** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+
+            return method_exists($metadata, 'getTableName')
+                ? $metadata->getTableName()
+                : ($metadata->table['name'] ?? $this->tableName.'_records');
+        } catch (\Exception $e) {
+            return $this->tableName.'_records';
+        }
     }
 }

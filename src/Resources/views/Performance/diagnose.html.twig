@@ -571,21 +571,104 @@
 
     </div>
 {% else %}
-    {# Tailwind version - similar structure but with Tailwind classes #}
-    <div class="min-h-screen bg-gray-50 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mb-6 flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Diagnóstico del Bundle</h1>
-                    <p class="text-gray-600 mt-1">Revisión completa de configuración y estado del sistema</p>
-                </div>
-                <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                    ← Volver al Dashboard
-                </a>
-            </div>
+    {# Tailwind version #}
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Diagnóstico del Bundle</h1>
+            <p class="text-gray-600 mt-1">Revisión completa de configuración y estado del sistema</p>
+        </div>
+        <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+            ← Volver al Dashboard
+        </a>
+    </div>
 
-            {# Similar structure with Tailwind classes #}
-            {# ... (similar content but with Tailwind styling) #}
+    {% if diagnostic.issues|length > 0 %}
+        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 overflow-hidden">
+            <div class="px-4 py-3 bg-red-600 text-white font-medium">⚠️ Problemas Detectados</div>
+            <ul class="px-4 py-3 list-disc list-inside text-red-800 space-y-1">
+                {% for issue in diagnostic.issues %}<li>{{ issue }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if diagnostic.warnings|length > 0 %}
+        <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 overflow-hidden">
+            <div class="px-4 py-3 bg-amber-500 text-white font-medium">⚠️ Advertencias</div>
+            <ul class="px-4 py-3 list-disc list-inside text-amber-800 space-y-1">
+                {% for warning in diagnostic.warnings %}<li>{{ warning }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if diagnostic.suggestions|length > 0 %}
+        <div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 overflow-hidden">
+            <div class="px-4 py-3 bg-blue-600 text-white font-medium">💡 Sugerencias</div>
+            <ul class="px-4 py-3 list-disc list-inside text-blue-800 space-y-1">
+                {% for suggestion in diagnostic.suggestions %}<li>{{ suggestion }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="space-y-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">📋 Configuración</h2>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Bundle Habilitado</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.configuration.bundle_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ diagnostic.configuration.bundle_enabled ? '✓ Sí' : '✗ No' }}</span></dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Tracking de Queries</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.configuration.track_queries ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">{{ diagnostic.configuration.track_queries ? '✓ Habilitado' : '✗ Deshabilitado' }}</span></dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Tracking de Request Time</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.configuration.track_request_time ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">{{ diagnostic.configuration.track_request_time ? '✓ Habilitado' : '✗ Deshabilitado' }}</span></dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Conexión</dt><dd><code class="text-sm bg-gray-100 px-1 rounded">{{ diagnostic.configuration.connection_name }}</code></dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Entornos Permitidos</dt><dd>{{ diagnostic.configuration.allowed_environments|join(', ') }}</dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Rutas Ignoradas</dt><dd>{% if diagnostic.configuration.ignore_routes|length > 0 %}<code class="text-sm">{{ diagnostic.configuration.ignore_routes|join(', ') }}</code> ({{ diagnostic.configuration.ignore_routes|length }}){% else %}<span class="text-gray-400">Ninguna</span>{% endif %}</dd></div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">🌍 Entorno</h2>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Entorno Actual</dt><dd><code class="text-sm bg-gray-100 px-1 rounded">{{ diagnostic.environment.current }}</code></dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Estado</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.environment.is_allowed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ diagnostic.environment.is_allowed ? '✓ Permitido' : '✗ No Permitido' }}</span></dd></div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">🗄️ Conexión a Base de Datos</h2>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Estado</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.database_connection.connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ diagnostic.database_connection.connected ? '✓ Conectado' : '✗ Desconectado' }}</span></dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Driver</dt><dd><code class="text-sm bg-gray-100 px-1 rounded">{{ diagnostic.database_connection.driver ?? 'N/A' }}</code></dd></div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">📊 Estado de las Tablas</h2>
+            <p class="text-sm text-gray-600 mb-2"><strong>Tabla principal:</strong> <code class="bg-gray-100 px-1 rounded">{{ diagnostic.table_status.main_table_name ?? 'N/A' }}</code> — <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.table_status.main_table_exists ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ diagnostic.table_status.main_table_exists ? '✓ Existe' : '✗ No existe' }}</span></p>
+            {% if diagnostic.configuration.enable_access_records %}
+                <p class="text-sm text-gray-600"><strong>Tabla de registros:</strong> <code class="bg-gray-100 px-1 rounded">{{ diagnostic.table_status.records_table_name ?? 'N/A' }}</code> — <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.table_status.records_table_exists ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ diagnostic.table_status.records_table_exists ? '✓ Existe' : '✗ No existe' }}</span></p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">📈 Estado de los Datos</h2>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Total de Registros</dt><dd class="font-semibold">{{ diagnostic.data_status.total_records }}</dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Hay Datos</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.data_status.has_data ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">{{ diagnostic.data_status.has_data ? '✓ Sí' : '✗ No' }}</span></dd></div>
+            </dl>
+        </div>
+
+        {% if diagnostic.subscriber_status is defined %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">⚙️ Estado del Subscriber</h2>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Subscriber Registrado</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.subscriber_status.subscriber_registered ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ diagnostic.subscriber_status.subscriber_registered ? '✓ Sí' : '✗ No' }}</span></dd></div>
+            </dl>
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">🛣️ Tracking de Rutas</h2>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Ruta Actual</dt><dd><code class="text-sm bg-gray-100 px-1 rounded">{{ diagnostic.route_tracking.current_route ?? 'N/A' }}</code></dd></div>
+                <div class="border-b border-gray-100 py-2"><dt class="text-sm text-gray-500">Ruta Ignorada</dt><dd><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ diagnostic.route_tracking.current_route_ignored ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800' }}">{{ diagnostic.route_tracking.current_route_ignored ? '⚠ Sí' : '✓ No' }}</span></dd></div>
+            </dl>
         </div>
     </div>
 {% endif %}

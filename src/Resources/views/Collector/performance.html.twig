@@ -479,6 +479,41 @@
                         {% endif %}
                     </td>
                 </tr>
+                {% if (collector.enableAccessRecords|default(false)) and (collector.recordsTableName is defined and collector.recordsTableName) %}
+                <tr>
+                    <td>Access Records Table</td>
+                    <td>
+                        <code>{{ collector.recordsTableName }}</code>
+                        {% if collector.recordsTableExists %}
+                            {% if collector.recordsTableIsComplete %}
+                                <span style="color: #4caf50; font-weight: bold;">✓ Complete</span>
+                                <span class="text-muted">(all columns present)</span>
+                            {% else %}
+                                <span style="color: #f57c00; font-weight: bold;">⚠ Incomplete</span>
+                                <span class="text-muted">(table exists but missing columns)</span>
+                                {% set missingColsRecords = collector.missingColumnsRecords|default([]) %}
+                                {% if missingColsRecords is not empty %}
+                                    <br>
+                                    <small style="color: #d32f2f; font-weight: bold;">
+                                        Missing columns: {{ missingColsRecords|join(', ') }}
+                                    </small>
+                                    <br>
+                                    <small class="text-muted">
+                                        Run: <code>php bin/console nowo:performance:sync-schema</code> or <code>nowo:performance:create-records-table --update</code>
+                                    </small>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #d32f2f; font-weight: bold;">✗ Does not exist</span>
+                            <span class="text-muted">(access records disabled or table not created)</span>
+                            <br>
+                            <small class="text-muted">
+                                Run: <code>php bin/console nowo:performance:create-records-table</code>
+                            </small>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
                 {% if collector.missingDependencies is defined and collector.missingDependencies is not empty %}
                     <tr>
                         <td colspan="2" style="background-color: #fff3cd; padding: 15px;">

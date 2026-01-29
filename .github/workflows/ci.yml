@@ -25,12 +25,15 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: json, pdo, pdo_mysql, pdo_pgsql
+          extensions: json, pdo, pdo_mysql, pdo_pgsql, yaml
           coverage: xdebug
           tools: composer:v2
 
       - name: Validate composer.json
         run: composer validate --strict
+
+      - name: Validate translation YAML files
+        run: php scripts/validate-translations-yaml.php src/Resources/translations
 
       - name: Get Composer cache directory
         id: composer-cache

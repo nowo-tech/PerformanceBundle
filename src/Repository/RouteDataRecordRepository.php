@@ -31,6 +31,18 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     }
 
     /**
+     * Find one access record by request ID (for deduplication).
+     *
+     * @param string $requestId The unique request identifier
+     *
+     * @return RouteDataRecord|null The record if found
+     */
+    public function findOneByRequestId(string $requestId): ?RouteDataRecord
+    {
+        return $this->findOneBy(['requestId' => $requestId], ['id' => 'ASC']);
+    }
+
+    /**
      * Get access statistics grouped by hour of day.
      *
      * This implementation performs grouping in PHP using DateTime formatting,

@@ -24,6 +24,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 #[ORM\Index(columns: ['accessed_at'], name: 'idx_record_accessed_at')]
 #[ORM\Index(columns: ['status_code'], name: 'idx_record_status_code')]
 #[ORM\Index(columns: ['route_data_id', 'accessed_at'], name: 'idx_record_route_accessed')]
+#[ORM\UniqueConstraint(name: 'uniq_record_request_id', columns: ['request_id'])]
 class RouteDataRecord
 {
     /**
@@ -76,6 +77,13 @@ class RouteDataRecord
      */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $memoryUsage = null;
+
+    /**
+     * Unique request identifier to avoid duplicate records for the same HTTP request
+     * (e.g. when main request and sub-requests both fire TERMINATE).
+     */
+    #[ORM\Column(type: Types::STRING, length: 64, nullable: true, unique: true)]
+    private ?string $requestId = null;
 
     /**
      * Creates a new instance.
@@ -245,6 +253,28 @@ class RouteDataRecord
     public function setMemoryUsage(?int $memoryUsage): self
     {
         $this->memoryUsage = $memoryUsage;
+
+        return $this;
+    }
+
+    /**
+     * Get the unique request identifier.
+     *
+     * @return string|null The request ID (null for records created before this field or from CLI)
+     */
+    public function getRequestId(): ?string
+    {
+        return $this->requestId;
+    }
+
+    /**
+     * Set the unique request identifier.
+     *
+     * @param string|null $requestId The request ID
+     */
+    public function setRequestId(?string $requestId): self
+    {
+        $this->requestId = $requestId;
 
         return $this;
     }

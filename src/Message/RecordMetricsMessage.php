@@ -26,6 +26,7 @@ final class RecordMetricsMessage
      * @param array|null  $params       Route parameters
      * @param int|null    $memoryUsage  Peak memory usage in bytes
      * @param string|null $httpMethod   HTTP method (GET, POST, PUT, DELETE, etc.)
+     * @param string|null $requestId    Unique request ID for deduplication of access records
      */
     public function __construct(
         private readonly string $routeName,
@@ -36,6 +37,7 @@ final class RecordMetricsMessage
         private readonly ?array $params = null,
         private readonly ?int $memoryUsage = null,
         private readonly ?string $httpMethod = null,
+        private readonly ?string $requestId = null,
     ) {
     }
 
@@ -85,5 +87,11 @@ final class RecordMetricsMessage
     public function getHttpMethod(): ?string
     {
         return $this->httpMethod;
+    }
+
+    /** @return string|null Unique request ID for deduplication */
+    public function getRequestId(): ?string
+    {
+        return $this->requestId;
     }
 }

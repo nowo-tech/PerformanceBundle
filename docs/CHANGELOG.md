@@ -11,6 +11,22 @@ _Nothing yet._
 
 ---
 
+## [2.0.2] - 2026-01-29
+
+### Added
+- **Request ID deduplication** – When access records are enabled, the bundle assigns a unique `request_id` per HTTP request (shared between main and sub-requests). At most one `RouteDataRecord` is created per logical request, avoiding duplicate entries when multiple `TERMINATE` events fire (e.g. main request + fragment).
+- **`routes_data_records`** – New optional column `request_id` (VARCHAR 64, nullable, unique). Existing records keep `request_id = NULL`. Run `php bin/console nowo:performance:sync-schema` or your Doctrine migrations after updating.
+- **Translation YAML validation** – Script `scripts/validate-translations-yaml.php` checks translation YAML files for valid syntax and duplicate keys. CI runs it in the test job. Composer: `composer validate-translations`; included in `composer qa`.
+- **Collector & diagnose: records table status** – When `enable_access_records` is true, the Web Profiler Performance panel shows **Access Records Table** (exists, complete, missing columns). TableStatusChecker gains `recordsTableExists()`, `recordsTableIsComplete()`, `getRecordsMissingColumns()`, `getRecordsTableName()`, `isAccessRecordsEnabled()`. CLI `nowo:performance:diagnose` includes a **Database Tables** section (main table + records table) with missing columns. Missing `request_id` (or any entity column) is detected and the UI suggests running `sync-schema` or `create-records-table --update`.
+
+### Fixed
+- **CreateRecordsTableCommand** – Creating the records table from scratch now sets `AUTO_INCREMENT` on the `id` column for MySQL/MariaDB. `--update` now creates missing **unique constraints** (e.g. `uniq_record_request_id` on `request_id`) and uses the same operation order as the main table (Drop → Add → Update).
+- **CreateTableCommand** – `addMissingIndexes()` now uses `getSchemaManager()` for DBAL 2.x compatibility.
+
+See [UPGRADING](UPGRADING.md#upgrading-to-202-2026-01-29) for migration steps.
+
+---
+
 ## [2.0.1] - 2026-01-28
 
 ### Added

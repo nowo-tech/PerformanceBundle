@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Command;
 
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
+use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,10 +28,12 @@ final class DiagnoseCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param ParameterBagInterface $parameterBag Parameter bag to check configuration
+     * @param ParameterBagInterface $parameterBag     Parameter bag to check configuration
+     * @param TableStatusChecker|null $tableStatusChecker Table status checker (optional)
      */
     public function __construct(
         private readonly ParameterBagInterface $parameterBag,
+        private readonly ?TableStatusChecker $tableStatusChecker = null,
     ) {
         parent::__construct();
     }
@@ -89,6 +92,50 @@ HELP
                 ['Environments', implode(', ', $environments)],
             ]
         );
+
+        // Check database tables (main + records table when enable_access_records)
+        if (null !== $this->tableStatusChecker) {
+            $io->section('Database Tables');
+            $mainExists = $this->tableStatusChecker->tableExists();
+            $mainComplete = $this->tableStatusChecker->tableIsComplete();
+            $mainName = $this->tableStatusChecker->getTableName();
+            $mainMissing = $this->tableStatusChecker->getMissingColumns();
+
+            $tableRows = [
+                [
+                    $mainName,
+                    $mainExists ? '✓ Yes' : '✗ No',
+                    $mainComplete ? '✓ Yes' : '✗ No',
+                    empty($mainMissing) ? '—' : implode(', ', $mainMissing),
+                ],
+            ];
+            if ($this->tableStatusChecker->isAccessRecordsEnabled()) {
+                $recordsExists = $this->tableStatusChecker->recordsTableExists();
+                $recordsComplete = $this->tableStatusChecker->recordsTableIsComplete();
+                $recordsName = $this->tableStatusChecker->getRecordsTableName();
+                $recordsMissing = $this->tableStatusChecker->getRecordsMissingColumns();
+                $tableRows[] = [
+                    $recordsName,
+                    $recordsExists ? '✓ Yes' : '✗ No',
+                    $recordsComplete ? '✓ Yes' : '✗ No',
+                    empty($recordsMissing) ? '—' : implode(', ', $recordsMissing),
+                ];
+            }
+            $io->table(['Table', 'Exists', 'Complete', 'Missing columns'], $tableRows);
+
+            if (!$mainExists) {
+                $io->note('Main table: php bin/console nowo:performance:create-table');
+            } elseif (!empty($mainMissing)) {
+                $io->note('Main table: php bin/console nowo:performance:create-table --update');
+            }
+            if ($this->tableStatusChecker->isAccessRecordsEnabled()) {
+                if (!$recordsExists) {
+                    $io->note('Records table: php bin/console nowo:performance:create-records-table');
+                } elseif (!empty($recordsMissing)) {
+                    $io->note('Records table: php bin/console nowo:performance:sync-schema or nowo:performance:create-records-table --update');
+                }
+            }
+        }
 
         // Check QueryTrackingMiddleware
         $io->section('Query Tracking Middleware');

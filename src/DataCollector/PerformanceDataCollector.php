@@ -288,6 +288,11 @@ class PerformanceDataCollector extends DataCollector
         $tableName = null;
         $missingColumns = [];
 
+        $recordsTableExists = null;
+        $recordsTableIsComplete = null;
+        $recordsTableName = null;
+        $missingColumnsRecords = [];
+
         if (null !== $this->tableStatusChecker) {
             try {
                 $tableExists = $this->tableStatusChecker->tableExists();
@@ -297,6 +302,16 @@ class PerformanceDataCollector extends DataCollector
                 // Get missing columns if table exists but is incomplete
                 if ($tableExists && !$tableIsComplete) {
                     $missingColumns = $this->tableStatusChecker->getMissingColumns();
+                }
+
+                // Records table status (only when enable_access_records is true)
+                if ($this->tableStatusChecker->isAccessRecordsEnabled()) {
+                    $recordsTableExists = $this->tableStatusChecker->recordsTableExists();
+                    $recordsTableIsComplete = $this->tableStatusChecker->recordsTableIsComplete();
+                    $recordsTableName = $this->tableStatusChecker->getRecordsTableName();
+                    if ($recordsTableExists && !$recordsTableIsComplete) {
+                        $missingColumnsRecords = $this->tableStatusChecker->getRecordsMissingColumns();
+                    }
                 }
             } catch (\Exception $e) {
                 // Silently fail if table check fails
@@ -362,6 +377,11 @@ class PerformanceDataCollector extends DataCollector
             'table_is_complete' => $tableIsComplete,
             'table_name' => $tableName,
             'missing_columns' => $missingColumns,
+            'records_table_exists' => $recordsTableExists,
+            'records_table_is_complete' => $recordsTableIsComplete,
+            'records_table_name' => $recordsTableName,
+            'missing_columns_records' => $missingColumnsRecords,
+            'enable_access_records' => $this->tableStatusChecker?->isAccessRecordsEnabled() ?? false,
             // Note: record_was_new and record_was_updated are set by setRecordOperation()
             // which is called in onKernelTerminate (after collect()). These values will be
             // updated in setRecordOperation() if the array already exists.

@@ -74,6 +74,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     private ?array $routeParams = null;
 
     /**
+     * Unique request ID for this HTTP request (used to avoid duplicate access records).
+     */
+    private ?string $requestId = null;
+
+    /**
      * Creates a new instance.
      *
      * @param PerformanceMetricsService $metricsService Service for recording metrics
@@ -263,6 +268,15 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Track initial memory usage
         $this->startMemory = memory_get_usage(true);
+
+        // Unique request ID for deduplication: one per logical request (main + sub-requests share the main's ID)
+        if ($event->isMainRequest()) {
+            $this->requestId = bin2hex(random_bytes(16));
+            $request->attributes->set('_performance_request_id', $this->requestId);
+        } else {
+            $mainRequest = $request->getMainRequest();
+            $this->requestId = $mainRequest?->attributes->get('_performance_request_id');
+        }
 
         // Track queries if enabled
         if ($this->trackQueries) {
@@ -507,7 +521,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $memoryUsage,
                 $httpMethod,
                 $statusCode,
-                $this->trackStatusCodes
+                $this->trackStatusCodes,
+                $this->requestId
             );
 
             LogHelper::logf(

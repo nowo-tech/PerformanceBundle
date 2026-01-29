@@ -3,21 +3,22 @@
 {% block title %}{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}{% endblock %}
 
 {% block content %}
+{% set export_params = {
+    env: environment,
+    start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '',
+    end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '',
+    route: selected_route ?? '',
+    status_code: selected_status_code ?? '',
+    min_query_time: filterForm.min_query_time.vars.value ?? '',
+    max_query_time: filterForm.max_query_time.vars.value ?? '',
+    min_memory_mb: filterForm.min_memory_mb.vars.value ?? '',
+    max_memory_mb: filterForm.max_memory_mb.vars.value ?? ''
+} %}
+{% if template == 'bootstrap' %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}</h1>
             <div>
-                {% set export_params = {
-                    env: environment,
-                    start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '',
-                    end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '',
-                    route: selected_route ?? '',
-                    status_code: selected_status_code ?? '',
-                    min_query_time: filterForm.min_query_time.vars.value ?? '',
-                    max_query_time: filterForm.max_query_time.vars.value ?? '',
-                    min_memory_mb: filterForm.min_memory_mb.vars.value ?? '',
-                    max_memory_mb: filterForm.max_memory_mb.vars.value ?? ''
-                } %}
                 <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="btn btn-success me-2">
                     {{ 'access_statistics.export_records_csv'|trans({}, 'nowo_performance') }}
                 </a>
@@ -33,7 +34,6 @@
             </div>
         </div>
 
-        {# Filters – FormType (RecordFiltersType) #}
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h5>
@@ -62,7 +62,6 @@
             </div>
         </div>
 
-        {# Records Table #}
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ 'access_statistics.records'|trans({}, 'nowo_performance') }}</h5>
@@ -214,4 +213,162 @@
             </div>
         </div>
     </div>
+{% else %}
+    {# Tailwind #}
+    <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+        <h1 class="text-3xl font-bold text-gray-900">{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}</h1>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">{{ 'access_statistics.export_records_csv'|trans({}, 'nowo_performance') }}</a>
+            <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.export_records_json'|trans({}, 'nowo_performance') }}</a>
+            <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.back_to_statistics'|trans({}, 'nowo_performance') }}</a>
+            <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">{{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}</a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h2>
+        {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'space-y-4'}}) }}
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    {{ form_label(filterForm.start_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.start_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.start_date) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.end_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.end_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.end_date) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.env, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.env, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.env) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.route, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.route, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.route) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.status_code, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.status_code, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                    {{ form_errors(filterForm.status_code) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.min_query_time, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.min_query_time, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '0.001'}}) }}
+                    {{ form_errors(filterForm.min_query_time) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.max_query_time, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.max_query_time, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '5'}}) }}
+                    {{ form_errors(filterForm.max_query_time) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.min_memory_mb, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.min_memory_mb, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '0'}}) }}
+                    {{ form_errors(filterForm.min_memory_mb) }}
+                </div>
+                <div>
+                    {{ form_label(filterForm.max_memory_mb, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(filterForm.max_memory_mb, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '100'}}) }}
+                    {{ form_errors(filterForm.max_memory_mb) }}
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 pt-2">
+                {{ form_widget(filterForm.filter, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}
+                <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
+            </div>
+        {{ form_end(filterForm, {'render_rest': false}) }}
+        {% if enable_record_management|default(false) %}
+            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                {{ form_widget(deleteByFilterForm, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700'}}) }}
+            {{ form_end(deleteByFilterForm) }}
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.records'|trans({}, 'nowo_performance') }}</h2>
+            <span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">{{ 'access_statistics.total_records'|trans({}, 'nowo_performance') }}: {{ paginated_data.total|number_format }}</span>
+        </div>
+        <div class="overflow-x-auto">
+            {% if paginated_data.records|length > 0 %}
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.timestamp'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.route'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.status_code'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.response_time'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.total_queries'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.query_time'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.memory_usage'|trans({}, 'nowo_performance') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for record in paginated_data.records %}
+                    <tr>
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ record.accessedAt|date(dateTimeFormat) }}</td>
+                        <td class="px-4 py-3 text-sm"><code class="bg-gray-100 px-1 rounded">{{ record.routeData.name ?? 'N/A' }}</code></td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if record.statusCode %}
+                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ record.statusCode >= 200 and record.statusCode < 300 ? 'bg-green-100 text-green-800' : (record.statusCode >= 400 and record.statusCode < 500 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800') }}">{{ record.statusCode }}</span>
+                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if record.responseTime is not null %}
+                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ record.responseTime > 1.0 ? 'bg-red-100 text-red-800' : (record.responseTime > 0.5 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800') }}">{{ (record.responseTime * 1000)|number_format(0) }}ms</span>
+                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">{% if record.totalQueries is not null %}<span class="inline-flex px-2 py-0.5 rounded bg-gray-100 text-gray-800">{{ record.totalQueries }}</span>{% else %}<span class="text-gray-400">N/A</span>{% endif %}</td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if record.queryTime is not null %}
+                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ record.queryTime > 1.0 ? 'bg-red-100 text-red-800' : (record.queryTime > 0.5 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800') }}">{{ (record.queryTime * 1000)|number_format(0) }}ms</span>
+                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if record.memoryUsage is not null %}
+                                {% set mem_mb = record.memoryUsage / 1024 / 1024 %}
+                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ mem_mb > 50 ? 'bg-red-100 text-red-800' : (mem_mb > 20 ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800') }}">{% if mem_mb >= 1 %}{{ mem_mb|number_format(2) }} MB{% else %}{{ (record.memoryUsage / 1024)|number_format(0) }} KB{% endif %}</span>
+                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if paginated_data.total_pages > 1 %}
+                {% set pagination_params = {
+                    env: environment,
+                    start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '',
+                    end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '',
+                    route: selected_route,
+                    status_code: selected_status_code,
+                    min_query_time: filterForm.min_query_time.vars.value ?? '',
+                    max_query_time: filterForm.max_query_time.vars.value ?? '',
+                    min_memory_mb: filterForm.min_memory_mb.vars.value ?? '',
+                    max_memory_mb: filterForm.max_memory_mb.vars.value ?? '',
+                    per_page: paginated_data.per_page
+                } %}
+                <nav class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+                    <p class="text-sm text-gray-600">
+                        {{ 'access_statistics.showing'|trans({}, 'nowo_performance') }} {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }} {{ 'access_statistics.of'|trans({}, 'nowo_performance') }} {{ paginated_data.total|number_format }}
+                    </p>
+                    <div class="flex gap-2">
+                        {% if paginated_data.page > 1 %}
+                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page - 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.previous'|trans({}, 'nowo_performance') }}</a>
+                        {% endif %}
+                        {% if paginated_data.page < paginated_data.total_pages %}
+                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page + 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.next'|trans({}, 'nowo_performance') }}</a>
+                        {% endif %}
+                    </div>
+                </nav>
+            {% endif %}
+            {% else %}
+            <div class="px-4 py-12 text-center text-gray-500">{{ 'access_statistics.no_records'|trans({}, 'nowo_performance') }}</div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
 {% endblock %}
