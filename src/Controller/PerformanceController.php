@@ -430,12 +430,12 @@ class PerformanceController extends AbstractController
 
         return [
             'total_routes' => \count($routes),
-            'avg_queries' => $queryCounts !== [] ? array_sum($queryCounts) / \count($queryCounts) : 0.0,
-            'max_queries' => $queryCounts !== [] ? max($queryCounts) : 0,
-            'avg_request_time' => $requestTimes !== [] ? array_sum($requestTimes) / \count($requestTimes) : 0.0,
-            'avg_query_time' => $queryTimes !== [] ? array_sum($queryTimes) / \count($queryTimes) : 0.0,
-            'max_request_time' => $requestTimes !== [] ? max($requestTimes) : 0.0,
-            'max_query_time' => $queryTimes !== [] ? max($queryTimes) : 0.0,
+            'avg_queries' => [] !== $queryCounts ? array_sum($queryCounts) / \count($queryCounts) : 0.0,
+            'max_queries' => [] !== $queryCounts ? max($queryCounts) : 0,
+            'avg_request_time' => [] !== $requestTimes ? array_sum($requestTimes) / \count($requestTimes) : 0.0,
+            'avg_query_time' => [] !== $queryTimes ? array_sum($queryTimes) / \count($queryTimes) : 0.0,
+            'max_request_time' => [] !== $requestTimes ? max($requestTimes) : 0.0,
+            'max_query_time' => [] !== $queryTimes ? max($queryTimes) : 0.0,
         ];
     }
 

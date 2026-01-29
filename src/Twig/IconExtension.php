@@ -29,7 +29,7 @@ class IconExtension extends AbstractExtension
      * Render an icon using UX Icons (ux_icon).
      *
      * @param string               $name    Icon name with optional prefix (e.g. "bi:gear", "heroicons:check")
-     * @param array<string, mixed>  $options Attributes for the SVG (class, style, etc.)
+     * @param array<string, mixed> $options Attributes for the SVG (class, style, etc.)
      *
      * @return string Rendered icon HTML
      */
