@@ -90,12 +90,12 @@ class ReviewRouteDataType extends AbstractType
         }
 
         $builder->add('submit', SubmitType::class, [
-                'label' => $submitLabel,
-                'translation_domain' => 'nowo_performance',
-                'attr' => [
-                    'class' => 'btn btn-primary',
-                ],
-            ]);
+            'label' => $submitLabel,
+            'translation_domain' => 'nowo_performance',
+            'attr' => [
+                'class' => 'btn btn-primary',
+            ],
+        ]);
     }
 
     /**

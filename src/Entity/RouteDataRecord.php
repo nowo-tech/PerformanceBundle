@@ -314,7 +314,7 @@ class RouteDataRecord
      */
     public function setReferer(?string $referer): self
     {
-        $this->referer = $referer !== null && \strlen($referer) > 2048 ? substr($referer, 0, 2048) : $referer;
+        $this->referer = null !== $referer && \strlen($referer) > 2048 ? substr($referer, 0, 2048) : $referer;
 
         return $this;
     }
@@ -336,7 +336,7 @@ class RouteDataRecord
      */
     public function setUserIdentifier(?string $userIdentifier): self
     {
-        $this->userIdentifier = $userIdentifier !== null && \strlen($userIdentifier) > 255 ? substr($userIdentifier, 0, 255) : $userIdentifier;
+        $this->userIdentifier = null !== $userIdentifier && \strlen($userIdentifier) > 255 ? substr($userIdentifier, 0, 255) : $userIdentifier;
 
         return $this;
     }
@@ -358,7 +358,7 @@ class RouteDataRecord
      */
     public function setUserId(?string $userId): self
     {
-        $this->userId = $userId !== null && \strlen($userId) > 64 ? substr($userId, 0, 64) : $userId;
+        $this->userId = null !== $userId && \strlen($userId) > 64 ? substr($userId, 0, 64) : $userId;
 
         return $this;
     }
