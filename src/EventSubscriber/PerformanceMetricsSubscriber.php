@@ -274,7 +274,16 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->requestId = bin2hex(random_bytes(16));
             $request->attributes->set('_performance_request_id', $this->requestId);
         } else {
-            $mainRequest = $request->getMainRequest();
+            // Use RequestStack to support Symfony < 5.3 where Request::getMainRequest() does not exist
+            $mainRequest = null;
+            if (null !== $this->requestStack) {
+                $mainRequest = method_exists($this->requestStack, 'getMainRequest')
+                    ? $this->requestStack->getMainRequest()
+                    : $this->requestStack->getMasterRequest();
+            }
+            if (null === $mainRequest && method_exists($request, 'getMainRequest')) {
+                $mainRequest = $request->getMainRequest();
+            }
             $this->requestId = $mainRequest?->attributes->get('_performance_request_id');
         }
 
