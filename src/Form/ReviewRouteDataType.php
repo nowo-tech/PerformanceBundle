@@ -32,9 +32,9 @@ class ReviewRouteDataType extends AbstractType
         $timeData = '';
         if ($routeData instanceof RouteData) {
             $q = $routeData->getQueriesImproved();
-            $queriesData = $q === true ? '1' : ($q === false ? '0' : '');
+            $queriesData = true === $q ? '1' : (false === $q ? '0' : '');
             $t = $routeData->getTimeImproved();
-            $timeData = $t === true ? '1' : ($t === false ? '0' : '');
+            $timeData = true === $t ? '1' : (false === $t ? '0' : '');
         }
 
         $submitLabel = ($routeData instanceof RouteData && $routeData->isReviewed())
