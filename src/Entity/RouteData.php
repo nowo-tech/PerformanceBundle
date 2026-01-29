@@ -104,6 +104,13 @@ class RouteData
     private ?string $reviewedBy = null;
 
     /**
+     * Whether to save access records (RouteDataRecord) for this route.
+     * When false, metrics are still aggregated in RouteData but individual access records are not stored.
+     */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $saveAccessRecords = true;
+
+    /**
      * Creates a new instance.
      */
     public function __construct()
@@ -467,6 +474,28 @@ class RouteData
                 $accessRecord->setRouteData(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * Whether to save access records for this route.
+     *
+     * @return bool True to save access records (default), false to skip
+     */
+    public function getSaveAccessRecords(): bool
+    {
+        return $this->saveAccessRecords;
+    }
+
+    /**
+     * Set whether to save access records for this route.
+     *
+     * @param bool $saveAccessRecords True to save access records, false to skip
+     */
+    public function setSaveAccessRecords(bool $saveAccessRecords): self
+    {
+        $this->saveAccessRecords = $saveAccessRecords;
 
         return $this;
     }

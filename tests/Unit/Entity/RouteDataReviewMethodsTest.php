@@ -138,4 +138,27 @@ final class RouteDataReviewMethodsTest extends TestCase
         $this->assertFalse($routeData->getTimeImproved());
         $this->assertSame('new_user', $routeData->getReviewedBy());
     }
+
+    public function testGetSaveAccessRecordsDefaultsToTrue(): void
+    {
+        $routeData = new RouteData();
+        $this->assertTrue($routeData->getSaveAccessRecords());
+    }
+
+    public function testSetSaveAccessRecords(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setSaveAccessRecords(false);
+        $this->assertFalse($routeData->getSaveAccessRecords());
+
+        $routeData->setSaveAccessRecords(true);
+        $this->assertTrue($routeData->getSaveAccessRecords());
+    }
+
+    public function testSetSaveAccessRecordsReturnsSelf(): void
+    {
+        $routeData = new RouteData();
+        $result = $routeData->setSaveAccessRecords(false);
+        $this->assertSame($routeData, $result);
+    }
 }

@@ -3671,6 +3671,97 @@ final class PerformanceControllerTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $result);
     }
 
+    public function testReviewUpdatesSaveAccessRecordsWhenEnableAccessRecordsTrue(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setId(1);
+        $routeData->setName('test_route');
+        $routeData->setEnv('dev');
+        $routeData->setSaveAccessRecords(true);
+
+        $entityManager = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $entityManager->expects($this->atLeastOnce())->method('flush');
+
+        $repository = $this->createMock(RouteDataRepository::class);
+        $repository->method('find')->with(1)->willReturn($routeData);
+        $repository->method('markAsReviewed')->with(1, null, null, null)->willReturn(true);
+        $repository->method('getEntityManager')->willReturn($entityManager);
+
+        $this->metricsService->method('getRepository')->willReturn($repository);
+
+        $form = $this->createMock(\Symfony\Component\Form\FormInterface::class);
+        $form->method('isSubmitted')->willReturn(true);
+        $form->method('isValid')->willReturn(true);
+        $form->method('getData')->willReturn([
+            'queries_improved' => '',
+            'time_improved' => '',
+            'save_access_records' => false,
+        ]);
+        $form->method('handleRequest')->willReturnSelf();
+
+        $controller = $this->getMockBuilder(PerformanceController::class)
+            ->setConstructorArgs([
+                $this->metricsService,
+                null,
+                true,
+                [],
+                'bootstrap',
+                null,
+                null,
+                null,
+                false,
+                true, // enableReviewSystem
+                null,
+                0.5,
+                1.0,
+                20,
+                50,
+                20.0,
+                50.0,
+                'Y-m-d H:i:s',
+                'Y-m-d H:i',
+                0,
+                [200, 404, 500, 503],
+                null,
+                true,  // enableAccessRecords
+                true,
+                ['dev', 'test'],
+                'default',
+                true,
+                true,
+                false,
+                [],
+                false,
+                1.0,
+                true,
+            ])
+            ->onlyMethods(['createForm', 'addFlash', 'redirectToRoute', 'getUser'])
+            ->getMock();
+
+        $request = new Request();
+        $request->setMethod('POST');
+
+        $controller->expects($this->once())
+            ->method('createForm')
+            ->willReturn($form);
+
+        $controller->expects($this->once())
+            ->method('getUser')
+            ->willReturn(null);
+
+        $controller->expects($this->once())
+            ->method('addFlash')
+            ->with('success', $this->anything());
+
+        $controller->expects($this->once())
+            ->method('redirectToRoute')
+            ->willReturn(new RedirectResponse('/performance'));
+
+        $controller->review(1, $request);
+
+        $this->assertFalse($routeData->getSaveAccessRecords());
+    }
+
     public function testClearHandlesException(): void
     {
         $repository = $this->createMock(RouteDataRepository::class);

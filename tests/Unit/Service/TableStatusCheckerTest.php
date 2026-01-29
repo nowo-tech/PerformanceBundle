@@ -38,10 +38,83 @@ final class TableStatusCheckerTest extends TestCase
         $checker = new TableStatusChecker(
             $this->registry,
             'default',
-            'routes_data'
+            'routes_data',
+            false
         );
-        
+
         $this->assertSame('routes_data', $checker->getTableName());
+    }
+
+    public function testIsAccessRecordsEnabledReturnsFalseByDefault(): void
+    {
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data',
+            false
+        );
+
+        $this->assertFalse($checker->isAccessRecordsEnabled());
+    }
+
+    public function testIsAccessRecordsEnabledReturnsTrueWhenConfigured(): void
+    {
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data',
+            true
+        );
+
+        $this->assertTrue($checker->isAccessRecordsEnabled());
+    }
+
+    public function testRecordsTableExistsReturnsTrueWhenAccessRecordsDisabled(): void
+    {
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data',
+            false
+        );
+
+        $this->assertTrue($checker->recordsTableExists());
+    }
+
+    public function testRecordsTableIsCompleteReturnsTrueWhenAccessRecordsDisabled(): void
+    {
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data',
+            false
+        );
+
+        $this->assertTrue($checker->recordsTableIsComplete());
+    }
+
+    public function testGetRecordsMissingColumnsReturnsEmptyWhenAccessRecordsDisabled(): void
+    {
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data',
+            false
+        );
+
+        $this->assertSame([], $checker->getRecordsMissingColumns());
+    }
+
+    public function testGetRecordsTableNameReturnsSuffixWhenAccessRecordsDisabled(): void
+    {
+        $checker = new TableStatusChecker(
+            $this->registry,
+            'default',
+            'routes_data',
+            false
+        );
+
+        $this->assertSame('routes_data_records', $checker->getRecordsTableName());
     }
 
     public function testTableExistsReturnsTrueWhenTableExists(): void

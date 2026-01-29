@@ -133,7 +133,7 @@ nowo_performance:
 **Type:** `boolean`  
 **Default:** `false`
 
-Enable temporal access records tracking. When enabled, creates individual records for each route access with timestamp, HTTP status code, and response time in a separate `routes_data_records` table. Useful for analyzing access patterns by time of day, hour, or specific time periods.
+Enable temporal access records tracking. When enabled, creates individual records for each route access with timestamp, HTTP status code, response time, query time, memory usage, request ID, and HTTP Referer (when sent) in a separate `routes_data_records` table. Useful for analyzing access patterns by time of day, hour, or specific time periods. You can disable saving access records per route in the review/config modal (**Save access records for this route**).
 
 When this option is enabled, the `nowo:performance:create-table` command will automatically create the `routes_data_records` table along with the main `routes_data` table.
 

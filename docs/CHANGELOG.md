@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- _Nothing yet._
+
+---
+
+## [2.0.4] - 2026-01-28
+
+### Added
+- **Access records: HTTP Referer** – When access records are enabled, each `RouteDataRecord` now stores the HTTP `Referer` header (page that linked to the request). New column `referer` (VARCHAR 2048, nullable) on `routes_data_records`. The Access Records UI shows a Referer column (with link); CSV and JSON exports include the referer. Run `php bin/console nowo:performance:create-table --update` or `nowo:performance:sync-schema` after updating.
+- **Per-route: disable saving access records** – When access records are enabled, you can now turn off saving access records for individual routes. In the review/config modal for each route (same form as "Mark as reviewed"), a checkbox **"Save access records for this route"** appears. If unchecked, the bundle still updates aggregate metrics (RouteData) for that route but does not create new `RouteDataRecord` rows. Useful for high-traffic or internal routes where you want aggregates but not per-request history. New column `save_access_records` (boolean, default true) on `routes_data`. Run `php bin/console nowo:performance:create-table --update` or `nowo:performance:sync-schema` after updating.
+
+See [UPGRADING](UPGRADING.md#upgrading-to-204-2026-01-28) for migration steps.
 
 ---
 

@@ -142,9 +142,11 @@ final class RouteDataRecordTest extends TestCase
             ->setResponseTime(0.5)
             ->setTotalQueries(10)
             ->setQueryTime(0.2)
-            ->setMemoryUsage(2048);
+            ->setMemoryUsage(2048)
+            ->setRequestId('req-fluent');
 
         $this->assertSame($this->record, $result);
+        $this->assertSame('req-fluent', $this->record->getRequestId());
     }
 
     public function testSetMemoryUsageWithZero(): void
@@ -165,4 +167,23 @@ final class RouteDataRecordTest extends TestCase
         $this->record->setQueryTime(0.0);
         $this->assertSame(0.0, $this->record->getQueryTime());
     }
-}
+
+    public function testRequestIdIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getRequestId());
+    }
+
+    public function testSetAndGetRequestId(): void
+    {
+        $this->record->setRequestId('abc123def456');
+        $this->assertSame('abc123def456', $this->record->getRequestId());
+
+        $this->record->setRequestId(null);
+        $this->assertNull($this->record->getRequestId());
+    }
+
+    public function testSetRequestIdReturnsSelf(): void
+    {
+        $result = $this->record->setRequestId('req-xyz');
+        $this->assertSame($this->record, $result);
+    }

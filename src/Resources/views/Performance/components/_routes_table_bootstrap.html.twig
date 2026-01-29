@@ -262,6 +262,13 @@
                                                                                 {{ form_errors(reviewForm.time_improved) }}
                                                                             {% endif %}
                                                                         </div>
+                                                                        {% if reviewForm.save_access_records is defined %}
+                                                                        <div class="mb-3 form-check">
+                                                                            {{ form_widget(reviewForm.save_access_records) }}
+                                                                            {{ form_label(reviewForm.save_access_records) }}
+                                                                            {{ form_errors(reviewForm.save_access_records) }}
+                                                                        </div>
+                                                                        {% endif %}
                                                                     </div>
                                                                     <div class="modal-footer">
                                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'routes_table.cancel'|trans({}, 'nowo_performance') }}</button>

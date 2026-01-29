@@ -388,6 +388,47 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $this->assertSame(5, $result);
     }
 
+    public function testFindOneByRequestIdCallsFindOneByWithCorrectCriteria(): void
+    {
+        $existingRecord = new RouteDataRecord();
+        $existingRecord->setRequestId('req-xyz');
+
+        /** @var RouteDataRecordRepository&MockObject $repository */
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['findOneBy'])
+            ->getMock();
+
+        $repository
+            ->expects($this->once())
+            ->method('findOneBy')
+            ->with(['requestId' => 'req-xyz'], ['id' => 'ASC'])
+            ->willReturn($existingRecord);
+
+        $result = $repository->findOneByRequestId('req-xyz');
+
+        $this->assertSame($existingRecord, $result);
+    }
+
+    public function testFindOneByRequestIdReturnsNullWhenNoRecord(): void
+    {
+        /** @var RouteDataRecordRepository&MockObject $repository */
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['findOneBy'])
+            ->getMock();
+
+        $repository
+            ->expects($this->once())
+            ->method('findOneBy')
+            ->with(['requestId' => 'req-nonexistent'], ['id' => 'ASC'])
+            ->willReturn(null);
+
+        $result = $repository->findOneByRequestId('req-nonexistent');
+
+        $this->assertNull($result);
+    }
+
     public function testDeleteByEnvironmentReturnsDeletedCount(): void
     {
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)

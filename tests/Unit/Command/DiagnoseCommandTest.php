@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
 use Nowo\PerformanceBundle\Command\DiagnoseCommand;
+use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -107,5 +108,72 @@ final class DiagnoseCommandTest extends TestCase
         $this->assertStringContainsString('QueryTrackingMiddleware class is available', $output);
         $this->assertStringContainsString('Query Tracking Status', $output);
         $this->assertStringContainsString('How Query Tracking Works', $output);
+    }
+
+    public function testExecuteShowsDatabaseTablesSectionWhenTableStatusCheckerInjected(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+            return match ($key) {
+                'nowo_performance.enabled' => true,
+                'nowo_performance.track_queries' => true,
+                'nowo_performance.track_request_time' => true,
+                'nowo_performance.connection' => 'default',
+                'nowo_performance.environments' => ['dev'],
+                default => null,
+            };
+        });
+
+        $checker = $this->createMock(TableStatusChecker::class);
+        $checker->method('tableExists')->willReturn(true);
+        $checker->method('tableIsComplete')->willReturn(true);
+        $checker->method('getTableName')->willReturn('routes_data');
+        $checker->method('getMissingColumns')->willReturn([]);
+        $checker->method('isAccessRecordsEnabled')->willReturn(false);
+
+        $command = new DiagnoseCommand($this->parameterBag, $checker);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Database Tables', $output);
+        $this->assertStringContainsString('routes_data', $output);
+    }
+
+    public function testExecuteShowsRecordsTableRowAndNoteWhenAccessRecordsEnabledAndColumnsMissing(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+            return match ($key) {
+                'nowo_performance.enabled' => true,
+                'nowo_performance.track_queries' => true,
+                'nowo_performance.track_request_time' => true,
+                'nowo_performance.connection' => 'default',
+                'nowo_performance.environments' => ['dev'],
+                default => null,
+            };
+        });
+
+        $checker = $this->createMock(TableStatusChecker::class);
+        $checker->method('tableExists')->willReturn(true);
+        $checker->method('tableIsComplete')->willReturn(true);
+        $checker->method('getTableName')->willReturn('routes_data');
+        $checker->method('getMissingColumns')->willReturn([]);
+        $checker->method('isAccessRecordsEnabled')->willReturn(true);
+        $checker->method('recordsTableExists')->willReturn(true);
+        $checker->method('recordsTableIsComplete')->willReturn(false);
+        $checker->method('getRecordsTableName')->willReturn('routes_data_records');
+        $checker->method('getRecordsMissingColumns')->willReturn(['request_id']);
+
+        $command = new DiagnoseCommand($this->parameterBag, $checker);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Database Tables', $output);
+        $this->assertStringContainsString('routes_data_records', $output);
+        $this->assertStringContainsString('request_id', $output);
+        $this->assertStringContainsString('sync-schema', $output);
+        $this->assertStringContainsString('create-records-table', $output);
     }
 }

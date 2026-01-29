@@ -103,6 +103,22 @@ final class PerformanceMetricsSubscriberTest extends TestCase
         $this->subscriber->onKernelRequest($event);
     }
 
+    public function testOnKernelRequestMainRequestSetsPerformanceRequestIdAttribute(): void
+    {
+        $this->kernel->method('getEnvironment')->willReturn('dev');
+
+        $request = Request::create('/');
+        $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+
+        $this->subscriber->onKernelRequest($event);
+
+        $this->assertTrue($request->attributes->has('_performance_request_id'));
+        $requestId = $request->attributes->get('_performance_request_id');
+        $this->assertIsString($requestId);
+        $this->assertSame(32, \strlen($requestId));
+        $this->assertMatchesRegularExpression('/^[a-f0-9]+$/', $requestId);
+    }
+
     public function testOnKernelRequestWhenSubRequestAndTrackSubRequestsEnabled(): void
     {
         $subscriber = new PerformanceMetricsSubscriber(

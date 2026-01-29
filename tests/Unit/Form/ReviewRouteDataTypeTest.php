@@ -86,4 +86,58 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
         $this->assertSame('', $data['queries_improved']);
         $this->assertSame('', $data['time_improved']);
     }
+
+    public function testBuildFormWithEnableAccessRecordsAddsSaveAccessRecordsField(): void
+    {
+        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData->setSaveAccessRecords(true);
+
+        $form = $this->factory->create(ReviewRouteDataType::class, null, [
+            'route_data' => $routeData,
+            'enable_access_records' => true,
+        ]);
+
+        $this->assertTrue($form->has('save_access_records'));
+        $this->assertTrue($form->get('save_access_records')->getData());
+    }
+
+    public function testBuildFormWithEnableAccessRecordsAndRouteSaveAccessRecordsFalse(): void
+    {
+        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData->setSaveAccessRecords(false);
+
+        $form = $this->factory->create(ReviewRouteDataType::class, null, [
+            'route_data' => $routeData,
+            'enable_access_records' => true,
+        ]);
+
+        $this->assertTrue($form->has('save_access_records'));
+        $this->assertFalse($form->get('save_access_records')->getData());
+    }
+
+    public function testBuildFormWithoutEnableAccessRecordsDoesNotAddSaveAccessRecordsField(): void
+    {
+        $form = $this->factory->create(ReviewRouteDataType::class, null, [
+            'enable_access_records' => false,
+        ]);
+
+        $this->assertFalse($form->has('save_access_records'));
+    }
+
+    public function testFormSubmissionWithSaveAccessRecordsWhenEnabled(): void
+    {
+        $form = $this->factory->create(ReviewRouteDataType::class, null, [
+            'enable_access_records' => true,
+        ]);
+
+        $form->submit([
+            'queries_improved' => '',
+            'time_improved' => '',
+            'save_access_records' => false,
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertFalse($data['save_access_records']);
+    }
 }

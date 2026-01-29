@@ -27,6 +27,7 @@ final class RecordMetricsMessage
      * @param int|null    $memoryUsage  Peak memory usage in bytes
      * @param string|null $httpMethod   HTTP method (GET, POST, PUT, DELETE, etc.)
      * @param string|null $requestId    Unique request ID for deduplication of access records
+     * @param string|null $referer      HTTP Referer header (page that linked to this request)
      */
     public function __construct(
         private readonly string $routeName,
@@ -38,6 +39,7 @@ final class RecordMetricsMessage
         private readonly ?int $memoryUsage = null,
         private readonly ?string $httpMethod = null,
         private readonly ?string $requestId = null,
+        private readonly ?string $referer = null,
     ) {
     }
 
@@ -93,5 +95,11 @@ final class RecordMetricsMessage
     public function getRequestId(): ?string
     {
         return $this->requestId;
+    }
+
+    /** @return string|null HTTP Referer header */
+    public function getReferer(): ?string
+    {
+        return $this->referer;
     }
 }

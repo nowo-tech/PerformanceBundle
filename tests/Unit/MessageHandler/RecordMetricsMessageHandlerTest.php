@@ -42,7 +42,10 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 0.2,
                 ['id' => 123],
                 1048576,
-                'GET'
+                'GET',
+                null,
+                [],
+                null
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -72,6 +75,67 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 null,
+                null,
+                null,
+                [],
+                null
+            );
+
+        $handler = new RecordMetricsMessageHandler($this->metricsService);
+        $handler($message);
+    }
+
+    public function testInvokePassesRequestIdToRecordMetrics(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            'req-abc123'
+        );
+
+        $this->metricsService->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'app_home',
+                'dev',
+                0.5,
+                10,
+                0.2,
+                null,
+                null,
+                'GET',
+                null,
+                [],
+                'req-abc123'
+            );
+
+        $handler = new RecordMetricsMessageHandler($this->metricsService);
+        $handler($message);
+    }
+
+    public function testInvokePassesNullRequestIdWhenMessageHasNoRequestId(): void
+    {
+        $message = new RecordMetricsMessage('app_home', 'dev', 0.5, 5);
+
+        $this->metricsService->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'app_home',
+                'dev',
+                0.5,
+                5,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [],
                 null
             );
 

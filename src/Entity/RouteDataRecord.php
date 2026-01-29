@@ -86,6 +86,12 @@ class RouteDataRecord
     private ?string $requestId = null;
 
     /**
+     * HTTP Referer header (page that linked to this request).
+     */
+    #[ORM\Column(type: Types::STRING, length: 2048, nullable: true)]
+    private ?string $referer = null;
+
+    /**
      * Creates a new instance.
      */
     public function __construct()
@@ -275,6 +281,28 @@ class RouteDataRecord
     public function setRequestId(?string $requestId): self
     {
         $this->requestId = $requestId;
+
+        return $this;
+    }
+
+    /**
+     * Get the HTTP Referer header.
+     *
+     * @return string|null The referer URL (null if not sent)
+     */
+    public function getReferer(): ?string
+    {
+        return $this->referer;
+    }
+
+    /**
+     * Set the HTTP Referer header.
+     *
+     * @param string|null $referer The referer URL
+     */
+    public function setReferer(?string $referer): self
+    {
+        $this->referer = $referer !== null && \strlen($referer) > 2048 ? substr($referer, 0, 2048) : $referer;
 
         return $this;
     }

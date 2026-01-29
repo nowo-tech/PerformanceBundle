@@ -7,6 +7,8 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\TestCase;
@@ -192,6 +194,164 @@ final class PerformanceMetricsServiceTest extends TestCase
             null,
             null
         );
+    }
+
+    public function testRecordMetricsAcceptsRequestIdParameter(): void
+    {
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->atLeastOnce())
+            ->method('flush');
+
+        $result = $this->service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            null,
+            [],
+            'req-abc123'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('is_new', $result);
+        $this->assertArrayHasKey('was_updated', $result);
+        $this->assertTrue($result['is_new']);
+    }
+
+    public function testRecordMetricsWithRequestIdAndExistingAccessRecordSkipsDuplicate(): void
+    {
+        $recordRepository = $this->createMock(RouteDataRecordRepository::class);
+        $existingAccessRecord = new RouteDataRecord();
+        $existingAccessRecord->setRequestId('req-dedup');
+
+        $this->entityManager
+            ->method('getRepository')
+            ->willReturnMap([
+                [RouteData::class, $this->repository],
+                [RouteDataRecord::class, $recordRepository],
+            ]);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn(null);
+
+        $recordRepository
+            ->expects($this->once())
+            ->method('findOneByRequestId')
+            ->with('req-dedup')
+            ->willReturn($existingAccessRecord);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteData::class));
+
+        $this->entityManager
+            ->expects($this->atLeastOnce())
+            ->method('flush');
+
+        $service = new PerformanceMetricsService(
+            $this->registry,
+            'default',
+            false,  // async
+            true,   // enableAccessRecords
+            true    // enableLogging
+        );
+
+        $result = $service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            null,
+            [],
+            'req-dedup'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['is_new']);
+    }
+
+    public function testRecordMetricsSkipsAccessRecordWhenRouteSaveAccessRecordsFalse(): void
+    {
+        $recordRepository = $this->createMock(RouteDataRecordRepository::class);
+        $existingRoute = new RouteData();
+        $existingRoute->setName('app_home');
+        $existingRoute->setEnv('dev');
+        $existingRoute->setSaveAccessRecords(false);
+
+        $this->entityManager
+            ->method('getRepository')
+            ->willReturnMap([
+                [RouteData::class, $this->repository],
+                [RouteDataRecord::class, $recordRepository],
+            ]);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('findByRouteAndEnv')
+            ->with('app_home', 'dev')
+            ->willReturn($existingRoute);
+
+        $recordRepository
+            ->expects($this->never())
+            ->method('findOneByRequestId');
+
+        $this->entityManager
+            ->expects($this->never())
+            ->method('persist')
+            ->with($this->isInstanceOf(RouteDataRecord::class));
+
+        $this->entityManager
+            ->expects($this->atLeastOnce())
+            ->method('flush');
+
+        $service = new PerformanceMetricsService(
+            $this->registry,
+            'default',
+            false,
+            true,
+            true
+        );
+
+        $result = $service->recordMetrics(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            null,
+            [],
+            'req-xyz'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('is_new', $result);
+        $this->assertArrayHasKey('was_updated', $result);
     }
 
     public function testGetRouteData(): void

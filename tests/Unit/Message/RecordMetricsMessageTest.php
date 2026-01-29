@@ -30,6 +30,7 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertSame(['id' => 123], $message->getParams());
         $this->assertSame(1048576, $message->getMemoryUsage());
         $this->assertSame('GET', $message->getHttpMethod());
+        $this->assertNull($message->getRequestId());
     }
 
     public function testGettersReturnNullForOptionalParameters(): void
@@ -47,6 +48,31 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertNull($message->getParams());
         $this->assertNull($message->getMemoryUsage());
         $this->assertNull($message->getHttpMethod());
+        $this->assertNull($message->getRequestId());
+    }
+
+    public function testGetRequestIdReturnsValueWhenProvided(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            'req-abc123'
+        );
+
+        $this->assertSame('req-abc123', $message->getRequestId());
+    }
+
+    public function testGetRequestIdReturnsNullWhenNotProvided(): void
+    {
+        $message = new RecordMetricsMessage('app_home', 'dev', null, null, null, null, null, 'GET');
+
+        $this->assertNull($message->getRequestId());
     }
 
     public function testConstructorWithMinimalArgs(): void

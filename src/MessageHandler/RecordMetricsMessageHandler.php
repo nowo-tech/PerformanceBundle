@@ -52,7 +52,8 @@ final class RecordMetricsMessageHandler
             $message->getHttpMethod(),
             null,
             [],
-            $message->getRequestId()
+            $message->getRequestId(),
+            $message->getReferer()
         );
     }
 }

@@ -292,6 +292,7 @@ class PerformanceController extends AbstractController
                 if ($routeData instanceof RouteData) {
                     $reviewForm = $this->createForm(ReviewRouteDataType::class, null, [
                         'route_data' => $routeData,
+                        'enable_access_records' => $this->enableAccessRecords,
                         'csrf_token_id' => 'review_performance_record_'.$routeData->getId(),
                     ]);
                     $reviewForms[$routeData->getId()] = $reviewForm->createView();
@@ -1071,6 +1072,7 @@ class PerformanceController extends AbstractController
                 'Total Queries',
                 'Query Time (s)',
                 'Memory Usage (bytes)',
+                'Referer',
             ]);
             foreach ($records as $r) {
                 $rd = $r->getRouteData();
@@ -1084,6 +1086,7 @@ class PerformanceController extends AbstractController
                     $r->getTotalQueries() ?? '',
                     $r->getQueryTime() ?? '',
                     $r->getMemoryUsage() ?? '',
+                    $r->getReferer() ?? '',
                 ]);
             }
             fclose($handle);
@@ -1181,6 +1184,7 @@ class PerformanceController extends AbstractController
                 'total_queries' => $r->getTotalQueries(),
                 'query_time' => $r->getQueryTime(),
                 'memory_usage' => $r->getMemoryUsage(),
+                'referer' => $r->getReferer(),
             ];
         }, $result['records']);
 
@@ -2152,6 +2156,15 @@ class PerformanceController extends AbstractController
 
             $wasAlreadyReviewed = $routeData->isReviewed();
             $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy);
+
+            // Update save_access_records per route when access records are enabled
+            if ($this->enableAccessRecords && isset($formData['save_access_records'])) {
+                $routeDataToUpdate = $repository->find($id);
+                if (null !== $routeDataToUpdate) {
+                    $routeDataToUpdate->setSaveAccessRecords((bool) $formData['save_access_records']);
+                    $repository->getEntityManager()->flush();
+                }
+            }
 
             if ($updated) {
                 // Reload the updated record for the after event

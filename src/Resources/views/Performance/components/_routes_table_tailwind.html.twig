@@ -276,6 +276,15 @@
                                                                         {{ form_errors(reviewForm.time_improved) }}
                                                                     {% endif %}
                                                                 </div>
+                                                                {% if reviewForm.save_access_records is defined %}
+                                                                <div class="mb-4">
+                                                                    <div class="flex items-center">
+                                                                        {{ form_widget(reviewForm.save_access_records) }}
+                                                                        {{ form_label(reviewForm.save_access_records, null, {'label_attr': {'class': 'ml-2 text-sm text-gray-700'}}) }}
+                                                                    </div>
+                                                                    {{ form_errors(reviewForm.save_access_records) }}
+                                                                </div>
+                                                                {% endif %}
                                                                 <div class="flex justify-end space-x-2">
                                                                     <button type="button" onclick="document.getElementById('reviewModal{{ route.id }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">{{ 'routes_table.cancel'|trans({}, 'nowo_performance') }}</button>
                                                                     {% if not reviewForm.submit.isRendered %}

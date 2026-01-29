@@ -127,6 +127,23 @@ final class RouteDataRecordEdgeCasesTest extends TestCase
         $this->assertSame($routeData2, $record->getRouteData());
     }
 
+    public function testSetRequestIdWithEmptyString(): void
+    {
+        $record = new RouteDataRecord();
+        $record->setRequestId('');
+
+        $this->assertSame('', $record->getRequestId());
+    }
+
+    public function testSetRequestIdWithLongString(): void
+    {
+        $record = new RouteDataRecord();
+        $longId = str_repeat('a', 64);
+
+        $record->setRequestId($longId);
+        $this->assertSame($longId, $record->getRequestId());
+    }
+
     public function testAllSettersReturnSelf(): void
     {
         $record = new RouteDataRecord();
@@ -140,5 +157,6 @@ final class RouteDataRecordEdgeCasesTest extends TestCase
         $this->assertSame($record, $record->setTotalQueries(10));
         $this->assertSame($record, $record->setQueryTime(0.2));
         $this->assertSame($record, $record->setMemoryUsage(1024));
+        $this->assertSame($record, $record->setRequestId('req-fluent'));
     }
 }

@@ -520,6 +520,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 (string) ($this->samplingRate * 100).'%'
             );
 
+            $referer = $request->headers->get('Referer');
+
             $result = $this->metricsService->recordMetrics(
                 $this->routeName,
                 $env,
@@ -531,7 +533,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $httpMethod,
                 $statusCode,
                 $this->trackStatusCodes,
-                $this->requestId
+                $this->requestId,
+                $referer
             );
 
             LogHelper::logf(

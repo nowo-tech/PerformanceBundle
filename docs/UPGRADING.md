@@ -2,6 +2,27 @@
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
+## Upgrading to 2.0.4 (2026-01-28)
+
+New features: HTTP Referer on access records and per-route option to disable saving access records. See [CHANGELOG](CHANGELOG.md#204---2026-01-28) for details.
+
+**New:**
+- **Access records: HTTP Referer** – Each `RouteDataRecord` now stores the HTTP `Referer` header when present. The Access Records UI shows a Referer column (with link); CSV and JSON exports include the referer.
+- **Per-route: disable saving access records** – When access records are enabled, you can turn off saving access records for individual routes. In the review/config modal for each route (same form as "Mark as reviewed"), a checkbox **"Save access records for this route"** appears. If unchecked, the bundle still updates aggregate metrics (RouteData) for that route but does not create new `RouteDataRecord` rows.
+
+**Schema:**
+- **`routes_data`** – New column `save_access_records` (boolean, default true).
+- **`routes_data_records`** – New column `referer` (VARCHAR 2048, nullable).
+
+Run schema update after upgrading:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+php bin/console nowo:performance:create-table --update
+# or: php bin/console nowo:performance:sync-schema
+```
+
 ## Upgrading to 2.0.3 (2026-01-29)
 
 Bugfix release. No schema or configuration changes.

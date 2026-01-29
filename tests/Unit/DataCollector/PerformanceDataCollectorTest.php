@@ -318,6 +318,36 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertSame(['total_queries', 'query_time'], $collector->getMissingColumns());
     }
 
+    public function testCollectWithTableStatusCheckerAndRecordsTableIncomplete(): void
+    {
+        $checker = $this->createMock(\Nowo\PerformanceBundle\Service\TableStatusChecker::class);
+        $checker->method('tableExists')->willReturn(true);
+        $checker->method('tableIsComplete')->willReturn(true);
+        $checker->method('getTableName')->willReturn('routes_data');
+        $checker->method('getMissingColumns')->willReturn([]);
+        $checker->method('isAccessRecordsEnabled')->willReturn(true);
+        $checker->method('recordsTableExists')->willReturn(true);
+        $checker->method('recordsTableIsComplete')->willReturn(false);
+        $checker->method('getRecordsTableName')->willReturn('routes_data_records');
+        $checker->method('getRecordsMissingColumns')->willReturn(['request_id']);
+
+        $collector = new PerformanceDataCollector(null, null, $checker, null, null);
+
+        $request = Request::create('/');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $ref = new \ReflectionClass($collector);
+        $dataProp = $ref->getProperty('data');
+        $dataProp->setAccessible(true);
+        $data = $dataProp->getValue($collector);
+
+        $this->assertTrue($data['records_table_exists'] ?? false);
+        $this->assertFalse($data['records_table_is_complete'] ?? true);
+        $this->assertSame('routes_data_records', $data['records_table_name'] ?? null);
+        $this->assertSame(['request_id'], $data['missing_columns_records'] ?? []);
+    }
+
     public function testCollectWithDependencyChecker(): void
     {
         $depChecker = $this->createMock(\Nowo\PerformanceBundle\Service\DependencyChecker::class);

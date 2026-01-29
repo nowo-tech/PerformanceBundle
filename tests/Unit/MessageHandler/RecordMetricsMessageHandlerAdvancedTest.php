@@ -45,7 +45,10 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 0.2,
                 ['id' => 123],
                 1048576,
-                'POST'
+                'POST',
+                null,
+                [],
+                null
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -66,6 +69,9 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 null,
+                null,
+                null,
+                [],
                 null
             );
 
@@ -96,7 +102,10 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 0.0,
                 [],
                 0,
-                'GET'
+                'GET',
+                null,
+                [],
+                null
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -117,6 +126,9 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 null,
+                null,
+                null,
+                [],
                 null
             );
 
@@ -138,6 +150,9 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 null,
+                null,
+                null,
+                [],
                 null
             );
 
@@ -172,6 +187,9 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 $params,
                 null,
+                null,
+                null,
+                [],
                 null
             );
 
@@ -202,7 +220,10 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 999999.99,
                 null,
                 999999999,
-                'GET'
+                'GET',
+                null,
+                [],
+                null
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -232,7 +253,10 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 0.0001,
                 null,
                 1024,
-                'GET'
+                'GET',
+                null,
+                [],
+                null
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -265,7 +289,10 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                     null,
                     null,
                     null,
-                    $method
+                    $method,
+                    null,
+                    [],
+                    null
                 );
 
             $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -290,6 +317,9 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                     null,
                     null,
                     null,
+                    null,
+                    null,
+                    [],
                     null
                 );
 
@@ -357,7 +387,10 @@ final class RecordMetricsMessageHandlerAdvancedTest extends TestCase
                 null,
                 null,
                 null,
-                'GET'
+                'GET',
+                null,
+                [],
+                null
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);

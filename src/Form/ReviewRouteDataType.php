@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Form;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -73,8 +74,22 @@ class ReviewRouteDataType extends AbstractType
                 'attr' => [
                     'class' => 'form-select',
                 ],
-            ])
-            ->add('submit', SubmitType::class, [
+            ]);
+
+        if ($options['enable_access_records'] ?? false) {
+            $saveAccessRecordsData = ($routeData instanceof RouteData) ? $routeData->getSaveAccessRecords() : true;
+            $builder->add('save_access_records', CheckboxType::class, [
+                'label' => 'review.save_access_records',
+                'translation_domain' => 'nowo_performance',
+                'required' => false,
+                'data' => $saveAccessRecordsData,
+                'attr' => [
+                    'class' => 'form-check-input',
+                ],
+            ]);
+        }
+
+        $builder->add('submit', SubmitType::class, [
                 'label' => $submitLabel,
                 'translation_domain' => 'nowo_performance',
                 'attr' => [
@@ -96,8 +111,10 @@ class ReviewRouteDataType extends AbstractType
             'csrf_field_name' => '_token',
             'csrf_token_id' => 'review_performance_record',
             'route_data' => null,
+            'enable_access_records' => false,
         ]);
         $resolver->setAllowedTypes('route_data', [RouteData::class, 'null']);
+        $resolver->setAllowedTypes('enable_access_records', 'bool');
     }
 
     /**

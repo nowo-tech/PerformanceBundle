@@ -162,6 +162,7 @@ class PerformanceMetricsService
      * @param int|null    $statusCode       HTTP status code (200, 404, 500, etc.)
      * @param array<int>  $trackStatusCodes List of status codes to track
      * @param string|null $requestId        Unique request ID to avoid duplicate access records for the same request
+     * @param string|null $referer          HTTP Referer header (page that linked to this request)
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -177,6 +178,7 @@ class PerformanceMetricsService
         ?int $statusCode = null,
         array $trackStatusCodes = [],
         ?string $requestId = null,
+        ?string $referer = null,
     ): array {
         LogHelper::logf(
             '[PerformanceBundle] recordMetrics: START - route=%s, env=%s, async=%s, requestTime=%s, totalQueries=%s',
@@ -223,7 +225,8 @@ class PerformanceMetricsService
                 $params,
                 $memoryUsage,
                 $httpMethod,
-                $requestId
+                $requestId,
+                $referer
             );
             $this->messageBus->dispatch($message);
 
@@ -234,7 +237,7 @@ class PerformanceMetricsService
         // Otherwise, record synchronously
         LogHelper::log('[PerformanceBundle] recordMetrics: Recording synchronously', $this->enableLogging);
 
-        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes, $requestId);
+        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes, $requestId, $referer);
     }
 
     /**
@@ -251,6 +254,7 @@ class PerformanceMetricsService
      * @param int|null    $statusCode       HTTP status code (200, 404, 500, etc.)
      * @param array<int>  $trackStatusCodes List of status codes to track
      * @param string|null $requestId        Unique request ID to avoid duplicate access records for the same request
+     * @param string|null $referer          HTTP Referer header
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -266,6 +270,7 @@ class PerformanceMetricsService
         ?int $statusCode = null,
         array $trackStatusCodes = [],
         ?string $requestId = null,
+        ?string $referer = null,
     ): array {
         $isNew = false;
         $wasUpdated = false;
@@ -343,7 +348,11 @@ class PerformanceMetricsService
             // Create access record if enabled (one per request when requestId is set)
             if ($this->enableAccessRecords) {
                 $skipAccessRecord = false;
-                if (null !== $requestId && '' !== $requestId) {
+                // Skip if this route has "save access records" disabled
+                if (!$routeData->getSaveAccessRecords()) {
+                    $skipAccessRecord = true;
+                }
+                if (!$skipAccessRecord && null !== $requestId && '' !== $requestId) {
                     $existing = $this->recordRepository->findOneByRequestId($requestId);
                     if (null !== $existing) {
                         $skipAccessRecord = true;
@@ -365,6 +374,9 @@ class PerformanceMetricsService
                     $accessRecord->setMemoryUsage($memoryUsage);
                     if (null !== $requestId && '' !== $requestId) {
                         $accessRecord->setRequestId($requestId);
+                    }
+                    if (null !== $referer && '' !== $referer) {
+                        $accessRecord->setReferer($referer);
                     }
 
                     $this->entityManager->persist($accessRecord);

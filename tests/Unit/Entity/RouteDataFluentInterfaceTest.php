@@ -73,7 +73,8 @@ final class RouteDataFluentInterfaceTest extends TestCase
             ->setHttpMethod('POST')
             ->setParams(['id' => 456])
             ->setCreatedAt($date)
-            ->setLastAccessedAt($date);
+            ->setLastAccessedAt($date)
+            ->setSaveAccessRecords(false);
 
         $this->assertSame($routeData, $result);
         $this->assertSame('prod', $routeData->getEnv());
@@ -82,5 +83,13 @@ final class RouteDataFluentInterfaceTest extends TestCase
         $this->assertSame(['id' => 456], $routeData->getParams());
         $this->assertSame($date, $routeData->getCreatedAt());
         $this->assertSame($date, $routeData->getLastAccessedAt());
+        $this->assertFalse($routeData->getSaveAccessRecords());
+    }
+
+    public function testSetSaveAccessRecordsReturnsSelf(): void
+    {
+        $routeData = new RouteData();
+        $result = $routeData->setSaveAccessRecords(true);
+        $this->assertSame($routeData, $result);
     }
 }

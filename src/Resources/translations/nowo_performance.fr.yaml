@@ -22,7 +22,6 @@ statistics:
     max_request_time: "Temps de requête max"
     avg_query_time: "Temps de requête BDD moyen"
     max_query_time: "Temps de requête BDD max"
-    max_queries: "Requêtes max"
     not_available: "N/D"
 
 # Paginateur (table des routes index)
@@ -101,6 +100,7 @@ review:
     modal_title_edit: "Modifier la revue"
     queries_improved: "Requêtes améliorées ?"
     time_improved: "Temps amélioré ?"
+    save_access_records: "Enregistrer les accès pour cette route"
     not_specified: "Non spécifié"
     yes: "Oui"
     no: "Non"
@@ -206,6 +206,7 @@ access_statistics:
     total_queries: "Requêtes"
     query_time: "Temps requêtes"
     memory_usage: "Mémoire"
+    referer: "Referer"
     min_query_time: "Temps requêtes min (s)"
     max_query_time: "Temps requêtes max (s)"
     min_memory_mb: "Mémoire min (Mo)"

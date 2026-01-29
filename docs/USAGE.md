@@ -37,6 +37,9 @@ These records contain:
 - `accessedAt` (timestamp)
 - `statusCode`
 - `responseTime`
+- `totalQueries`, `queryTime`, `memoryUsage` (when tracked)
+- `requestId` (unique per request, for deduplication)
+- `referer` (HTTP Referer header when present)
 
 They power the **Access Statistics** and **Access Records** pages:
 
@@ -246,7 +249,7 @@ The dashboard includes export functionality to download performance data:
 
 **Access records export (CSV / JSON):**
 - On the **Access Records** page (temporal records per route), use **Export Records (CSV)** or **Export Records (JSON)**.
-- Exports individual `RouteDataRecord` rows (id, route name, environment, accessed at, status code, response time, total queries, query time, memory usage).
+- Exports individual `RouteDataRecord` rows (id, route name, environment, accessed at, status code, response time, total queries, query time, memory usage, referer).
 - Uses the same filters as the records page: environment, date range, route, status code.
 - Requires `enable_access_records: true`. Subject to dashboard roles if configured.
 
