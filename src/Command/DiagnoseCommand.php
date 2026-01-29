@@ -28,7 +28,7 @@ final class DiagnoseCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param ParameterBagInterface $parameterBag     Parameter bag to check configuration
+     * @param ParameterBagInterface   $parameterBag       Parameter bag to check configuration
      * @param TableStatusChecker|null $tableStatusChecker Table status checker (optional)
      */
     public function __construct(

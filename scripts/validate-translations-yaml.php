@@ -16,17 +16,16 @@ declare(strict_types=1);
  *
  * Exit code: 0 if all valid, 1 if any error.
  */
-
-$translationsDir = $argv[1] ?? __DIR__ . '/../src/Resources/translations';
+$translationsDir = $argv[1] ?? __DIR__.'/../src/Resources/translations';
 
 if (!is_dir($translationsDir)) {
-    fwrite(STDERR, "Error: Directory not found: {$translationsDir}\n");
+    fwrite(\STDERR, "Error: Directory not found: {$translationsDir}\n");
     exit(1);
 }
 
-$files = glob($translationsDir . '/*.yaml');
-if ($files === false || $files === []) {
-    fwrite(STDERR, "Error: No YAML files found in {$translationsDir}\n");
+$files = glob($translationsDir.'/*.yaml');
+if (false === $files || [] === $files) {
+    fwrite(\STDERR, "Error: No YAML files found in {$translationsDir}\n");
     exit(1);
 }
 
@@ -35,8 +34,8 @@ $hasErrors = false;
 foreach ($files as $file) {
     $basename = basename($file);
     $content = @file_get_contents($file);
-    if ($content === false) {
-        fwrite(STDERR, "{$basename}: Could not read file.\n");
+    if (false === $content) {
+        fwrite(\STDERR, "{$basename}: Could not read file.\n");
         $hasErrors = true;
         continue;
     }
@@ -44,8 +43,8 @@ foreach ($files as $file) {
     // 1. Syntax: try to parse with ext-yaml if available
     if (function_exists('yaml_parse')) {
         $data = @yaml_parse($content);
-        if ($data === false && substr(trim($content), 0, 1) !== '') {
-            fwrite(STDERR, "{$basename}: Invalid YAML syntax.\n");
+        if (false === $data && '' !== substr(trim($content), 0, 1)) {
+            fwrite(\STDERR, "{$basename}: Invalid YAML syntax.\n");
             $hasErrors = true;
             continue;
         }
@@ -54,9 +53,9 @@ foreach ($files as $file) {
 
     // 2. Duplicate keys: scan lines and track keys per indent level
     $duplicates = findDuplicateKeys($content);
-    if ($duplicates !== []) {
+    if ([] !== $duplicates) {
         foreach ($duplicates as $dup) {
-            fwrite(STDERR, "{$basename}:{$dup['line']}: Duplicate key \"{$dup['key']}\" at same level.\n");
+            fwrite(\STDERR, "{$basename}:{$dup['line']}: Duplicate key \"{$dup['key']}\" at same level.\n");
         }
         $hasErrors = true;
     }
@@ -86,7 +85,7 @@ function findDuplicateKeys(string $content): array
 
         // Blank or comment
         $trimmed = ltrim($line, " \t");
-        if ($trimmed === '' || $trimmed[0] === '#') {
+        if ('' === $trimmed || '#' === $trimmed[0]) {
             continue;
         }
 
@@ -100,7 +99,7 @@ function findDuplicateKeys(string $content): array
                     $prevIndent = $i;
                 }
             }
-            if ($prevIndent !== null && $indent > $prevIndent) {
+            if (null !== $prevIndent && $indent > $prevIndent) {
                 continue; // continuation of a multi-line value
             }
         }
