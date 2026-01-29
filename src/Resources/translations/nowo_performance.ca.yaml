@@ -207,7 +207,6 @@ access_statistics:
     delete_records_confirm: "Esteu segur que voleu eliminar tots els registres que coincideixen amb el filtre actual? Aquesta acció no es pot desfer."
 
 access_records: "Registres d'accés"
-access_statistics: "Estadístiques d'accés"
 api:
     chart_data: "Dades del gràfic"
 clear: "Esborrar"

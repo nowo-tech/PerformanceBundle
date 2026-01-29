@@ -207,7 +207,6 @@ access_statistics:
     delete_records_confirm: "Mevcut filtreyle eşleşen tüm kayıtları silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
 
 access_records: "Erişim Kayıtları"
-access_statistics: "Erişim İstatistikleri"
 api:
     chart_data: "Grafik Verisi"
 clear: "Temizle"
@@ -215,4 +214,3 @@ delete: "Sil"
 delete_records_by_filter: "Filtreye Göre Kayıtları Sil"
 diagnose: "Tanı"
 index: "Panel"
-statistics: "İstatistikler"

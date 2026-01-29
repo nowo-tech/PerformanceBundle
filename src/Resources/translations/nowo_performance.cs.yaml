@@ -207,7 +207,6 @@ access_statistics:
     delete_records_confirm: "Opravdu chcete smazat všechny záznamy odpovídající aktuálnímu filtru? Tuto akci nelze vrátit zpět."
 
 access_records: "Záznamy přístupů"
-access_statistics: "Statistiky přístupů"
 api:
     chart_data: "Data grafu"
 clear: "Vymazat"
@@ -215,4 +214,3 @@ delete: "Smazat"
 delete_records_by_filter: "Smazat záznamy podle filtru"
 diagnose: "Diagnostika"
 index: "Dashboard"
-statistics: "Statistiky"

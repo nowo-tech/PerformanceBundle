@@ -207,7 +207,6 @@ access_statistics:
     delete_records_confirm: "Вы уверены, что хотите удалить все записи, соответствующие текущему фильтру? Это действие нельзя отменить."
 
 access_records: "Записи обращений"
-access_statistics: "Статистика обращений"
 api:
     chart_data: "Данные графика"
 clear: "Очистить"
