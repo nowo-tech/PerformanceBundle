@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Event;
 
 use Nowo\PerformanceBundle\Event\BeforeMetricsRecordedEvent;
 use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\EventDispatcher\Event;
 
 final class BeforeMetricsRecordedEventTest extends TestCase
 {
@@ -104,5 +105,34 @@ final class BeforeMetricsRecordedEventTest extends TestCase
         $event = new BeforeMetricsRecordedEvent('my_route', 'prod');
         $this->assertSame('my_route', $event->getRouteName());
         $this->assertSame('prod', $event->getEnv());
+    }
+
+    public function testSetParamsWithEmptyArray(): void
+    {
+        $event = new BeforeMetricsRecordedEvent('r', 'dev', null, null, null, ['a' => 1]);
+        $this->assertSame(['a' => 1], $event->getParams());
+        $event->setParams([]);
+        $this->assertSame([], $event->getParams());
+    }
+
+    public function testExtendsSymfonyEvent(): void
+    {
+        $event = new BeforeMetricsRecordedEvent('route', 'dev');
+
+        $this->assertInstanceOf(Event::class, $event);
+    }
+
+    public function testSetRequestTimeWithZero(): void
+    {
+        $event = new BeforeMetricsRecordedEvent('r', 'dev', 0.5);
+        $event->setRequestTime(0.0);
+        $this->assertSame(0.0, $event->getRequestTime());
+    }
+
+    public function testSetTotalQueriesWithZero(): void
+    {
+        $event = new BeforeMetricsRecordedEvent('r', 'dev', null, 5);
+        $event->setTotalQueries(0);
+        $this->assertSame(0, $event->getTotalQueries());
     }
 }

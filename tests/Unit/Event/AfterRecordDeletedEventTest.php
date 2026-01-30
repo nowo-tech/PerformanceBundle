@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Event;
 
 use Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent;
 use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\EventDispatcher\Event;
 
 final class AfterRecordDeletedEventTest extends TestCase
 {
@@ -38,6 +39,40 @@ final class AfterRecordDeletedEventTest extends TestCase
         $this->assertSame($event->getRouteName(), $event->getRouteName());
         $this->assertSame($event->getEnv(), $event->getEnv());
         $this->assertSame(10, $event->getRecordId());
+        $this->assertSame('api_foo', $event->getRouteName());
+        $this->assertSame('prod', $event->getEnv());
+    }
+
+    public function testGetEnvWithEmptyString(): void
+    {
+        $event = new AfterRecordDeletedEvent(1, 'app_home', '');
+
+        $this->assertSame(1, $event->getRecordId());
+        $this->assertSame('app_home', $event->getRouteName());
+        $this->assertSame('', $event->getEnv());
+    }
+
+    public function testExtendsSymfonyEvent(): void
+    {
+        $event = new AfterRecordDeletedEvent(1, 'app_home', 'dev');
+
+        $this->assertInstanceOf(Event::class, $event);
+    }
+
+    public function testGetRouteNameWithEmptyString(): void
+    {
+        $event = new AfterRecordDeletedEvent(5, '', 'dev');
+
+        $this->assertSame(5, $event->getRecordId());
+        $this->assertSame('', $event->getRouteName());
+        $this->assertSame('dev', $event->getEnv());
+    }
+
+    public function testGetRecordIdWithLargeNumber(): void
+    {
+        $event = new AfterRecordDeletedEvent(999999, 'api_foo', 'prod');
+
+        $this->assertSame(999999, $event->getRecordId());
         $this->assertSame('api_foo', $event->getRouteName());
         $this->assertSame('prod', $event->getEnv());
     }

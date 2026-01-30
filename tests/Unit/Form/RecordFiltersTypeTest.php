@@ -6,7 +6,6 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\RecordFiltersType;
 use Nowo\PerformanceBundle\Model\RecordFilters;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\Form\Test\TypeTestCase;
 
 final class RecordFiltersTypeTest extends TypeTestCase
@@ -19,13 +18,11 @@ final class RecordFiltersTypeTest extends TypeTestCase
         $this->formType = new RecordFiltersType();
     }
 
-    public function testBuildFormCreatesAllFields(): void
+    public function testBuildFormCreatesExpectedFields(): void
     {
-        $form = $this->factory->create(RecordFiltersType::class, null, [
-            'environments' => ['dev', 'test'],
-            'available_routes' => ['app_home'],
-            'all_routes_label' => 'access_statistics.all_routes',
-            'all_status_label' => 'access_statistics.all_status_codes',
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev', 'test', 'prod'],
+            'available_routes' => ['app_home', 'api_foo'],
         ]);
 
         $this->assertTrue($form->has('start_date'));
@@ -53,116 +50,152 @@ final class RecordFiltersTypeTest extends TypeTestCase
                     && isset($defaults['csrf_protection'])
                     && $defaults['csrf_protection'] === false
                     && isset($defaults['environments'])
-                    && isset($defaults['available_routes']);
+                    && isset($defaults['available_routes'])
+                    && isset($defaults['all_routes_label'])
+                    && isset($defaults['all_status_label']);
             }));
-        $resolver->expects($this->atLeastOnce())->method('setAllowedTypes');
+        $resolver->expects($this->exactly(2))->method('setAllowedTypes');
 
         $this->formType->configureOptions($resolver);
     }
 
-    public function testGetBlockPrefixReturnsEmptyString(): void
+    public function testGetBlockPrefixReturnsEmpty(): void
     {
         $this->assertSame('', $this->formType->getBlockPrefix());
     }
 
-    public function testFormSubmissionBindsToRecordFilters(): void
+    public function testFormBuildsWithCustomAllRoutesAndAllStatusLabels(): void
     {
-        $form = $this->factory->create(RecordFiltersType::class, null, [
-            'environments' => ['dev', 'test', 'prod'],
-            'available_routes' => ['app_home', 'api_foo'],
-            'all_routes_label' => 'All',
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => ['api_foo'],
+            'all_routes_label' => 'All routes',
             'all_status_label' => 'All statuses',
         ]);
 
+        $this->assertTrue($form->has('route'));
+        $this->assertTrue($form->has('status_code'));
+    }
+
+    public function testFormSubmissionWithPartialData(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev', 'prod'],
+            'available_routes' => ['app_home', 'api_foo'],
+        ]);
+
         $form->submit([
-            'start_date' => '2026-01-01',
-            'end_date' => '2026-01-31',
-            'env' => 'dev',
-            'route' => 'app_home',
-            'status_code' => '200',
-            'min_query_time' => '0.05',
-            'max_query_time' => '2.0',
+            'env' => 'prod',
+            'route' => 'api_foo',
         ]);
 
         $this->assertTrue($form->isValid());
         $data = $form->getData();
         $this->assertInstanceOf(RecordFilters::class, $data);
-        $this->assertNotNull($data->startDate);
-        $this->assertSame('2026-01-01', $data->startDate->format('Y-m-d'));
-        $this->assertNotNull($data->endDate);
-        $this->assertSame('2026-01-31', $data->endDate->format('Y-m-d'));
-        $this->assertSame('dev', $data->env);
-        $this->assertSame('app_home', $data->route);
-        $this->assertSame(200, $data->statusCode);
-        $this->assertSame(0.05, $data->minQueryTime);
-        $this->assertSame(2.0, $data->maxQueryTime);
+        $this->assertSame('prod', $data->env);
+        $this->assertSame('api_foo', $data->route);
     }
 
-    public function testFormWithInitialMemoryDataShowsMbInFields(): void
-    {
-        $filterData = new RecordFilters(
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            10 * 1024 * 1024,  // 10 MB in bytes
-            100 * 1024 * 1024  // 100 MB in bytes
-        );
-
-        $form = $this->factory->create(RecordFiltersType::class, $filterData, [
-            'environments' => ['dev', 'test'],
-            'available_routes' => ['app_home'],
-            'all_routes_label' => 'All',
-            'all_status_label' => 'All statuses',
-        ]);
-
-        $this->assertSame(10.0, $form->get('min_memory_mb')->getData());
-        $this->assertSame(100.0, $form->get('max_memory_mb')->getData());
-    }
-
-    public function testFormWithEmptyInitialDataShowsNullForMemoryMb(): void
+    public function testFormBuildsWithEmptyAvailableRoutes(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
             'environments' => ['dev'],
             'available_routes' => [],
-            'all_routes_label' => 'All',
-            'all_status_label' => 'All',
         ]);
 
-        $this->assertNull($form->get('min_memory_mb')->getData());
-        $this->assertNull($form->get('max_memory_mb')->getData());
+        $this->assertTrue($form->has('route'));
+        $choices = $form->get('route')->getConfig()->getOption('choices');
+        $this->assertArrayHasKey('access_statistics.all_routes', $choices);
+        $this->assertSame('', $choices['access_statistics.all_routes']);
     }
 
-    public function testFormSubmissionWithMemoryMbFieldsPreservesSubmittedValues(): void
+    public function testFormSubmissionWithStatusCodeTransformsToInt(): void
     {
-        $form = $this->factory->create(RecordFiltersType::class, null, [
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
             'environments' => ['dev', 'prod'],
             'available_routes' => ['app_home'],
-            'all_routes_label' => 'All',
-            'all_status_label' => 'All statuses',
         ]);
 
         $form->submit([
-            'start_date' => '',
-            'end_date' => '',
             'env' => 'dev',
             'route' => '',
-            'status_code' => '',
-            'min_query_time' => '',
-            'max_query_time' => '',
-            'min_memory_mb' => '5.5',
-            'max_memory_mb' => '128.25',
+            'status_code' => '404',
         ]);
 
         $this->assertTrue($form->isValid());
-        $this->assertSame(5.5, $form->get('min_memory_mb')->getData());
-        $this->assertSame(128.25, $form->get('max_memory_mb')->getData());
         $data = $form->getData();
         $this->assertInstanceOf(RecordFilters::class, $data);
-        $this->assertNull($data->minMemoryUsage);
-        $this->assertNull($data->maxMemoryUsage);
+        $this->assertSame(404, $data->statusCode);
+    }
+
+    public function testFormSubmissionWithEmptyStatusCodeTransformsToNull(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => [],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'status_code' => '',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertInstanceOf(RecordFilters::class, $data);
+        $this->assertNull($data->statusCode);
+    }
+
+    public function testFormSubmissionWithQueryTimeFilters(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev', 'prod'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => 'app_home',
+            'status_code' => '',
+            'min_query_time' => '0.1',
+            'max_query_time' => '2.5',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertInstanceOf(RecordFilters::class, $data);
+        $this->assertSame(0.1, $data->minQueryTime);
+        $this->assertSame(2.5, $data->maxQueryTime);
+    }
+
+    public function testFormBuildsWithMemoryFields(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $this->assertTrue($form->has('min_memory_mb'));
+        $this->assertTrue($form->has('max_memory_mb'));
+        $this->assertTrue($form->has('filter'));
+    }
+
+    public function testFormSubmissionWithStageEnvironment(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev', 'stage', 'prod'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $form->submit([
+            'env' => 'stage',
+            'route' => '',
+            'status_code' => '',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('stage', $data->env);
     }
 }

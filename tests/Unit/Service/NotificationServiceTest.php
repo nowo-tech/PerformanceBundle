@@ -141,4 +141,22 @@ final class NotificationServiceTest extends TestCase
         $this->assertNotContains('channel2', $enabled);
         $this->assertCount(2, $enabled);
     }
+
+    public function testGetEnabledChannelsReturnsEmptyWhenNoChannels(): void
+    {
+        $service = new NotificationService([], true);
+
+        $this->assertSame([], $service->getEnabledChannels());
+    }
+
+    public function testGetEnabledChannelsWithSingleChannel(): void
+    {
+        $channel = $this->createMock(NotificationChannelInterface::class);
+        $channel->method('isEnabled')->willReturn(true);
+        $channel->method('getName')->willReturn('email');
+
+        $service = new NotificationService([$channel], true);
+
+        $this->assertSame(['email'], $service->getEnabledChannels());
+    }
 }

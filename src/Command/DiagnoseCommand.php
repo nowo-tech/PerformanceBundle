@@ -58,6 +58,7 @@ Use this command to:
   - Understand how the bundle is configured
   - Check database connectivity
 
+<info>php bin/console nowo:performance:diagnose</info>
 <info>php %command.full_name%</info>
 
 The command will show detailed information about:

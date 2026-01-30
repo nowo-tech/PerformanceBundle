@@ -100,6 +100,24 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertNull($message->getReferer());
     }
 
+    public function testGetRefererWithEmptyString(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            'req-1',
+            ''
+        );
+
+        $this->assertSame('', $message->getReferer());
+    }
+
     public function testConstructorWithMinimalArgs(): void
     {
         $message = new RecordMetricsMessage('other_route', 'prod');
@@ -158,6 +176,39 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertNull($message->getUserId());
     }
 
+    public function testRouteNameAndEnvAreRequired(): void
+    {
+        $message = new RecordMetricsMessage('api_foo', 'stage');
+        $this->assertSame('api_foo', $message->getRouteName());
+        $this->assertSame('stage', $message->getEnv());
+    }
+
+    public function testGetRouteNameAndEnvWithEmptyStrings(): void
+    {
+        $message = new RecordMetricsMessage('', '');
+
+        $this->assertSame('', $message->getRouteName());
+        $this->assertSame('', $message->getEnv());
+    }
+
+    public function testHttpMethodOptional(): void
+    {
+        $m = new RecordMetricsMessage('r', 'dev', 0.1, 1, 0.01, null, null, 'POST');
+        $this->assertSame('POST', $m->getHttpMethod());
+    }
+
+    public function testGetParamsWithEmptyArray(): void
+    {
+        $m = new RecordMetricsMessage('r', 'dev', null, null, null, [], null);
+        $this->assertSame([], $m->getParams());
+    }
+
+    public function testGetMemoryUsageWithZero(): void
+    {
+        $m = new RecordMetricsMessage('r', 'dev', null, null, null, null, 0, null);
+        $this->assertSame(0, $m->getMemoryUsage());
+    }
+
     public function testConstructorWithAllOptionalUserFields(): void
     {
         $message = new RecordMetricsMessage(
@@ -179,5 +230,54 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertSame('12345', $message->getUserId());
         $this->assertSame('https://example.com/from', $message->getReferer());
         $this->assertSame('req-xyz', $message->getRequestId());
+    }
+
+    public function testGetRequestTimeWithZero(): void
+    {
+        $message = new RecordMetricsMessage('r', 'dev', 0.0, null, null, null, null, null);
+
+        $this->assertSame(0.0, $message->getRequestTime());
+    }
+
+    public function testGetQueryTimeWithZero(): void
+    {
+        $message = new RecordMetricsMessage('r', 'dev', null, null, 0.0, null, null, null);
+
+        $this->assertSame(0.0, $message->getQueryTime());
+    }
+
+    public function testGetTotalQueriesWithZero(): void
+    {
+        $message = new RecordMetricsMessage('r', 'dev', null, 0, null, null, null, null);
+
+        $this->assertSame(0, $message->getTotalQueries());
+    }
+
+    public function testGetHttpMethodWithPUT(): void
+    {
+        $message = new RecordMetricsMessage('api_update', 'dev', null, null, null, null, null, 'PUT');
+
+        $this->assertSame('PUT', $message->getHttpMethod());
+    }
+
+    public function testGetHttpMethodWithPATCH(): void
+    {
+        $message = new RecordMetricsMessage('api_patch', 'dev', null, null, null, null, null, 'PATCH');
+
+        $this->assertSame('PATCH', $message->getHttpMethod());
+    }
+
+    public function testGetHttpMethodWithDELETE(): void
+    {
+        $message = new RecordMetricsMessage('api_delete', 'prod', null, null, null, null, null, 'DELETE');
+
+        $this->assertSame('DELETE', $message->getHttpMethod());
+    }
+
+    public function testGetHttpMethodWithOPTIONS(): void
+    {
+        $message = new RecordMetricsMessage('api_cors', 'dev', null, null, null, null, null, 'OPTIONS');
+
+        $this->assertSame('OPTIONS', $message->getHttpMethod());
     }
 }

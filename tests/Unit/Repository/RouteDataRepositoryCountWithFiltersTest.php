@@ -191,4 +191,92 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
 
         $this->assertSame(7, $result);
     }
+
+    public function testCountWithFiltersDateToOnly(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $dateTo = new \DateTimeImmutable('2025-12-31');
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn('4');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('andWhere')
+            ->with('r.createdAt <= :date_to')
+            ->willReturnSelf();
+        $queryBuilder->expects($this->exactly(2))
+            ->method('setParameter')
+            ->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->countWithFilters('dev', ['date_to' => $dateTo]);
+
+        $this->assertSame(4, $result);
+    }
+
+    public function testCountWithFiltersDateFromOnly(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $dateFrom = new \DateTimeImmutable('2026-01-01');
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn('6');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('andWhere')
+            ->with('r.createdAt >= :date_from')
+            ->willReturnSelf();
+        $queryBuilder->expects($this->exactly(2))
+            ->method('setParameter')
+            ->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->countWithFilters('prod', ['date_from' => $dateFrom]);
+
+        $this->assertSame(6, $result);
+    }
+
+    public function testCountWithFiltersWithEmptyEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn('0');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('setParameter')
+            ->with('env', '')
+            ->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->countWithFilters('', []);
+
+        $this->assertSame(0, $result);
+    }
 }

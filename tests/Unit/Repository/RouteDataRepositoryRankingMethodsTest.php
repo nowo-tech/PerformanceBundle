@@ -72,4 +72,18 @@ final class RouteDataRepositoryRankingMethodsTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    public function testGetRankingByRequestTimeWithStageEnvReturnsNull(): void
+    {
+        $result = $this->repository->getRankingByRequestTime('api_dashboard', 'stage');
+
+        $this->assertNull($result);
+    }
+
+    public function testGetRankingByQueryCountWithStageEnvReturnsNull(): void
+    {
+        $result = $this->repository->getRankingByQueryCount('api_dashboard', 'stage');
+
+        $this->assertNull($result);
+    }
 }

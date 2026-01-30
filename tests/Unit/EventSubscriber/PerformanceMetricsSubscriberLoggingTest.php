@@ -51,7 +51,10 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
             false, // enableLogging = false
+            false, // trackUser
             null,  // requestStack
+            null,  // security
+            null,  // stopwatch
             null   // kernel
         );
 
@@ -94,7 +97,10 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
             false, // enableLogging = false
+            false, // trackUser
             null,  // requestStack
+            null,  // security
+            null,  // stopwatch
             null   // kernel
         );
 
@@ -165,7 +171,10 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
             false, // enableLogging = false
+            false, // trackUser
             null,  // requestStack
+            null,  // security
+            null,  // stopwatch
             null   // kernel
         );
 
@@ -224,7 +233,10 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
             true,  // enableLogging = true
+            false, // trackUser
             null,  // requestStack
+            null,  // security
+            null,  // stopwatch
             null   // kernel
         );
 
@@ -267,7 +279,10 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             1.0,   // samplingRate
             [200, 404, 500, 503], // trackStatusCodes
             true,  // enableLogging = true
+            false, // trackUser
             null,  // requestStack
+            null,  // security
+            null,  // stopwatch
             null   // kernel
         );
 

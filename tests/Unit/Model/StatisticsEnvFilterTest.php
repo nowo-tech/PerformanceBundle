@@ -33,4 +33,34 @@ final class StatisticsEnvFilterTest extends TestCase
         $f->env = 'stage';
         $this->assertSame('stage', $f->env);
     }
+
+    public function testEnvPropertyCanBeSetToNull(): void
+    {
+        $f = new StatisticsEnvFilter('dev');
+        $this->assertSame('dev', $f->env);
+        $f->env = null;
+        $this->assertNull($f->env);
+    }
+
+    public function testEnvPropertyCanBeSetToEmptyString(): void
+    {
+        $f = new StatisticsEnvFilter('prod');
+        $this->assertSame('prod', $f->env);
+        $f->env = '';
+        $this->assertSame('', $f->env);
+    }
+
+    public function testEnvPropertyCanBeSetToStage(): void
+    {
+        $f = new StatisticsEnvFilter();
+        $f->env = 'stage';
+        $this->assertSame('stage', $f->env);
+    }
+
+    public function testEnvPropertyCanBeSetToTest(): void
+    {
+        $f = new StatisticsEnvFilter();
+        $f->env = 'test';
+        $this->assertSame('test', $f->env);
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\DependencyInjection;
 
+use Nowo\PerformanceBundle\DependencyInjection\Configuration;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -98,8 +99,24 @@ final class PerformanceExtensionTest extends TestCase
     {
         // Don't register twig extension
         $this->extension->prepend($this->container);
-        
+
         // Should not throw exception
         $this->assertTrue(true);
+    }
+
+    public function testGetConfigurationReturnsConfigurationInstance(): void
+    {
+        $config = $this->extension->getConfiguration([], $this->container);
+
+        $this->assertInstanceOf(Configuration::class, $config);
+    }
+
+    public function testLoadWithPartialConfigMergesWithDefaults(): void
+    {
+        $this->extension->load([['enabled' => false, 'table_name' => 'custom_perf']], $this->container);
+
+        $this->assertFalse($this->container->getParameter('nowo_performance.enabled'));
+        $this->assertSame('custom_perf', $this->container->getParameter('nowo_performance.table_name'));
+        $this->assertSame(['prod', 'dev', 'test'], $this->container->getParameter('nowo_performance.environments'));
     }
 }

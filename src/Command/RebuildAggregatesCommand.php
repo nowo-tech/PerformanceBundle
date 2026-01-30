@@ -47,6 +47,15 @@ final class RebuildAggregatesCommand extends Command
 
     protected function configure(): void
     {
+        $this->setHelp(<<<'HELP'
+The <info>nowo:performance:rebuild-aggregates</info> command rebuilds RouteData aggregates from RouteDataRecord entries.
+
+Updates lastAccessedAt and related metadata on RouteData from records (normalized: metrics live in records).
+
+<info>php bin/console nowo:performance:rebuild-aggregates</info>
+<info>php bin/console nowo:performance:rebuild-aggregates --env=prod --batch-size=100</info>
+HELP
+        );
         $this
             ->addOption(
                 'env',

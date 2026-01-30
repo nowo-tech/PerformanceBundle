@@ -85,4 +85,36 @@ final class TableNameSubscriberTest extends TestCase
         
         $subscriber->loadClassMetadata($eventArgs);
     }
+
+    public function testLoadClassMetadataWhenTableNameMatchesDoesNotCallSetPrimaryTable(): void
+    {
+        $tableName = 'routes_data';
+        $subscriber = new TableNameSubscriber($tableName);
+
+        $classMetadata = $this->createMock(ClassMetadata::class);
+        $classMetadata->expects($this->once())
+            ->method('getName')
+            ->willReturn('Nowo\PerformanceBundle\Entity\RouteData');
+        $classMetadata->expects($this->any())
+            ->method('getTableName')
+            ->willReturn($tableName);
+        $classMetadata->expects($this->never())
+            ->method('setPrimaryTable');
+
+        $eventArgs = $this->createMock(LoadClassMetadataEventArgs::class);
+        $eventArgs->expects($this->once())
+            ->method('getClassMetadata')
+            ->willReturn($classMetadata);
+
+        $subscriber->loadClassMetadata($eventArgs);
+    }
+
+    public function testConstructorWithDifferentTableName(): void
+    {
+        $subscriber = new TableNameSubscriber('performance_metrics');
+
+        $events = $subscriber->getSubscribedEvents();
+
+        $this->assertContains('loadClassMetadata', $events);
+    }
 }

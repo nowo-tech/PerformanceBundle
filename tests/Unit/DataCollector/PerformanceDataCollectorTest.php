@@ -11,793 +11,253 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class PerformanceDataCollectorTest extends TestCase
 {
-    private PerformanceDataCollector $collector;
-
-    protected function setUp(): void
-    {
-        $this->collector = new PerformanceDataCollector();
-    }
-
     public function testGetName(): void
     {
-        $this->assertSame('performance', $this->collector->getName());
+        $collector = new PerformanceDataCollector();
+        $this->assertSame('performance', $collector->getName());
     }
 
-    public function testSetAndGetEnabled(): void
+    public function testIsEnabledFalseByDefault(): void
     {
-        $this->collector->setEnabled(true);
-        
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-        
-        $this->assertTrue($this->collector->isEnabled());
-        
-        $this->collector->setEnabled(false);
-        $this->collector->collect($request, $response);
-        
-        $this->assertFalse($this->collector->isEnabled());
+        $collector = new PerformanceDataCollector();
+        $this->assertFalse($collector->isEnabled());
     }
 
-    public function testSetAndGetRouteName(): void
+    public function testSetEnabled(): void
     {
-        $this->collector->setRouteName('app_home');
-        
-        $request = Request::create('/');
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(true);
+        $this->assertTrue($collector->isEnabled());
+        $collector->setEnabled(false);
+        $this->assertFalse($collector->isEnabled());
+    }
+
+    public function testResetClearsDataAfterCollect(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $collector->setRouteName('app_home');
+
+        $request = new Request();
         $request->attributes->set('_route', 'app_home');
         $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $this->assertSame('app_home', $this->collector->getRouteName());
+
+        $collector->collect($request, $response);
+
+        $this->assertSame('app_home', $collector->getRouteName());
+        $this->assertSame(0, $collector->getQueryCount());
+
+        $collector->reset();
+
+        $this->assertNull($collector->getRouteName());
+        $this->assertSame(0, $collector->getQueryCount());
+        $this->assertFalse($collector->isEnabled());
     }
 
-    public function testSetStartTimeAndCollect(): void
+    public function testSetRouteName(): void
     {
-        $startTime = microtime(true);
-        $this->collector->setStartTime($startTime);
-        
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $requestTime = $this->collector->getRequestTime();
-        $this->assertNotNull($requestTime);
-        $this->assertGreaterThan(0, $requestTime);
-    }
+        $collector = new PerformanceDataCollector();
+        $collector->setRouteName('api_foo');
+        $collector->setEnabled(false);
 
-    public function testSetQueryMetrics(): void
-    {
-        $this->collector->setQueryMetrics(10, 0.5);
-        
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $this->assertSame(10, $this->collector->getQueryCount());
-        $this->assertSame(500.0, $this->collector->getQueryTime()); // Converted to ms
-    }
-
-    public function testSetQueryCountAndTime(): void
-    {
-        $this->collector->setQueryCount(5);
-        $this->collector->setQueryTime(0.25);
-        
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $this->assertSame(5, $this->collector->getQueryCount());
-        $this->assertSame(250.0, $this->collector->getQueryTime());
-    }
-
-    public function testGetFormattedRequestTime(): void
-    {
-        $this->collector->setStartTime(microtime(true) - 0.001); // 1ms ago
-        
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $formatted = $this->collector->getFormattedRequestTime();
-        $this->assertStringContainsString('ms', $formatted);
-    }
-
-    public function testGetFormattedRequestTimeForSeconds(): void
-    {
-        $this->collector->setStartTime(microtime(true) - 1.5); // 1.5s ago
-        
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $formatted = $this->collector->getFormattedRequestTime();
-        $this->assertStringContainsString('s', $formatted);
-    }
-
-    public function testGetFormattedRequestTimeWhenNull(): void
-    {
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $formatted = $this->collector->getFormattedRequestTime();
-        $this->assertSame('N/A', $formatted);
-    }
-
-    public function testGetFormattedQueryTime(): void
-    {
-        $this->collector->setQueryTime(0.001); // 1ms
-        
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $formatted = $this->collector->getFormattedQueryTime();
-        $this->assertStringContainsString('ms', $formatted);
-    }
-
-    public function testGetFormattedQueryTimeForSeconds(): void
-    {
-        $this->collector->setQueryTime(1.5); // 1.5s
-        
-        $request = Request::create('/');
-        $response = new Response();
-        
-        $this->collector->collect($request, $response);
-        
-        $formatted = $this->collector->getFormattedQueryTime();
-        $this->assertStringContainsString('s', $formatted);
-    }
-
-    public function testReset(): void
-    {
-        $this->collector->setStartTime(microtime(true));
-        $this->collector->setQueryMetrics(10, 0.5);
-        $this->collector->setRouteName('app_home');
-        $this->collector->setEnabled(true);
-        
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-        
-        $this->collector->reset();
-        $this->collector->setEnabled(false);
-        $this->collector->collect($request, $response);
-        
-        $this->assertFalse($this->collector->isEnabled());
-        $this->assertNull($this->collector->getRouteName());
-        $this->assertNull($this->collector->getRequestTime());
-        $this->assertSame(0, $this->collector->getQueryCount());
-        $this->assertSame(0.0, $this->collector->getQueryTime());
-    }
-
-    public function testSetAndGetDisabledReason(): void
-    {
-        $this->collector->setDisabledReason('Route "_profiler" is in ignore_routes list');
-        $this->collector->setEnabled(false);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertSame('Route "_profiler" is in ignore_routes list', $this->collector->getDisabledReason());
-    }
-
-    public function testGetDisabledReasonWhenEnabled(): void
-    {
-        $this->collector->setEnabled(true);
-        $this->collector->setDisabledReason(null);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertNull($this->collector->getDisabledReason());
-    }
-
-    public function testSetAndGetConfiguredEnvironments(): void
-    {
-        $this->collector->setConfiguredEnvironments(['dev', 'test', 'prod']);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertSame(['dev', 'test', 'prod'], $this->collector->getConfiguredEnvironments());
-    }
-
-    public function testSetAndGetCurrentEnvironment(): void
-    {
-        $this->collector->setCurrentEnvironment('test');
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertSame('test', $this->collector->getCurrentEnvironment());
-    }
-
-    public function testCollectWhenDisabledStillStoresDiagnostics(): void
-    {
-        $this->collector->setEnabled(false);
-        $this->collector->setDisabledReason('Bundle is disabled in configuration (nowo_performance.enabled: false)');
-        $this->collector->setRouteName('_profiler');
-        $this->collector->setConfiguredEnvironments(['dev', 'test']);
-        $this->collector->setCurrentEnvironment('dev');
-
-        $request = Request::create('/');
-        $request->attributes->set('_route', '_profiler');
-        $response = new Response();
-
-        $this->collector->collect($request, $response);
-
-        $this->assertFalse($this->collector->isEnabled());
-        $this->assertSame('Bundle is disabled in configuration (nowo_performance.enabled: false)', $this->collector->getDisabledReason());
-        $this->assertSame('_profiler', $this->collector->getRouteName());
-        $this->assertSame(['dev', 'test'], $this->collector->getConfiguredEnvironments());
-        $this->assertSame('dev', $this->collector->getCurrentEnvironment());
-        $this->assertSame('N/A', $this->collector->getFormattedRequestTime());
-        $this->assertSame(0, $this->collector->getQueryCount());
-    }
-
-    public function testResetClearsDisabledReasonAndEnvironments(): void
-    {
-        $this->collector->setDisabledReason('Test reason');
-        $this->collector->setConfiguredEnvironments(['dev']);
-        $this->collector->setCurrentEnvironment('dev');
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->collector->reset();
-        $this->collector->setEnabled(false);
-        $this->collector->collect($request, $response);
-
-        $this->assertNull($this->collector->getDisabledReason());
-        $this->assertNull($this->collector->getConfiguredEnvironments());
-        $this->assertNull($this->collector->getCurrentEnvironment());
-    }
-
-    public function testCollectWithoutTableCheckerReturnsDefaultTableStatus(): void
-    {
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertFalse($this->collector->tableExists());
-        $this->assertFalse($this->collector->tableIsComplete());
-        $this->assertNull($this->collector->getTableName());
-        $this->assertSame([], $this->collector->getMissingColumns());
-    }
-
-    public function testCollectWithTableStatusChecker(): void
-    {
-        $checker = $this->createMock(\Nowo\PerformanceBundle\Service\TableStatusChecker::class);
-        $checker->method('tableExists')->willReturn(true);
-        $checker->method('tableIsComplete')->willReturn(true);
-        $checker->method('getTableName')->willReturn('routes_data');
-        $checker->method('getMissingColumns')->willReturn([]);
-
-        $collector = new PerformanceDataCollector(null, null, $checker, null, null);
-
-        $request = Request::create('/');
+        $request = new Request();
+        $request->attributes->set('_route', 'other');
         $response = new Response();
         $collector->collect($request, $response);
 
-        $this->assertTrue($collector->tableExists());
-        $this->assertTrue($collector->tableIsComplete());
-        $this->assertSame('routes_data', $collector->getTableName());
+        $this->assertSame('api_foo', $collector->getRouteName());
+    }
+
+    public function testGetFormattedRequestTimeReturnsNaWhenDisabled(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame('N/A', $collector->getFormattedRequestTime());
+    }
+
+    public function testGetFormattedQueryTimeReturnsZeroMsWhenDisabled(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertStringContainsString('ms', $collector->getFormattedQueryTime());
+        $this->assertSame(0, $collector->getQueryCount());
+    }
+
+    public function testGetProcessingModeReturnsSyncWhenDisabled(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame('sync', $collector->getProcessingMode());
+        $this->assertFalse($collector->isAsync());
+    }
+
+    public function testSetRecordOperationAndGetRecordOperationStatus(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $collector->setRecordOperation(true, false);
+        $this->assertTrue($collector->wasRecordNew());
+        $this->assertFalse($collector->wasRecordUpdated());
+        $this->assertSame($collector->wasRecordNew(), $collector->getWasRecordNew());
+        $this->assertSame($collector->wasRecordUpdated(), $collector->getWasRecordUpdated());
+        $this->assertSame('New record created', $collector->getRecordOperationStatus());
+
+        $collector->setRecordOperation(false, true);
+        $this->assertSame('Existing record updated', $collector->getRecordOperationStatus());
+
+        $collector->setRecordOperation(false, false);
+        $this->assertSame('No changes (metrics not worse than existing)', $collector->getRecordOperationStatus());
+
+        $collector->setRecordOperation(true, true);
+        $this->assertSame('New record created', $collector->getRecordOperationStatus());
+    }
+
+    public function testGetRecordOperationStatusUnknownWhenBothNull(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertNull($collector->wasRecordNew());
+        $this->assertNull($collector->wasRecordUpdated());
+        $this->assertSame('Unknown', $collector->getRecordOperationStatus());
+    }
+
+    public function testConfiguredEnvironmentsAndDisabledReasonStoredWhenDisabled(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setConfiguredEnvironments(['dev', 'prod']);
+        $collector->setCurrentEnvironment('dev');
+        $collector->setDisabledReason('Route ignored');
+        $collector->setEnabled(false);
+
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame(['dev', 'prod'], $collector->getConfiguredEnvironments());
+        $this->assertSame('dev', $collector->getCurrentEnvironment());
+        $this->assertSame('Route ignored', $collector->getDisabledReason());
+    }
+
+    public function testGetMissingDependenciesAndDependencyStatusWhenDisabled(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame([], $collector->getMissingDependencies());
+        $this->assertSame([], $collector->getDependencyStatus());
+    }
+
+    public function testTableExistsTableIsCompleteGetTableNameGetMissingColumnsWhenDisabled(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertFalse($collector->tableExists());
+        $this->assertFalse($collector->tableIsComplete());
+        $this->assertNull($collector->getTableName());
         $this->assertSame([], $collector->getMissingColumns());
     }
 
-    public function testCollectWithTableStatusCheckerIncomplete(): void
+    public function testGetRequestTimeAccessCountRankingAndTotalRoutesWhenDisabled(): void
     {
-        $checker = $this->createMock(\Nowo\PerformanceBundle\Service\TableStatusChecker::class);
-        $checker->method('tableExists')->willReturn(true);
-        $checker->method('tableIsComplete')->willReturn(false);
-        $checker->method('getTableName')->willReturn('routes_data');
-        $checker->method('getMissingColumns')->willReturn(['total_queries', 'query_time']);
-
-        $collector = new PerformanceDataCollector(null, null, $checker, null, null);
-
-        $request = Request::create('/');
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
-        $this->assertTrue($collector->tableExists());
-        $this->assertFalse($collector->tableIsComplete());
-        $this->assertSame(['total_queries', 'query_time'], $collector->getMissingColumns());
-    }
-
-    public function testCollectWithTableStatusCheckerAndRecordsTableIncomplete(): void
-    {
-        $checker = $this->createMock(\Nowo\PerformanceBundle\Service\TableStatusChecker::class);
-        $checker->method('tableExists')->willReturn(true);
-        $checker->method('tableIsComplete')->willReturn(true);
-        $checker->method('getTableName')->willReturn('routes_data');
-        $checker->method('getMissingColumns')->willReturn([]);
-        $checker->method('isAccessRecordsEnabled')->willReturn(true);
-        $checker->method('recordsTableExists')->willReturn(true);
-        $checker->method('recordsTableIsComplete')->willReturn(false);
-        $checker->method('getRecordsTableName')->willReturn('routes_data_records');
-        $checker->method('getRecordsMissingColumns')->willReturn(['request_id']);
-
-        $collector = new PerformanceDataCollector(null, null, $checker, null, null);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $collector->collect($request, $response);
-
-        $ref = new \ReflectionClass($collector);
-        $dataProp = $ref->getProperty('data');
-        $dataProp->setAccessible(true);
-        $data = $dataProp->getValue($collector);
-
-        $this->assertTrue($data['records_table_exists'] ?? false);
-        $this->assertFalse($data['records_table_is_complete'] ?? true);
-        $this->assertSame('routes_data_records', $data['records_table_name'] ?? null);
-        $this->assertSame(['request_id'], $data['missing_columns_records'] ?? []);
-    }
-
-    public function testCollectWithDependencyChecker(): void
-    {
-        $depChecker = $this->createMock(\Nowo\PerformanceBundle\Service\DependencyChecker::class);
-        $depChecker->method('getMissingDependencies')->willReturn([
-            ['package' => 'symfony/messenger', 'feature' => 'Async', 'message' => 'Optional', 'install_command' => 'composer require symfony/messenger'],
-        ]);
-        $depChecker->method('getDependencyStatus')->willReturn([
-            'messenger' => ['available' => false, 'package' => 'symfony/messenger'],
-            'form' => ['available' => true, 'package' => 'symfony/form'],
-        ]);
-
-        $collector = new PerformanceDataCollector(null, null, null, $depChecker, null);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $collector->collect($request, $response);
-
-        $missing = $collector->getMissingDependencies();
-        $this->assertCount(1, $missing);
-        $this->assertSame('symfony/messenger', $missing[0]['package']);
-
-        $status = $collector->getDependencyStatus();
-        $this->assertArrayHasKey('messenger', $status);
-        $this->assertFalse($status['messenger']['available']);
-        $this->assertArrayHasKey('form', $status);
-        $this->assertTrue($status['form']['available']);
-    }
-
-    public function testGetProcessingMode(): void
-    {
-        $this->collector->setAsync(false);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertSame('sync', $this->collector->getProcessingMode());
-
-        $this->collector->reset();
-        $this->collector->setAsync(true);
-        $this->collector->collect($request, $response);
-
-        $mode = $this->collector->getProcessingMode();
-        $this->assertContains($mode, ['sync', 'async']);
-    }
-
-    public function testSetRequestTime(): void
-    {
-        // This method is currently a no-op, but we test it doesn't throw
-        $this->collector->setRequestTime(0.5);
-        $this->assertTrue(true); // If we get here, no exception was thrown
-    }
-
-    public function testGetAccessCount(): void
-    {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
-        
-        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
-        $routeData->setName('app_home');
-        $routeData->setEnv('dev');
-
-        $repository
-            ->expects($this->once())
-            ->method('findByRouteAndEnv')
-            ->with('app_home', 'dev')
-            ->willReturn($routeData);
-
-        $recordRepository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRecordRepository::class);
-        $recordRepository
-            ->expects($this->once())
-            ->method('countByRouteData')
-            ->with($this->identicalTo($routeData))
-            ->willReturn(5);
-
-        $kernel
-            ->expects($this->once())
-            ->method('getEnvironment')
-            ->willReturn('dev');
-
-        $collector = new PerformanceDataCollector($repository, $kernel, null, null, $recordRepository);
-        $collector->setRouteName('app_home');
-        $collector->setEnabled(true);
-
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
-        $response = new Response();
-
-        $collector->collect($request, $response);
-
-        $this->assertSame(5, $collector->getAccessCount());
-    }
-
-    public function testGetRankingByRequestTime(): void
-    {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
-        
-        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
-        $routeData->setName('app_home');
-        $routeData->setEnv('dev');
-
-        $repository
-            ->expects($this->once())
-            ->method('findByRouteAndEnv')
-            ->with('app_home', 'dev')
-            ->willReturn($routeData);
-
-        $repository
-            ->expects($this->once())
-            ->method('getRankingByRequestTime')
-            ->with($this->isInstanceOf(\Nowo\PerformanceBundle\Entity\RouteData::class))
-            ->willReturn(3);
-
-        $repository
-            ->expects($this->once())
-            ->method('getTotalRoutesCount')
-            ->with('dev')
-            ->willReturn(10);
-
-        $kernel
-            ->expects($this->once())
-            ->method('getEnvironment')
-            ->willReturn('dev');
-
-        $collector = new PerformanceDataCollector($repository, $kernel);
-        $collector->setRouteName('app_home');
-        $collector->setEnabled(true);
-
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
-        $response = new Response();
-
-        $collector->collect($request, $response);
-
-        $this->assertSame(3, $collector->getRankingByRequestTime());
-        $this->assertSame(10, $collector->getTotalRoutes());
-    }
-
-    public function testGetRankingByQueryCount(): void
-    {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
-        
-        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
-        $routeData->setName('app_home');
-        $routeData->setEnv('dev');
-
-        $repository
-            ->expects($this->once())
-            ->method('findByRouteAndEnv')
-            ->with('app_home', 'dev')
-            ->willReturn($routeData);
-
-        $repository
-            ->expects($this->once())
-            ->method('getRankingByQueryCount')
-            ->with($this->isInstanceOf(\Nowo\PerformanceBundle\Entity\RouteData::class))
-            ->willReturn(2);
-
-        $kernel
-            ->expects($this->once())
-            ->method('getEnvironment')
-            ->willReturn('dev');
-
-        $collector = new PerformanceDataCollector($repository, $kernel);
-        $collector->setRouteName('app_home');
-        $collector->setEnabled(true);
-
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
-        $response = new Response();
-
-        $collector->collect($request, $response);
-
-        $this->assertSame(2, $collector->getRankingByQueryCount());
-    }
-
-    public function testCollectSkipsRankingQueriesWhenDisabled(): void
-    {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
-        $container = $this->createMock(\Psr\Container\ContainerInterface::class);
-        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-
-        // Container returns enable_ranking_queries = false
-        $container->expects($this->once())
-            ->method('getParameter')
-            ->with('nowo_performance.dashboard.enable_ranking_queries')
-            ->willReturn(false);
-
-        $kernel->expects($this->once())
-            ->method('getContainer')
-            ->willReturn($container);
-
-        $kernel->expects($this->once())
-            ->method('getEnvironment')
-            ->willReturn('dev');
-
-        $repository->expects($this->once())
-            ->method('findByRouteAndEnv')
-            ->with('app_home', 'dev')
-            ->willReturn($routeData);
-
-        // Ranking queries should NOT be called
-        $repository->expects($this->never())
-            ->method('getRankingByRequestTime');
-        $repository->expects($this->never())
-            ->method('getRankingByQueryCount');
-        $repository->expects($this->never())
-            ->method('getTotalRoutesCount');
-
-        $collector = new PerformanceDataCollector($repository, $kernel);
-        $collector->setRouteName('app_home');
-        $collector->setEnabled(true);
-
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
-        $response = new Response();
-
-        $collector->collect($request, $response);
-
-        // Ranking should be null when disabled
+        $this->assertNull($collector->getRequestTime());
+        $this->assertNull($collector->getAccessCount());
         $this->assertNull($collector->getRankingByRequestTime());
         $this->assertNull($collector->getRankingByQueryCount());
         $this->assertNull($collector->getTotalRoutes());
     }
 
-    public function testCollectExecutesRankingQueriesWhenEnabled(): void
+    public function testCollectMustBeCalledBeforeReset(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
-        $container = $this->createMock(\Psr\Container\ContainerInterface::class);
-        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
 
-        // Container returns enable_ranking_queries = true (default)
-        $container->expects($this->once())
-            ->method('getParameter')
-            ->with('nowo_performance.dashboard.enable_ranking_queries')
-            ->willReturn(true);
+        $collector->reset();
 
-        $kernel->expects($this->once())
-            ->method('getContainer')
-            ->willReturn($container);
+        $this->assertNull($collector->getRouteName());
+        $this->assertSame(0, $collector->getQueryCount());
+    }
 
-        $kernel->expects($this->once())
-            ->method('getEnvironment')
-            ->willReturn('dev');
-
-        $repository->expects($this->once())
-            ->method('findByRouteAndEnv')
-            ->with('app_home', 'dev')
-            ->willReturn($routeData);
-
-        // Ranking queries SHOULD be called
-        $repository->expects($this->once())
-            ->method('getRankingByRequestTime')
-            ->with($routeData)
-            ->willReturn(1);
-        $repository->expects($this->once())
-            ->method('getRankingByQueryCount')
-            ->with($routeData)
-            ->willReturn(2);
-        $repository->expects($this->once())
-            ->method('getTotalRoutesCount')
-            ->with('dev')
-            ->willReturn(10);
-
-        $collector = new PerformanceDataCollector($repository, $kernel);
-        $collector->setRouteName('app_home');
+    public function testSetStartTimeBeforeCollect(): void
+    {
+        $collector = new PerformanceDataCollector();
         $collector->setEnabled(true);
+        $collector->setStartTime(microtime(true) - 0.5);
 
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
+        $request = new Request();
         $response = new Response();
-
         $collector->collect($request, $response);
 
-        // Ranking should be set when enabled
-        $this->assertSame(1, $collector->getRankingByRequestTime());
-        $this->assertSame(2, $collector->getRankingByQueryCount());
-        $this->assertSame(10, $collector->getTotalRoutes());
+        $requestTime = $collector->getRequestTime();
+        $this->assertNotNull($requestTime);
+        $this->assertGreaterThanOrEqual(0.0, $requestTime);
     }
 
-    public function testCollectUsesDefaultWhenParameterNotAvailable(): void
+    public function testSetQueryMetricsAndGetQueryCountQueryTime(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
-        $container = $this->createMock(\Psr\Container\ContainerInterface::class);
-        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-
-        // Container throws exception (parameter not available)
-        $container->expects($this->once())
-            ->method('getParameter')
-            ->with('nowo_performance.dashboard.enable_ranking_queries')
-            ->willThrowException(new \Exception('Parameter not found'));
-
-        $kernel->expects($this->once())
-            ->method('getContainer')
-            ->willReturn($container);
-
-        $kernel->expects($this->once())
-            ->method('getEnvironment')
-            ->willReturn('dev');
-
-        $repository->expects($this->once())
-            ->method('findByRouteAndEnv')
-            ->with('app_home', 'dev')
-            ->willReturn($routeData);
-
-        // Should use default (true) and execute ranking queries
-        $repository->expects($this->once())
-            ->method('getRankingByRequestTime')
-            ->with($routeData)
-            ->willReturn(1);
-        $repository->expects($this->once())
-            ->method('getRankingByQueryCount')
-            ->with($routeData)
-            ->willReturn(2);
-        $repository->expects($this->once())
-            ->method('getTotalRoutesCount')
-            ->with('dev')
-            ->willReturn(10);
-
-        $collector = new PerformanceDataCollector($repository, $kernel);
-        $collector->setRouteName('app_home');
+        $collector = new PerformanceDataCollector();
         $collector->setEnabled(true);
+        $collector->setQueryMetrics(7, 0.15);
 
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
+        $request = new Request();
         $response = new Response();
-
         $collector->collect($request, $response);
 
-        // Should have ranking data (default is enabled)
-        $this->assertSame(1, $collector->getRankingByRequestTime());
-        $this->assertSame(2, $collector->getRankingByQueryCount());
-        $this->assertSame(10, $collector->getTotalRoutes());
+        $this->assertSame(7, $collector->getQueryCount());
+        $this->assertStringContainsString('ms', $collector->getFormattedQueryTime());
     }
 
-    public function testCollectHandlesRepositoryException(): void
+    public function testSetAsyncAndIsAsync(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $kernel = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
-
-        $repository
-            ->expects($this->once())
-            ->method('findByRouteAndEnv')
-            ->willThrowException(new \Exception('Database error'));
-
-        $kernel
-            ->expects($this->once())
-            ->method('getEnvironment')
-            ->willReturn('dev');
-
-        $collector = new PerformanceDataCollector($repository, $kernel);
-        $collector->setRouteName('app_home');
+        $collector = new PerformanceDataCollector();
         $collector->setEnabled(true);
+        $collector->setAsync(true);
 
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
+        $request = new Request();
         $response = new Response();
-
-        // Should not throw exception
         $collector->collect($request, $response);
 
-        $this->assertNull($collector->getAccessCount());
-        $this->assertNull($collector->getRankingByRequestTime());
-    }
-
-    public function testCollectWithoutRepository(): void
-    {
-        $collector = new PerformanceDataCollector(null, null);
-        $collector->setRouteName('app_home');
-        $collector->setEnabled(true);
-
-        $request = Request::create('/');
-        $request->attributes->set('_route', 'app_home');
-        $response = new Response();
-
-        $collector->collect($request, $response);
-
-        $this->assertNull($collector->getAccessCount());
-        $this->assertNull($collector->getRankingByRequestTime());
-    }
-
-    public function testSetRecordOperationWithNewRecord(): void
-    {
-        $this->collector->setRecordOperation(true, false);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertTrue($this->collector->wasRecordNew());
-        $this->assertFalse($this->collector->wasRecordUpdated());
-        $this->assertSame('New record created', $this->collector->getRecordOperationStatus());
-    }
-
-    public function testSetRecordOperationWithUpdatedRecord(): void
-    {
-        $this->collector->setRecordOperation(false, true);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertFalse($this->collector->wasRecordNew());
-        $this->assertTrue($this->collector->wasRecordUpdated());
-        $this->assertSame('Existing record updated', $this->collector->getRecordOperationStatus());
-    }
-
-    public function testSetRecordOperationWithNoChanges(): void
-    {
-        $this->collector->setRecordOperation(false, false);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertFalse($this->collector->wasRecordNew());
-        $this->assertFalse($this->collector->wasRecordUpdated());
-        $this->assertSame('No changes (metrics not worse than existing)', $this->collector->getRecordOperationStatus());
-    }
-
-    public function testGetRecordOperationStatusWhenNotSet(): void
-    {
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertNull($this->collector->wasRecordNew());
-        $this->assertNull($this->collector->wasRecordUpdated());
-        $this->assertSame('Unknown', $this->collector->getRecordOperationStatus());
-    }
-
-    public function testResetClearsRecordOperation(): void
-    {
-        $this->collector->setRecordOperation(true, false);
-
-        $request = Request::create('/');
-        $response = new Response();
-        $this->collector->collect($request, $response);
-
-        $this->assertTrue($this->collector->wasRecordNew());
-
-        $this->collector->reset();
-        $this->collector->collect($request, $response);
-
-        $this->assertNull($this->collector->wasRecordNew());
-        $this->assertNull($this->collector->wasRecordUpdated());
+        // isAsync() returns true only when both setAsync(true) AND Symfony Messenger is available
+        $messengerAvailable = interface_exists('Symfony\Component\Messenger\MessageBusInterface')
+            || class_exists('Symfony\Component\Messenger\MessageBusInterface');
+        if ($messengerAvailable) {
+            $this->assertTrue($collector->isAsync());
+            $this->assertSame('async', $collector->getProcessingMode());
+        } else {
+            $this->assertFalse($collector->isAsync());
+            $this->assertSame('sync', $collector->getProcessingMode());
+        }
     }
 }

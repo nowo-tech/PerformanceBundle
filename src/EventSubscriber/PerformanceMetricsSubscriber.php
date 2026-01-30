@@ -272,8 +272,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                     ? $this->requestStack->getMainRequest()
                     : $this->requestStack->getMasterRequest();
             }
-            if (null === $mainRequest && method_exists($request, 'getMainRequest')) {
-                $mainRequest = $request->getMainRequest();
+            // Request does not have getMainRequest(); only RequestStack does. Use current request if we have no stack.
+            if (null === $mainRequest) {
+                $mainRequest = $request;
             }
             $this->requestId = $mainRequest?->attributes->get('_performance_request_id');
         }
@@ -330,9 +331,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $env = 'dev'; // Default fallback
         }
 
-        // Get route name here, as it should be resolved by now
+        // Get route name here, as it should be resolved by now.
+        // If request no longer has _route at terminate (route lost), clear and skip saving.
         $routeNameFromRequest = $request->attributes->get('_route');
-        $this->routeName = $this->routeName ?? $routeNameFromRequest;
+        if ($routeNameFromRequest === null) {
+            $this->routeName = null;
+        } else {
+            $this->routeName = $this->routeName ?? $routeNameFromRequest;
+        }
         $this->dataCollector->setRouteName($this->routeName);
 
         LogHelper::logf(

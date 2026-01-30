@@ -38,6 +38,29 @@ final class RouteDataRecordTest extends TestCase
         $this->assertSame($routeData, $this->record->getRouteData());
     }
 
+    public function testSetRouteDataReturnsSelf(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_foo')->setEnv('dev');
+
+        $result = $this->record->setRouteData($routeData);
+
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testSetRouteDataNull(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('app_home')->setEnv('dev');
+        $this->record->setRouteData($routeData);
+        $this->assertSame($routeData, $this->record->getRouteData());
+
+        $result = $this->record->setRouteData(null);
+
+        $this->assertSame($this->record, $result);
+        $this->assertNull($this->record->getRouteData());
+    }
+
     public function testAccessedAtIsSetOnConstruction(): void
     {
         $this->assertInstanceOf(\DateTimeImmutable::class, $this->record->getAccessedAt());
@@ -168,6 +191,12 @@ final class RouteDataRecordTest extends TestCase
         $this->assertSame(0.0, $this->record->getQueryTime());
     }
 
+    public function testSetResponseTimeWithZero(): void
+    {
+        $this->record->setResponseTime(0.0);
+        $this->assertSame(0.0, $this->record->getResponseTime());
+    }
+
     public function testRequestIdIsInitiallyNull(): void
     {
         $this->assertNull($this->record->getRequestId());
@@ -270,5 +299,99 @@ final class RouteDataRecordTest extends TestCase
     {
         $result = $this->record->setUserId('user-1');
         $this->assertSame($this->record, $result);
+    }
+
+    public function testSetResponseTimeReturnsSelf(): void
+    {
+        $result = $this->record->setResponseTime(0.5);
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testSetStatusCodeReturnsSelf(): void
+    {
+        $result = $this->record->setStatusCode(200);
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testSetStatusCodeWith503(): void
+    {
+        $this->record->setStatusCode(503);
+        $this->assertSame(503, $this->record->getStatusCode());
+    }
+
+    public function testSetStatusCodeWith500(): void
+    {
+        $this->record->setStatusCode(500);
+        $this->assertSame(500, $this->record->getStatusCode());
+    }
+
+    public function testSetStatusCodeWith502(): void
+    {
+        $this->record->setStatusCode(502);
+        $this->assertSame(502, $this->record->getStatusCode());
+    }
+
+    public function testSetAccessedAtReturnsSelf(): void
+    {
+        $date = new \DateTimeImmutable('2024-06-01 10:00:00');
+        $result = $this->record->setAccessedAt($date);
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testSetTotalQueriesReturnsSelf(): void
+    {
+        $result = $this->record->setTotalQueries(15);
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testSetQueryTimeReturnsSelf(): void
+    {
+        $result = $this->record->setQueryTime(0.1);
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testSetMemoryUsageReturnsSelf(): void
+    {
+        $result = $this->record->setMemoryUsage(1024);
+        $this->assertSame($this->record, $result);
+    }
+
+    public function testSetRefererWithEmptyString(): void
+    {
+        $this->record->setReferer('');
+        $this->assertSame('', $this->record->getReferer());
+    }
+
+    public function testSetTotalQueriesWithZero(): void
+    {
+        $this->record->setTotalQueries(0);
+        $this->assertSame(0, $this->record->getTotalQueries());
+    }
+
+    public function testSetRequestIdWithEmptyString(): void
+    {
+        $this->record->setRequestId('');
+        $this->assertSame('', $this->record->getRequestId());
+    }
+
+    public function testSetUserIdentifierWithEmptyString(): void
+    {
+        $this->record->setUserIdentifier('');
+        $this->assertSame('', $this->record->getUserIdentifier());
+    }
+
+    public function testSetUserIdWithEmptyString(): void
+    {
+        $this->record->setUserId('');
+        $this->assertSame('', $this->record->getUserId());
+    }
+
+    public function testSetQueryTimeWithNull(): void
+    {
+        $this->record->setQueryTime(0.1);
+        $this->assertSame(0.1, $this->record->getQueryTime());
+
+        $this->record->setQueryTime(null);
+        $this->assertNull($this->record->getQueryTime());
     }
 }

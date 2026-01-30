@@ -114,4 +114,67 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         $this->assertSame('DESC', $data['order']);
         $this->assertSame(25, $data['limit']);
     }
+
+    public function testFormBuildsWithCurrentDateFromAndDateTo(): void
+    {
+        $from = new \DateTimeImmutable('2026-01-01');
+        $to = new \DateTimeImmutable('2026-01-31');
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+            'current_date_from' => $from,
+            'current_date_to' => $to,
+        ]);
+
+        $this->assertTrue($form->has('date_from'));
+        $this->assertTrue($form->has('date_to'));
+        $this->assertInstanceOf(\DateTimeInterface::class, $form->get('date_from')->getData());
+        $this->assertInstanceOf(\DateTimeInterface::class, $form->get('date_to')->getData());
+        $this->assertSame('2026-01-01', $form->get('date_from')->getData()->format('Y-m-d'));
+        $this->assertSame('2026-01-31', $form->get('date_to')->getData()->format('Y-m-d'));
+    }
+
+    public function testFormSubmissionWithDateFromAndDateTo(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev', 'prod'],
+        ]);
+
+        $form->submit([
+            'env' => 'prod',
+            'route' => '',
+            'sort' => 'name',
+            'order' => 'ASC',
+            'limit' => 50,
+            'date_from' => '2026-02-01',
+            'date_to' => '2026-02-28',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('prod', $data['env']);
+        $this->assertInstanceOf(\DateTimeInterface::class, $data['date_from']);
+        $this->assertInstanceOf(\DateTimeInterface::class, $data['date_to']);
+        $this->assertSame('2026-02-01', $data['date_from']->format('Y-m-d'));
+        $this->assertSame('2026-02-28', $data['date_to']->format('Y-m-d'));
+    }
+
+    public function testFormMethodIsGet(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+        ]);
+
+        $this->assertSame('GET', $form->getConfig()->getOption('method'));
+    }
+
+    public function testFormBuildsWithStageEnvironment(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev', 'stage', 'prod'],
+            'current_env' => 'stage',
+        ]);
+
+        $this->assertTrue($form->has('env'));
+        $this->assertSame('stage', $form->get('env')->getData());
+    }
 }

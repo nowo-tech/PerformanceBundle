@@ -55,6 +55,14 @@ final class RoutesTableComponentTest extends TestCase
         $this->assertSame('ASC', $component->order);
     }
 
+    public function testSortByWithAccessCount(): void
+    {
+        $component = new RoutesTableComponent();
+        $component->sortBy = 'accessCount';
+
+        $this->assertSame('accessCount', $component->sortBy);
+    }
+
     public function testReviewFormsAndDeleteFormsDefaultEmpty(): void
     {
         $component = new RoutesTableComponent();
@@ -71,5 +79,19 @@ final class RoutesTableComponentTest extends TestCase
 
         $this->assertFalse($component->enableRecordManagement);
         $this->assertFalse($component->enableReviewSystem);
+    }
+
+    public function testReviewFormsAndDeleteFormsCanBeAssigned(): void
+    {
+        $component = new RoutesTableComponent();
+        $formView = $this->createMock(\Symfony\Component\Form\FormView::class);
+
+        $component->reviewForms = [1 => $formView];
+        $component->deleteForms = [2 => $formView];
+
+        $this->assertCount(1, $component->reviewForms);
+        $this->assertCount(1, $component->deleteForms);
+        $this->assertArrayHasKey(1, $component->reviewForms);
+        $this->assertArrayHasKey(2, $component->deleteForms);
     }
 }

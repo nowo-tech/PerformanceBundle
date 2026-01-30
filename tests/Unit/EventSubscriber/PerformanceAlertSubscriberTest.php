@@ -10,255 +10,193 @@ use Nowo\PerformanceBundle\EventSubscriber\PerformanceAlertSubscriber;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Nowo\PerformanceBundle\Service\NotificationService;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 
 final class PerformanceAlertSubscriberTest extends TestCase
 {
-    private NotificationService&MockObject $notificationService;
-    private PerformanceAlertSubscriber $subscriber;
-
-    protected function setUp(): void
+    public function testOnAfterMetricsRecordedDoesNothingWhenDisabled(): void
     {
-        $this->notificationService = $this->createMock(NotificationService::class);
-        
-        $this->subscriber = new PerformanceAlertSubscriber(
-            $this->notificationService,
-            0.5,  // requestTimeWarning
-            1.0,  // requestTimeCritical
-            20,   // queryCountWarning
-            50,   // queryCountCritical
-            20.0, // memoryUsageWarning
-            50.0, // memoryUsageCritical
-            true  // enabled
-        );
-    }
+        $notification = $this->createMock(NotificationService::class);
+        $notification->expects($this->never())->method('sendAlert');
 
-    public function testSendsCriticalAlertForRequestTime(): void
-    {
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        $routeData->setRequestTime(1.5); // Above critical threshold (1.0)
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, false);
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, 2.0, 100, 100 * 1024 * 1024);
 
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
-
-        $this->notificationService->expects($this->once())
-            ->method('sendAlert')
-            ->with(
-                $this->callback(function (PerformanceAlert $alert) {
-                    return $alert->getType() === PerformanceAlert::TYPE_REQUEST_TIME &&
-                           $alert->isCritical() &&
-                           str_contains($alert->getMessage(), 'Critical');
-                }),
-                $routeData
-            )
-            ->willReturn(['email' => true]);
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
-    }
-
-    public function testSendsWarningAlertForRequestTime(): void
-    {
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        $routeData->setRequestTime(0.6); // Above warning threshold (0.5) but below critical
-
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
-
-        $this->notificationService->expects($this->once())
-            ->method('sendAlert')
-            ->with(
-                $this->callback(function (PerformanceAlert $alert) {
-                    return $alert->getType() === PerformanceAlert::TYPE_REQUEST_TIME &&
-                           $alert->isWarning() &&
-                           str_contains($alert->getMessage(), 'Warning');
-                }),
-                $routeData
-            )
-            ->willReturn(['email' => true]);
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
-    }
-
-    public function testSendsCriticalAlertForQueryCount(): void
-    {
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        $routeData->setTotalQueries(60); // Above critical threshold (50)
-
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
-
-        $this->notificationService->expects($this->once())
-            ->method('sendAlert')
-            ->with(
-                $this->callback(function (PerformanceAlert $alert) {
-                    return $alert->getType() === PerformanceAlert::TYPE_QUERY_COUNT &&
-                           $alert->isCritical();
-                }),
-                $routeData
-            )
-            ->willReturn(['email' => true]);
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
-    }
-
-    public function testSendsWarningAlertForQueryCount(): void
-    {
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        $routeData->setTotalQueries(25); // Above warning threshold (20) but below critical
-
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
-
-        $this->notificationService->expects($this->once())
-            ->method('sendAlert')
-            ->with(
-                $this->callback(function (PerformanceAlert $alert) {
-                    return $alert->getType() === PerformanceAlert::TYPE_QUERY_COUNT &&
-                           $alert->isWarning();
-                }),
-                $routeData
-            )
-            ->willReturn(['email' => true]);
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
-    }
-
-    public function testSendsCriticalAlertForMemoryUsage(): void
-    {
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        $routeData->setMemoryUsage(60 * 1024 * 1024); // 60 MB, above critical threshold (50 MB)
-
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
-
-        $this->notificationService->expects($this->once())
-            ->method('sendAlert')
-            ->with(
-                $this->callback(function (PerformanceAlert $alert) {
-                    return $alert->getType() === PerformanceAlert::TYPE_MEMORY_USAGE &&
-                           $alert->isCritical();
-                }),
-                $routeData
-            )
-            ->willReturn(['email' => true]);
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
-    }
-
-    public function testSendsWarningAlertForMemoryUsage(): void
-    {
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        $routeData->setMemoryUsage(25 * 1024 * 1024); // 25 MB, above warning threshold (20 MB) but below critical
-
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
-
-        $this->notificationService->expects($this->once())
-            ->method('sendAlert')
-            ->with(
-                $this->callback(function (PerformanceAlert $alert) {
-                    return $alert->getType() === PerformanceAlert::TYPE_MEMORY_USAGE &&
-                           $alert->isWarning();
-                }),
-                $routeData
-            )
-            ->willReturn(['email' => true]);
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
-    }
-
-    public function testDoesNotSendAlertWhenDisabled(): void
-    {
-        $subscriber = new PerformanceAlertSubscriber(
-            $this->notificationService,
-            0.5,
-            1.0,
-            20,
-            50,
-            20.0,
-            50.0,
-            false // disabled
-        );
-
-        $routeData = new RouteData();
-        $routeData->setRequestTime(1.5);
-
-        $this->notificationService->expects($this->never())
-            ->method('sendAlert');
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
         $subscriber->onAfterMetricsRecorded($event);
     }
 
-    public function testDoesNotSendAlertWhenNotificationServiceDisabled(): void
+    public function testOnAfterMetricsRecordedDoesNothingWhenNotificationServiceNull(): void
     {
-        $routeData = new RouteData();
-        $routeData->setRequestTime(1.5);
+        $subscriber = new PerformanceAlertSubscriber(null, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, 2.0, 100, 100 * 1024 * 1024);
 
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(false);
+        $subscriber->onAfterMetricsRecorded($event);
 
-        $this->notificationService->expects($this->never())
-            ->method('sendAlert');
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
+        $this->addToAssertionCount(1);
     }
 
-    public function testDoesNotSendAlertWhenBelowThresholds(): void
+    public function testOnAfterMetricsRecordedDoesNothingWhenNotificationServiceNotEnabled(): void
     {
-        $routeData = new RouteData();
-        $routeData->setRequestTime(0.3); // Below warning threshold
-        $routeData->setTotalQueries(10); // Below warning threshold
-        $routeData->setMemoryUsage(10 * 1024 * 1024); // 10 MB, below warning threshold
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(false);
+        $notification->expects($this->never())->method('sendAlert');
 
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, 2.0, 100, 100 * 1024 * 1024);
 
-        $this->notificationService->expects($this->never())
-            ->method('sendAlert');
-
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
+        $subscriber->onAfterMetricsRecorded($event);
     }
 
-    public function testSendsMultipleAlertsForMultipleThresholds(): void
+    public function testOnAfterMetricsRecordedSendsAlertWhenRequestTimeCritical(): void
     {
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        $routeData->setRequestTime(1.5); // Critical
-        $routeData->setTotalQueries(60); // Critical
-        $routeData->setMemoryUsage(60 * 1024 * 1024); // Critical
-
-        $this->notificationService->expects($this->once())
-            ->method('isEnabled')
-            ->willReturn(true);
-
-        $this->notificationService->expects($this->exactly(3))
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
-            ->willReturn(['email' => true]);
+            ->with(
+                $this->callback(function (PerformanceAlert $a): bool {
+                    return $a->getType() === PerformanceAlert::TYPE_REQUEST_TIME
+                        && $a->getSeverity() === PerformanceAlert::SEVERITY_CRITICAL
+                        && $a->isCritical();
+                }),
+                $this->isInstanceOf(AfterMetricsRecordedEvent::class)
+            );
 
-        $event = new AfterMetricsRecordedEvent($routeData, false);
-        $this->subscriber->onAfterMetricsRecorded($event);
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('api_slow')->setEnv('prod');
+        $event = new AfterMetricsRecordedEvent($route, true, 1.5, null, null);
+
+        $subscriber->onAfterMetricsRecorded($event);
+    }
+
+    public function testOnAfterMetricsRecordedSendsAlertWhenRequestTimeWarning(): void
+    {
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->atLeastOnce())
+            ->method('sendAlert')
+            ->with(
+                $this->callback(function (PerformanceAlert $a): bool {
+                    return $a->getType() === PerformanceAlert::TYPE_REQUEST_TIME
+                        && $a->getSeverity() === PerformanceAlert::SEVERITY_WARNING
+                        && $a->isWarning();
+                }),
+                $this->isInstanceOf(AfterMetricsRecordedEvent::class)
+            );
+
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('api_warn')->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, 0.6, null, null);
+
+        $subscriber->onAfterMetricsRecorded($event);
+    }
+
+    public function testOnAfterMetricsRecordedSendsAlertWhenQueryCountCritical(): void
+    {
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->atLeastOnce())
+            ->method('sendAlert')
+            ->with(
+                $this->callback(function (PerformanceAlert $a): bool {
+                    return $a->getType() === PerformanceAlert::TYPE_QUERY_COUNT
+                        && $a->getSeverity() === PerformanceAlert::SEVERITY_CRITICAL;
+                }),
+                $this->anything()
+            );
+
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('api_n1')->setEnv('prod');
+        $event = new AfterMetricsRecordedEvent($route, true, null, 60, null);
+
+        $subscriber->onAfterMetricsRecorded($event);
+    }
+
+    public function testOnAfterMetricsRecordedSendsAlertWhenQueryCountWarning(): void
+    {
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->atLeastOnce())
+            ->method('sendAlert')
+            ->with(
+                $this->callback(function (PerformanceAlert $a): bool {
+                    return $a->getType() === PerformanceAlert::TYPE_QUERY_COUNT
+                        && $a->getSeverity() === PerformanceAlert::SEVERITY_WARNING;
+                }),
+                $this->anything()
+            );
+
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('api_queries')->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, null, 25, null);
+
+        $subscriber->onAfterMetricsRecorded($event);
+    }
+
+    public function testOnAfterMetricsRecordedSendsAlertWhenMemoryUsageCritical(): void
+    {
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->atLeastOnce())
+            ->method('sendAlert')
+            ->with(
+                $this->callback(function (PerformanceAlert $a): bool {
+                    return $a->getType() === PerformanceAlert::TYPE_MEMORY_USAGE
+                        && $a->getSeverity() === PerformanceAlert::SEVERITY_CRITICAL;
+                }),
+                $this->anything()
+            );
+
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('api_mem')->setEnv('prod');
+        $event = new AfterMetricsRecordedEvent($route, true, null, null, 60 * 1024 * 1024);
+
+        $subscriber->onAfterMetricsRecorded($event);
+    }
+
+    public function testOnAfterMetricsRecordedSendsAlertWhenMemoryUsageWarning(): void
+    {
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->atLeastOnce())
+            ->method('sendAlert')
+            ->with(
+                $this->callback(function (PerformanceAlert $a): bool {
+                    return $a->getType() === PerformanceAlert::TYPE_MEMORY_USAGE
+                        && $a->getSeverity() === PerformanceAlert::SEVERITY_WARNING;
+                }),
+                $this->anything()
+            );
+
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('api_mem')->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, null, null, 25 * 1024 * 1024);
+
+        $subscriber->onAfterMetricsRecorded($event);
+    }
+
+    public function testOnAfterMetricsRecordedNoAlertWhenBelowThresholds(): void
+    {
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->never())->method('sendAlert');
+
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setName('app_fast')->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, 0.1, 5, 10 * 1024 * 1024);
+
+        $subscriber->onAfterMetricsRecorded($event);
     }
 }

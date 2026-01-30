@@ -63,6 +63,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->willReturn([$record1, $record2, $record3]);
 
         $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
         $qb->method('join')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
@@ -89,12 +90,12 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $hour10 = array_values(array_filter($result, static fn ($stat) => $stat['hour'] === 10))[0];
         $this->assertSame(2, $hour10['count']);
         $this->assertEqualsWithDelta((0.5 + 0.7) / 2, $hour10['avg_response_time'], 0.0001);
-        $this->assertSame(['200' => 1, '404' => 1], $hour10['status_codes']);
+        $this->assertEquals([200 => 1, 404 => 1], $hour10['status_codes']);
 
         $hour14 = array_values(array_filter($result, static fn ($stat) => $stat['hour'] === 14))[0];
         $this->assertSame(1, $hour14['count']);
         $this->assertSame(1.0, $hour14['avg_response_time']);
-        $this->assertSame(['500' => 1], $hour14['status_codes']);
+        $this->assertEquals([500 => 1], $hour14['status_codes']);
     }
 
     public function testGetStatisticsByHourWithoutDataStillReturnsAllHours(): void
@@ -109,6 +110,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $query->method('getResult')->willReturn([]);
 
         $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
         $qb->method('join')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
@@ -157,6 +159,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $query->method('getResult')->willReturn([$record1, $record2]);
 
         $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
         $qb->method('join')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
@@ -173,12 +176,12 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $monday = $result[1];
         $this->assertSame(1, $monday['count']);
         $this->assertSame('Monday', $monday['day_name']);
-        $this->assertSame(['200' => 1], $monday['status_codes']);
+        $this->assertEquals([200 => 1], $monday['status_codes']);
 
         $wednesday = $result[3];
         $this->assertSame(1, $wednesday['count']);
         $this->assertSame('Wednesday', $wednesday['day_name']);
-        $this->assertSame(['500' => 1], $wednesday['status_codes']);
+        $this->assertEquals([500 => 1], $wednesday['status_codes']);
     }
 
     public function testGetStatisticsByMonthAggregatesCorrectly(): void
@@ -207,6 +210,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $query->method('getResult')->willReturn([$record1, $record2]);
 
         $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
         $qb->method('join')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
@@ -251,6 +255,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $query->method('getResult')->willReturn([$record1, $record2, $record3]);
 
         $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
         $qb->method('join')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
@@ -470,5 +475,160 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $result = $repository->deleteByEnvironment('dev');
 
         $this->assertSame(10, $result);
+    }
+
+    public function testCountByRouteDataReturnsCount(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('app_home')->setEnv('dev');
+
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())
+            ->method('getSingleScalarResult')
+            ->willReturn('7');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->expects($this->once())
+            ->method('select')
+            ->with('COUNT(r.id)')
+            ->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('where')
+            ->with('r.routeData = :routeData')
+            ->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('setParameter')
+            ->with('routeData', $routeData)
+            ->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('getQuery')
+            ->willReturn($query);
+
+        $repository
+            ->expects($this->once())
+            ->method('createQueryBuilder')
+            ->with('r')
+            ->willReturn($queryBuilder);
+
+        $result = $repository->countByRouteData($routeData);
+
+        $this->assertSame(7, $result);
+    }
+
+    public function testGetAggregatesForRouteDataIdsReturnsEmptyWhenEmptyInput(): void
+    {
+        $result = $this->repository->getAggregatesForRouteDataIds([]);
+        $this->assertSame([], $result);
+    }
+
+    public function testDeleteByFilterReturnsZeroWhenNoRecordsMatch(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())
+            ->method('getSingleColumnResult')
+            ->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('setMaxResults')->willReturnSelf();
+        $qb->method('andWhere')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->expects($this->once())->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->deleteByFilter('dev', null, null, null, null, null, null, null, null, 1000);
+
+        $this->assertSame(0, $result);
+    }
+
+    public function testGetPaginatedRecordsReturnsStructure(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $countQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $countQuery->method('getSingleScalarResult')->willReturn(0);
+        $recordsQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $recordsQuery->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('andWhere')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->method('select')->willReturnSelf();
+        $qb->method('setFirstResult')->willReturnSelf();
+        $qb->method('setMaxResults')->willReturnSelf();
+        $getQueryCallCount = 0;
+        $qb->method('getQuery')->willReturnCallback(function () use (&$getQueryCallCount, $countQuery, $recordsQuery) {
+            ++$getQueryCallCount;
+            return 1 === $getQueryCallCount ? $countQuery : $recordsQuery;
+        });
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getPaginatedRecords('dev', 1, 50);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('records', $result);
+        $this->assertArrayHasKey('total', $result);
+        $this->assertArrayHasKey('page', $result);
+        $this->assertArrayHasKey('per_page', $result);
+        $this->assertArrayHasKey('total_pages', $result);
+        $this->assertSame(1, $result['page']);
+        $this->assertSame(50, $result['per_page']);
+        $this->assertSame(0, $result['total']);
+        $this->assertSame(0, $result['total_pages']);
+        $this->assertIsArray($result['records']);
+        $this->assertSame([], $result['records']);
+    }
+
+    public function testGetRecordsForExportReturnsStructure(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->method('getSingleScalarResult')->willReturn(0);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('join')->willReturnSelf();
+        $qb->method('addSelect')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('andWhere')->willReturnSelf();
+        $qb->method('select')->willReturnSelf();
+        $qb->method('setMaxResults')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getRecordsForExport('dev');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('records', $result);
+        $this->assertArrayHasKey('total', $result);
+        $this->assertSame([], $result['records']);
+        $this->assertSame(0, $result['total']);
     }
 }

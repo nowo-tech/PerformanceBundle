@@ -20,7 +20,9 @@ final class ClearPerformanceDataTypeTest extends TypeTestCase
 
     public function testBuildFormCreatesEnvAndSubmit(): void
     {
-        $form = $this->factory->create(ClearPerformanceDataType::class);
+        $form = $this->factory->create(ClearPerformanceDataType::class, null, [
+            'csrf_protection' => false,
+        ]);
 
         $this->assertTrue($form->has('env'));
         $this->assertTrue($form->has('submit'));
@@ -54,35 +56,73 @@ final class ClearPerformanceDataTypeTest extends TypeTestCase
 
     public function testFormSubmissionBindsToClearPerformanceDataRequest(): void
     {
-        $form = $this->factory->create(ClearPerformanceDataType::class, null, [
+        $form = $this->factory->create(ClearPerformanceDataType::class, new ClearPerformanceDataRequest(), [
             'csrf_protection' => false,
         ]);
 
-        $form->submit([
-            'env' => 'dev',
-            'submit' => '',
-        ]);
+        $form->submit(['env' => 'prod']);
 
         $this->assertTrue($form->isValid());
         $data = $form->getData();
         $this->assertInstanceOf(ClearPerformanceDataRequest::class, $data);
-        $this->assertSame('dev', $data->env);
+        $this->assertSame('prod', $data->env);
     }
 
     public function testFormSubmissionWithEmptyEnv(): void
+    {
+        $form = $this->factory->create(ClearPerformanceDataType::class, new ClearPerformanceDataRequest(), [
+            'csrf_protection' => false,
+        ]);
+
+        $form->submit(['env' => '']);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertInstanceOf(ClearPerformanceDataRequest::class, $data);
+        $this->assertNull($data->env);
+    }
+
+    public function testFormSubmissionWithDifferentEnvironments(): void
+    {
+        $form = $this->factory->create(ClearPerformanceDataType::class, new ClearPerformanceDataRequest(), [
+            'csrf_protection' => false,
+        ]);
+
+        $form->submit(['env' => 'stage']);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('stage', $data->env);
+    }
+
+    public function testFormBuildsWithCsrfProtectionDisabled(): void
     {
         $form = $this->factory->create(ClearPerformanceDataType::class, null, [
             'csrf_protection' => false,
         ]);
 
-        $form->submit([
-            'env' => '',
-            'submit' => '',
+        $this->assertFalse($form->getConfig()->getOption('csrf_protection'));
+    }
+
+    public function testFormBuildsWithTestEnvironment(): void
+    {
+        $form = $this->factory->create(ClearPerformanceDataType::class, new ClearPerformanceDataRequest(), [
+            'csrf_protection' => false,
         ]);
+
+        $form->submit(['env' => 'test']);
 
         $this->assertTrue($form->isValid());
         $data = $form->getData();
-        $this->assertInstanceOf(ClearPerformanceDataRequest::class, $data);
-        $this->assertSame('', $data->env);
+        $this->assertSame('test', $data->env);
+    }
+
+    public function testFormMethodIsPost(): void
+    {
+        $form = $this->factory->create(ClearPerformanceDataType::class, null, [
+            'csrf_protection' => false,
+        ]);
+
+        $this->assertSame('POST', $form->getConfig()->getOption('method'));
     }
 }

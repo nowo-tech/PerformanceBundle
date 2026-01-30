@@ -46,6 +46,8 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 [],
                 null,
+                null,
+                null,
                 null
             );
 
@@ -79,6 +81,8 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 [],
+                null,
+                null,
                 null,
                 null
             );
@@ -115,6 +119,8 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 [],
                 'req-abc123',
+                null,
+                null,
                 null
             );
 
@@ -151,7 +157,9 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 [],
                 null,
-                'https://referer.example/'
+                'https://referer.example/',
+                null,
+                null
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -176,7 +184,49 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 [],
                 null,
+                null,
+                null,
                 null
+            );
+
+        $handler = new RecordMetricsMessageHandler($this->metricsService);
+        $handler($message);
+    }
+
+    public function testInvokePassesUserIdentifierAndUserIdToRecordMetrics(): void
+    {
+        $message = new RecordMetricsMessage(
+            'api_foo',
+            'prod',
+            0.1,
+            3,
+            0.05,
+            null,
+            null,
+            'POST',
+            null,
+            null,
+            'user@example.com',
+            '42'
+        );
+
+        $this->metricsService->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'api_foo',
+                'prod',
+                0.1,
+                3,
+                0.05,
+                null,
+                null,
+                'POST',
+                null,
+                [],
+                null,
+                null,
+                'user@example.com',
+                '42'
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);

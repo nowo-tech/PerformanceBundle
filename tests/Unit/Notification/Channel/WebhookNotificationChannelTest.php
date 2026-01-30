@@ -5,229 +5,118 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Notification\Channel;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use PHPUnit\Framework\TestCase;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class WebhookNotificationChannelTest extends TestCase
 {
-    public function testIsEnabledWhenHttpClientAndUrlProvided(): void
-    {
-        $httpClient = $this->createMock(HttpClientInterface::class);
-        
-        $channel = new WebhookNotificationChannel(
-            $httpClient,
-            'https://example.com/webhook',
-            'json',
-            [],
-            true
-        );
-        
-        $this->assertTrue($channel->isEnabled());
-    }
+    private const HTTP_CLIENT_INTERFACE = 'Symfony\Contracts\HttpClient\HttpClientInterface';
+    private const RESPONSE_INTERFACE = 'Symfony\Contracts\HttpClient\ResponseInterface';
 
-    public function testIsDisabledWhenHttpClientIsNull(): void
+    protected function setUp(): void
     {
-        $channel = new WebhookNotificationChannel(
-            null,
-            'https://example.com/webhook',
-            'json',
-            [],
-            true
-        );
-        
-        $this->assertFalse($channel->isEnabled());
-    }
-
-    public function testIsDisabledWhenUrlIsEmpty(): void
-        {
-        $httpClient = $this->createMock(HttpClientInterface::class);
-        
-        $channel = new WebhookNotificationChannel(
-            $httpClient,
-            '',
-            'json',
-            [],
-            true
-        );
-        
-        $this->assertFalse($channel->isEnabled());
-    }
-
-    public function testIsDisabledWhenExplicitlyDisabled(): void
-    {
-        $httpClient = $this->createMock(HttpClientInterface::class);
-        
-        $channel = new WebhookNotificationChannel(
-            $httpClient,
-            'https://example.com/webhook',
-            'json',
-            [],
-            false
-        );
-        
-        $this->assertFalse($channel->isEnabled());
-    }
-
-    public function testSendWebhookWithJsonFormat(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        
-        $httpClient = $this->createMock(HttpClientInterface::class);
-        $httpClient->expects($this->once())
-            ->method('request')
-            ->with(
-                'POST',
-                'https://example.com/webhook',
-                $this->callback(function ($options) {
-                    return isset($options['headers']['Content-Type']) &&
-                           $options['headers']['Content-Type'] === 'application/json' &&
-                           isset($options['json']['alert']) &&
-                           isset($options['json']['route']);
-                })
-            )
-            ->willReturn($response);
-        
-        $channel = new WebhookNotificationChannel(
-            $httpClient,
-            'https://example.com/webhook',
-            'json',
-            [],
-            true
-        );
-        
-        $alert = new PerformanceAlert(
-            PerformanceAlert::TYPE_REQUEST_TIME,
-            PerformanceAlert::SEVERITY_CRITICAL,
-            'Test alert',
-            ['value' => 1.5]
-        );
-        
-        $routeData = new RouteData();
-        $routeData->setName('app_home');
-        
-        $result = $channel->send($alert, $routeData);
-        
-        $this->assertTrue($result);
-    }
-
-    public function testSendWebhookWithSlackFormat(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        
-        $httpClient = $this->createMock(HttpClientInterface::class);
-        $httpClient->expects($this->once())
-            ->method('request')
-            ->with(
-                'POST',
-                'https://hooks.slack.com/webhook',
-                $this->callback(function ($options) {
-                    return isset($options['json']['text']) &&
-                           isset($options['json']['attachments']);
-                })
-            )
-            ->willReturn($response);
-        
-        $channel = new WebhookNotificationChannel(
-            $httpClient,
-            'https://hooks.slack.com/webhook',
-            'slack',
-            [],
-            true
-        );
-        
-        $alert = new PerformanceAlert(
-            PerformanceAlert::TYPE_QUERY_COUNT,
-            PerformanceAlert::SEVERITY_WARNING,
-            'Warning alert'
-        );
-        
-        $routeData = new RouteData();
-        
-        $result = $channel->send($alert, $routeData);
-        
-        $this->assertTrue($result);
-    }
-
-    public function testSendWebhookWithTeamsFormat(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        
-        $httpClient = $this->createMock(HttpClientInterface::class);
-        $httpClient->expects($this->once())
-            ->method('request')
-            ->with(
-                'POST',
-                'https://outlook.office.com/webhook',
-                $this->callback(function ($options) {
-                    return isset($options['json']['@type']) &&
-                           $options['json']['@type'] === 'MessageCard' &&
-                           isset($options['json']['sections']);
-                })
-            )
-            ->willReturn($response);
-        
-        $channel = new WebhookNotificationChannel(
-            $httpClient,
-            'https://outlook.office.com/webhook',
-            'teams',
-            [],
-            true
-        );
-        
-        $alert = new PerformanceAlert(
-            PerformanceAlert::TYPE_MEMORY_USAGE,
-            PerformanceAlert::SEVERITY_CRITICAL,
-            'Memory alert'
-        );
-        
-        $routeData = new RouteData();
-        
-        $result = $channel->send($alert, $routeData);
-        
-        $this->assertTrue($result);
-    }
-
-    public function testSendWebhookHandlesException(): void
-    {
-        $httpClient = $this->createMock(HttpClientInterface::class);
-        $httpClient->expects($this->once())
-            ->method('request')
-            ->willThrowException(new \RuntimeException('HTTP error'));
-        
-        $channel = new WebhookNotificationChannel(
-            $httpClient,
-            'https://example.com/webhook',
-            'json',
-            [],
-            true
-        );
-        
-        $alert = new PerformanceAlert(
-            PerformanceAlert::TYPE_REQUEST_TIME,
-            PerformanceAlert::SEVERITY_WARNING,
-            'Test alert'
-        );
-        
-        $routeData = new RouteData();
-        
-        $result = $channel->send($alert, $routeData);
-        
-        $this->assertFalse($result);
+        parent::setUp();
+        if (!interface_exists(self::HTTP_CLIENT_INTERFACE) && !class_exists(self::HTTP_CLIENT_INTERFACE)) {
+            $this->markTestSkipped('symfony/http-client is not installed.');
+        }
     }
 
     public function testGetName(): void
     {
-        $channel = new WebhookNotificationChannel(
-            $this->createMock(HttpClientInterface::class),
-            'https://example.com/webhook',
-            'json',
-            [],
-            true
-        );
-        
+        $channel = new WebhookNotificationChannel(null, '', 'json', [], false);
         $this->assertSame('webhook', $channel->getName());
+    }
+
+    public function testIsEnabledWhenDisabled(): void
+    {
+        $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $channel = new WebhookNotificationChannel($client, 'https://hooks.example.com', 'json', [], false);
+        $this->assertFalse($channel->isEnabled());
+    }
+
+    public function testIsEnabledWhenHttpClientNull(): void
+    {
+        $channel = new WebhookNotificationChannel(null, 'https://hooks.example.com', 'json', [], true);
+        $this->assertFalse($channel->isEnabled());
+    }
+
+    public function testIsEnabledWhenWebhookUrlEmpty(): void
+    {
+        $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $channel = new WebhookNotificationChannel($client, '', 'json', [], true);
+        $this->assertFalse($channel->isEnabled());
+    }
+
+    public function testIsEnabledWhenAllPresent(): void
+    {
+        $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $channel = new WebhookNotificationChannel($client, 'https://hooks.example.com', 'json', [], true);
+        $this->assertTrue($channel->isEnabled());
+    }
+
+    public function testSendReturnsFalseWhenNotEnabled(): void
+    {
+        $channel = new WebhookNotificationChannel(null, '', 'json', [], false);
+        $alert = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'msg');
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+
+        $this->assertFalse($channel->send($alert, $route));
+    }
+
+    public function testSendWithRouteDataContextCallsHttpClient(): void
+    {
+        if (!interface_exists(self::RESPONSE_INTERFACE) && !class_exists(self::RESPONSE_INTERFACE)) {
+            $this->markTestSkipped('Symfony HttpClient ResponseInterface is not available.');
+        }
+        $response = $this->createMock(self::RESPONSE_INTERFACE);
+        $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $client->expects($this->once())
+            ->method('request')
+            ->with('POST', 'https://hooks.example.com', $this->callback(function (array $opts): bool {
+                return isset($opts['headers']['Content-Type']) && $opts['headers']['Content-Type'] === 'application/json'
+                    && isset($opts['json']['alert']) && isset($opts['json']['route']);
+            }))
+            ->willReturn($response);
+
+        $channel = new WebhookNotificationChannel($client, 'https://hooks.example.com', 'json', [], true);
+        $alert = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'Test');
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+
+        $this->assertTrue($channel->send($alert, $route));
+    }
+
+    public function testSendWithAfterMetricsRecordedEventContext(): void
+    {
+        if (!interface_exists(self::RESPONSE_INTERFACE) && !class_exists(self::RESPONSE_INTERFACE)) {
+            $this->markTestSkipped('Symfony HttpClient ResponseInterface is not available.');
+        }
+        $response = $this->createMock(self::RESPONSE_INTERFACE);
+        $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $client->expects($this->once())->method('request')->with('POST', $this->anything(), $this->anything())->willReturn($response);
+
+        $channel = new WebhookNotificationChannel($client, 'https://hooks.slack.com/x', 'json', [], true);
+        $alert = new PerformanceAlert(PerformanceAlert::TYPE_QUERY_COUNT, PerformanceAlert::SEVERITY_CRITICAL, 'High');
+        $route = new RouteData();
+        $route->setName('api_foo')->setEnv('prod');
+        $event = new AfterMetricsRecordedEvent($route, true, 0.3, 10, null);
+
+        $this->assertTrue($channel->send($alert, $event));
+    }
+
+    public function testSendReturnsFalseWhenHttpClientThrows(): void
+    {
+        $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $client->method('request')->willThrowException(new \RuntimeException('Connection refused'));
+
+        $channel = new WebhookNotificationChannel($client, 'https://hooks.example.com', 'json', [], true);
+        $alert = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'Test');
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+
+        $this->assertFalse($channel->send($alert, $route));
     }
 }

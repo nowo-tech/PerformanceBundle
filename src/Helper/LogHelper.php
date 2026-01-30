@@ -64,6 +64,10 @@ final class LogHelper
             return false;
         }
 
+        if (defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
+            return true;
+        }
+
         if (\function_exists('error_log')) {
             error_log($message);
 
@@ -86,6 +90,10 @@ final class LogHelper
     {
         if (!self::isLoggingEnabled($enableLogging)) {
             return false;
+        }
+
+        if (defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
+            return true;
         }
 
         if (\function_exists('error_log')) {

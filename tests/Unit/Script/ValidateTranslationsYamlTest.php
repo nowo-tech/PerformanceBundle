@@ -16,7 +16,8 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$projectRoot = dirname(__DIR__, 2);
+        // tests/Unit/Script -> go up 3 levels to project root
+        self::$projectRoot = dirname(__DIR__, 3);
         self::$scriptPath = self::$projectRoot.'/scripts/validate-translations-yaml.php';
     }
 

@@ -108,4 +108,63 @@ final class RouteDataToStringTest extends TestCase
 
         $this->assertSame('RouteData#new', $result);
     }
+
+    public function testToStringWithPATCHMethod(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setHttpMethod('PATCH');
+        $routeData->setName('api_patch');
+        $routeData->setEnv('dev');
+
+        $result = (string) $routeData;
+
+        $this->assertSame('PATCH api_patch (dev)', $result);
+    }
+
+    public function testToStringWithHEADMethod(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setHttpMethod('HEAD');
+        $routeData->setName('app_resource');
+        $routeData->setEnv('prod');
+
+        $result = (string) $routeData;
+
+        $this->assertSame('HEAD app_resource (prod)', $result);
+    }
+
+    public function testToStringWithOPTIONSMethod(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setHttpMethod('OPTIONS');
+        $routeData->setName('api_cors');
+        $routeData->setEnv('dev');
+
+        $result = (string) $routeData;
+
+        $this->assertSame('OPTIONS api_cors (dev)', $result);
+    }
+
+    public function testToStringWithStageEnv(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_dashboard');
+        $routeData->setEnv('stage');
+
+        $result = (string) $routeData;
+
+        $this->assertSame('api_dashboard (stage)', $result);
+    }
+
+    public function testToStringWithMethodNameAndTestEnv(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setHttpMethod('GET');
+        $routeData->setName('api_health');
+        $routeData->setEnv('test');
+
+        $result = (string) $routeData;
+
+        $this->assertSame('GET api_health (test)', $result);
+    }
 }

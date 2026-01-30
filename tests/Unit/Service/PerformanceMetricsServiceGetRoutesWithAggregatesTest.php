@@ -213,4 +213,205 @@ final class PerformanceMetricsServiceGetRoutesWithAggregatesTest extends TestCas
         self::assertSame(100, $result[0]->getMemoryUsage());
         self::assertNull($result[1]->getMemoryUsage());
     }
+
+    public function testGetRepositoryReturnsRouteDataRepository(): void
+    {
+        $repo = $this->service->getRepository();
+        self::assertSame($this->repository, $repo);
+    }
+
+    public function testGetRoutesWithAggregatesFilteredWithEmptyResult(): void
+    {
+        $this->repository
+            ->expects(self::once())
+            ->method('findWithFilters')
+            ->with('dev', [], 'lastAccessedAt', 'DESC', null)
+            ->willReturn([]);
+
+        $this->recordRepository->expects(self::never())->method('getAggregatesForRouteDataIds');
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'requestTime', 'DESC', null);
+
+        self::assertSame([], $result);
+    }
+
+    public function testGetWorstPerformingRoutesDelegatesToRepository(): void
+    {
+        $r1 = new RouteData();
+        $r1->setName('a');
+        $r1->setEnv('prod');
+        $r2 = new RouteData();
+        $r2->setName('b');
+        $r2->setEnv('prod');
+        $routes = [$r1, $r2];
+
+        $this->repository->expects(self::once())
+            ->method('findWorstPerforming')
+            ->with('prod', 20)
+            ->willReturn($routes);
+
+        $result = $this->service->getWorstPerformingRoutes('prod', 20);
+
+        self::assertSame($routes, $result);
+    }
+
+    public function testGetRoutesWithAggregatesFilteredSortByAccessCountDesc(): void
+    {
+        $route1 = new RouteData();
+        $route1->setName('r1');
+        $route1->setEnv('dev');
+        $ref1 = new \ReflectionProperty(RouteData::class, 'id');
+        $ref1->setAccessible(true);
+        $ref1->setValue($route1, 1);
+
+        $route2 = new RouteData();
+        $route2->setName('r2');
+        $route2->setEnv('dev');
+        $ref2 = new \ReflectionProperty(RouteData::class, 'id');
+        $ref2->setAccessible(true);
+        $ref2->setValue($route2, 2);
+
+        $this->repository->method('findWithFilters')->willReturn([$route1, $route2]);
+        $this->recordRepository->method('getAggregatesForRouteDataIds')->willReturn([
+            1 => [
+                'request_time' => null,
+                'query_time' => null,
+                'total_queries' => null,
+                'memory_usage' => null,
+                'access_count' => 5,
+                'status_codes' => [],
+            ],
+            2 => [
+                'request_time' => null,
+                'query_time' => null,
+                'total_queries' => null,
+                'memory_usage' => null,
+                'access_count' => 20,
+                'status_codes' => [],
+            ],
+        ]);
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'accessCount', 'DESC', null);
+
+        self::assertCount(2, $result);
+        self::assertSame(20, $result[0]->getAccessCount());
+        self::assertSame(5, $result[1]->getAccessCount());
+    }
+
+    public function testGetRoutesWithAggregatesFilteredSortByRequestTimeAsc(): void
+    {
+        $route1 = new RouteData();
+        $route1->setName('r1');
+        $route1->setEnv('dev');
+        $ref1 = new \ReflectionProperty(RouteData::class, 'id');
+        $ref1->setAccessible(true);
+        $ref1->setValue($route1, 1);
+
+        $route2 = new RouteData();
+        $route2->setName('r2');
+        $route2->setEnv('dev');
+        $ref2 = new \ReflectionProperty(RouteData::class, 'id');
+        $ref2->setAccessible(true);
+        $ref2->setValue($route2, 2);
+
+        $this->repository->method('findWithFilters')->willReturn([$route1, $route2]);
+        $this->recordRepository->method('getAggregatesForRouteDataIds')->willReturn([
+            1 => [
+                'request_time' => 0.5,
+                'query_time' => null,
+                'total_queries' => null,
+                'memory_usage' => null,
+                'access_count' => 1,
+                'status_codes' => [],
+            ],
+            2 => [
+                'request_time' => 0.1,
+                'query_time' => null,
+                'total_queries' => null,
+                'memory_usage' => null,
+                'access_count' => 1,
+                'status_codes' => [],
+            ],
+        ]);
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'requestTime', 'ASC', null);
+
+        self::assertCount(2, $result);
+        self::assertEqualsWithDelta(0.1, $result[0]->getRequestTime(), 0.001);
+        self::assertEqualsWithDelta(0.5, $result[1]->getRequestTime(), 0.001);
+    }
+
+    public function testGetRoutesWithAggregatesFilteredSingleRoute(): void
+    {
+        $route = new RouteData();
+        $route->setName('single');
+        $route->setEnv('dev');
+        $ref = new \ReflectionProperty(RouteData::class, 'id');
+        $ref->setAccessible(true);
+        $ref->setValue($route, 1);
+
+        $this->repository->method('findWithFilters')->willReturn([$route]);
+        $this->recordRepository->method('getAggregatesForRouteDataIds')->willReturn([
+            1 => [
+                'request_time' => 0.2,
+                'query_time' => 0.05,
+                'total_queries' => 7,
+                'memory_usage' => 1024,
+                'access_count' => 1,
+                'status_codes' => [200 => 1],
+            ],
+        ]);
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'requestTime', 'DESC', 10);
+
+        self::assertCount(1, $result);
+        self::assertInstanceOf(RouteDataWithAggregates::class, $result[0]);
+        self::assertEqualsWithDelta(0.2, $result[0]->getRequestTime(), 0.001);
+        self::assertSame(7, $result[0]->getTotalQueries());
+        self::assertSame(1, $result[0]->getAccessCount());
+        self::assertSame([200 => 1], $result[0]->getStatusCodes());
+    }
+
+    public function testGetRoutesWithAggregatesFilteredSortByTotalQueriesDesc(): void
+    {
+        $route1 = new RouteData();
+        $route1->setName('r1');
+        $route1->setEnv('dev');
+        $ref1 = new \ReflectionProperty(RouteData::class, 'id');
+        $ref1->setAccessible(true);
+        $ref1->setValue($route1, 1);
+
+        $route2 = new RouteData();
+        $route2->setName('r2');
+        $route2->setEnv('dev');
+        $ref2 = new \ReflectionProperty(RouteData::class, 'id');
+        $ref2->setAccessible(true);
+        $ref2->setValue($route2, 2);
+
+        $this->repository->method('findWithFilters')->willReturn([$route1, $route2]);
+        $this->recordRepository->method('getAggregatesForRouteDataIds')->willReturn([
+            1 => [
+                'request_time' => null,
+                'query_time' => null,
+                'total_queries' => 5,
+                'memory_usage' => null,
+                'access_count' => 1,
+                'status_codes' => [],
+            ],
+            2 => [
+                'request_time' => null,
+                'query_time' => null,
+                'total_queries' => 50,
+                'memory_usage' => null,
+                'access_count' => 1,
+                'status_codes' => [],
+            ],
+        ]);
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'totalQueries', 'DESC', null);
+
+        self::assertCount(2, $result);
+        self::assertSame(50, $result[0]->getTotalQueries());
+        self::assertSame(5, $result[1]->getTotalQueries());
+    }
 }

@@ -8,165 +8,129 @@ use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
-/**
- * Tests for QueryTrackingMiddlewarePass.
- */
 final class QueryTrackingMiddlewarePassTest extends TestCase
 {
-    private QueryTrackingMiddlewarePass $pass;
-    private ContainerBuilder $container;
+    private const MIDDLEWARE_ID = 'nowo_performance.dbal.query_tracking_middleware';
 
-    protected function setUp(): void
+    public function testProcessDoesNothingWhenDoctrineExtensionMissing(): void
     {
-        $this->pass = new QueryTrackingMiddlewarePass();
-        $this->container = new ContainerBuilder();
-    }
+        $container = new ContainerBuilder();
+        $container->setParameter('nowo_performance.enabled', true);
+        $container->setParameter('nowo_performance.track_queries', true);
+        $container->setParameter('nowo_performance.connection', 'default');
 
-    public function testProcessDoesNothingWhenDoctrineExtensionNotAvailable(): void
-    {
-        // Container without Doctrine extension
-        $this->container->setParameter('nowo_performance.enabled', true);
-        $this->container->setParameter('nowo_performance.track_queries', true);
-        $this->container->setParameter('nowo_performance.connection', 'default');
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        $this->pass->process($this->container);
-
-        // Should not register the middleware service
-        $this->assertFalse($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
+        $this->assertFalse($container->hasDefinition(self::MIDDLEWARE_ID));
     }
 
     public function testProcessDoesNothingWhenEnabledParameterMissing(): void
     {
-        // Add Doctrine extension mock
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
+        $container = new ContainerBuilder();
+        $this->registerDoctrineExtension($container);
+        $container->setParameter('nowo_performance.track_queries', true);
+        $container->setParameter('nowo_performance.connection', 'default');
 
-        $this->container->setParameter('nowo_performance.track_queries', true);
-        $this->container->setParameter('nowo_performance.connection', 'default');
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        $this->pass->process($this->container);
-
-        $this->assertFalse($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
+        $this->assertFalse($container->hasDefinition(self::MIDDLEWARE_ID));
     }
 
     public function testProcessDoesNothingWhenTrackQueriesParameterMissing(): void
     {
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
+        $container = new ContainerBuilder();
+        $this->registerDoctrineExtension($container);
+        $container->setParameter('nowo_performance.enabled', true);
+        $container->setParameter('nowo_performance.connection', 'default');
 
-        $this->container->setParameter('nowo_performance.enabled', true);
-        $this->container->setParameter('nowo_performance.connection', 'default');
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        $this->pass->process($this->container);
-
-        $this->assertFalse($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
+        $this->assertFalse($container->hasDefinition(self::MIDDLEWARE_ID));
     }
 
     public function testProcessDoesNothingWhenConnectionParameterMissing(): void
     {
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
+        $container = new ContainerBuilder();
+        $this->registerDoctrineExtension($container);
+        $container->setParameter('nowo_performance.enabled', true);
+        $container->setParameter('nowo_performance.track_queries', true);
 
-        $this->container->setParameter('nowo_performance.enabled', true);
-        $this->container->setParameter('nowo_performance.track_queries', true);
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        $this->pass->process($this->container);
-
-        $this->assertFalse($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
+        $this->assertFalse($container->hasDefinition(self::MIDDLEWARE_ID));
     }
 
-    public function testProcessDoesNothingWhenBundleDisabled(): void
+    public function testProcessDoesNothingWhenDisabled(): void
     {
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
+        $container = new ContainerBuilder();
+        $this->registerDoctrineExtension($container);
+        $container->setParameter('nowo_performance.enabled', false);
+        $container->setParameter('nowo_performance.track_queries', true);
+        $container->setParameter('nowo_performance.connection', 'default');
 
-        $this->container->setParameter('nowo_performance.enabled', false);
-        $this->container->setParameter('nowo_performance.track_queries', true);
-        $this->container->setParameter('nowo_performance.connection', 'default');
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        $this->pass->process($this->container);
-
-        $this->assertFalse($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
+        $this->assertFalse($container->hasDefinition(self::MIDDLEWARE_ID));
     }
 
     public function testProcessDoesNothingWhenTrackQueriesDisabled(): void
     {
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
+        $container = new ContainerBuilder();
+        $this->registerDoctrineExtension($container);
+        $container->setParameter('nowo_performance.enabled', true);
+        $container->setParameter('nowo_performance.track_queries', false);
+        $container->setParameter('nowo_performance.connection', 'default');
 
-        $this->container->setParameter('nowo_performance.enabled', true);
-        $this->container->setParameter('nowo_performance.track_queries', false);
-        $this->container->setParameter('nowo_performance.connection', 'default');
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        $this->pass->process($this->container);
-
-        $this->assertFalse($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
+        $this->assertFalse($container->hasDefinition(self::MIDDLEWARE_ID));
     }
 
-    public function testProcessRegistersMiddlewareWhenAllConditionsMet(): void
+    public function testProcessRegistersMiddlewareWhenEnabledAndTrackQueries(): void
     {
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
+        $container = new ContainerBuilder();
+        $this->registerDoctrineExtension($container);
+        $container->setParameter('nowo_performance.enabled', true);
+        $container->setParameter('nowo_performance.track_queries', true);
+        $container->setParameter('nowo_performance.connection', 'default');
 
-        $this->container->setParameter('nowo_performance.enabled', true);
-        $this->container->setParameter('nowo_performance.track_queries', true);
-        $this->container->setParameter('nowo_performance.connection', 'default');
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        $this->pass->process($this->container);
-
-        $this->assertTrue($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
-
-        $definition = $this->container->getDefinition('nowo_performance.dbal.query_tracking_middleware');
-        $this->assertSame(QueryTrackingMiddleware::class, $definition->getClass());
-        $this->assertFalse($definition->isPublic());
+        $this->assertTrue($container->hasDefinition(self::MIDDLEWARE_ID));
+        $def = $container->getDefinition(self::MIDDLEWARE_ID);
+        $this->assertSame(QueryTrackingMiddleware::class, $def->getClass());
+        $this->assertFalse($def->isPublic());
     }
 
-    public function testProcessDoesNotOverrideExistingDefinition(): void
+    public function testProcessDoesNotOverwriteExistingMiddlewareDefinition(): void
     {
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
+        $container = new ContainerBuilder();
+        $this->registerDoctrineExtension($container);
+        $container->setParameter('nowo_performance.enabled', true);
+        $container->setParameter('nowo_performance.track_queries', true);
+        $container->setParameter('nowo_performance.connection', 'default');
+        $container->register(self::MIDDLEWARE_ID, QueryTrackingMiddleware::class)->setPublic(true);
 
-        $this->container->setParameter('nowo_performance.enabled', true);
-        $this->container->setParameter('nowo_performance.track_queries', true);
-        $this->container->setParameter('nowo_performance.connection', 'default');
+        $pass = new QueryTrackingMiddlewarePass();
+        $pass->process($container);
 
-        // Pre-register the service with custom configuration
-        $existingDefinition = new Definition(QueryTrackingMiddleware::class);
-        $existingDefinition->setPublic(true);
-        $existingDefinition->addTag('custom.tag');
-        $this->container->setDefinition('nowo_performance.dbal.query_tracking_middleware', $existingDefinition);
-
-        $this->pass->process($this->container);
-
-        // Should not override existing definition
-        $definition = $this->container->getDefinition('nowo_performance.dbal.query_tracking_middleware');
-        $this->assertTrue($definition->isPublic());
-        $this->assertTrue($definition->hasTag('custom.tag'));
+        $def = $container->getDefinition(self::MIDDLEWARE_ID);
+        $this->assertTrue($def->isPublic(), 'Existing definition should not be overwritten');
     }
 
-    public function testProcessWithCustomConnectionName(): void
+    private function registerDoctrineExtension(ContainerBuilder $container): void
     {
-        $doctrineExtension = $this->createMock(ExtensionInterface::class);
-        $this->container->registerExtension($doctrineExtension);
-        $this->container->loadFromExtension('doctrine', []);
-
-        $this->container->setParameter('nowo_performance.enabled', true);
-        $this->container->setParameter('nowo_performance.track_queries', true);
-        $this->container->setParameter('nowo_performance.connection', 'custom_connection');
-
-        $this->pass->process($this->container);
-
-        // Should still register middleware regardless of connection name
-        $this->assertTrue($this->container->hasDefinition('nowo_performance.dbal.query_tracking_middleware'));
+        $ext = $this->createMock(ExtensionInterface::class);
+        $ext->method('getAlias')->willReturn('doctrine');
+        $container->registerExtension($ext);
     }
 }

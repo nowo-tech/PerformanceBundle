@@ -48,6 +48,7 @@ Use this command to:
   - Get installation instructions for missing dependencies
   - Understand what features are using fallback mode
 
+<info>php bin/console nowo:performance:check-dependencies</info>
 <info>php %command.full_name%</info>
 
 The bundle will work without optional dependencies, but some features may use fallback implementations.

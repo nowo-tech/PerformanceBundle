@@ -4,80 +4,60 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Twig;
 
-use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Twig\IconExtension;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
 
 final class IconExtensionTest extends TestCase
 {
-    private DependencyChecker|MockObject $dependencyChecker;
     private IconExtension $extension;
 
     protected function setUp(): void
     {
-        $this->dependencyChecker = $this->createMock(DependencyChecker::class);
-        $this->extension = new IconExtension($this->dependencyChecker);
+        $this->extension = new IconExtension();
     }
 
-    public function testGetFunctionsReturnsPerformanceIconFunction(): void
+    public function testGetFunctionsReturnsPerformanceIcon(): void
     {
-        $functions = $this->extension->getFunctions();
-        
-        $this->assertCount(1, $functions);
-        $this->assertSame('performance_icon', $functions[0]->getName());
+        $fns = $this->extension->getFunctions();
+
+        $this->assertIsArray($fns);
+        $this->assertCount(1, $fns);
+        $this->assertInstanceOf(TwigFunction::class, $fns[0]);
+        $this->assertSame('performance_icon', $fns[0]->getName());
     }
 
-    public function testRenderIconWithIconsAvailable(): void
+    public function testRenderIconReturnsEmptyWhenUxIconNotDefined(): void
     {
-        $this->dependencyChecker->method('isIconsAvailable')->willReturn(true);
-        
-        // Mock ux_icon function doesn't exist in test environment, so it will fall back
-        $result = $this->extension->renderIcon('test', [], '<svg>test</svg>');
-        
-        $this->assertStringContainsString('svg', $result);
-    }
+        $result = $this->extension->renderIcon('bi:gear', []);
 
-    public function testRenderIconWithIconsNotAvailable(): void
-    {
-        $this->dependencyChecker->method('isIconsAvailable')->willReturn(false);
-        
-        $result = $this->extension->renderIcon('test', ['class' => 'icon-class'], '<svg>test</svg>');
-        
-        $this->assertStringContainsString('svg', $result);
-        $this->assertStringContainsString('icon-class', $result);
-    }
-
-    public function testRenderIconWithFallbackSvgContainingSvgTag(): void
-    {
-        $this->dependencyChecker->method('isIconsAvailable')->willReturn(false);
-        
-        $svg = '<svg xmlns="http://www.w3.org/2000/svg"><path/></svg>';
-        $result = $this->extension->renderIcon('test', [], $svg);
-        
-        $this->assertSame($svg, $result);
-    }
-
-    public function testRenderIconWithNoFallback(): void
-    {
-        $this->dependencyChecker->method('isIconsAvailable')->willReturn(false);
-        
-        $result = $this->extension->renderIcon('test', [], null);
-        
         $this->assertSame('', $result);
     }
 
-    public function testRenderIconWithOptions(): void
+    public function testRenderIconWithOptionsReturnsEmptyWhenUxIconNotDefined(): void
     {
-        $this->dependencyChecker->method('isIconsAvailable')->willReturn(false);
-        
-        $result = $this->extension->renderIcon('test', [
-            'class' => 'icon-class',
-            'style' => 'color: red;'
-        ], 'icon-content');
-        
-        $this->assertStringContainsString('icon-class', $result);
-        $this->assertStringContainsString('color: red;', $result);
-        $this->assertStringContainsString('icon-content', $result);
+        $result = $this->extension->renderIcon('heroicons:check', ['class' => 'icon-sm']);
+
+        $this->assertSame('', $result);
+    }
+
+    public function testExtendsAbstractExtension(): void
+    {
+        $this->assertInstanceOf(AbstractExtension::class, $this->extension);
+    }
+
+    public function testRenderIconWithEmptyOptionsArray(): void
+    {
+        $result = $this->extension->renderIcon('bi:clock', []);
+
+        $this->assertSame('', $result);
+    }
+
+    public function testRenderIconWithEmptyIconName(): void
+    {
+        $result = $this->extension->renderIcon('', []);
+
+        $this->assertSame('', $result);
     }
 }

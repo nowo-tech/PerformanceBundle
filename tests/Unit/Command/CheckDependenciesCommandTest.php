@@ -95,6 +95,18 @@ final class CheckDependenciesCommandTest extends TestCase
         $this->assertStringContainsString('dependencies', $help);
     }
 
+    public function testExecuteWithEmptyDependencyStatusShowsAllInstalled(): void
+    {
+        $this->dependencyChecker->method('getDependencyStatus')->willReturn([]);
+        $this->dependencyChecker->method('getMissingDependencies')->willReturn([]);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('All optional dependencies are installed', $tester->getDisplay());
+    }
+
     public function testExecuteShowsStatusForEachFeature(): void
     {
         $this->dependencyChecker->method('getDependencyStatus')->willReturn([
@@ -128,5 +140,46 @@ final class CheckDependenciesCommandTest extends TestCase
         $this->assertStringContainsString('icons', $output);
         $this->assertStringContainsString('✓ Installed', $output);
         $this->assertStringContainsString('✗ Not installed', $output);
+    }
+
+    public function testExecuteWithRequiredMissingDependency(): void
+    {
+        $this->dependencyChecker->method('getDependencyStatus')->willReturn([
+            'icons' => [
+                'available' => false,
+                'package' => 'symfony/ux-icons',
+                'required' => true,
+            ],
+        ]);
+
+        $this->dependencyChecker->method('getMissingDependencies')->willReturn([
+            'icons' => [
+                'required' => true,
+                'package' => 'symfony/ux-icons',
+                'message' => 'Symfony UX Icons is required.',
+                'install_command' => 'composer require symfony/ux-icons',
+                'feature' => 'UX Icons',
+            ],
+        ]);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('icons', $output);
+        $this->assertStringContainsString('symfony/ux-icons', $output);
+    }
+
+    public function testCommandHasNoArguments(): void
+    {
+        $this->assertCount(0, $this->command->getDefinition()->getArguments());
+    }
+
+    public function testCommandDescriptionIsNonEmpty(): void
+    {
+        $description = $this->command->getDescription();
+
+        $this->assertNotEmpty($description);
+        $this->assertStringContainsString('dependencies', strtolower($description));
     }
 }

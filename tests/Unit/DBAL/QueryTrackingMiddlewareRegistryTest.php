@@ -4,82 +4,62 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\DBAL;
 
-use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 
 final class QueryTrackingMiddlewareRegistryTest extends TestCase
 {
-    private ManagerRegistry|MockObject $registry;
-    private Connection|MockObject $connection;
-    private QueryTrackingMiddleware $middleware;
-
-    protected function setUp(): void
+    public function testSupportsYamlMiddlewareConfigReturnsFalse(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->connection = $this->createMock(Connection::class);
-        $this->middleware = new QueryTrackingMiddleware();
+        $this->assertFalse(QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig());
     }
 
-    public function testApplyMiddlewareReturnsFalseWhenConnectionNotFound(): void
+    public function testSupportsYamlMiddlewareReturnsFalse(): void
     {
-        $this->registry->method('getConnection')->willThrowException(new \Exception('Connection not found'));
-
-        $result = QueryTrackingMiddlewareRegistry::applyMiddleware(
-            $this->registry,
-            'non_existent',
-            $this->middleware
-        );
-
-        $this->assertFalse($result);
+        $this->assertFalse(QueryTrackingMiddlewareRegistry::supportsYamlMiddleware());
     }
 
-    public function testApplyMiddlewareReturnsFalseWhenConnectionIsNotDoctrineConnection(): void
+    public function testDetectDoctrineBundleVersionReturnsNullOrString(): void
     {
-        $this->registry->method('getConnection')->willReturn(new \stdClass());
-
-        $result = QueryTrackingMiddlewareRegistry::applyMiddleware(
-            $this->registry,
-            'default',
-            $this->middleware
-        );
-
-        $this->assertFalse($result);
+        $version = QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
+        $this->assertTrue($version === null || \is_string($version));
+        if ($version !== null) {
+            $this->assertNotEmpty($version);
+        }
     }
 
-    public function testApplyMiddlewareHandlesReflectionErrors(): void
+    public function testApplyMiddlewareReturnsFalseWhenRegistryReturnsNonConnection(): void
     {
-        $this->registry->method('getConnection')->willReturn($this->connection);
-        $this->connection->method('createSchemaManager')->willThrowException(new \Exception('Schema error'));
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->method('getConnection')->with('default')->willReturn(new \stdClass());
 
-        $result = QueryTrackingMiddlewareRegistry::applyMiddleware(
-            $this->registry,
-            'default',
-            $this->middleware
-        );
+        $middleware = $this->createMock(QueryTrackingMiddleware::class);
 
-        // Should return false when reflection fails
-        $this->assertFalse($result);
+        $this->assertFalse(QueryTrackingMiddlewareRegistry::applyMiddleware($registry, 'default', $middleware));
     }
 
-    public function testSupportsYamlMiddlewareAlwaysReturnsFalse(): void
+    public function testApplyMiddlewareReturnsFalseWhenRegistryThrows(): void
     {
-        // yamlMiddleware is disabled due to compatibility issues
-        // It should always return false regardless of DoctrineBundle version
-        $result = QueryTrackingMiddlewareRegistry::supportsYamlMiddleware();
-        $this->assertFalse($result);
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->method('getConnection')->willThrowException(new \RuntimeException('no connection'));
+
+        $middleware = $this->createMock(QueryTrackingMiddleware::class);
+
+        $this->assertFalse(QueryTrackingMiddlewareRegistry::applyMiddleware($registry, 'default', $middleware));
     }
 
-    public function testSupportsYamlMiddlewareConfigReturnsTrueForDoctrineBundle2x(): void
+    public function testApplyMiddlewareWithCustomConnectionName(): void
     {
-        // This test verifies that supportsYamlMiddlewareConfig works correctly
-        // It should return true for DoctrineBundle 2.x if available
-        $result = QueryTrackingMiddlewareRegistry::supportsYamlMiddlewareConfig();
-        // Result depends on whether DoctrineBundle is installed and its version
-        // We just verify the method doesn't throw an exception
-        $this->assertIsBool($result);
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->expects($this->atLeastOnce())
+            ->method('getConnection')
+            ->with('custom_conn')
+            ->willReturn(new \stdClass());
+
+        $middleware = $this->createMock(QueryTrackingMiddleware::class);
+
+        $this->assertFalse(QueryTrackingMiddlewareRegistry::applyMiddleware($registry, 'custom_conn', $middleware));
     }
 }

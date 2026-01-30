@@ -50,4 +50,22 @@ final class ChartsComponentTest extends TestCase
         $component->currentRoute = null;
         $this->assertNull($component->currentRoute);
     }
+
+    public function testEnvironmentWithStage(): void
+    {
+        $component = new ChartsComponent();
+        $component->environment = 'stage';
+        $component->chartDataUrl = '/api/chart';
+
+        $this->assertSame('stage', $component->environment);
+        $this->assertSame('/api/chart', $component->chartDataUrl);
+    }
+
+    public function testEnvironmentWithTest(): void
+    {
+        $component = new ChartsComponent();
+        $component->environment = 'test';
+
+        $this->assertSame('test', $component->environment);
+    }
 }

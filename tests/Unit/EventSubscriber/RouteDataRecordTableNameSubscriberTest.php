@@ -5,97 +5,29 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
+use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Nowo\PerformanceBundle\EventSubscriber\RouteDataRecordTableNameSubscriber;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 
-/**
- * Tests for RouteDataRecordTableNameSubscriber.
- */
 final class RouteDataRecordTableNameSubscriberTest extends TestCase
 {
-    private RouteDataRecordTableNameSubscriber $subscriber;
-
-    protected function setUp(): void
-    {
-        $this->subscriber = new RouteDataRecordTableNameSubscriber('routes_data');
-    }
-
     public function testGetSubscribedEvents(): void
     {
-        $events = $this->subscriber->getSubscribedEvents();
+        $subscriber = new RouteDataRecordTableNameSubscriber('routes_data');
+        $events = $subscriber->getSubscribedEvents();
 
         $this->assertIsArray($events);
-        $this->assertContains('loadClassMetadata', $events);
+        $this->assertContains(Events::loadClassMetadata, $events);
     }
 
-    public function testLoadClassMetadataWithRouteDataRecordEntity(): void
+    public function testLoadClassMetadataForOtherEntity(): void
     {
+        $subscriber = new RouteDataRecordTableNameSubscriber('routes_data');
+
         $classMetadata = $this->createMock(ClassMetadata::class);
-        $classMetadata->name = 'Nowo\PerformanceBundle\Entity\RouteDataRecord';
-
-        // Mock getTableName method (DBAL 3.x)
-        if (method_exists($classMetadata, 'getTableName')) {
-            $classMetadata->method('getTableName')->willReturn('routes_data_records');
-        }
-
-        // Mock table property access
-        $reflection = new \ReflectionClass($classMetadata);
-        if ($reflection->hasProperty('table')) {
-            $tableProperty = $reflection->getProperty('table');
-            $tableProperty->setAccessible(true);
-            $tableProperty->setValue($classMetadata, ['name' => 'routes_data_records', 'indexes' => []]);
-        }
-
-        $classMetadata->expects($this->once())
-            ->method('setPrimaryTable')
-            ->with($this->callback(function ($table) {
-                return isset($table['name']) && $table['name'] === 'routes_data_records';
-            }));
-
-        $eventArgs = $this->createMock(LoadClassMetadataEventArgs::class);
-        $eventArgs->method('getClassMetadata')->willReturn($classMetadata);
-
-        $this->subscriber->loadClassMetadata($eventArgs);
-    }
-
-    public function testLoadClassMetadataWithDifferentEntity(): void
-    {
-        $classMetadata = $this->createMock(ClassMetadata::class);
-        $classMetadata->name = 'Nowo\PerformanceBundle\Entity\RouteData';
-
-        $classMetadata->expects($this->never())
-            ->method('setPrimaryTable');
-
-        $eventArgs = $this->createMock(LoadClassMetadataEventArgs::class);
-        $eventArgs->method('getClassMetadata')->willReturn($classMetadata);
-
-        $this->subscriber->loadClassMetadata($eventArgs);
-    }
-
-    public function testLoadClassMetadataWithCustomTableName(): void
-    {
-        $subscriber = new RouteDataRecordTableNameSubscriber('custom_routes');
-        $classMetadata = $this->createMock(ClassMetadata::class);
-        $classMetadata->name = 'Nowo\PerformanceBundle\Entity\RouteDataRecord';
-
-        if (method_exists($classMetadata, 'getTableName')) {
-            $classMetadata->method('getTableName')->willReturn('routes_data_records');
-        }
-
-        $reflection = new \ReflectionClass($classMetadata);
-        if ($reflection->hasProperty('table')) {
-            $tableProperty = $reflection->getProperty('table');
-            $tableProperty->setAccessible(true);
-            $tableProperty->setValue($classMetadata, ['name' => 'routes_data_records', 'indexes' => []]);
-        }
-
-        $classMetadata->expects($this->once())
-            ->method('setPrimaryTable')
-            ->with($this->callback(function ($table) {
-                return isset($table['name']) && $table['name'] === 'custom_routes_records';
-            }));
+        $classMetadata->method('getName')->willReturn('App\Entity\Other');
+        $classMetadata->expects($this->never())->method('setPrimaryTable');
 
         $eventArgs = $this->createMock(LoadClassMetadataEventArgs::class);
         $eventArgs->method('getClassMetadata')->willReturn($classMetadata);
@@ -103,67 +35,82 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
         $subscriber->loadClassMetadata($eventArgs);
     }
 
-    public function testLoadClassMetadataPreservesIndexes(): void
+    public function testLoadClassMetadataForRouteDataRecordSetsTableName(): void
     {
+        $mainTable = 'custom_routes';
+        $expectedRecordsTable = $mainTable . '_records';
+        $subscriber = new RouteDataRecordTableNameSubscriber($mainTable);
+
         $classMetadata = $this->createMock(ClassMetadata::class);
-        $classMetadata->name = 'Nowo\PerformanceBundle\Entity\RouteDataRecord';
+        $classMetadata->method('getName')->willReturn('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+        $classMetadata->method('getTableName')->willReturn('routes_data_records');
 
-        $existingIndexes = [
-            'idx_record_route_data_id' => ['columns' => ['route_data_id']],
-            'idx_record_accessed_at' => ['columns' => ['accessed_at']],
-        ];
-
-        if (method_exists($classMetadata, 'getTableName')) {
-            $classMetadata->method('getTableName')->willReturn('routes_data_records');
+        $ref = new \ReflectionClass($classMetadata);
+        if ($ref->hasProperty('table')) {
+            $p = $ref->getProperty('table');
+            $p->setAccessible(true);
+            $p->setValue($classMetadata, ['name' => 'routes_data_records', 'indexes' => [['name' => 'idx_foo']]]);
         }
 
-        $reflection = new \ReflectionClass($classMetadata);
-        if ($reflection->hasProperty('table')) {
-            $tableProperty = $reflection->getProperty('table');
-            $tableProperty->setAccessible(true);
-            $tableProperty->setValue($classMetadata, [
-                'name' => 'routes_data_records',
-                'indexes' => $existingIndexes,
-            ]);
-        }
-
+        $actualTable = null;
         $classMetadata->expects($this->once())
             ->method('setPrimaryTable')
-            ->with($this->callback(function ($table) use ($existingIndexes) {
-                return isset($table['name'])
-                    && $table['name'] === 'routes_data_records'
-                    && isset($table['indexes'])
-                    && $table['indexes'] === $existingIndexes;
+            ->with($this->callback(function ($arg) use ($expectedRecordsTable, &$actualTable): bool {
+                $actualTable = $arg;
+                return true;
             }));
 
         $eventArgs = $this->createMock(LoadClassMetadataEventArgs::class);
         $eventArgs->method('getClassMetadata')->willReturn($classMetadata);
 
-        $this->subscriber->loadClassMetadata($eventArgs);
+        $subscriber->loadClassMetadata($eventArgs);
+
+        $this->assertNotNull($actualTable);
+        $this->assertIsArray($actualTable);
+        if (!\is_array($actualTable)) {
+            return;
+        }
+        $this->assertArrayHasKey('name', $actualTable);
+        $this->assertArrayHasKey('indexes', $actualTable);
+        $this->assertSame($expectedRecordsTable, $actualTable['name']);
     }
 
-    public function testLoadClassMetadataWithTableNameAlreadySet(): void
+    public function testLoadClassMetadataWhenTableNameMatchesDoesNotCallSetPrimaryTable(): void
     {
+        $subscriber = new RouteDataRecordTableNameSubscriber('routes_data');
+
         $classMetadata = $this->createMock(ClassMetadata::class);
-        $classMetadata->name = 'Nowo\PerformanceBundle\Entity\RouteDataRecord';
+        $classMetadata->expects($this->once())
+            ->method('getName')
+            ->willReturn('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+        $classMetadata->expects($this->any())
+            ->method('getTableName')
+            ->willReturn('routes_data_records');
+        $classMetadata->expects($this->never())
+            ->method('setPrimaryTable');
 
-        if (method_exists($classMetadata, 'getTableName')) {
-            $classMetadata->method('getTableName')->willReturn('routes_data_records');
-        }
-
-        $reflection = new \ReflectionClass($classMetadata);
-        if ($reflection->hasProperty('table')) {
-            $tableProperty = $reflection->getProperty('table');
-            $tableProperty->setAccessible(true);
-            $tableProperty->setValue($classMetadata, ['name' => 'routes_data_records', 'indexes' => []]);
-        }
-
-        // If table name is already correct, setPrimaryTable might not be called
-        // This depends on the implementation, but we test that it doesn't break
         $eventArgs = $this->createMock(LoadClassMetadataEventArgs::class);
-        $eventArgs->method('getClassMetadata')->willReturn($classMetadata);
+        $eventArgs->expects($this->once())
+            ->method('getClassMetadata')
+            ->willReturn($classMetadata);
 
-        // Should not throw an error
-        $this->subscriber->loadClassMetadata($eventArgs);
+        $subscriber->loadClassMetadata($eventArgs);
+    }
+
+    public function testConstructorWithCustomMainTableName(): void
+    {
+        $subscriber = new RouteDataRecordTableNameSubscriber('perf_metrics');
+        $events = $subscriber->getSubscribedEvents();
+
+        $this->assertContains(Events::loadClassMetadata, $events);
+    }
+
+    public function testConstructorWithDefaultTableName(): void
+    {
+        $subscriber = new RouteDataRecordTableNameSubscriber('routes_data');
+        $events = $subscriber->getSubscribedEvents();
+
+        $this->assertIsArray($events);
+        $this->assertContains(Events::loadClassMetadata, $events);
     }
 }

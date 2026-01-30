@@ -88,4 +88,47 @@ final class QueryLoggerTest extends TestCase
         $this->assertSame(2, $logger->getQueryCount());
         $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
     }
+
+    public function testStopQuerySameIdTwiceSecondNoOp(): void
+    {
+        $logger = new QueryLogger();
+        $logger->startQuery('q1');
+        usleep(2000);
+        $logger->stopQuery('q1');
+        $countAfterFirst = $logger->getQueryCount();
+        $timeAfterFirst = $logger->getTotalQueryTime();
+
+        $logger->stopQuery('q1');
+
+        $this->assertSame($countAfterFirst, $logger->getQueryCount());
+        $this->assertSame($timeAfterFirst, $logger->getTotalQueryTime());
+    }
+
+    public function testResetThenStartAndStopQueryAgain(): void
+    {
+        $logger = new QueryLogger();
+        $logger->startQuery('q1');
+        usleep(5000);
+        $logger->stopQuery('q1');
+        $this->assertSame(1, $logger->getQueryCount());
+
+        $logger->reset();
+        $this->assertSame(0, $logger->getQueryCount());
+        $this->assertSame(0.0, $logger->getTotalQueryTime());
+
+        $logger->startQuery('q2');
+        usleep(3000);
+        $logger->stopQuery('q2');
+
+        $this->assertSame(1, $logger->getQueryCount());
+        $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
+    }
+
+    public function testGetQueryCountAndTotalQueryTimeBeforeAnyQuery(): void
+    {
+        $logger = new QueryLogger();
+
+        $this->assertSame(0, $logger->getQueryCount());
+        $this->assertSame(0.0, $logger->getTotalQueryTime());
+    }
 }

@@ -76,6 +76,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
      * Build RouteDataWithAggregates for tests (calculateStats / calculateAdvancedStats expect this type).
      *
      * @param ?int $memoryUsage Memory in bytes (optional)
+     * @param \DateTimeImmutable|null $createdAt Used for getChartData date grouping (default: 2025-01-27)
+     * @param \DateTimeImmutable|null $lastAccessedAt Used for getChartData date grouping (default: 2025-01-27)
      */
     private function routeWithAggregates(
         ?float $requestTime,
@@ -83,12 +85,17 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         ?int $totalQueries,
         int $accessCount = 1,
         ?int $memoryUsage = null,
+        ?\DateTimeImmutable $createdAt = null,
+        ?\DateTimeImmutable $lastAccessedAt = null,
     ): RouteDataWithAggregates {
         $routeData = $this->createMock(RouteData::class);
         $routeData->method('getId')->willReturn(1);
         $routeData->method('getEnv')->willReturn('dev');
         $routeData->method('getName')->willReturn('test');
         $routeData->method('getAccessRecords')->willReturn(new \Doctrine\Common\Collections\ArrayCollection());
+        $dt = $createdAt ?? new \DateTimeImmutable('2025-01-27');
+        $routeData->method('getCreatedAt')->willReturn($dt);
+        $routeData->method('getLastAccessedAt')->willReturn($lastAccessedAt ?? $dt);
 
         return new RouteDataWithAggregates($routeData, [
             'request_time' => $requestTime,
@@ -222,13 +229,19 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithNullValues(): void
     {
-        $route = $this->createMock(RouteData::class);
-        $route->method('getName')->willReturn(null);
-        $route->method('getRequestTime')->willReturn(null);
-        $route->method('getQueryTime')->willReturn(null);
-        $route->method('getTotalQueries')->willReturn(null);
-        $route->method('getAccessCount')->willReturn(1); // getAccessCount returns int, not nullable
-        $route->method('getEnv')->willReturn(null);
+        $routeData = $this->createMock(RouteData::class);
+        $routeData->method('getName')->willReturn(null);
+        $routeData->method('getEnv')->willReturn(null);
+        $routeData->method('getCreatedAt')->willReturn(null);
+        $routeData->method('getLastAccessedAt')->willReturn(null);
+        $route = new RouteDataWithAggregates($routeData, [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 1,
+            'status_codes' => [],
+        ]);
 
         $this->assertSame('', $this->callPrivateMethod('getSortValue', $route, 'name'));
         $this->assertSame(0.0, $this->callPrivateMethod('getSortValue', $route, 'requestTime'));
@@ -247,12 +260,12 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         $this->assertSame([
             'total_routes' => 0,
-            'total_queries' => 0,
+            'avg_queries' => 0.0,
+            'max_queries' => 0,
             'avg_request_time' => 0.0,
             'avg_query_time' => 0.0,
             'max_request_time' => 0.0,
             'max_query_time' => 0.0,
-            'max_queries' => 0,
         ], $result);
     }
 
@@ -263,12 +276,12 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $result = $this->callPrivateMethod('calculateStats', [$route]);
 
         $this->assertSame(1, $result['total_routes']);
-        $this->assertSame(5, $result['total_queries']);
+        $this->assertEqualsWithDelta(5.0, $result['avg_queries'], 0.01);
+        $this->assertSame(5, $result['max_queries']);
         $this->assertSame(0.5, $result['avg_request_time']);
         $this->assertSame(0.1, $result['avg_query_time']);
         $this->assertSame(0.5, $result['max_request_time']);
         $this->assertSame(0.1, $result['max_query_time']);
-        $this->assertSame(5, $result['max_queries']);
     }
 
     public function testCalculateStatsWithMultipleRoutes(): void
@@ -280,12 +293,12 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $result = $this->callPrivateMethod('calculateStats', [$route1, $route2, $route3]);
 
         $this->assertSame(3, $result['total_routes']);
-        $this->assertSame(18, $result['total_queries']);
+        $this->assertEqualsWithDelta(6.0, $result['avg_queries'], 0.01); // (5 + 10 + 3) / 3
+        $this->assertSame(10, $result['max_queries']);
         $this->assertSame(0.6, $result['avg_request_time']); // (0.5 + 1.0 + 0.3) / 3
         $this->assertEqualsWithDelta(0.11666666666666667, $result['avg_query_time'], 0.00000001); // (0.1 + 0.2 + 0.05) / 3
         $this->assertSame(1.0, $result['max_request_time']);
         $this->assertSame(0.2, $result['max_query_time']);
-        $this->assertSame(10, $result['max_queries']);
     }
 
     public function testCalculateStatsFiltersNullValues(): void
@@ -296,7 +309,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $result = $this->callPrivateMethod('calculateStats', [$route1, $route2]);
 
         $this->assertSame(2, $result['total_routes']);
-        $this->assertSame(5, $result['total_queries']); // Only route1 has queries
+        $this->assertEqualsWithDelta(5.0, $result['avg_queries'], 0.01); // Only route1 has queries
+        $this->assertSame(5, $result['max_queries']);
         $this->assertSame(0.5, $result['avg_request_time']); // Only route1 has request time
         $this->assertSame(0.2, $result['avg_query_time']); // Only route2 has query time
     }
@@ -607,25 +621,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetChartDataWithRequestTimeMetric(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $this->metricsService->method('getRepository')->willReturn($repository);
-
-        $route = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.5);
-        $route->method('getUpdatedAt')->willReturn(new \DateTimeImmutable('2025-01-27'));
-
-        $queryBuilder = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
-        $query->method('getResult')->willReturn([$route]);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('orderBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-
-        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+        $route = $this->routeWithAggregates(0.5, 0.1, 5);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([$route]);
 
         $result = $this->callPrivateMethod('getChartData', 'dev', null, 7, 'requestTime');
 
@@ -638,25 +635,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetChartDataWithQueryTimeMetric(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $this->metricsService->method('getRepository')->willReturn($repository);
-
-        $route = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-        $route->method('getQueryTime')->willReturn(0.25);
-        $route->method('getUpdatedAt')->willReturn(new \DateTimeImmutable('2025-01-27'));
-
-        $queryBuilder = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
-        $query->method('getResult')->willReturn([$route]);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('orderBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-
-        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+        $route = $this->routeWithAggregates(0.5, 0.25, 5);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([$route]);
 
         $result = $this->callPrivateMethod('getChartData', 'dev', null, 7, 'queryTime');
 
@@ -667,25 +647,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetChartDataWithTotalQueriesMetric(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $this->metricsService->method('getRepository')->willReturn($repository);
-
-        $route = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-        $route->method('getTotalQueries')->willReturn(10);
-        $route->method('getUpdatedAt')->willReturn(new \DateTimeImmutable('2025-01-27'));
-
-        $queryBuilder = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
-        $query->method('getResult')->willReturn([$route]);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('orderBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-
-        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+        $route = $this->routeWithAggregates(0.5, 0.1, 10);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([$route]);
 
         $result = $this->callPrivateMethod('getChartData', 'dev', null, 7, 'totalQueries');
 
@@ -696,25 +659,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetChartDataWithMemoryUsageMetric(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $this->metricsService->method('getRepository')->willReturn($repository);
-
-        $route = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-        $route->method('getMemoryUsage')->willReturn(1048576); // 1MB
-        $route->method('getUpdatedAt')->willReturn(new \DateTimeImmutable('2025-01-27'));
-
-        $queryBuilder = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
-        $query->method('getResult')->willReturn([$route]);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('orderBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-
-        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+        $route = $this->routeWithAggregates(0.5, 0.1, 5, 1, 1048576); // 1MB
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([$route]);
 
         $result = $this->callPrivateMethod('getChartData', 'dev', null, 7, 'memoryUsage');
 
@@ -725,25 +671,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetChartDataWithSpecificRoute(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $this->metricsService->method('getRepository')->willReturn($repository);
-
-        $route = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.5);
-        $route->method('getUpdatedAt')->willReturn(new \DateTimeImmutable('2025-01-27'));
-
-        $queryBuilder = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
-        $query->method('getResult')->willReturn([$route]);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('orderBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-
-        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+        $route = $this->routeWithAggregates(0.5, 0.1, 5);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([$route]);
 
         $result = $this->callPrivateMethod('getChartData', 'dev', 'test_route', 7, 'requestTime');
 
@@ -754,60 +683,30 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetChartDataWithEmptyResults(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $this->metricsService->method('getRepository')->willReturn($repository);
-
-        $queryBuilder = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
-        $query->method('getResult')->willReturn([]);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('orderBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-
-        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([]);
 
         $result = $this->callPrivateMethod('getChartData', 'dev', null, 7, 'requestTime');
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('labels', $result);
         $this->assertArrayHasKey('datasets', $result);
-        $this->assertEmpty($result['labels']);
+        // Labels are generated for each day in range (startDate..endDate inclusive = 8 days for "7 days")
+        $this->assertCount(8, $result['labels']);
         $this->assertIsArray($result['datasets']);
     }
 
     public function testGetChartDataWithDifferentDays(): void
     {
-        $repository = $this->createMock(\Nowo\PerformanceBundle\Repository\RouteDataRepository::class);
-        $this->metricsService->method('getRepository')->willReturn($repository);
+        $route = $this->routeWithAggregates(0.5, 0.1, 5);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([$route]);
 
-        $route = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
-        $route->method('getRequestTime')->willReturn(0.5);
-        $route->method('getUpdatedAt')->willReturn(new \DateTimeImmutable('2025-01-27'));
-
-        $queryBuilder = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
-        $query->method('getResult')->willReturn([$route]);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('orderBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-
-        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
-
-        // Test with 30 days
         $result30 = $this->callPrivateMethod('getChartData', 'dev', null, 30, 'requestTime');
         $this->assertIsArray($result30);
+        $this->assertCount(31, $result30['labels']); // startDate..endDate inclusive
 
-        // Test with 1 day
         $result1 = $this->callPrivateMethod('getChartData', 'dev', null, 1, 'requestTime');
         $this->assertIsArray($result1);
+        $this->assertCount(2, $result1['labels']); // startDate..endDate inclusive for 1 day
     }
 
     // ========== buildFiltersFromRequest() tests ==========

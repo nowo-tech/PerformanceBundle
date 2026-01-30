@@ -24,7 +24,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
     name: 'nowo:performance:create-records-table',
     description: 'Create the access records database table for temporal analysis',
 )]
-final class CreateRecordsTableCommand extends Command
+class CreateRecordsTableCommand extends Command
 {
     /**
      * Creates a new instance.

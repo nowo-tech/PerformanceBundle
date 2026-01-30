@@ -49,4 +49,12 @@ final class StatisticsComponentTest extends TestCase
         $this->assertSame(0.5, $component->stats['request_time']['mean']);
         $this->assertSame(50, $component->stats['query_count']['max']);
     }
+
+    public function testStatsWithEmptyArray(): void
+    {
+        $component = new StatisticsComponent();
+        $component->stats = [];
+
+        $this->assertSame([], $component->stats);
+    }
 }

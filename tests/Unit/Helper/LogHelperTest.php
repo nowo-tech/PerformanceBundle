@@ -33,25 +33,16 @@ final class LogHelperTest extends TestCase
 
     public function testLogReturnsTrueWhenLoggingEnabled(): void
     {
-        // Note: This test may actually log to error_log, but that's acceptable for testing
+        // With NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS, we skip error_log but still return true
         $result = LogHelper::log('Test message', true);
-        // If error_log function exists, it should return true
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogReturnsTrueWhenLoggingNull(): void
     {
-        // Default behavior: true for backward compatibility
+        // Default behavior: true for backward compatibility; suppress avoids error_log in tests
         $result = LogHelper::log('Test message', null);
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfReturnsFalseWhenLoggingDisabled(): void
@@ -63,94 +54,67 @@ final class LogHelperTest extends TestCase
     public function testLogfReturnsTrueWhenLoggingEnabled(): void
     {
         $result = LogHelper::logf('Test message: %s', true, 'value');
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfFormatsMessageCorrectly(): void
     {
-        // This test verifies that logf uses sprintf correctly
-        // We can't easily test the actual output, but we can verify it doesn't throw
         $result = LogHelper::logf('Test: %s, %d', true, 'string', 123);
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfWithMultipleArguments(): void
     {
         $result = LogHelper::logf('Test: %s, %d, %s', true, 'arg1', 42, 'arg3');
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfReturnsTrueWhenLoggingNull(): void
     {
-        // Default behavior: true for backward compatibility
         $result = LogHelper::logf('Test message: %s', null, 'value');
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogWithEmptyString(): void
     {
         $result = LogHelper::log('', true);
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfWithEmptyFormat(): void
     {
         $result = LogHelper::logf('', true);
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfWithSpecialCharacters(): void
     {
         $result = LogHelper::logf('Test: %s with special chars: <>&"\'', true, 'value');
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfWithNumericValues(): void
     {
         $result = LogHelper::logf('Test: %d, %f, %s', true, 42, 3.14, 'string');
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
     }
 
     public function testLogfWithNoArguments(): void
     {
         $result = LogHelper::logf('Test message without placeholders', true);
-        if (\function_exists('error_log')) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertFalse($result);
-        }
+        $this->assertTrue($result);
+    }
+
+    /** When suppress is active (tests bootstrap), log/logf return true without writing to error_log. */
+    public function testLogReturnsTrueWhenSuppressActive(): void
+    {
+        $this->assertTrue(LogHelper::log('noise', true));
+    }
+
+    /** When suppress is active (tests bootstrap), logf returns true without writing to error_log. */
+    public function testLogfReturnsTrueWhenSuppressActive(): void
+    {
+        $this->assertTrue(LogHelper::logf('noise: %s', true, 'x'));
     }
 
     public function testIsLoggingEnabledWithExplicitTrue(): void

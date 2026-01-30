@@ -219,4 +219,141 @@ final class RouteDataWithAggregatesTest extends TestCase
         $this->assertSame(0.0, $dto->getStatusCodeRatio(404));
         $this->assertSame(0, $dto->getTotalResponses());
     }
+
+    public function testDelegatesCreatedAtLastAccessedAtReviewedAtAndOtherGetters(): void
+    {
+        $created = new \DateTimeImmutable('2026-01-01 10:00:00');
+        $lastAccessed = new \DateTimeImmutable('2026-01-15 12:00:00');
+        $reviewedAt = new \DateTimeImmutable('2026-01-10 09:00:00');
+        $params = ['id' => 1];
+
+        $this->routeData->method('getCreatedAt')->willReturn($created);
+        $this->routeData->method('getLastAccessedAt')->willReturn($lastAccessed);
+        $this->routeData->method('getReviewedAt')->willReturn($reviewedAt);
+        $this->routeData->method('getQueriesImproved')->willReturn(true);
+        $this->routeData->method('getTimeImproved')->willReturn(false);
+        $this->routeData->method('getReviewedBy')->willReturn('admin@example.com');
+        $this->routeData->method('getParams')->willReturn($params);
+
+        $dto = new RouteDataWithAggregates($this->routeData, ['access_count' => 1, 'status_codes' => []]);
+
+        $this->assertSame($created, $dto->getCreatedAt());
+        $this->assertSame($lastAccessed, $dto->getLastAccessedAt());
+        $this->assertSame($reviewedAt, $dto->getReviewedAt());
+        $this->assertTrue($dto->getQueriesImproved());
+        $this->assertFalse($dto->getTimeImproved());
+        $this->assertSame('admin@example.com', $dto->getReviewedBy());
+        $this->assertSame($params, $dto->getParams());
+    }
+
+    public function testAggregatesWithoutStatusCodesKey(): void
+    {
+        $aggregates = [
+            'request_time' => 0.1,
+            'total_queries' => 3,
+            'query_time' => 0.05,
+            'memory_usage' => 1024,
+            'access_count' => 1,
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertNull($dto->getStatusCodes());
+        $this->assertSame(0, $dto->getStatusCodeCount(200));
+        $this->assertSame(0.0, $dto->getStatusCodeRatio(200));
+        $this->assertSame(0, $dto->getTotalResponses());
+    }
+
+    public function testGetStatusCodeCountAndRatioForMissingCode(): void
+    {
+        $aggregates = [
+            'access_count' => 6,
+            'status_codes' => [200 => 5, 404 => 1],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0, $dto->getStatusCodeCount(500));
+        $this->assertSame(0.0, $dto->getStatusCodeRatio(500));
+        $this->assertSame(5, $dto->getStatusCodeCount(200));
+        $this->assertSame(1, $dto->getStatusCodeCount(404));
+    }
+
+    public function testGetRequestTimeWithZero(): void
+    {
+        $aggregates = [
+            'request_time' => 0.0,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 1,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0.0, $dto->getRequestTime());
+    }
+
+    public function testGetAccessCountWithLargeNumber(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 9999,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(9999, $dto->getAccessCount());
+    }
+
+    public function testGetQueryTimeWithZero(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => 0.0,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 1,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0.0, $dto->getQueryTime());
+    }
+
+    public function testGetStatusCodesWithSingleStatusCode(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 1,
+            'status_codes' => [200 => 1],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame([200 => 1], $dto->getStatusCodes());
+        $this->assertSame(1, $dto->getStatusCodeCount(200));
+        $this->assertSame(100.0, $dto->getStatusCodeRatio(200));
+    }
+
+    public function testGetTotalResponsesWithMultipleStatusCodes(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 15,
+            'status_codes' => [200 => 12, 404 => 2, 500 => 1],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(15, $dto->getTotalResponses());
+        $this->assertSame(12, $dto->getStatusCodeCount(200));
+        $this->assertSame(2, $dto->getStatusCodeCount(404));
+        $this->assertSame(1, $dto->getStatusCodeCount(500));
+    }
 }

@@ -24,7 +24,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
     name: 'nowo:performance:create-table',
     description: 'Create the performance metrics database table',
 )]
-final class CreateTableCommand extends Command
+class CreateTableCommand extends Command
 {
     /**
      * Creates a new instance.

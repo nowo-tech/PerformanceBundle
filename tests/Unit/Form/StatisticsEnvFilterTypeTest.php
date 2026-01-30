@@ -64,4 +64,56 @@ final class StatisticsEnvFilterTypeTest extends TypeTestCase
         $this->assertInstanceOf(StatisticsEnvFilter::class, $data);
         $this->assertSame('prod', $data->env);
     }
+
+    public function testFormBuildsWithSingleEnvironment(): void
+    {
+        $form = $this->factory->create(StatisticsEnvFilterType::class, null, [
+            'environments' => ['prod'],
+        ]);
+
+        $this->assertTrue($form->has('env'));
+        $choices = $form->get('env')->getConfig()->getOption('choices');
+        $this->assertIsArray($choices);
+        $this->assertArrayHasKey('PROD', $choices);
+        $this->assertSame('prod', $choices['PROD']);
+    }
+
+    public function testFormSubmissionWithEmptyEnv(): void
+    {
+        $form = $this->factory->create(StatisticsEnvFilterType::class, null, [
+            'environments' => ['dev', 'prod'],
+        ]);
+
+        $form->submit(['env' => '']);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertInstanceOf(StatisticsEnvFilter::class, $data);
+        $this->assertNull($data->env);
+    }
+
+    public function testFormBuildsWithStageEnvironment(): void
+    {
+        $form = $this->factory->create(StatisticsEnvFilterType::class, null, [
+            'environments' => ['dev', 'stage', 'prod'],
+        ]);
+
+        $choices = $form->get('env')->getConfig()->getOption('choices');
+        $this->assertArrayHasKey('STAGE', $choices);
+        $this->assertSame('stage', $choices['STAGE']);
+    }
+
+    public function testFormSubmissionWithTestEnvironment(): void
+    {
+        $form = $this->factory->create(StatisticsEnvFilterType::class, null, [
+            'environments' => ['dev', 'test', 'prod'],
+        ]);
+
+        $form->submit(['env' => 'test']);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertInstanceOf(StatisticsEnvFilter::class, $data);
+        $this->assertSame('test', $data->env);
+    }
 }

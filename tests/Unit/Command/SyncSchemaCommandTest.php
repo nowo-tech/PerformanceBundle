@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 final class SyncSchemaCommandTest extends TestCase
@@ -45,12 +47,34 @@ final class SyncSchemaCommandTest extends TestCase
         $this->assertTrue($definition->hasOption('drop-obsolete'));
     }
 
-    public function testCommandHelpMentionsBothTables(): void
+    public function testDropObsoleteOptionHasCorrectConfiguration(): void
+    {
+        $definition = $this->command->getDefinition();
+        $option = $definition->getOption('drop-obsolete');
+
+        $this->assertFalse($option->isValueRequired());
+        $this->assertFalse($option->acceptValue());
+    }
+
+    public function testCommandHasNoArguments(): void
+    {
+        $this->assertCount(0, $this->command->getDefinition()->getArguments());
+    }
+
+    public function testHelpContainsSyncAndDropObsolete(): void
     {
         $help = $this->command->getHelp();
-        $this->assertStringContainsString('routes_data', $help);
-        $this->assertStringContainsString('routes_data_records', $help);
-        $this->assertStringContainsString('sync-schema', $help);
+        $this->assertStringContainsString('sync', $help);
+        $this->assertStringContainsString('drop-obsolete', $help);
+        $this->assertStringContainsString('create-table', $help);
+    }
+
+    private function bindChildCommandInput(ArrayInput $input): void
+    {
+        $input->bind(new InputDefinition([
+            new InputOption('update', 'u', InputOption::VALUE_NONE),
+            new InputOption('drop-obsolete', null, InputOption::VALUE_NONE),
+        ]));
     }
 
     public function testExecuteCallsCreateTableThenCreateRecordsTable(): void
@@ -60,6 +84,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->getOption('update') === true && $input->getOption('drop-obsolete') === false;
                 }),
                 $this->anything()
@@ -71,6 +96,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->getOption('update') === true && $input->getOption('drop-obsolete') === false;
                 }),
                 $this->anything()
@@ -92,6 +118,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->getOption('drop-obsolete') === true;
                 }),
                 $this->anything()
@@ -103,6 +130,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->getOption('drop-obsolete') === true;
                 }),
                 $this->anything()
@@ -124,6 +152,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->isInteractive() === false
                         && $input->getOption('update') === true
                         && $input->getOption('drop-obsolete') === false;
@@ -137,6 +166,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->isInteractive() === false;
                 }),
                 $this->anything()
@@ -178,6 +208,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->getOption('update') === true;
                 }),
                 $this->anything()
@@ -189,6 +220,7 @@ final class SyncSchemaCommandTest extends TestCase
             ->method('run')
             ->with(
                 $this->callback(function (ArrayInput $input) {
+                    $this->bindChildCommandInput($input);
                     return $input->getOption('update') === true;
                 }),
                 $this->anything()

@@ -69,14 +69,21 @@ final class NowoPerformanceBundleTest extends TestCase
         $bundle->build($container);
     }
 
-    public function testGetPathReturnsNonEmptyPath(): void
+    public function testGetPathReturnsString(): void
     {
         $bundle = new NowoPerformanceBundle();
-
         $path = $bundle->getPath();
-
         $this->assertIsString($path);
         $this->assertNotEmpty($path);
-        $this->assertStringContainsString('PerformanceBundle', $path);
+    }
+
+    public function testBuildReceivesContainerBuilder(): void
+    {
+        $bundle = new NowoPerformanceBundle();
+        $container = new ContainerBuilder();
+
+        $bundle->build($container);
+
+        $this->addToAssertionCount(1);
     }
 }

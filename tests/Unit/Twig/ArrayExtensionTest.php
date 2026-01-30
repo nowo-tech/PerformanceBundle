@@ -6,10 +6,9 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Twig;
 
 use Nowo\PerformanceBundle\Twig\ArrayExtension;
 use PHPUnit\Framework\TestCase;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
 
-/**
- * Tests for ArrayExtension.
- */
 final class ArrayExtensionTest extends TestCase
 {
     private ArrayExtension $extension;
@@ -23,102 +22,55 @@ final class ArrayExtensionTest extends TestCase
     {
         $filters = $this->extension->getFilters();
 
+        $this->assertIsArray($filters);
         $this->assertCount(1, $filters);
+        $this->assertInstanceOf(TwigFilter::class, $filters[0]);
         $this->assertSame('sum', $filters[0]->getName());
-    }
-
-    public function testSumWithEmptyArray(): void
-    {
-        $result = $this->extension->sum([]);
-
-        $this->assertSame(0, $result);
     }
 
     public function testSumWithIntegers(): void
     {
-        $result = $this->extension->sum([1, 2, 3, 4, 5]);
-
-        $this->assertSame(15, $result);
+        $this->assertSame(10, $this->extension->sum([1, 2, 3, 4]));
+        $this->assertSame(0, $this->extension->sum([]));
+        $this->assertSame(5, $this->extension->sum([5]));
     }
 
     public function testSumWithFloats(): void
     {
-        $result = $this->extension->sum([1.5, 2.5, 3.5]);
-
-        $this->assertSame(7.5, $result);
+        $this->assertEqualsWithDelta(6.6, $this->extension->sum([1.1, 2.2, 3.3]), 0.001);
+        $this->assertEqualsWithDelta(0.0, $this->extension->sum([]), 0.001);
     }
 
-    public function testSumWithMixedIntegersAndFloats(): void
+    public function testSumWithMixedIntAndFloat(): void
     {
-        $result = $this->extension->sum([1, 2.5, 3, 4.5]);
-
-        $this->assertSame(11.0, $result);
-    }
-
-    public function testSumWithNegativeNumbers(): void
-    {
-        $result = $this->extension->sum([-1, -2, -3]);
-
-        $this->assertSame(-6, $result);
-    }
-
-    public function testSumWithMixedPositiveAndNegative(): void
-    {
-        $result = $this->extension->sum([1, -2, 3, -4, 5]);
-
-        $this->assertSame(3, $result);
-    }
-
-    public function testSumWithZeros(): void
-    {
-        $result = $this->extension->sum([0, 0, 0]);
-
-        $this->assertSame(0, $result);
-    }
-
-    public function testSumWithSingleValue(): void
-    {
-        $result = $this->extension->sum([42]);
-
-        $this->assertSame(42, $result);
-    }
-
-    public function testSumWithLargeNumbers(): void
-    {
-        $result = $this->extension->sum([1000000, 2000000, 3000000]);
-
-        $this->assertSame(6000000, $result);
-    }
-
-    public function testSumWithDecimalPrecision(): void
-    {
-        $result = $this->extension->sum([0.1, 0.2, 0.3]);
-
-        // Should be approximately 0.6 (may have floating point precision issues)
-        $this->assertGreaterThanOrEqual(0.59, $result);
-        $this->assertLessThanOrEqual(0.61, $result);
-    }
-
-    public function testSumWithManyValues(): void
-    {
-        $values = range(1, 100);
-        $result = $this->extension->sum($values);
-
-        // Sum of 1 to 100 = 5050
-        $this->assertSame(5050, $result);
+        $this->assertEqualsWithDelta(7.5, $this->extension->sum([1, 2.5, 4]), 0.001);
     }
 
     public function testSumWithAssociativeArray(): void
     {
-        $result = $this->extension->sum(['a' => 10, 'b' => 20, 'c' => 30]);
-
-        $this->assertSame(60, $result);
+        $this->assertSame(6, $this->extension->sum(['a' => 1, 'b' => 2, 'c' => 3]));
     }
 
-    public function testSumWithStringKeysAndFloatValues(): void
+    public function testExtendsAbstractExtension(): void
     {
-        $result = $this->extension->sum(['x' => 1.5, 'y' => 2.5]);
+        $this->assertInstanceOf(AbstractExtension::class, $this->extension);
+    }
 
-        $this->assertSame(4.0, $result);
+    public function testSumWithSingleElement(): void
+    {
+        $this->assertSame(42, $this->extension->sum([42]));
+        $this->assertEqualsWithDelta(3.14, $this->extension->sum([3.14]), 0.001);
+    }
+
+    public function testSumWithTwoElements(): void
+    {
+        $this->assertSame(3, $this->extension->sum([1, 2]));
+        $this->assertEqualsWithDelta(5.5, $this->extension->sum([2.5, 3.0]), 0.001);
+    }
+
+    public function testSumWithNegativeNumbers(): void
+    {
+        $this->assertSame(-6, $this->extension->sum([-1, -2, -3]));
+        $this->assertSame(0, $this->extension->sum([5, -5]));
     }
 }

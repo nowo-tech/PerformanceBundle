@@ -39,4 +39,24 @@ final class AfterRecordReviewedEventTest extends TestCase
 
         $this->assertInstanceOf(Event::class, $event);
     }
+
+    public function testGetRouteDataReturnsCorrectRoute(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_users')->setEnv('prod');
+        $event = new AfterRecordReviewedEvent($routeData);
+
+        $this->assertSame('api_users', $event->getRouteData()->getName());
+        $this->assertSame('prod', $event->getRouteData()->getEnv());
+    }
+
+    public function testGetRouteDataWithStageEnv(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_dashboard')->setEnv('stage');
+        $event = new AfterRecordReviewedEvent($routeData);
+
+        $this->assertSame('api_dashboard', $event->getRouteData()->getName());
+        $this->assertSame('stage', $event->getRouteData()->getEnv());
+    }
 }

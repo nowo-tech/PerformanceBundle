@@ -128,4 +128,179 @@ final class ConfigurationTest extends TestCase
 
         $this->assertTrue($config['track_user']);
     }
+
+    public function testTrackSubRequestsDefaultFalse(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['track_sub_requests']);
+    }
+
+    public function testTrackStatusCodesDefault(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame([200, 404, 500, 503], $config['track_status_codes']);
+    }
+
+    public function testAsyncDefaultFalse(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['async']);
+    }
+
+    public function testSamplingRateDefault(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame(1.0, $config['sampling_rate']);
+    }
+
+    public function testThresholdsDefaults(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame(0.5, $config['thresholds']['request_time']['warning']);
+        $this->assertSame(1.0, $config['thresholds']['request_time']['critical']);
+        $this->assertSame(20, $config['thresholds']['query_count']['warning']);
+        $this->assertSame(50, $config['thresholds']['query_count']['critical']);
+        $this->assertSame(20.0, $config['thresholds']['memory_usage']['warning']);
+        $this->assertSame(50.0, $config['thresholds']['memory_usage']['critical']);
+    }
+
+    public function testNotificationsDefaults(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['notifications']['enabled']);
+        $this->assertFalse($config['notifications']['email']['enabled']);
+        $this->assertSame('noreply@example.com', $config['notifications']['email']['from']);
+        $this->assertSame([], $config['notifications']['email']['to']);
+        $this->assertFalse($config['notifications']['slack']['enabled']);
+        $this->assertSame('', $config['notifications']['slack']['webhook_url']);
+    }
+
+    public function testDashboardTemplateDefault(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame('bootstrap', $config['dashboard']['template']);
+    }
+
+    public function testDashboardEnableRecordManagementDefault(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['dashboard']['enable_record_management']);
+    }
+
+    public function testConfigurationAlias(): void
+    {
+        $this->assertSame('nowo_performance', Configuration::ALIAS);
+    }
+
+    public function testEnableLoggingDefaultIsTrue(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertTrue($config['enable_logging']);
+    }
+
+    public function testQueryTrackingThresholdDefaultIsZero(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame(0, $config['query_tracking_threshold']);
+    }
+
+    public function testNotificationsWebhookDefaults(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['notifications']['webhook']['enabled']);
+        $this->assertSame('', $config['notifications']['webhook']['url']);
+        $this->assertSame('json', $config['notifications']['webhook']['format']);
+        $this->assertSame([], $config['notifications']['webhook']['headers']);
+    }
+
+    public function testNotificationsTeamsDefaults(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['notifications']['teams']['enabled']);
+        $this->assertSame('', $config['notifications']['teams']['webhook_url']);
+    }
+
+    public function testDashboardEnableReviewSystemDefaultIsFalse(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertFalse($config['dashboard']['enable_review_system']);
+    }
+
+    public function testDashboardAutoRefreshIntervalDefaultIsZero(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame(0, $config['dashboard']['auto_refresh_interval']);
+    }
+
+    public function testDashboardEnableRankingQueriesDefaultIsTrue(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertTrue($config['dashboard']['enable_ranking_queries']);
+    }
+
+    public function testDashboardDateFormatsDefaults(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame('Y-m-d H:i:s', $config['dashboard']['date_formats']['datetime']);
+        $this->assertSame('Y-m-d H:i', $config['dashboard']['date_formats']['date']);
+    }
+
+    public function testIgnoreRoutesDefaultContainsProfiler(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertContains('_profiler', $config['ignore_routes']);
+        $this->assertContains('_wdt', $config['ignore_routes']);
+    }
+
+    public function testTableNameDefault(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, []);
+
+        $this->assertSame('routes_data', $config['table_name']);
+    }
+
+    public function testEnvironmentsCanIncludeStage(): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processor->processConfiguration($configuration, [[
+            'environments' => ['dev', 'stage', 'prod'],
+        ]]);
+
+        $this->assertSame(['dev', 'stage', 'prod'], $config['environments']);
+    }
 }

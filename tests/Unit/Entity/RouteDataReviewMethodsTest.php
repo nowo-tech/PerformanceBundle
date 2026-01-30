@@ -161,4 +161,23 @@ final class RouteDataReviewMethodsTest extends TestCase
         $result = $routeData->setSaveAccessRecords(false);
         $this->assertSame($routeData, $result);
     }
+
+    public function testSetReviewedWithFalse(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setReviewed(true);
+        $this->assertTrue($routeData->isReviewed());
+
+        $routeData->setReviewed(false);
+        $this->assertFalse($routeData->isReviewed());
+    }
+
+    public function testMarkAsReviewedWithEmptyStringReviewedBy(): void
+    {
+        $routeData = new RouteData();
+        $routeData->markAsReviewed(true, false, '');
+
+        $this->assertTrue($routeData->isReviewed());
+        $this->assertSame('', $routeData->getReviewedBy());
+    }
 }

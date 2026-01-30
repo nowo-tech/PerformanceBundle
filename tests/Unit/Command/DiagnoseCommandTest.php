@@ -176,4 +176,16 @@ final class DiagnoseCommandTest extends TestCase
         $this->assertStringContainsString('sync-schema', $output);
         $this->assertStringContainsString('create-records-table', $output);
     }
+
+    public function testCommandHasNoArguments(): void
+    {
+        $definition = $this->command->getDefinition();
+        $this->assertCount(0, $definition->getArguments());
+    }
+
+    public function testCommandHelpContainsConfiguration(): void
+    {
+        $help = $this->command->getHelp();
+        $this->assertStringContainsString('configuration', $help);
+    }
 }

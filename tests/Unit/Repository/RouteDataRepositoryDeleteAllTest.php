@@ -116,4 +116,62 @@ final class RouteDataRepositoryDeleteAllTest extends TestCase
 
         $this->assertSame(0, $result);
     }
+
+    public function testDeleteAllWithEmptyStringEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('execute')->willReturn(3);
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('delete')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('where')
+            ->with('r.env = :env')
+            ->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('setParameter')
+            ->with('env', '')
+            ->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->deleteAll('');
+
+        $this->assertSame(3, $result);
+    }
+
+    public function testDeleteAllWithStageEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('execute')->willReturn(2);
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('delete')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('where')
+            ->with('r.env = :env')
+            ->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('setParameter')
+            ->with('env', 'stage')
+            ->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->deleteAll('stage');
+
+        $this->assertSame(2, $result);
+    }
 }

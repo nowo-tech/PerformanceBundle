@@ -46,4 +46,27 @@ final class TableNamePassTest extends TestCase
 
         $this->assertSame('', $container->getParameter('nowo_performance.table_name'));
     }
+
+    public function testProcessPreservesCustomTableName(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter('nowo_performance.table_name', 'performance_metrics');
+
+        $pass = new TableNamePass();
+        $pass->process($container);
+
+        $this->assertSame('performance_metrics', $container->getParameter('nowo_performance.table_name'));
+    }
+
+    public function testProcessCanBeCalledMultipleTimes(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter('nowo_performance.table_name', 'routes_data');
+
+        $pass = new TableNamePass();
+        $pass->process($container);
+        $pass->process($container);
+
+        $this->assertSame('routes_data', $container->getParameter('nowo_performance.table_name'));
+    }
 }

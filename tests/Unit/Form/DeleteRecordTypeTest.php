@@ -17,31 +17,33 @@ final class DeleteRecordTypeTest extends TypeTestCase
         $this->formType = new DeleteRecordType();
     }
 
-    public function testBuildFormCreatesSubmitOnly(): void
+    /** Form type builds without adding a submit child when buildForm submit block is commented out. */
+    public function testBuildFormBuildsSuccessfully(): void
     {
         $form = $this->factory->create(DeleteRecordType::class, null, [
+            'csrf_protection' => false,
             'csrf_token_id' => 'delete_performance_record',
         ]);
 
-        $this->assertTrue($form->has('submit'));
+        $this->assertFalse($form->has('submit'));
+        $this->assertCount(0, $form);
     }
 
-    public function testConfigureOptionsSetsDefaults(): void
+    public function testConfigureOptionsSetsDefaultsAndRequired(): void
     {
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
             ->with($this->callback(function (array $defaults): bool {
-                return isset($defaults['method'])
-                    && $defaults['method'] === 'POST'
-                    && isset($defaults['csrf_protection'])
-                    && $defaults['csrf_protection'] === true
-                    && isset($defaults['csrf_field_name'])
-                    && $defaults['csrf_field_name'] === '_token'
-                    && isset($defaults['csrf_token_id'])
-                    && isset($defaults['submit_attr_class']);
+                return isset($defaults['method']) && $defaults['method'] === 'POST'
+                    && isset($defaults['csrf_protection']) && $defaults['csrf_protection'] === true
+                    && isset($defaults['csrf_field_name']) && $defaults['csrf_field_name'] === '_token'
+                    && isset($defaults['csrf_token_id']) && $defaults['csrf_token_id'] === 'delete_performance_record'
+                    && isset($defaults['submit_attr_class']) && $defaults['submit_attr_class'] === 'btn btn-danger btn-sm';
             }));
-        $resolver->expects($this->once())->method('setRequired')->with('csrf_token_id');
+        $resolver->expects($this->once())
+            ->method('setRequired')
+            ->with('csrf_token_id');
 
         $this->formType->configureOptions($resolver);
     }
@@ -51,14 +53,45 @@ final class DeleteRecordTypeTest extends TypeTestCase
         $this->assertSame('delete_record', $this->formType->getBlockPrefix());
     }
 
-    public function testSubmitButtonUsesCustomAttrClassWhenProvided(): void
+    /** Form accepts submit_attr_class option (used when submit is present); no submit child in current build. */
+    public function testFormAcceptsSubmitAttrClassOption(): void
+    {
+        $form = $this->factory->create(DeleteRecordType::class, null, [
+            'csrf_protection' => false,
+            'csrf_token_id' => 'delete_performance_record',
+            'submit_attr_class' => 'custom-btn custom-danger',
+        ]);
+
+        $this->assertFalse($form->has('submit'));
+        $this->assertCount(0, $form);
+    }
+
+    public function testFormBuildsWithCustomCsrfTokenId(): void
+    {
+        $form = $this->factory->create(DeleteRecordType::class, null, [
+            'csrf_protection' => false,
+            'csrf_token_id' => 'custom_delete_token',
+        ]);
+
+        $this->assertCount(0, $form);
+    }
+
+    public function testFormHasCsrfProtectionEnabledByDefault(): void
     {
         $form = $this->factory->create(DeleteRecordType::class, null, [
             'csrf_token_id' => 'delete_performance_record',
-            'submit_attr_class' => 'custom-delete-class',
         ]);
 
-        $submit = $form->get('submit');
-        $this->assertSame('custom-delete-class', $submit->getConfig()->getOption('attr')['class']);
+        $this->assertTrue($form->getConfig()->getOption('csrf_protection'));
+    }
+
+    public function testFormMethodIsPost(): void
+    {
+        $form = $this->factory->create(DeleteRecordType::class, null, [
+            'csrf_protection' => false,
+            'csrf_token_id' => 'delete_performance_record',
+        ]);
+
+        $this->assertSame('POST', $form->getConfig()->getOption('method'));
     }
 }

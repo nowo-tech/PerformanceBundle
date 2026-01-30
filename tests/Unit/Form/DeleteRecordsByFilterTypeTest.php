@@ -96,4 +96,91 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
         $this->assertSame('2097152', $data->minMemoryUsage);
         $this->assertSame('104857600', $data->maxMemoryUsage);
     }
+
+    public function testFormBuildsWithFromValueAccessStatistics(): void
+    {
+        $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
+            'from_value' => 'access_statistics',
+            'csrf_protection' => false,
+        ]);
+
+        $this->assertTrue($form->has('_from'));
+        $this->assertSame('access_statistics', $form->get('_from')->getData());
+    }
+
+    public function testFormSubmissionWithPartialData(): void
+    {
+        $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
+            'from_value' => 'access_records',
+            'csrf_protection' => false,
+        ]);
+
+        $form->submit([
+            '_from' => 'access_records',
+            'env' => 'dev',
+            'route' => 'app_home',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertInstanceOf(DeleteRecordsByFilterRequest::class, $data);
+        $this->assertSame('access_records', $data->from);
+        $this->assertSame('dev', $data->env);
+        $this->assertSame('app_home', $data->route);
+    }
+
+    public function testFormSubmissionWithEmptyOptionalFields(): void
+    {
+        $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
+            'from_value' => 'access_records',
+            'csrf_protection' => false,
+        ]);
+
+        $form->submit([
+            '_from' => 'access_statistics',
+            'env' => 'prod',
+            'start_date' => '',
+            'end_date' => '',
+            'route' => '',
+            'status_code' => '',
+            'min_query_time' => '',
+            'max_query_time' => '',
+            'min_memory_usage' => '',
+            'max_memory_usage' => '',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('access_statistics', $data->from);
+        $this->assertSame('prod', $data->env);
+    }
+
+    public function testFormSubmissionWithTestEnvironment(): void
+    {
+        $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
+            'from_value' => 'access_records',
+            'csrf_protection' => false,
+        ]);
+
+        $form->submit([
+            '_from' => 'access_records',
+            'env' => 'test',
+            'route' => 'app_home',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('test', $data->env);
+        $this->assertSame('app_home', $data->route);
+    }
+
+    public function testFormMethodIsPost(): void
+    {
+        $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
+            'from_value' => 'access_records',
+            'csrf_protection' => false,
+        ]);
+
+        $this->assertSame('POST', $form->getConfig()->getOption('method'));
+    }
 }

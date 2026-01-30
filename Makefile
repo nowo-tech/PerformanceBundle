@@ -14,8 +14,8 @@ help:
 	@echo "  down          Stop Docker container"
 	@echo "  shell         Open shell in container"
 	@echo "  install       Install Composer dependencies"
-	@echo "  test          Run PHPUnit tests"
-	@echo "  test-coverage Run tests with code coverage"
+	@echo "  test          Run PHPUnit tests only (no coverage). Starts PHP container if needed."
+	@echo "  test-coverage Run PHPUnit tests with code coverage (HTML + Clover). Starts PHP container if needed."
 	@echo "  test-with-db  Run tests with databases (integration tests)"
 	@echo "  test-coverage-with-db Run tests with coverage and databases"
 	@echo "  test-up       Start test container with databases"
@@ -53,12 +53,14 @@ shell:
 install:
 	docker-compose exec -T php composer install
 
-# Run tests
+# Run tests only (no coverage). Starts PHP container if needed.
 test:
+	docker-compose up -d
 	docker-compose exec -T php composer test
 
-# Run tests with coverage
+# Run tests with code coverage (HTML in coverage/, Clover in coverage.xml). Starts PHP container if needed.
 test-coverage:
+	docker-compose up -d
 	docker-compose exec -T php composer test-coverage
 
 # Run tests in test container (with databases)

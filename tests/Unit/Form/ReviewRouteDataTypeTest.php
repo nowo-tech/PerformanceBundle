@@ -140,4 +140,37 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
         $data = $form->getData();
         $this->assertFalse($data['save_access_records']);
     }
+
+    public function testBuildFormWithRouteDataNullAndEnableAccessRecordsDefaultsSaveAccessRecordsToTrue(): void
+    {
+        $form = $this->factory->create(ReviewRouteDataType::class, null, [
+            'route_data' => null,
+            'enable_access_records' => true,
+        ]);
+
+        $this->assertTrue($form->has('save_access_records'));
+        $this->assertTrue($form->get('save_access_records')->getData());
+    }
+
+    public function testFormSubmissionWithQueriesImprovedTrueAndTimeImprovedTrue(): void
+    {
+        $form = $this->factory->create(ReviewRouteDataType::class);
+
+        $form->submit([
+            'queries_improved' => '1',
+            'time_improved' => '1',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('1', $data['queries_improved']);
+        $this->assertSame('1', $data['time_improved']);
+    }
+
+    public function testFormMethodIsPost(): void
+    {
+        $form = $this->factory->create(ReviewRouteDataType::class);
+
+        $this->assertSame('POST', $form->getConfig()->getOption('method'));
+    }
 }

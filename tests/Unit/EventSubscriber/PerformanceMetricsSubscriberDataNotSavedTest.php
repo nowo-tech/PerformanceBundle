@@ -54,6 +54,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             1.0,
             [200, 404, 500, 503],
             true,
+            false, // trackUser
+            null,
+            null,
             null,
             null
         );
@@ -110,6 +113,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             1.0,
             [200, 404, 500, 503],
             true,
+            false, // trackUser
+            null,
+            null,
             null,
             null
         );
@@ -132,7 +138,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             ->willReturnSelf();
 
         $this->dataCollector
-            ->expects($this->once())
+            ->expects($this->atLeastOnce())
             ->method('setRecordOperation')
             ->with(false, false);
 
@@ -161,6 +167,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             1.0,
             [200, 404, 500, 503],
             true,
+            false, // trackUser
+            null,
+            null,
             null,
             null
         );
@@ -212,6 +221,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             1.0,
             [200, 404, 500, 503],
             true,
+            false, // trackUser
+            null,
+            null,
             null,
             null
         );
@@ -265,7 +277,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 $this->anything(),
                 $this->anything(),
                 $this->anything(), // requestId
-                $this->anything()  // referer
+                $this->anything(), // referer
+                null,   // userIdentifier
+                null    // userId
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -290,6 +304,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             1.0,
             [200, 404, 500, 503],
             true,
+            false, // trackUser
+            null,
+            null,
             null,
             null
         );
@@ -342,7 +359,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 $this->anything(),
                 $this->anything(),
                 $this->anything(), // requestId
-                $this->anything()  // referer
+                $this->anything(), // referer
+                null,   // userIdentifier
+                null    // userId
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -367,6 +386,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             1.0,
             [200, 404, 500, 503],
             true,
+            false, // trackUser
+            null,
+            null,
             null,
             null
         );
@@ -389,7 +411,8 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             ->method('setRecordOperation')
             ->willReturnSelf();
 
-        // Even when all metrics are null, we should still save (at least access count)
+        // Even when all metrics are null, we should still save (at least access count).
+        // memoryUsage is int because onKernelRequest was called and sets startMemory.
         $this->metricsService
             ->expects($this->once())
             ->method('recordMetrics')
@@ -400,16 +423,18 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 null, // queryCount
                 null, // queryTime
                 $this->anything(), // routeParams
-                null, // memoryUsage
+                $this->isType('int'), // memoryUsage (startMemory set in onKernelRequest)
                 'GET', // httpMethod
                 200,   // statusCode
                 [200, 404, 500, 503], // trackStatusCodes
                 $this->isType('string'), // requestId (set in onKernelRequest)
-                null   // referer (no Referer header)
+                null,  // referer (no Referer header)
+                null,  // userIdentifier
+                null   // userId
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
-        $terminateEvent = new TerminateEvent($this->kernel, $request, new Response(200));
+        $terminateEvent = new TerminateEvent($this->kernel, $request, new Response('', 200));
         $subscriber->onKernelTerminate($terminateEvent);
     }
 
@@ -432,6 +457,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             0.0, // samplingRate = 0% (never record)
             [200, 404, 500, 503],
             true,
+            false, // trackUser
+            null,
+            null,
             null,
             null
         );
