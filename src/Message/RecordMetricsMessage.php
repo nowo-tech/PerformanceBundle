@@ -18,14 +18,14 @@ final class RecordMetricsMessage
     /**
      * Creates a new record metrics message for async processing.
      *
-     * @param string      $routeName    The route name
-     * @param string      $env          The environment (e.g. dev, prod)
-     * @param float|null  $requestTime  Request execution time in seconds
-     * @param int|null    $totalQueries Total number of database queries
-     * @param float|null  $queryTime    Total query execution time in seconds
-     * @param array|null  $params       Route parameters
-     * @param int|null    $memoryUsage  Peak memory usage in bytes
-     * @param string|null $httpMethod   HTTP method (GET, POST, PUT, DELETE, etc.)
+     * @param string      $routeName      The route name
+     * @param string      $env            The environment (e.g. dev, prod)
+     * @param float|null  $requestTime    Request execution time in seconds
+     * @param int|null    $totalQueries   Total number of database queries
+     * @param float|null  $queryTime      Total query execution time in seconds
+     * @param array|null  $params         Route parameters
+     * @param int|null    $memoryUsage    Peak memory usage in bytes
+     * @param string|null $httpMethod     HTTP method (GET, POST, PUT, DELETE, etc.)
      * @param string|null $requestId      Unique request ID for deduplication of access records
      * @param string|null $referer        HTTP Referer header (page that linked to this request)
      * @param string|null $userIdentifier Logged-in user identifier (e.g. username, email)
