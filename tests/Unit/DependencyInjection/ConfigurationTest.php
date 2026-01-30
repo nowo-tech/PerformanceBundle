@@ -35,6 +35,7 @@ final class ConfigurationTest extends TestCase
         $this->assertSame('/performance', $config['dashboard']['path']);
         $this->assertSame('', $config['dashboard']['prefix']);
         $this->assertSame([], $config['dashboard']['roles']);
+        $this->assertSame('nowo_performance.cache', $config['cache']['pool']);
     }
 
     public function testCustomConfiguration(): void

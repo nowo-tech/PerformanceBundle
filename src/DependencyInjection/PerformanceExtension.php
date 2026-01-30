@@ -55,6 +55,9 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter(Configuration::ALIAS.'.track_user', $config['track_user'] ?? false);
         $container->setParameter(Configuration::ALIAS.'.enable_logging', $config['enable_logging'] ?? true);
 
+        $cacheConfig = $config['cache'] ?? [];
+        $container->setParameter(Configuration::ALIAS.'.cache.pool', $cacheConfig['pool'] ?? 'nowo_performance.cache');
+
         // Thresholds configuration
         $thresholdsConfig = $config['thresholds'] ?? [];
         $requestTimeThresholds = $thresholdsConfig['request_time'] ?? [];
@@ -127,7 +130,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
     }
 
     /**
-     * Prepend Twig and Doctrine configuration.
+     * Prepend Twig and cache configuration.
      *
      * @param ContainerBuilder $container The container builder
      */
@@ -141,6 +144,20 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
             $container->prependExtensionConfig('twig', [
                 'paths' => [
                     $viewsPath => 'NowoPerformanceBundle',
+                ],
+            ]);
+        }
+
+        // Prepend dedicated cache pool for Performance Bundle (filesystem, 1h default TTL)
+        if ($container->hasExtension('framework')) {
+            $container->prependExtensionConfig('framework', [
+                'cache' => [
+                    'pools' => [
+                        'nowo_performance.cache' => [
+                            'adapter' => 'cache.adapter.filesystem',
+                            'default_lifetime' => 3600,
+                        ],
+                    ],
                 ],
             ]);
         }

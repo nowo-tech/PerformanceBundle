@@ -42,6 +42,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('/performance', $this->container->getParameter('nowo_performance.dashboard.path'));
         $this->assertSame('', $this->container->getParameter('nowo_performance.dashboard.prefix'));
         $this->assertSame([], $this->container->getParameter('nowo_performance.dashboard.roles'));
+        $this->assertSame('nowo_performance.cache', $this->container->getParameter('nowo_performance.cache.pool'));
     }
 
     public function testLoadCustomConfiguration(): void
@@ -77,6 +78,15 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('/metrics', $this->container->getParameter('nowo_performance.dashboard.path'));
         $this->assertSame('/admin', $this->container->getParameter('nowo_performance.dashboard.prefix'));
         $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $this->container->getParameter('nowo_performance.dashboard.roles'));
+    }
+
+    public function testLoadCustomCachePoolConfiguration(): void
+    {
+        $this->extension->load([
+            ['cache' => ['pool' => 'cache.app']],
+        ], $this->container);
+
+        $this->assertSame('cache.app', $this->container->getParameter('nowo_performance.cache.pool'));
     }
 
     public function testPrependTwigConfiguration(): void

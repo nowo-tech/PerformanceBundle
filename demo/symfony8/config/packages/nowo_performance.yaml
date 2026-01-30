@@ -73,6 +73,9 @@ nowo_performance:
     # The bundle automatically increments the count for each status code when a response is recorded
     track_status_codes: [200, 404, 500, 503]
 
+    cache:                            # Cache configuration (dedicated pool by default)
+        pool: 'nowo_performance.cache'
+        
     # Performance dashboard configuration
     dashboard:
         # Enable or disable the performance dashboard

@@ -26,6 +26,8 @@ nowo_performance:
         - 'web_profiler*'            # Symfony WebProfilerBundle routes
         - '_error'                   # Error pages
     track_status_codes: [200, 404, 500, 503]  # HTTP status codes to track
+    cache:                            # Cache configuration (dedicated pool by default)
+        pool: 'nowo_performance.cache'
     dashboard:                       # Performance dashboard configuration
         enabled: true                # Enable/disable the dashboard
         path: '/performance'         # Route path for the dashboard
@@ -69,6 +71,19 @@ Doctrine connection name to use for storing metrics.
 ```yaml
 nowo_performance:
     connection: 'performance'  # Use a dedicated connection
+```
+
+### `cache`
+
+**Type:** `array`  
+**Default:** `{ pool: 'nowo_performance.cache' }`
+
+Cache configuration. The bundle registers a dedicated filesystem pool `nowo_performance.cache` by default (1h TTL). Use this to override the pool.
+
+```yaml
+nowo_performance:
+    cache:
+        pool: cache.app  # Use application cache instead of dedicated pool
 ```
 
 ### `table_name`

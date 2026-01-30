@@ -16,6 +16,11 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 class TableStatusChecker
 {
     /**
+     * Cache TTL in seconds.
+     */
+    private const CACHE_TTL_SECONDS = 300;
+    
+    /**
      * Cache service (optional, for caching table status).
      */
     private ?PerformanceCacheService $cacheService = null;
@@ -107,10 +112,10 @@ class TableStatusChecker
 
             $exists = $schemaManager->tablesExist([$actualTableName]);
 
-            // Cache the result for 5 minutes (table structure doesn't change frequently)
+            // Cache the result (table structure doesn't change frequently)
             if (null !== $this->cacheService) {
                 $cacheKey = 'table_exists_'.$this->connectionName.'_'.$this->tableName;
-                $this->cacheService->cacheValue($cacheKey, $exists, 300);
+                $this->cacheService->cacheValue($cacheKey, $exists, self::CACHE_TTL_SECONDS);
             }
 
             return $exists;
@@ -163,10 +168,10 @@ class TableStatusChecker
         $missingColumns = $this->getMissingColumns();
         $isComplete = empty($missingColumns);
 
-        // Cache the result for 5 minutes (table structure doesn't change frequently)
+        // Cache the result (table structure doesn't change frequently)
         if (null !== $this->cacheService) {
             $cacheKey = 'table_complete_'.$this->connectionName.'_'.$this->tableName;
-            $this->cacheService->cacheValue($cacheKey, $isComplete, 300);
+            $this->cacheService->cacheValue($cacheKey, $isComplete, self::CACHE_TTL_SECONDS);
         }
 
         return $isComplete;
@@ -175,10 +180,21 @@ class TableStatusChecker
     /**
      * Get list of missing columns in the table.
      *
+     * Result is cached (filesystem via PerformanceCacheService) for CACHE_TTL_SECONDS.
+     *
      * @return array<string> List of missing column names
      */
     public function getMissingColumns(): array
     {
+        $cacheKey = 'missing_columns_'.$this->connectionName.'_'.$this->tableName;
+
+        if (null !== $this->cacheService) {
+            $cached = $this->cacheService->getCachedValue($cacheKey);
+            if (null !== $cached && \is_array($cached)) {
+                return $cached;
+            }
+        }
+
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
@@ -198,7 +214,12 @@ class TableStatusChecker
             // Check if table exists
             if (!$schemaManager->tablesExist([$actualTableName])) {
                 // If table doesn't exist, all columns are missing
-                return $this->getExpectedColumns($metadata);
+                $missing = $this->getExpectedColumns($metadata);
+                if (null !== $this->cacheService) {
+                    $this->cacheService->cacheValue($cacheKey, $missing, self::CACHE_TTL_SECONDS);
+                }
+
+                return $missing;
             }
 
             // Get existing columns from database
@@ -225,9 +246,13 @@ class TableStatusChecker
                 }
             }
 
+            if (null !== $this->cacheService) {
+                $this->cacheService->cacheValue($cacheKey, $missingColumns, self::CACHE_TTL_SECONDS);
+            }
+
             return $missingColumns;
         } catch (\Exception $e) {
-            // If there's any error, return empty array (assume we can't check)
+            // If there's any error, return empty array (assume we can't check). Do not cache errors.
             return [];
         }
     }

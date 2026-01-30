@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use Psr\Cache\CacheItemPoolInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Service for caching performance metrics data.
@@ -36,10 +35,9 @@ class PerformanceCacheService
     /**
      * Creates a new instance.
      *
-     * @param CacheItemPoolInterface|string|null $cachePool The cache pool (optional, uses app cache if not provided)
+     * @param CacheItemPoolInterface|string|null $cachePool The cache pool (optional; bundle configures nowo_performance.cache by default)
      */
     public function __construct(
-        #[Autowire('?cache.app')]
         CacheItemPoolInterface|string|null $cachePool = null,
     ) {
         // Handle case where cache service might not be available (string passed instead of null)

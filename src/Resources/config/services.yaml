@@ -20,11 +20,11 @@ services:
             - method: setMessageBus
               arguments: ['@?messenger.bus.default']
 
-    # Cache Service
+    # Cache Service - uses dedicated pool (configurable via nowo_performance.cache.pool)
     Nowo\PerformanceBundle\Service\PerformanceCacheService:
         public: true
-        # cachePool is optional and will be null if cache.app is not available
-        # The Autowire attribute handles the optional injection
+        arguments:
+            $cachePool: '@?%nowo_performance.cache.pool%'
 
     # Dependency Checker
     Nowo\PerformanceBundle\Service\DependencyChecker:

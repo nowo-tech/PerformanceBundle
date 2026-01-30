@@ -259,4 +259,21 @@ final class TableStatusCheckerTest extends TestCase
 
         $this->assertSame([], $checker->getMissingColumns());
     }
+
+    public function testGetMissingColumnsReturnsCachedValueWhenCacheHit(): void
+    {
+        $cachedMissing = ['missing_col_a', 'missing_col_b'];
+        $cache = $this->createMock(PerformanceCacheService::class);
+        $cache->method('getCachedValue')
+            ->with($this->stringContains('missing_columns'))
+            ->willReturn($cachedMissing);
+
+        $registry = $this->createMock(ManagerRegistry::class);
+        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker->setCacheService($cache);
+
+        $registry->expects($this->never())->method('getConnection');
+
+        $this->assertSame($cachedMissing, $checker->getMissingColumns());
+    }
 }

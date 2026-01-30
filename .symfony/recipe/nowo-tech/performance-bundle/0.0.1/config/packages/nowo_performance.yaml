@@ -100,6 +100,9 @@ nowo_performance:
             warning: 20.0  # Memory usage threshold for warning (MB)
             critical: 50.0 # Memory usage threshold for critical (MB)
 
+    cache:                            # Cache configuration (dedicated pool by default)
+        pool: 'nowo_performance.cache'
+        
     # Dashboard configuration
     dashboard:
         # Enable or disable the performance dashboard
