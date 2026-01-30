@@ -64,7 +64,7 @@ final class LogHelper
             return false;
         }
 
-        if (defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
+        if (\defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
             return true;
         }
 
@@ -92,7 +92,7 @@ final class LogHelper
             return false;
         }
 
-        if (defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
+        if (\defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
             return true;
         }
 

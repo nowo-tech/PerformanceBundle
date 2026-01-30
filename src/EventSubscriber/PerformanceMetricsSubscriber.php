@@ -334,7 +334,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // Get route name here, as it should be resolved by now.
         // If request no longer has _route at terminate (route lost), clear and skip saving.
         $routeNameFromRequest = $request->attributes->get('_route');
-        if ($routeNameFromRequest === null) {
+        if (null === $routeNameFromRequest) {
             $this->routeName = null;
         } else {
             $this->routeName = $this->routeName ?? $routeNameFromRequest;
