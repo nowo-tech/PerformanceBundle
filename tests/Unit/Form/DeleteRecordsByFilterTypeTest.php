@@ -174,6 +174,25 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
         $this->assertSame('app_home', $data->route);
     }
 
+    public function testFormSubmissionWithStageEnvironment(): void
+    {
+        $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
+            'from_value' => 'access_records',
+            'csrf_protection' => false,
+        ]);
+
+        $form->submit([
+            '_from' => 'access_records',
+            'env' => 'stage',
+            'route' => 'api_dashboard',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('stage', $data->env);
+        $this->assertSame('api_dashboard', $data->route);
+    }
+
     public function testFormMethodIsPost(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [

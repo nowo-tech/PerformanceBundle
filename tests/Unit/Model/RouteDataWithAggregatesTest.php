@@ -356,4 +356,20 @@ final class RouteDataWithAggregatesTest extends TestCase
         $this->assertSame(2, $dto->getStatusCodeCount(404));
         $this->assertSame(1, $dto->getStatusCodeCount(500));
     }
+
+    public function testGetStatusCodeRatioWithFiftyPercent(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 10,
+            'status_codes' => [200 => 5, 404 => 5],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertEqualsWithDelta(50.0, $dto->getStatusCodeRatio(200), 0.001);
+        $this->assertEqualsWithDelta(50.0, $dto->getStatusCodeRatio(404), 0.001);
+    }
 }

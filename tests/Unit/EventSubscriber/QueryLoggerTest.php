@@ -131,4 +131,16 @@ final class QueryLoggerTest extends TestCase
         $this->assertSame(0, $logger->getQueryCount());
         $this->assertSame(0.0, $logger->getTotalQueryTime());
     }
+
+    public function testStartAndStopQueryWithEmptyStringId(): void
+    {
+        $logger = new QueryLogger();
+
+        $logger->startQuery('');
+        usleep(5000);
+        $logger->stopQuery('');
+
+        $this->assertSame(1, $logger->getQueryCount());
+        $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
+    }
 }

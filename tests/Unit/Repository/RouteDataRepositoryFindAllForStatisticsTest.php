@@ -138,4 +138,30 @@ final class RouteDataRepositoryFindAllForStatisticsTest extends TestCase
         $this->assertIsArray($result);
         $this->assertCount(0, $result);
     }
+
+    public function testFindAllForStatisticsWithStageEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('setParameter')
+            ->with('env', 'stage')
+            ->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->findAllForStatistics('stage');
+
+        $this->assertIsArray($result);
+        $this->assertCount(0, $result);
+    }
 }

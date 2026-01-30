@@ -190,4 +190,19 @@ final class RebuildAggregatesCommandTest extends TestCase
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('stage', $tester->getDisplay());
     }
+
+    public function testExecuteWithTestEnvFilter(): void
+    {
+        $this->routeDataRepository
+            ->expects($this->once())
+            ->method('findBy')
+            ->with(['env' => 'test'], ['env' => 'ASC', 'name' => 'ASC'])
+            ->willReturn([]);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--env' => 'test']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('test', $tester->getDisplay());
+    }
 }

@@ -116,4 +116,26 @@ final class StatisticsEnvFilterTypeTest extends TypeTestCase
         $this->assertInstanceOf(StatisticsEnvFilter::class, $data);
         $this->assertSame('test', $data->env);
     }
+
+    public function testFormMethodIsGet(): void
+    {
+        $form = $this->factory->create(StatisticsEnvFilterType::class, null, [
+            'environments' => ['dev'],
+        ]);
+
+        $this->assertSame('GET', $form->getConfig()->getOption('method'));
+    }
+
+    public function testFormBuildsWithCustomAttrClassAndAttrExtra(): void
+    {
+        $form = $this->factory->create(StatisticsEnvFilterType::class, null, [
+            'environments' => ['dev', 'prod'],
+            'attr_class' => 'custom-select',
+            'attr_extra' => ['data-test' => 'env-filter'],
+        ]);
+
+        $attr = $form->get('env')->getConfig()->getOption('attr');
+        $this->assertSame('custom-select', $attr['class']);
+        $this->assertSame('env-filter', $attr['data-test']);
+    }
 }

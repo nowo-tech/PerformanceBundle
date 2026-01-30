@@ -75,4 +75,16 @@ final class BeforeRecordsClearedEventTest extends TestCase
 
         $this->assertSame('test', $event->getEnv());
     }
+
+    public function testPreventClearingWithStageEnv(): void
+    {
+        $event = new BeforeRecordsClearedEvent('stage');
+
+        $this->assertSame('stage', $event->getEnv());
+        $this->assertFalse($event->isClearingPrevented());
+
+        $event->preventClearing();
+
+        $this->assertTrue($event->isClearingPrevented());
+    }
 }

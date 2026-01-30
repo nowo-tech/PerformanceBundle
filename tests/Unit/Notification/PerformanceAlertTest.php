@@ -187,4 +187,18 @@ final class PerformanceAlertTest extends TestCase
         $this->assertSame(1.0, $alert->getContextValue('threshold'));
         $this->assertSame('api_slow', $alert->getContextValue('route'));
     }
+
+    public function testOutlierTypeWithContext(): void
+    {
+        $alert = new PerformanceAlert(
+            PerformanceAlert::TYPE_OUTLIER,
+            PerformanceAlert::SEVERITY_WARNING,
+            'Outlier detected',
+            ['route' => 'api_slow', 'value' => 2.5]
+        );
+
+        $this->assertSame(PerformanceAlert::TYPE_OUTLIER, $alert->getType());
+        $this->assertSame('api_slow', $alert->getContextValue('route'));
+        $this->assertSame(2.5, $alert->getContextValue('value'));
+    }
 }

@@ -260,4 +260,32 @@ final class PerformanceDataCollectorTest extends TestCase
             $this->assertSame('sync', $collector->getProcessingMode());
         }
     }
+
+    public function testSetQueryCountAndSetQueryTimeBeforeCollect(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(true);
+        $collector->setQueryCount(3);
+        $collector->setQueryTime(0.12);
+
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame(3, $collector->getQueryCount());
+        $this->assertStringContainsString('ms', $collector->getFormattedQueryTime());
+    }
+
+    public function testSetRequestTimeCalledDoesNotThrow(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(true);
+        $collector->setRequestTime(0.5);
+
+        $request = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->addToAssertionCount(1);
+    }
 }

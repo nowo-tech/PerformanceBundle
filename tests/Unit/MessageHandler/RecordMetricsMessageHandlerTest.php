@@ -232,4 +232,40 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         $handler = new RecordMetricsMessageHandler($this->metricsService);
         $handler($message);
     }
+
+    public function testInvokePassesEmptyParamsArrayToRecordMetrics(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.2,
+            5,
+            0.05,
+            [],
+            null,
+            'GET'
+        );
+
+        $this->metricsService->expects($this->once())
+            ->method('recordMetrics')
+            ->with(
+                'app_home',
+                'dev',
+                0.2,
+                5,
+                0.05,
+                [],
+                null,
+                'GET',
+                null,
+                [],
+                null,
+                null,
+                null,
+                null
+            );
+
+        $handler = new RecordMetricsMessageHandler($this->metricsService);
+        $handler($message);
+    }
 }

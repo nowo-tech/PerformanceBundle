@@ -119,4 +119,11 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('custom_perf', $this->container->getParameter('nowo_performance.table_name'));
         $this->assertSame(['prod', 'dev', 'test'], $this->container->getParameter('nowo_performance.environments'));
     }
+
+    public function testLoadWithStageInEnvironments(): void
+    {
+        $this->extension->load([['environments' => ['dev', 'stage', 'prod']]], $this->container);
+
+        $this->assertSame(['dev', 'stage', 'prod'], $this->container->getParameter('nowo_performance.environments'));
+    }
 }

@@ -150,4 +150,32 @@ final class RouteDataRepositoryFindWorstPerformingTest extends TestCase
         $this->assertIsArray($result);
         $this->assertCount(0, $result);
     }
+
+    public function testFindWorstPerformingWithStageEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->expects($this->once())
+            ->method('setParameter')
+            ->with('env', 'stage')
+            ->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->method('setMaxResults')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findWorstPerforming('stage', 10);
+
+        $this->assertIsArray($result);
+        $this->assertCount(0, $result);
+    }
 }

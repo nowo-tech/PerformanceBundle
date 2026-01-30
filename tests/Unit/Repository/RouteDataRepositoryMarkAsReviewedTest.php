@@ -76,4 +76,52 @@ final class RouteDataRepositoryMarkAsReviewedTest extends TestCase
         $this->assertTrue($result);
         $this->assertTrue($routeData->isReviewed());
     }
+
+    public function testMarkAsReviewedWithStageEnv(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_dashboard')->setEnv('stage');
+
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['find'])
+            ->getMock();
+
+        $repository->expects($this->once())
+            ->method('find')
+            ->with(5)
+            ->willReturn($routeData);
+
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $result = $repository->markAsReviewed(5, false, true, 'admin');
+
+        $this->assertTrue($result);
+        $this->assertTrue($routeData->isReviewed());
+        $this->assertSame('stage', $routeData->getEnv());
+    }
+
+    public function testMarkAsReviewedWithNullReviewedBy(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('app_home')->setEnv('dev');
+
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['find'])
+            ->getMock();
+
+        $repository->expects($this->once())
+            ->method('find')
+            ->with(2)
+            ->willReturn($routeData);
+
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $result = $repository->markAsReviewed(2, null, null, null);
+
+        $this->assertTrue($result);
+        $this->assertTrue($routeData->isReviewed());
+        $this->assertNull($routeData->getReviewedBy());
+    }
 }

@@ -51,6 +51,8 @@ final class RouteDataTest extends TestCase
         $this->assertSame('GET', $routeData->getHttpMethod());
         $routeData->setHttpMethod('POST');
         $this->assertSame('POST', $routeData->getHttpMethod());
+        $routeData->setHttpMethod('');
+        $this->assertSame('', $routeData->getHttpMethod());
         $routeData->setHttpMethod(null);
         $this->assertNull($routeData->getHttpMethod());
 
@@ -333,5 +335,13 @@ final class RouteDataTest extends TestCase
         $this->assertCount(2, $routeData->getAccessRecords());
         $this->assertTrue($routeData->getAccessRecords()->contains($record1));
         $this->assertTrue($routeData->getAccessRecords()->contains($record2));
+    }
+
+    public function testSetParamsWithSingleKey(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setParams(['id' => 1]);
+
+        $this->assertSame(['id' => 1], $routeData->getParams());
     }
 }

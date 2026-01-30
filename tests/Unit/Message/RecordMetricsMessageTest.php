@@ -203,6 +203,13 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertSame([], $m->getParams());
     }
 
+    public function testGetParamsWithMultipleKeys(): void
+    {
+        $params = ['id' => 42, 'slug' => 'my-article'];
+        $m = new RecordMetricsMessage('article_show', 'dev', null, null, null, $params, null);
+        $this->assertSame($params, $m->getParams());
+    }
+
     public function testGetMemoryUsageWithZero(): void
     {
         $m = new RecordMetricsMessage('r', 'dev', null, null, null, null, 0, null);
@@ -279,5 +286,12 @@ final class RecordMetricsMessageTest extends TestCase
         $message = new RecordMetricsMessage('api_cors', 'dev', null, null, null, null, null, 'OPTIONS');
 
         $this->assertSame('OPTIONS', $message->getHttpMethod());
+    }
+
+    public function testGetHttpMethodWithHEAD(): void
+    {
+        $message = new RecordMetricsMessage('api_resource', 'prod', null, null, null, null, null, 'HEAD');
+
+        $this->assertSame('HEAD', $message->getHttpMethod());
     }
 }

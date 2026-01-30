@@ -56,6 +56,14 @@ final class SyncSchemaCommandTest extends TestCase
         $this->assertFalse($option->acceptValue());
     }
 
+    public function testDropObsoleteOptionDefaultValue(): void
+    {
+        $definition = $this->command->getDefinition();
+        $option = $definition->getOption('drop-obsolete');
+
+        $this->assertFalse($option->getDefault());
+    }
+
     public function testCommandHasNoArguments(): void
     {
         $this->assertCount(0, $this->command->getDefinition()->getArguments());

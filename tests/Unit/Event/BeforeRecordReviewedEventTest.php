@@ -122,4 +122,14 @@ final class BeforeRecordReviewedEventTest extends TestCase
         $this->assertSame('api_dashboard', $event->getRouteData()->getName());
         $this->assertSame('stage', $event->getRouteData()->getEnv());
     }
+
+    public function testSetReviewedByWithNull(): void
+    {
+        $routeData = new RouteData();
+        $event = new BeforeRecordReviewedEvent($routeData, null, null, 'original');
+
+        $event->setReviewedBy(null);
+
+        $this->assertNull($event->getReviewedBy());
+    }
 }

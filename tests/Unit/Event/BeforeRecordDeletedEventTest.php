@@ -85,4 +85,29 @@ final class BeforeRecordDeletedEventTest extends TestCase
         $this->assertSame('api_dashboard', $event->getRouteData()->getName());
         $this->assertSame('stage', $event->getRouteData()->getEnv());
     }
+
+    public function testGetRouteDataReturnsRouteWithTestEnv(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_health')->setEnv('test');
+
+        $event = new BeforeRecordDeletedEvent($routeData);
+
+        $this->assertSame('api_health', $event->getRouteData()->getName());
+        $this->assertSame('test', $event->getRouteData()->getEnv());
+    }
+
+    public function testPreventDeletionWithStageEnvRoute(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_dashboard')->setEnv('stage');
+        $event = new BeforeRecordDeletedEvent($routeData);
+
+        $this->assertSame('stage', $event->getRouteData()->getEnv());
+        $this->assertFalse($event->isDeletionPrevented());
+
+        $event->preventDeletion();
+
+        $this->assertTrue($event->isDeletionPrevented());
+    }
 }

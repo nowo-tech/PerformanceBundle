@@ -177,4 +177,45 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         $this->assertTrue($form->has('env'));
         $this->assertSame('stage', $form->get('env')->getData());
     }
+
+    public function testFormSubmissionWithSortAccessCount(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev', 'prod'],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'sort' => 'accessCount',
+            'order' => 'ASC',
+            'limit' => 25,
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('accessCount', $data['sort']);
+        $this->assertSame('ASC', $data['order']);
+    }
+
+    public function testFormSubmissionWithSortQueryTimeAndOrderAsc(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'sort' => 'queryTime',
+            'order' => 'ASC',
+            'limit' => 10,
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame('queryTime', $data['sort']);
+        $this->assertSame('ASC', $data['order']);
+        $this->assertSame(10, $data['limit']);
+    }
 }

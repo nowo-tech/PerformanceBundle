@@ -167,4 +167,16 @@ final class RouteDataToStringTest extends TestCase
 
         $this->assertSame('GET api_health (test)', $result);
     }
+
+    public function testToStringWithEmptyNameIncludesEmptyInParts(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setHttpMethod('GET');
+        $routeData->setName('');
+        $routeData->setEnv('dev');
+
+        $result = (string) $routeData;
+
+        $this->assertSame('GET  (dev)', $result);
+    }
 }

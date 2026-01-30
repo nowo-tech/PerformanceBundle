@@ -76,4 +76,22 @@ final class AfterRecordDeletedEventTest extends TestCase
         $this->assertSame('api_foo', $event->getRouteName());
         $this->assertSame('prod', $event->getEnv());
     }
+
+    public function testGetEnvWithStageEnvironment(): void
+    {
+        $event = new AfterRecordDeletedEvent(1, 'api_dashboard', 'stage');
+
+        $this->assertSame(1, $event->getRecordId());
+        $this->assertSame('api_dashboard', $event->getRouteName());
+        $this->assertSame('stage', $event->getEnv());
+    }
+
+    public function testGetEnvWithTestEnvironment(): void
+    {
+        $event = new AfterRecordDeletedEvent(2, 'api_health', 'test');
+
+        $this->assertSame(2, $event->getRecordId());
+        $this->assertSame('api_health', $event->getRouteName());
+        $this->assertSame('test', $event->getEnv());
+    }
 }

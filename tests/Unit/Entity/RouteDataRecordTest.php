@@ -22,6 +22,16 @@ final class RouteDataRecordTest extends TestCase
         $this->assertNull($this->record->getId());
     }
 
+    public function testGetIdReturnsValueWhenSet(): void
+    {
+        $reflection = new \ReflectionClass($this->record);
+        $idProperty = $reflection->getProperty('id');
+        $idProperty->setAccessible(true);
+        $idProperty->setValue($this->record, 42);
+
+        $this->assertSame(42, $this->record->getId());
+    }
+
     public function testRouteDataIsInitiallyNull(): void
     {
         $this->assertNull($this->record->getRouteData());
@@ -331,6 +341,12 @@ final class RouteDataRecordTest extends TestCase
         $this->assertSame(502, $this->record->getStatusCode());
     }
 
+    public function testSetStatusCodeWith504(): void
+    {
+        $this->record->setStatusCode(504);
+        $this->assertSame(504, $this->record->getStatusCode());
+    }
+
     public function testSetAccessedAtReturnsSelf(): void
     {
         $date = new \DateTimeImmutable('2024-06-01 10:00:00');
@@ -368,6 +384,12 @@ final class RouteDataRecordTest extends TestCase
         $this->assertSame(0, $this->record->getTotalQueries());
     }
 
+    public function testSetTotalQueriesWithLargeNumber(): void
+    {
+        $this->record->setTotalQueries(999);
+        $this->assertSame(999, $this->record->getTotalQueries());
+    }
+
     public function testSetRequestIdWithEmptyString(): void
     {
         $this->record->setRequestId('');
@@ -393,5 +415,44 @@ final class RouteDataRecordTest extends TestCase
 
         $this->record->setQueryTime(null);
         $this->assertNull($this->record->getQueryTime());
+    }
+
+    public function testSetMemoryUsageWithNull(): void
+    {
+        $this->record->setMemoryUsage(1024);
+        $this->assertSame(1024, $this->record->getMemoryUsage());
+
+        $this->record->setMemoryUsage(null);
+        $this->assertNull($this->record->getMemoryUsage());
+    }
+
+    public function testSetRefererTruncatesWhenExceedsMaxLength(): void
+    {
+        $longUrl = str_repeat('a', 2100);
+        $this->record->setReferer($longUrl);
+
+        $result = $this->record->getReferer();
+        $this->assertSame(2048, \strlen($result));
+        $this->assertSame(substr($longUrl, 0, 2048), $result);
+    }
+
+    public function testSetUserIdentifierTruncatesWhenExceedsMaxLength(): void
+    {
+        $longIdentifier = str_repeat('x', 300);
+        $this->record->setUserIdentifier($longIdentifier);
+
+        $result = $this->record->getUserIdentifier();
+        $this->assertSame(255, \strlen($result));
+        $this->assertSame(substr($longIdentifier, 0, 255), $result);
+    }
+
+    public function testSetUserIdTruncatesWhenExceedsMaxLength(): void
+    {
+        $longUserId = str_repeat('u', 80);
+        $this->record->setUserId($longUserId);
+
+        $result = $this->record->getUserId();
+        $this->assertSame(64, \strlen($result));
+        $this->assertSame(substr($longUserId, 0, 64), $result);
     }
 }

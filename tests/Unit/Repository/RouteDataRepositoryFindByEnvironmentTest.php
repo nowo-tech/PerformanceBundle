@@ -127,4 +127,36 @@ final class RouteDataRepositoryFindByEnvironmentTest extends TestCase
         $this->assertIsArray($result);
         $this->assertCount(0, $result);
     }
+
+    public function testFindByEnvironmentWithTestEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $route = new RouteData();
+        $route->setName('api_health')->setEnv('test');
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([$route]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->expects($this->once())
+            ->method('setParameter')
+            ->with('env', 'test')
+            ->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findByEnvironment('test');
+
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result);
+        $this->assertSame('api_health', $result[0]->getName());
+        $this->assertSame('test', $result[0]->getEnv());
+    }
 }

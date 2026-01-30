@@ -128,6 +128,42 @@ final class RecordFiltersTypeTest extends TypeTestCase
         $this->assertSame(404, $data->statusCode);
     }
 
+    public function testFormSubmissionWithStatusCode503(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => [],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'status_code' => '503',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame(503, $data->statusCode);
+    }
+
+    public function testFormSubmissionWithStatusCode200(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => [],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'status_code' => '200',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame(200, $data->statusCode);
+    }
+
     public function testFormSubmissionWithEmptyStatusCodeTransformsToNull(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
@@ -197,5 +233,30 @@ final class RecordFiltersTypeTest extends TypeTestCase
         $this->assertTrue($form->isValid());
         $data = $form->getData();
         $this->assertSame('stage', $data->env);
+    }
+
+    public function testFormMethodIsGet(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => [],
+        ]);
+
+        $this->assertSame('GET', $form->getConfig()->getOption('method'));
+    }
+
+    public function testFormBuildsWithDataHavingMemoryUsageInitializesMemoryFields(): void
+    {
+        $filters = new RecordFilters();
+        $filters->minMemoryUsage = 2 * 1024 * 1024; // 2 MB
+        $filters->maxMemoryUsage = 50 * 1024 * 1024; // 50 MB
+
+        $form = $this->factory->create(RecordFiltersType::class, $filters, [
+            'environments' => ['dev'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $this->assertEqualsWithDelta(2.0, $form->get('min_memory_mb')->getData(), 0.01);
+        $this->assertEqualsWithDelta(50.0, $form->get('max_memory_mb')->getData(), 0.01);
     }
 }

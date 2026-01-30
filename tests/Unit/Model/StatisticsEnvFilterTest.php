@@ -63,4 +63,11 @@ final class StatisticsEnvFilterTest extends TestCase
         $f->env = 'test';
         $this->assertSame('test', $f->env);
     }
+
+    public function testConstructorWithTestValue(): void
+    {
+        $f = new StatisticsEnvFilter('test');
+
+        $this->assertSame('test', $f->env);
+    }
 }

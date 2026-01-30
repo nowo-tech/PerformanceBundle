@@ -199,4 +199,25 @@ final class PerformanceAlertSubscriberTest extends TestCase
 
         $subscriber->onAfterMetricsRecorded($event);
     }
+
+    public function testOnAfterMetricsRecordedWithRouteNullNameUsesUnknown(): void
+    {
+        $notification = $this->createMock(NotificationService::class);
+        $notification->method('isEnabled')->willReturn(true);
+        $notification->expects($this->atLeastOnce())
+            ->method('sendAlert')
+            ->with(
+                $this->callback(function (PerformanceAlert $a): bool {
+                    return str_contains($a->getMessage(), 'Unknown');
+                }),
+                $this->anything()
+            );
+
+        $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
+        $route = new RouteData();
+        $route->setEnv('dev');
+        $event = new AfterMetricsRecordedEvent($route, true, 1.5, null, null);
+
+        $subscriber->onAfterMetricsRecorded($event);
+    }
 }

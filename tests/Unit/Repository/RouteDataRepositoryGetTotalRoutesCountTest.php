@@ -133,4 +133,30 @@ final class RouteDataRepositoryGetTotalRoutesCountTest extends TestCase
 
         $this->assertSame(0, $result);
     }
+
+    public function testGetTotalRoutesCountWithStageEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn('3');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('setParameter')
+            ->with('env', 'stage')
+            ->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->getTotalRoutesCount('stage');
+
+        $this->assertSame(3, $result);
+    }
 }

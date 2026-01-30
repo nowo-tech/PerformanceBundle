@@ -59,4 +59,11 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
 
         $this->assertSame([], $subscriber->getSubscribedEvents());
     }
+
+    public function testConstructorWithTrackRequestTimeDisabled(): void
+    {
+        $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, false, 'default');
+
+        $this->assertSame([], $subscriber->getSubscribedEvents());
+    }
 }

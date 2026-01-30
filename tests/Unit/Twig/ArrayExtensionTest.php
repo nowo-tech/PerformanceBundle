@@ -73,4 +73,14 @@ final class ArrayExtensionTest extends TestCase
         $this->assertSame(-6, $this->extension->sum([-1, -2, -3]));
         $this->assertSame(0, $this->extension->sum([5, -5]));
     }
+
+    public function testSumWithAllZeros(): void
+    {
+        $this->assertSame(0, $this->extension->sum([0, 0, 0]));
+    }
+
+    public function testSumWithSingleZero(): void
+    {
+        $this->assertSame(0, $this->extension->sum([0]));
+    }
 }

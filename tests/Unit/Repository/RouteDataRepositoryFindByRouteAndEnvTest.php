@@ -118,4 +118,60 @@ final class RouteDataRepositoryFindByRouteAndEnvTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    public function testFindByRouteAndEnvWithStageEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $route = new RouteData();
+        $route->setName('api_dashboard')->setEnv('stage');
+
+        $query = $this->createMock(Query::class);
+        $query->method('getOneOrNullResult')->willReturn($route);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('andWhere')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findByRouteAndEnv('api_dashboard', 'stage');
+
+        $this->assertSame($route, $result);
+        $this->assertSame('api_dashboard', $result->getName());
+        $this->assertSame('stage', $result->getEnv());
+    }
+
+    public function testFindByRouteAndEnvWithTestEnv(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $route = new RouteData();
+        $route->setName('api_health')->setEnv('test');
+
+        $query = $this->createMock(Query::class);
+        $query->method('getOneOrNullResult')->willReturn($route);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('andWhere')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findByRouteAndEnv('api_health', 'test');
+
+        $this->assertSame($route, $result);
+        $this->assertSame('api_health', $result->getName());
+        $this->assertSame('test', $result->getEnv());
+    }
 }
