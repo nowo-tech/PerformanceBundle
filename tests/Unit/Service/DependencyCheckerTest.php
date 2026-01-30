@@ -115,14 +115,14 @@ final class DependencyCheckerTest extends TestCase
     public function testIsMailerAvailableReturnsBool(): void
     {
         $result = $this->checker->isMailerAvailable();
-        
+
         $this->assertIsBool($result);
     }
 
     public function testIsHttpClientAvailableReturnsBool(): void
     {
         $result = $this->checker->isHttpClientAvailable();
-        
+
         $this->assertIsBool($result);
     }
 

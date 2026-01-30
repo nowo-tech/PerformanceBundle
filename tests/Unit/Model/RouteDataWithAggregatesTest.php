@@ -322,6 +322,21 @@ final class RouteDataWithAggregatesTest extends TestCase
         $this->assertSame(0.0, $dto->getQueryTime());
     }
 
+    public function testGetTotalQueriesWithZero(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => 0,
+            'memory_usage' => null,
+            'access_count' => 1,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0, $dto->getTotalQueries());
+    }
+
     public function testGetStatusCodesWithSingleStatusCode(): void
     {
         $aggregates = [
@@ -371,5 +386,67 @@ final class RouteDataWithAggregatesTest extends TestCase
 
         $this->assertEqualsWithDelta(50.0, $dto->getStatusCodeRatio(200), 0.001);
         $this->assertEqualsWithDelta(50.0, $dto->getStatusCodeRatio(404), 0.001);
+    }
+
+    public function testGetStatusCodeRatioWithThirtyThreePercent(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 3,
+            'status_codes' => [200 => 1, 404 => 1, 500 => 1],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertEqualsWithDelta(33.333, $dto->getStatusCodeRatio(200), 0.01);
+        $this->assertSame(3, $dto->getTotalResponses());
+    }
+
+    public function testGetStatusCodesReturnsNullWhenEmpty(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 0,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertNull($dto->getStatusCodes());
+    }
+
+    public function testGetStatusCodeCountReturnsZeroForNonExistentCode(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 5,
+            'status_codes' => [200 => 3, 404 => 2],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0, $dto->getStatusCodeCount(500));
+        $this->assertSame(3, $dto->getStatusCodeCount(200));
+    }
+
+    public function testGetStatusCodeRatioReturnsZeroWithEmptyCodes(): void
+    {
+        $aggregates = [
+            'request_time' => null,
+            'query_time' => null,
+            'total_queries' => null,
+            'memory_usage' => null,
+            'access_count' => 0,
+            'status_codes' => [],
+        ];
+        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+
+        $this->assertSame(0.0, $dto->getStatusCodeRatio(200));
     }
 }

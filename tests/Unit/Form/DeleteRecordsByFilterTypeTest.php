@@ -202,4 +202,15 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
 
         $this->assertSame('POST', $form->getConfig()->getOption('method'));
     }
+
+    public function testFormBuildsWithFromValueAccessRecords(): void
+    {
+        $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
+            'from_value' => 'access_records',
+            'csrf_protection' => false,
+        ]);
+
+        $this->assertTrue($form->has('_from'));
+        $this->assertSame('access_records', $form->get('_from')->getData());
+    }
 }

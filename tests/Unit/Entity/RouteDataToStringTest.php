@@ -179,4 +179,16 @@ final class RouteDataToStringTest extends TestCase
 
         $this->assertSame('GET  (dev)', $result);
     }
+
+    public function testToStringWithCONNECTMethod(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setHttpMethod('CONNECT');
+        $routeData->setName('api_proxy');
+        $routeData->setEnv('prod');
+
+        $result = (string) $routeData;
+
+        $this->assertSame('CONNECT api_proxy (prod)', $result);
+    }
 }

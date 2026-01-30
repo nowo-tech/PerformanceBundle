@@ -60,4 +60,11 @@ final class IconExtensionTest extends TestCase
 
         $this->assertSame('', $result);
     }
+
+    public function testRenderIconWithStyleOptionReturnsEmptyWhenUxIconNotDefined(): void
+    {
+        $result = $this->extension->renderIcon('bi:trash', ['style' => 'width: 24px']);
+
+        $this->assertSame('', $result);
+    }
 }

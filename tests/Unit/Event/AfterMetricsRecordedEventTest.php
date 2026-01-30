@@ -130,4 +130,15 @@ final class AfterMetricsRecordedEventTest extends TestCase
         $this->assertSame('api_dashboard', $event->getRouteData()->getName());
         $this->assertSame('stage', $event->getRouteData()->getEnv());
     }
+
+    public function testGetRouteDataWithTestEnv(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('api_health')->setEnv('test');
+        $event = new AfterMetricsRecordedEvent($routeData, false);
+
+        $this->assertSame('api_health', $event->getRouteData()->getName());
+        $this->assertSame('test', $event->getRouteData()->getEnv());
+        $this->assertFalse($event->isNew());
+    }
 }

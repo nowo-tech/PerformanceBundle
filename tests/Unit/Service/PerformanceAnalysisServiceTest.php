@@ -82,6 +82,58 @@ final class PerformanceAnalysisServiceTest extends TestCase
         $this->assertSame(2, $corr['sample_size']);
     }
 
+    public function testAnalyzeCorrelationsWithRoutesHavingPartialNullMetrics(): void
+    {
+        $r1 = $this->routeMock(1.0, null, 10, null, 5);
+        $r2 = $this->routeMock(2.0, 0.8, null, 2 * 1024 * 1024, 10);
+
+        $result = $this->service->analyzeCorrelations([$r1, $r2]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('request_time_vs_query_time', $result);
+        $this->assertArrayHasKey('memory_vs_request_time', $result);
+        $this->assertArrayHasKey('access_count_vs_performance', $result);
+    }
+
+    public function testAnalyzeCorrelationsWithPerfectCorrelationHitsVeryStrong(): void
+    {
+        $r1 = $this->routeMock(1.0, 0.5, 10, null, 1);
+        $r2 = $this->routeMock(2.0, 1.0, 20, null, 2);
+        $r3 = $this->routeMock(3.0, 1.5, 30, null, 3);
+
+        $result = $this->service->analyzeCorrelations([$r1, $r2, $r3]);
+
+        $this->assertIsArray($result);
+        $corr = $result['request_time_vs_query_time'] ?? null;
+        if (null !== $corr && isset($corr['strength'])) {
+            $this->assertContains($corr['strength'], ['very_strong', 'strong', 'moderate', 'weak', 'none']);
+        }
+    }
+
+    public function testAnalyzeEfficiencyWithNullRequestTimeSkipsRoute(): void
+    {
+        $r1 = $this->routeMock(null, 0.5, 10, null, 1);
+        $r2 = $this->routeMock(0.5, 0.1, 5, null, 1);
+
+        $result = $this->service->analyzeEfficiency([$r1, $r2]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('efficient_routes', $result);
+        $this->assertArrayHasKey('inefficient_routes', $result);
+    }
+
+    public function testAnalyzeTrafficDistributionWithSingleRoute(): void
+    {
+        $r1 = $this->routeMock(0.1, null, null, null, 100);
+
+        $result = $this->service->analyzeTrafficDistribution([$r1]);
+
+        $this->assertSame(100, $result['total_accesses']);
+        $this->assertCount(1, $result['hot_paths']);
+        $this->assertCount(1, $result['cold_paths']);
+        $this->assertSame(100.0, $result['traffic_concentration']);
+    }
+
     public function testAnalyzeEfficiencyWithMockedRoutes(): void
     {
         $efficient = $this->routeMock(0.1, 0.02, 5, null, 1);

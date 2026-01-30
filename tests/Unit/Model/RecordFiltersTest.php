@@ -212,4 +212,31 @@ final class RecordFiltersTest extends TestCase
 
         $this->assertSame('stage', $f->env);
     }
+
+    public function testAssignAllFiltersAfterConstruction(): void
+    {
+        $f = new RecordFilters();
+        $start = new \DateTimeImmutable('2026-05-01');
+        $end = new \DateTimeImmutable('2026-05-31');
+
+        $f->startDate = $start;
+        $f->endDate = $end;
+        $f->env = 'prod';
+        $f->route = 'api_report';
+        $f->statusCode = 200;
+        $f->minQueryTime = 0.01;
+        $f->maxQueryTime = 2.0;
+        $f->minMemoryUsage = 1048576;
+        $f->maxMemoryUsage = 52428800;
+
+        $this->assertSame($start, $f->startDate);
+        $this->assertSame($end, $f->endDate);
+        $this->assertSame('prod', $f->env);
+        $this->assertSame('api_report', $f->route);
+        $this->assertSame(200, $f->statusCode);
+        $this->assertSame(0.01, $f->minQueryTime);
+        $this->assertSame(2.0, $f->maxQueryTime);
+        $this->assertSame(1048576, $f->minMemoryUsage);
+        $this->assertSame(52428800, $f->maxMemoryUsage);
+    }
 }

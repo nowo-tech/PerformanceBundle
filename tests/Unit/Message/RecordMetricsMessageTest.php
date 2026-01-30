@@ -294,4 +294,11 @@ final class RecordMetricsMessageTest extends TestCase
 
         $this->assertSame('HEAD', $message->getHttpMethod());
     }
+
+    public function testGetHttpMethodWithCONNECT(): void
+    {
+        $message = new RecordMetricsMessage('api_proxy', 'prod', null, null, null, null, null, 'CONNECT');
+
+        $this->assertSame('CONNECT', $message->getHttpMethod());
+    }
 }

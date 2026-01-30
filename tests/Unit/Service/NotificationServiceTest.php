@@ -159,4 +159,33 @@ final class NotificationServiceTest extends TestCase
 
         $this->assertSame(['email'], $service->getEnabledChannels());
     }
+
+    public function testSendAlertWithAfterMetricsRecordedEventContext(): void
+    {
+        $channel = $this->createMock(NotificationChannelInterface::class);
+        $channel->method('isEnabled')->willReturn(true);
+        $channel->method('getName')->willReturn('webhook');
+        $channel->expects($this->once())
+            ->method('send')
+            ->with(
+                $this->isInstanceOf(PerformanceAlert::class),
+                $this->isInstanceOf(\Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent::class)
+            )
+            ->willReturn(true);
+
+        $service = new NotificationService([$channel], true);
+        $alert = new PerformanceAlert(
+            PerformanceAlert::TYPE_QUERY_COUNT,
+            PerformanceAlert::SEVERITY_CRITICAL,
+            'High query count'
+        );
+        $routeData = new RouteData();
+        $routeData->setName('api_slow')->setEnv('prod');
+        $event = new \Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent($routeData, true, 0.5, 50, null);
+
+        $results = $service->sendAlert($alert, $event);
+
+        $this->assertArrayHasKey('webhook', $results);
+        $this->assertTrue($results['webhook']);
+    }
 }

@@ -176,6 +176,15 @@ final class RebuildAggregatesCommandTest extends TestCase
         $this->assertFalse($option->isValueRequired());
     }
 
+    public function testCommandBatchSizeOptionHasDefault(): void
+    {
+        $definition = $this->command->getDefinition();
+        $option = $definition->getOption('batch-size');
+
+        $this->assertTrue($definition->hasOption('batch-size'));
+        $this->assertSame('200', $option->getDefault());
+    }
+
     public function testExecuteWithStageEnvFilter(): void
     {
         $this->routeDataRepository

@@ -143,4 +143,12 @@ final class BeforeMetricsRecordedEventTest extends TestCase
         $this->assertSame('api_dashboard', $event->getRouteName());
         $this->assertSame('stage', $event->getEnv());
     }
+
+    public function testGetRouteNameAndEnvWithTest(): void
+    {
+        $event = new BeforeMetricsRecordedEvent('api_health', 'test');
+
+        $this->assertSame('api_health', $event->getRouteName());
+        $this->assertSame('test', $event->getEnv());
+    }
 }

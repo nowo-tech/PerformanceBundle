@@ -173,4 +173,30 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
         $this->assertSame('POST', $form->getConfig()->getOption('method'));
     }
+
+    public function testBuildFormWithReviewedRouteDataUsesEditLabel(): void
+    {
+        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData->setName('app_home')->setEnv('dev')->setReviewed(true);
+
+        $form = $this->factory->create(ReviewRouteDataType::class, null, [
+            'route_data' => $routeData,
+        ]);
+
+        $submitConfig = $form->get('submit')->getConfig();
+        $this->assertSame('review.edit_review', $submitConfig->getOption('label'));
+    }
+
+    public function testBuildFormWithUnreviewedRouteDataUsesMarkAsReviewedLabel(): void
+    {
+        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData->setName('app_home')->setEnv('dev')->setReviewed(false);
+
+        $form = $this->factory->create(ReviewRouteDataType::class, null, [
+            'route_data' => $routeData,
+        ]);
+
+        $submitConfig = $form->get('submit')->getConfig();
+        $this->assertSame('review.mark_as_reviewed', $submitConfig->getOption('label'));
+    }
 }

@@ -271,4 +271,18 @@ final class PerformanceCacheServiceTest extends TestCase
 
         $this->assertNull($service->getCachedStatistics('stage'));
     }
+
+    public function testInvalidateStatisticsReturnsFalseWhenPoolNull(): void
+    {
+        $service = new PerformanceCacheService(null);
+
+        $this->assertFalse($service->invalidateStatistics('dev'));
+    }
+
+    public function testCacheEnvironmentsReturnsFalseWhenPoolNull(): void
+    {
+        $service = new PerformanceCacheService(null);
+
+        $this->assertFalse($service->cacheEnvironments(['dev', 'prod']));
+    }
 }

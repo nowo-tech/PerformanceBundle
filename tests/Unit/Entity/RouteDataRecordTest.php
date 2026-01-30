@@ -207,6 +207,15 @@ final class RouteDataRecordTest extends TestCase
         $this->assertSame(0.0, $this->record->getResponseTime());
     }
 
+    public function testSetResponseTimeWithNull(): void
+    {
+        $this->record->setResponseTime(0.5);
+        $this->assertSame(0.5, $this->record->getResponseTime());
+
+        $this->record->setResponseTime(null);
+        $this->assertNull($this->record->getResponseTime());
+    }
+
     public function testRequestIdIsInitiallyNull(): void
     {
         $this->assertNull($this->record->getRequestId());
@@ -347,6 +356,18 @@ final class RouteDataRecordTest extends TestCase
         $this->assertSame(504, $this->record->getStatusCode());
     }
 
+    public function testSetStatusCodeWith501(): void
+    {
+        $this->record->setStatusCode(501);
+        $this->assertSame(501, $this->record->getStatusCode());
+    }
+
+    public function testSetStatusCodeWith400(): void
+    {
+        $this->record->setStatusCode(400);
+        $this->assertSame(400, $this->record->getStatusCode());
+    }
+
     public function testSetAccessedAtReturnsSelf(): void
     {
         $date = new \DateTimeImmutable('2024-06-01 10:00:00');
@@ -415,6 +436,15 @@ final class RouteDataRecordTest extends TestCase
 
         $this->record->setQueryTime(null);
         $this->assertNull($this->record->getQueryTime());
+    }
+
+    public function testSetTotalQueriesWithNull(): void
+    {
+        $this->record->setTotalQueries(10);
+        $this->assertSame(10, $this->record->getTotalQueries());
+
+        $this->record->setTotalQueries(null);
+        $this->assertNull($this->record->getTotalQueries());
     }
 
     public function testSetMemoryUsageWithNull(): void

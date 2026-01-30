@@ -218,4 +218,74 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         $this->assertSame('ASC', $data['order']);
         $this->assertSame(10, $data['limit']);
     }
+
+    public function testFormSubmissionWithSortCreatedAt(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+        ]);
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'sort' => 'createdAt',
+            'order' => 'DESC',
+            'limit' => 100,
+        ]);
+        $this->assertTrue($form->isValid());
+        $this->assertSame('createdAt', $form->getData()['sort']);
+    }
+
+    public function testFormSubmissionWithSortTotalQueries(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+        ]);
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'sort' => 'totalQueries',
+            'order' => 'DESC',
+            'limit' => 50,
+        ]);
+        $this->assertTrue($form->isValid());
+        $this->assertSame('totalQueries', $form->getData()['sort']);
+    }
+
+    public function testFormBuildsWithCurrentMinAndMaxRequestTime(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+            'current_min_request_time' => 0.05,
+            'current_max_request_time' => 2.0,
+        ]);
+        $this->assertSame(0.05, $form->get('min_request_time')->getData());
+        $this->assertSame(2.0, $form->get('max_request_time')->getData());
+    }
+
+    public function testFormBuildsWithCurrentMinAndMaxQueryCount(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+            'current_min_query_count' => 5,
+            'current_max_query_count' => 100,
+        ]);
+        $this->assertSame(5, $form->get('min_query_count')->getData());
+        $this->assertSame(100, $form->get('max_query_count')->getData());
+    }
+
+    public function testFormSubmissionWithSortLastAccessedAt(): void
+    {
+        $form = $this->factory->create(PerformanceFiltersType::class, null, [
+            'environments' => ['dev'],
+        ]);
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'sort' => 'lastAccessedAt',
+            'order' => 'ASC',
+            'limit' => 25,
+        ]);
+        $this->assertTrue($form->isValid());
+        $this->assertSame('lastAccessedAt', $form->getData()['sort']);
+    }
 }

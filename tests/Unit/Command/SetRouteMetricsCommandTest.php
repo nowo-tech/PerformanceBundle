@@ -41,6 +41,13 @@ final class SetRouteMetricsCommandTest extends TestCase
         $this->assertTrue($definition->hasArgument('route'));
     }
 
+    public function testCommandHelpContainsMetricsAndRoute(): void
+    {
+        $help = $this->command->getHelp();
+        $this->assertStringContainsString('metrics', strtolower($help));
+        $this->assertStringContainsString('route', strtolower($help));
+    }
+
     public function testExecuteWithNewRoute(): void
     {
         $routeData = new RouteData();

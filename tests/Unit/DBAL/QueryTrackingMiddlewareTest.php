@@ -249,17 +249,17 @@ final class QueryTrackingMiddlewareTest extends TestCase
     public function testQueryTrackingConnectionPrepareWithException(): void
     {
         QueryTrackingMiddleware::reset();
-        
+
         $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
         $statement = $this->createMock(\Doctrine\DBAL\Driver\Statement::class);
-        
+
         $connection->method('prepare')->willReturn($statement);
         $statement->method('execute')->willThrowException(new \Exception('Database error'));
-        
+
         $trackingConnection = new QueryTrackingConnection($connection);
-        
+
         $preparedStatement = $trackingConnection->prepare('SELECT * FROM users');
-        
+
         try {
             $preparedStatement->execute();
             $this->fail('Expected exception was not thrown');
@@ -268,5 +268,19 @@ final class QueryTrackingMiddlewareTest extends TestCase
             // Query should still be tracked even if it fails
             $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
         }
+    }
+
+    public function testStartQuerySameIdTwiceOverwritesStartTime(): void
+    {
+        QueryTrackingMiddleware::reset();
+
+        QueryTrackingMiddleware::startQuery('q1');
+        usleep(10000);
+        QueryTrackingMiddleware::startQuery('q1');
+        usleep(2000);
+        QueryTrackingMiddleware::stopQuery('q1');
+
+        $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
+        $this->assertGreaterThan(0.0, QueryTrackingMiddleware::getTotalQueryTime());
     }
 }

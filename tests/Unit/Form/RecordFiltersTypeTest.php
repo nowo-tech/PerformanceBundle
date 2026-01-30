@@ -146,6 +146,24 @@ final class RecordFiltersTypeTest extends TypeTestCase
         $this->assertSame(503, $data->statusCode);
     }
 
+    public function testFormSubmissionWithStatusCode500(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => [],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'status_code' => '500',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame(500, $data->statusCode);
+    }
+
     public function testFormSubmissionWithStatusCode200(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
@@ -258,5 +276,57 @@ final class RecordFiltersTypeTest extends TypeTestCase
 
         $this->assertEqualsWithDelta(2.0, $form->get('min_memory_mb')->getData(), 0.01);
         $this->assertEqualsWithDelta(50.0, $form->get('max_memory_mb')->getData(), 0.01);
+    }
+
+    public function testFormSubmissionWithMinAndMaxQueryTime(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => 'app_home',
+            'status_code' => '',
+            'min_query_time' => '0.001',
+            'max_query_time' => '0.5',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertSame(0.001, $data->minQueryTime);
+        $this->assertSame(0.5, $data->maxQueryTime);
+    }
+
+    public function testFormSubmissionWithEmptyStatusCodeBindsToNull(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments' => ['dev'],
+            'available_routes' => [],
+        ]);
+
+        $form->submit([
+            'env' => 'dev',
+            'route' => '',
+            'status_code' => '',
+        ]);
+
+        $this->assertTrue($form->isValid());
+        $data = $form->getData();
+        $this->assertNull($data->statusCode);
+    }
+
+    public function testFormWithInitialStatusCode200DisplaysCorrectly(): void
+    {
+        $filters = new RecordFilters();
+        $filters->statusCode = 200;
+
+        $form = $this->factory->create(RecordFiltersType::class, $filters, [
+            'environments' => ['dev'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $this->assertSame('200', $form->get('status_code')->getViewData());
     }
 }

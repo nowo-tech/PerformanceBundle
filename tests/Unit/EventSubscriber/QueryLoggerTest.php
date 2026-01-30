@@ -143,4 +143,16 @@ final class QueryLoggerTest extends TestCase
         $this->assertSame(1, $logger->getQueryCount());
         $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
     }
+
+    public function testStartQuerySameIdTwiceOverwritesStartTime(): void
+    {
+        $logger = new QueryLogger();
+        $logger->startQuery('q1');
+        usleep(10000);
+        $logger->startQuery('q1');
+        usleep(2000);
+        $logger->stopQuery('q1');
+        $this->assertSame(1, $logger->getQueryCount());
+        $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
+    }
 }

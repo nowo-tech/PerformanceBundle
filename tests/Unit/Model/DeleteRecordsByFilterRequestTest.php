@@ -166,4 +166,31 @@ final class DeleteRecordsByFilterRequestTest extends TestCase
 
         $this->assertSame('503', $r->statusCode);
     }
+
+    public function testConstructorWithAllOptionalParams(): void
+    {
+        $r = new DeleteRecordsByFilterRequest(
+            env: 'stage',
+            from: 'access_statistics',
+            startDate: '2026-05-01T00:00',
+            endDate: '2026-05-31T23:59',
+            route: 'api_report',
+            statusCode: '200',
+            minQueryTime: '0.01',
+            maxQueryTime: '1.5',
+            minMemoryUsage: '1048576',
+            maxMemoryUsage: '104857600',
+        );
+
+        $this->assertSame('stage', $r->env);
+        $this->assertSame('access_statistics', $r->from);
+        $this->assertSame('2026-05-01T00:00', $r->startDate);
+        $this->assertSame('2026-05-31T23:59', $r->endDate);
+        $this->assertSame('api_report', $r->route);
+        $this->assertSame('200', $r->statusCode);
+        $this->assertSame('0.01', $r->minQueryTime);
+        $this->assertSame('1.5', $r->maxQueryTime);
+        $this->assertSame('1048576', $r->minMemoryUsage);
+        $this->assertSame('104857600', $r->maxMemoryUsage);
+    }
 }

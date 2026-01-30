@@ -45,6 +45,19 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
         $this->service = new PerformanceMetricsService($this->registry, 'default');
     }
 
+    public function testSetMessageBusAcceptsNull(): void
+    {
+        $this->service->setMessageBus(null);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testSetMessageBusAcceptsObject(): void
+    {
+        $bus = new \stdClass();
+        $this->service->setMessageBus($bus);
+        $this->addToAssertionCount(1);
+    }
+
     public function testGetRouteDataReturnsRouteWhenFound(): void
     {
         $route = new RouteData();

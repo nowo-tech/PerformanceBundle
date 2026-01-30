@@ -94,4 +94,15 @@ final class DeleteRecordTypeTest extends TypeTestCase
 
         $this->assertSame('POST', $form->getConfig()->getOption('method'));
     }
+
+    public function testFormHasCorrectCsrfFieldNameAndTokenId(): void
+    {
+        $form = $this->factory->create(DeleteRecordType::class, null, [
+            'csrf_protection' => false,
+            'csrf_token_id' => 'delete_performance_record',
+        ]);
+
+        $this->assertSame('_token', $form->getConfig()->getOption('csrf_field_name'));
+        $this->assertSame('delete_performance_record', $form->getConfig()->getOption('csrf_token_id'));
+    }
 }

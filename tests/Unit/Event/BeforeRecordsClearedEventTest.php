@@ -61,6 +61,14 @@ final class BeforeRecordsClearedEventTest extends TestCase
         $this->assertInstanceOf(Event::class, $event);
     }
 
+    public function testGetEnvWithProdEnvironment(): void
+    {
+        $event = new BeforeRecordsClearedEvent('prod');
+
+        $this->assertSame('prod', $event->getEnv());
+        $this->assertFalse($event->isClearingPrevented());
+    }
+
     public function testGetEnvWithStageEnvironment(): void
     {
         $event = new BeforeRecordsClearedEvent('stage');

@@ -98,6 +98,45 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $this->assertEquals([500 => 1], $hour14['status_codes']);
     }
 
+    public function testGetStatisticsByHourWithRouteNameAndStatusCodeFilters(): void
+    {
+        /** @var RouteDataRecordRepository&MockObject $repository */
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $routeData = new RouteData();
+        $routeData->setName('api_foo')->setEnv('dev');
+
+        $record = new RouteDataRecord();
+        $record->setRouteData($routeData);
+        $record->setAccessedAt(new \DateTimeImmutable('2024-01-01 09:30:00'));
+        $record->setResponseTime(0.3);
+        $record->setStatusCode(200);
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->method('getResult')->willReturn([$record]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->exactly(4))->method('andWhere')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $startDate = new \DateTimeImmutable('2024-01-01');
+        $endDate = new \DateTimeImmutable('2024-01-02');
+        $result = $repository->getStatisticsByHour('dev', $startDate, $endDate, 'api_foo', 200);
+
+        $this->assertIsArray($result);
+        $this->assertCount(24, $result);
+    }
+
     public function testGetStatisticsByHourWithoutDataStillReturnsAllHours(): void
     {
         /** @var RouteDataRecordRepository&MockObject $repository */

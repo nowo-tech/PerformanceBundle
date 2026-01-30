@@ -83,4 +83,10 @@ final class ArrayExtensionTest extends TestCase
     {
         $this->assertSame(0, $this->extension->sum([0]));
     }
+
+    public function testSumWithManyElements(): void
+    {
+        $values = array_fill(0, 100, 1);
+        $this->assertSame(100, $this->extension->sum($values));
+    }
 }

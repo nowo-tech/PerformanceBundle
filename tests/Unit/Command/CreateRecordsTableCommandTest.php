@@ -81,6 +81,9 @@ final class CreateRecordsTableCommandTest extends TestCase
         $this->assertStringContainsString('access records', $help);
         $this->assertStringContainsString('--update', $help);
         $this->assertStringContainsString('--force', $help);
+        $this->assertStringContainsString('access records', $help);
+        $this->assertStringContainsString('--update', $help);
+        $this->assertStringContainsString('--force', $help);
     }
 
     public function testExecuteWhenTableExistsWithoutOptions(): void

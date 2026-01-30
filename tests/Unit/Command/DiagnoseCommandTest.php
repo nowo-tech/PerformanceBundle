@@ -188,4 +188,12 @@ final class DiagnoseCommandTest extends TestCase
         $help = $this->command->getHelp();
         $this->assertStringContainsString('configuration', $help);
     }
+
+    public function testCommandDescriptionIsNonEmpty(): void
+    {
+        $description = $this->command->getDescription();
+
+        $this->assertNotEmpty($description);
+        $this->assertStringContainsString('Diagnose', $description);
+    }
 }
