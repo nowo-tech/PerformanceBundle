@@ -11,7 +11,7 @@ _No changes yet._
 Access records now store route params and path. Schema change required.
 
 **New:**
-- **Route params and path in access records** – Each `RouteDataRecord` stores `route_params` (JSON) and `route_path` (VARCHAR 2048). The Access Records UI shows a Path column with a link to the exact URL; CSV/JSON exports include both fields.
+- **Route params and path in access records** – Each `RouteDataRecord` stores `route_params` (JSON) and `route_path` (VARCHAR 2048, path + query string, e.g. `/user/123?page=2`). The Access Records UI shows a Path column with a link to the exact URL for re-access; CSV/JSON exports include both fields.
 
 **Schema:**
 - **`routes_data_records`** – New columns `route_params` (JSON, nullable) and `route_path` (VARCHAR 2048, nullable).

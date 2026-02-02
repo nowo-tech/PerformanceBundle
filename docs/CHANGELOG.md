@@ -14,7 +14,7 @@ _Nothing yet._
 ## [2.0.7] - 2026-01-30
 
 ### Added
-- **Access records: route params and path** – Each `RouteDataRecord` now stores the route parameters (`route_params`, JSON) and the request path (`route_path`, VARCHAR 2048) for the specific access. The Access Records table shows a **Path** column with a clickable link to the exact URL that was hit (e.g. `/user/123`). When path is not available, params are shown as JSON. CSV and JSON exports include `path` and `params`. Run `php bin/console nowo:performance:create-records-table --update` or `nowo:performance:sync-schema` after updating.
+- **Access records: route params and path** – Each `RouteDataRecord` now stores the route parameters (`route_params`, JSON) and the full request path including query string (`route_path`, VARCHAR 2048, e.g. `/user/123?page=2`) for the specific access. The Access Records table shows a **Path** column with a clickable link to the exact URL that was hit, so you can re-access it at any time. When path is not available, params are shown as JSON. CSV and JSON exports include `path` and `params`. Run `php bin/console nowo:performance:create-records-table --update` or `nowo:performance:sync-schema` after updating.
 
 See [UPGRADING](UPGRADING.md#upgrading-to-207-2026-01-30) for migration steps.
 
