@@ -492,7 +492,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 }
             }
 
-            $routePath = $request->getPathInfo();
+            $pathInfo = $request->getPathInfo();
+            $queryString = $request->getQueryString();
+            $routePath = $pathInfo.(\is_string($queryString) && '' !== $queryString ? '?'.$queryString : '');
 
             $result = $this->metricsService->recordMetrics(
                 $this->routeName,

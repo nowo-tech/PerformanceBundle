@@ -30,7 +30,7 @@ final class RecordMetricsMessage
      * @param string|null $referer        HTTP Referer header (page that linked to this request)
      * @param string|null $userIdentifier Logged-in user identifier (e.g. username, email)
      * @param string|null $userId         Logged-in user ID (stringified, if available)
-     * @param string|null $routePath      Request path (e.g. /user/123) for access records
+     * @param string|null $routePath      Request path including query string (e.g. /user/123?page=2) for access records
      */
     public function __construct(
         private readonly string $routeName,
@@ -121,7 +121,7 @@ final class RecordMetricsMessage
         return $this->userId;
     }
 
-    /** @return string|null Request path (e.g. /user/123) for access records */
+    /** @return string|null Request path including query string (e.g. /user/123?page=2) for access records */
     public function getRoutePath(): ?string
     {
         return $this->routePath;

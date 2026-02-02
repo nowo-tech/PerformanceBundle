@@ -110,7 +110,7 @@ class RouteDataRecord
     private ?array $routeParams = null;
 
     /**
-     * Request path (e.g. /user/123) for linking to the exact URL that was hit.
+     * Request path including query string (e.g. /user/123?page=2) for linking to the exact URL that was hit.
      */
     #[ORM\Column(type: Types::STRING, length: 2048, nullable: true)]
     private ?string $routePath = null;
@@ -398,7 +398,7 @@ class RouteDataRecord
     }
 
     /**
-     * Get the request path (e.g. /user/123) for linking.
+     * Get the request path including query string (e.g. /user/123?page=2) for linking.
      *
      * @return string|null The path or null
      */
@@ -410,7 +410,7 @@ class RouteDataRecord
     /**
      * Set the request path.
      *
-     * @param string|null $routePath The path (max 2048 chars)
+     * @param string|null $routePath The path including query string (max 2048 chars)
      */
     public function setRoutePath(?string $routePath): self
     {
