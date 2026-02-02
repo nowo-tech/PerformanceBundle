@@ -166,6 +166,26 @@ nowo_performance:
 
 **Note:** Enabling this feature will increase database storage requirements as it creates a record for every route access (subject to sampling_rate).
 
+### `access_records_retention_days`
+
+**Type:** `integer`\|`null`  
+**Default:** `null` (keep all records)
+
+Retention period in days. When set, records older than this can be purged via the command `nowo:performance:purge-records` or the UI on the Access Records page. If `null` or omitted, all records are kept until manually purged.
+
+```yaml
+nowo_performance:
+    enable_access_records: true
+    access_records_retention_days: 30  # Suggest purging records older than 30 days
+```
+
+**Use cases:**
+- Limit storage growth by keeping only recent records
+- Run `nowo:performance:purge-records` via cron to auto-purge old data
+- Use the Access Records UI to purge all or records older than X days
+
+**Note:** This setting does not automatically delete records. Use the purge command or UI to perform the cleanup.
+
 ### `track_user`
 
 **Type:** `boolean`  

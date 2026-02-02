@@ -223,6 +223,93 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     }
 
     /**
+     * Delete all access records, optionally filtered by environment.
+     *
+     * @param string|null $env Environment to limit deletion (null = all environments)
+     *
+     * @return int Number of deleted records
+     */
+    public function deleteAllRecords(?string $env = null): int
+    {
+        if (null !== $env && '' !== $env) {
+            return $this->deleteByEnvironment($env);
+        }
+
+        $totalDeleted = 0;
+        $batchSize = 1000;
+
+        while (true) {
+            $qb = $this->createQueryBuilder('r')
+                ->select('r.id')
+                ->setMaxResults($batchSize);
+
+            /** @var array<int, int> $ids */
+            $ids = $qb->getQuery()->getSingleColumnResult();
+
+            if (empty($ids)) {
+                break;
+            }
+
+            $deleted = $this->createQueryBuilder('r')
+                ->delete()
+                ->where('r.id IN (:ids)')
+                ->setParameter('ids', $ids)
+                ->getQuery()
+                ->execute();
+
+            $totalDeleted += $deleted;
+        }
+
+        return $totalDeleted;
+    }
+
+    /**
+     * Delete access records older than the given date.
+     *
+     * @param \DateTimeImmutable $before Cutoff date (records with accessedAt < before are deleted)
+     * @param string|null        $env   Optional environment filter (null = all environments)
+     * @param int                $batchSize Max IDs per batch
+     *
+     * @return int Number of deleted records
+     */
+    public function deleteOlderThan(\DateTimeImmutable $before, ?string $env = null, int $batchSize = 1000): int
+    {
+        $totalDeleted = 0;
+
+        while (true) {
+            $qb = $this->createQueryBuilder('r')
+                ->select('r.id')
+                ->where('r.accessedAt < :before')
+                ->setParameter('before', $before)
+                ->setMaxResults($batchSize);
+
+            if (null !== $env && '' !== $env) {
+                $qb->join('r.routeData', 'rd')
+                    ->andWhere('rd.env = :env')
+                    ->setParameter('env', $env);
+            }
+
+            /** @var array<int, int> $ids */
+            $ids = $qb->getQuery()->getSingleColumnResult();
+
+            if (empty($ids)) {
+                break;
+            }
+
+            $deleted = $this->createQueryBuilder('r')
+                ->delete()
+                ->where('r.id IN (:ids)')
+                ->setParameter('ids', $ids)
+                ->getQuery()
+                ->execute();
+
+            $totalDeleted += $deleted;
+        }
+
+        return $totalDeleted;
+    }
+
+    /**
      * Delete all records for an environment.
      *
      * @param string $env The environment

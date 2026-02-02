@@ -52,6 +52,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter(Configuration::ALIAS.'.query_tracking_threshold', $config['query_tracking_threshold'] ?? 0);
         $container->setParameter(Configuration::ALIAS.'.track_status_codes', $config['track_status_codes'] ?? [200, 404, 500, 503]);
         $container->setParameter(Configuration::ALIAS.'.enable_access_records', $config['enable_access_records'] ?? false);
+        $container->setParameter(Configuration::ALIAS.'.access_records_retention_days', $config['access_records_retention_days'] ?? null);
         $container->setParameter(Configuration::ALIAS.'.track_user', $config['track_user'] ?? false);
         $container->setParameter(Configuration::ALIAS.'.enable_logging', $config['enable_logging'] ?? true);
 

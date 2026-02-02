@@ -222,6 +222,45 @@ Use this command when:
 - Deploying to a new environment where temporal records are needed
 - Adding new fields to `RouteDataRecord` in future versions
 
+## nowo:performance:purge-records
+
+Purge access records (RouteDataRecord) by age or delete all.
+
+### Usage
+
+```bash
+php bin/console nowo:performance:purge-records [options]
+```
+
+### Options
+
+- `--older-than=N, -o N` - Delete records older than N days (e.g. `--older-than=30`)
+- `--all, -a` - Delete all access records
+- `--env=ENV, -e ENV` - Limit to a specific environment (dev, prod, etc.)
+- `--dry-run` - Show what would be deleted without actually deleting
+
+### Description
+
+Deletes access records from the `routes_data_records` table. Without options, uses the configured `access_records_retention_days` (must be set). With `--older-than=N`, deletes records with `accessed_at` older than N days. With `--all`, deletes all records.
+
+Use via cron to automatically purge old records when `access_records_retention_days` is configured:
+
+```bash
+# Purge records older than retention_days (from config)
+php bin/console nowo:performance:purge-records
+
+# Purge records older than 30 days
+php bin/console nowo:performance:purge-records --older-than=30
+
+# Purge all records for prod
+php bin/console nowo:performance:purge-records --all --env=prod
+
+# Preview what would be deleted
+php bin/console nowo:performance:purge-records --older-than=30 --dry-run
+```
+
+Requires `enable_access_records: true`.
+
 ## nowo:performance:sync-schema
 
 Sync database schema with entity metadata for both tables in one go.

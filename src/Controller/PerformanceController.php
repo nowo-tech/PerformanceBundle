@@ -14,12 +14,14 @@ use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
 use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
 use Nowo\PerformanceBundle\Form\DeleteRecordType;
+use Nowo\PerformanceBundle\Form\PurgeAccessRecordsType;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
 use Nowo\PerformanceBundle\Form\RecordFiltersType;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Form\StatisticsEnvFilterType;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
+use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
 use Nowo\PerformanceBundle\Model\RecordFilters;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
@@ -116,6 +118,8 @@ class PerformanceController extends AbstractController
         private readonly float $samplingRate = 1.0,
         #[Autowire('%nowo_performance.enable_logging%')]
         private readonly bool $enableLogging = true,
+        #[Autowire('%nowo_performance.access_records_retention_days%')]
+        private readonly ?int $accessRecordsRetentionDays = null,
     ) {
     }
 
@@ -2677,6 +2681,12 @@ class PerformanceController extends AbstractController
             'from_value' => 'access_records',
         ]);
 
+        $retentionDays = $this->accessRecordsRetentionDays ?? 30;
+        $purgeForm = $this->createForm(PurgeAccessRecordsType::class, new PurgeAccessRecordsRequest($env, PurgeAccessRecordsRequest::PURGE_OLDER_THAN, $retentionDays), [
+            'environments' => $environments,
+            'default_days' => $retentionDays,
+        ]);
+
         return $this->render('@NowoPerformanceBundle/Performance/access_records.html.twig', [
             'paginated_data' => $paginatedData,
             'environment' => $env,
@@ -2694,7 +2704,93 @@ class PerformanceController extends AbstractController
             'enable_record_management' => $this->enableRecordManagement,
             'filterForm' => $filterForm->createView(),
             'deleteByFilterForm' => $deleteByFilterForm->createView(),
+            'purgeForm' => $purgeForm->createView(),
         ]);
+    }
+
+    /**
+     * Purge access records: all or older than X days.
+     *
+     * Expects POST with purge_type (all|older_than), days (when older_than), env.
+     * Requires enable_access_records and enable_record_management.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return RedirectResponse Redirects back to access records
+     */
+    #[Route(
+        path: '/purge-records',
+        name: 'nowo_performance.purge_records',
+        methods: ['POST']
+    )]
+    public function purgeRecords(Request $request): RedirectResponse
+    {
+        if (!$this->enabled || !$this->enableAccessRecords) {
+            throw $this->createNotFoundException('Temporal access records are disabled.');
+        }
+
+        if (!$this->enableRecordManagement) {
+            throw $this->createAccessDeniedException('Record management is disabled.');
+        }
+
+        if (!empty($this->requiredRoles)) {
+            $hasAccess = false;
+            foreach ($this->requiredRoles as $role) {
+                if ($this->isGranted($role)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+            if (!$hasAccess) {
+                throw $this->createAccessDeniedException('You do not have permission to purge access records.');
+            }
+        }
+
+        $currentEnv = $this->getParameter('kernel.environment');
+        $purgeForm = $this->createForm(PurgeAccessRecordsType::class, new PurgeAccessRecordsRequest($currentEnv));
+        $purgeForm->handleRequest($request);
+
+        if (!$purgeForm->isSubmitted() || !$purgeForm->isValid()) {
+            $this->addFlash('error', 'Invalid security token. Please try again.');
+
+            return $this->redirectToRoute('nowo_performance.access_records');
+        }
+
+        $data = $purgeForm->getData();
+        $env = $data->env;
+        $envFilter = '' !== $env ? $env : null;
+
+        if (null === $this->recordRepository) {
+            $this->addFlash('error', 'RouteDataRecordRepository is not available.');
+
+            return $this->redirectToRoute('nowo_performance.access_records', ['env' => $env ?: $currentEnv]);
+        }
+
+        try {
+            if (PurgeAccessRecordsRequest::PURGE_ALL === $data->purgeType) {
+                $deleted = $this->recordRepository->deleteAllRecords($envFilter);
+                $this->addFlash('success', \sprintf('Purged %d access record(s).', $deleted));
+            } else {
+                $days = $data->days ?? 30;
+                if ($days < 1) {
+                    $days = 30;
+                }
+                $before = new \DateTimeImmutable('-'.$days.' days');
+                $deleted = $this->recordRepository->deleteOlderThan($before, $envFilter);
+                $this->addFlash('success', \sprintf('Purged %d access record(s) older than %d days.', $deleted, $days));
+            }
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Error purging records: '.$e->getMessage());
+        }
+
+        if (null !== $this->cacheService) {
+            $this->cacheService->clearStatistics($envFilter ?? '');
+            if (null === $envFilter) {
+                $this->cacheService->clearEnvironments();
+            }
+        }
+
+        return $this->redirectToRoute('nowo_performance.access_records', ['env' => $env ?: $currentEnv]);
     }
 
     /**

@@ -225,7 +225,17 @@ access_statistics:
     next: "Next"
     heatmap: "Access Heatmap (Day of Week vs Hour)"
     delete_records_matching_filter: "Delete records matching filter"
-    delete_records_confirm: "Are you sure you want to delete all records matching the current filter? This cannot be undone."# Route / page titles (for breadcrumbs, nav, messages)
+    delete_records_confirm: "Are you sure you want to delete all records matching the current filter? This cannot be undone."
+    purge_records_title: "Purge records"
+    purge_records_help: "Clear access records by retention: delete all or only records older than X days. Configure access_records_retention_days in config to set default retention."
+    purge_type: "Action"
+    purge_all: "Clear all records"
+    purge_older_than: "Clear records older than X days"
+    older_than_days: "Days"
+    purge_records: "Purge"
+    purge_records_confirm: "Are you sure you want to purge the selected access records? This cannot be undone."
+    all_environments: "All environments"
+# Route / page titles (for breadcrumbs, nav, messages)
 access_records: "Access Records"
 api:
     chart_data: "Chart Data"

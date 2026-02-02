@@ -53,6 +53,11 @@ nowo_performance:
     # Note: Enabling this will increase database storage requirements
     enable_access_records: true
 
+    # Retention period for access records (days). Records older than this can be purged.
+    # Omit or null = keep all. Use nowo:performance:purge-records command or UI to clean old records.
+    # Example: 30 to suggest keeping only the last 30 days
+    # access_records_retention_days: 30
+
     # Store logged-in user on each access record (user identifier and user ID if available)
     # Requires Symfony Security. Disabled by default for privacy.
     track_user: false
@@ -75,7 +80,7 @@ nowo_performance:
 
     cache:                            # Cache configuration (dedicated pool by default)
         pool: 'nowo_performance.cache'
-        
+
     # Performance dashboard configuration
     dashboard:
         # Enable or disable the performance dashboard

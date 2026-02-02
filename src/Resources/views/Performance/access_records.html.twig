@@ -69,6 +69,23 @@
             </div>
         </div>
 
+        {% if enable_record_management|default(false) and purgeForm is defined %}
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0">{{ 'access_statistics.purge_records_title'|trans({}, 'nowo_performance') }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">{{ 'access_statistics.purge_records_help'|trans({}, 'nowo_performance') }}</p>
+                {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                    <div class="col-md-2">{{ form_row(purgeForm.purgeType) }}</div>
+                    <div class="col-md-2 purge-days-field">{{ form_row(purgeForm.days) }}</div>
+                    <div class="col-md-2">{{ form_row(purgeForm.env) }}</div>
+                    <div class="col-md-2">{{ form_row(purgeForm.submit) }}</div>
+                {{ form_end(purgeForm, {'render_rest': false}) }}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ 'access_statistics.records'|trans({}, 'nowo_performance') }}</h5>
@@ -318,6 +335,19 @@
             {{ form_end(deleteByFilterForm) }}
         {% endif %}
     </div>
+
+    {% if enable_record_management|default(false) and purgeForm is defined %}
+    <div class="mt-4 rounded-lg border-2 border-amber-200 bg-amber-50 p-4">
+        <h3 class="text-lg font-medium text-amber-900 mb-2">{{ 'access_statistics.purge_records_title'|trans({}, 'nowo_performance') }}</h3>
+        <p class="text-sm text-amber-800 mb-3">{{ 'access_statistics.purge_records_help'|trans({}, 'nowo_performance') }}</p>
+        {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+            <div class="flex-1 min-w-[140px]">{{ form_row(purgeForm.purge_type, {'attr': {'class': 'form-select'}}) }}</div>
+            <div class="flex-1 min-w-[100px] purge-days-field">{{ form_row(purgeForm.days) }}</div>
+            <div class="flex-1 min-w-[120px]">{{ form_row(purgeForm.env) }}</div>
+            <div>{{ form_row(purgeForm.submit, {'attr': {'class': 'px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700'}}) }}</div>
+        {{ form_end(purgeForm, {'render_rest': false}) }}
+    </div>
+    {% endif %}
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">

@@ -226,6 +226,15 @@ access_statistics:
     heatmap: "Mapa de calor (día de semana vs hora)"
     delete_records_matching_filter: "Eliminar registros que coincidan con el filtro"
     delete_records_confirm: "¿Está seguro de que desea eliminar todos los registros que coincidan con el filtro actual? Esta acción no se puede deshacer."
+    purge_records_title: "Vaciar registros"
+    purge_records_help: "Vaciar registros por antigüedad: eliminar todos o solo los más antiguos que X días. Configura access_records_retention_days para el valor por defecto."
+    purge_type: "Acción"
+    purge_all: "Vaciar todos los registros"
+    purge_older_than: "Vaciar registros con más de X días"
+    older_than_days: "Días"
+    purge_records: "Vaciar"
+    purge_records_confirm: "¿Está seguro de que desea vaciar los registros seleccionados? Esta acción no se puede deshacer."
+    all_environments: "Todos los entornos"
 
 # Títulos de rutas / páginas (migas, navegación, mensajes)
 access_records: "Registros de Acceso"

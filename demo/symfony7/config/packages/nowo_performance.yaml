@@ -53,6 +53,11 @@ nowo_performance:
     # Note: Enabling this will increase database storage requirements
     enable_access_records: true
 
+    # Retention period for access records (days). Records older than this can be purged.
+    # Omit or null = keep all. Use nowo:performance:purge-records command or UI to clean old records.
+    # Example: 30 to suggest keeping only the last 30 days
+    # access_records_retention_days: 30
+
     # List of route names to ignore (not tracked)
     # Routes in this list will not have their performance metrics recorded
     # Supports exact names, prefix (e.g. _wdt also ignores _wdt_open) and glob patterns (_wdt*, web_profiler*)

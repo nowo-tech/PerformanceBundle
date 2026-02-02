@@ -54,6 +54,11 @@ nowo_performance:
     # Note: Enabling this will increase database storage requirements
     enable_access_records: true
 
+    # Retention period for access records (days). Records older than this can be purged.
+    # Omit or null = keep all. Use nowo:performance:purge-records command or UI to clean old records.
+    # Example: 30 to suggest keeping only the last 30 days
+    access_records_retention_days: 30
+
     # Enable or disable bundle logging
     # When disabled, no error_log() calls will be made by the bundle
     # Recommended to disable in production for better performance and reduced log noise
