@@ -1238,6 +1238,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     enable_access_records?: bool|Param, // Enable temporal access records tracking. Creates individual records for each route access with timestamp, status code, and response time. Useful for analyzing access patterns by time of day. // Default: false
  *     track_user?: bool|Param, // When access records are enabled, store the logged-in user identifier and user ID (if available) on each record. Requires Symfony Security. Disabled by default for privacy. // Default: false
  *     enable_logging?: bool|Param, // Enable or disable bundle logging. When disabled, no error_log() calls will be made. Recommended to disable in production for better performance. // Default: true
+ *     cache?: array{ // Cache configuration. The bundle registers a dedicated pool nowo_performance.cache (filesystem) by default.
+ *         pool?: scalar|Param|null, // Cache pool service ID. Default: nowo_performance.cache (dedicated pool). Use cache.app to share with application cache. // Default: "nowo_performance.cache"
+ *     },
  *     thresholds?: array{ // Performance thresholds for warning and critical levels
  *         request_time?: array{ // Request time thresholds in seconds
  *             warning?: float|Param, // Request time threshold for warning (seconds) // Default: 0.5

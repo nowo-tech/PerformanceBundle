@@ -219,9 +219,7 @@ access_statistics:
     next: "Next"
     heatmap: "Access Heatmap (Day of Week vs Hour)"
     delete_records_matching_filter: "Delete records matching filter"
-    delete_records_confirm: "Are you sure you want to delete all records matching the current filter? This cannot be undone."
-
-# Route / page titles (for breadcrumbs, nav, messages)
+    delete_records_confirm: "Are you sure you want to delete all records matching the current filter? This cannot be undone."# Route / page titles (for breadcrumbs, nav, messages)
 access_records: "Access Records"
 api:
     chart_data: "Chart Data"

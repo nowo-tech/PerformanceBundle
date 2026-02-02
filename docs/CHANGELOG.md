@@ -11,6 +11,27 @@ _Nothing yet._
 
 ---
 
+## [2.0.6] - 2026-01-30
+
+### Added
+- **Dedicated cache pool** – The bundle now registers a dedicated filesystem cache pool `nowo_performance.cache` (TTL 1h) via `framework.cache.pools`. `PerformanceCacheService` uses this pool by default instead of `cache.app`, isolating bundle cache from application cache.
+- **Cache configuration** – New `nowo_performance.cache.pool` option to override the cache pool (e.g. `cache.app` to share with the application). See [CONFIGURATION](CONFIGURATION.md#cache).
+- **TableStatusChecker: cache getMissingColumns** – `getMissingColumns()` results are now cached (filesystem, 5 min TTL) to reduce `information_schema` queries. Uses `CACHE_TTL_SECONDS` constant (300s) shared with `tableExists` and `tableIsComplete`.
+- **symfony/yaml** – Added as explicit `require` dependency for `YamlFileLoader` when loading services config.
+
+### Added (tests)
+- **TableStatusCheckerTest** – `testGetMissingColumnsReturnsCachedValueWhenCacheHit`, `testTableExistsWhenNoCacheAndDatabaseReturnsTrue`, `testRecordsTableExistsReturnsFalseWhenConnectionFails`, and additional cache/exception path tests.
+- **PerformanceExtensionTest** – `testLoadCustomCachePoolConfiguration`.
+- **ConfigurationTest** – Default `cache.pool` assertion.
+- **RouteDataRecordRepositoryTest** – `testGetStatisticsByHourWithRouteNameAndStatusCodeFilters`.
+- **PerformanceAnalysisServiceTest** – Correlations, efficiency with null metrics, traffic distribution with single route.
+- **RouteDataWithAggregatesTest** – `getStatusCodes` null, `getStatusCodeCount` for non-existent code, `getStatusCodeRatio` with empty codes.
+- **PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest** – `testSetMessageBusAcceptsNull`, `testSetMessageBusAcceptsObject`.
+
+See [UPGRADING](UPGRADING.md#upgrading-to-206-2026-01-30) for migration steps.
+
+---
+
 ## [2.0.5] - 2026-01-28
 
 ### Added

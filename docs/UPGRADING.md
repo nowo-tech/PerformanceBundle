@@ -6,6 +6,25 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.6 (2026-01-30)
+
+Cache improvements and dedicated pool. No schema or breaking changes.
+
+**New:**
+- **Dedicated cache pool** – The bundle registers `nowo_performance.cache` (filesystem, 1h TTL) by default. `PerformanceCacheService` and `TableStatusChecker` use this pool. Cache is isolated from `cache.app`.
+- **Cache config** – Override with `nowo_performance.cache.pool` if you prefer to use `cache.app` or another pool.
+- **TableStatusChecker** – `getMissingColumns()` results are cached (5 min) to reduce database introspection queries.
+
+**Fixed:**
+- **symfony/yaml** – Added as explicit dependency. Fixes "Unable to load YAML config files as the Symfony Yaml Component is not installed" when the component was not pulled transitively.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.5 (2026-01-28)
 
 New feature: store logged-in user on access records when `track_user` is enabled. Fixes: Security autowiring on Symfony 7/8; translation validation no longer reports false positives for the same key in different YAML blocks. See [CHANGELOG](CHANGELOG.md#205---2026-01-28) for details.
