@@ -461,7 +461,7 @@ class PerformanceController extends AbstractController
      * Get top routes by access count (most used).
      *
      * @param RouteDataWithAggregates[] $routes All routes with aggregates
-     * @param int                      $limit  Max number to return
+     * @param int                       $limit  Max number to return
      *
      * @return array<int, array{name: string, access_count: int}>
      */
@@ -470,7 +470,7 @@ class PerformanceController extends AbstractController
         $withCount = array_filter($routes, static fn ($r) => $r->getAccessCount() > 0);
         usort($withCount, static fn ($a, $b) => $b->getAccessCount() <=> $a->getAccessCount());
 
-        return array_slice(array_map(static fn (RouteDataWithAggregates $r) => [
+        return \array_slice(array_map(static fn (RouteDataWithAggregates $r) => [
             'name' => $r->getName() ?? 'N/A',
             'access_count' => $r->getAccessCount(),
         ], $withCount), 0, $limit);
@@ -480,7 +480,7 @@ class PerformanceController extends AbstractController
      * Get top routes by request time (most resource-consuming by latency).
      *
      * @param RouteDataWithAggregates[] $routes All routes with aggregates
-     * @param int                      $limit  Max number to return
+     * @param int                       $limit  Max number to return
      *
      * @return array<int, array{name: string, request_time: float}>
      */
@@ -489,7 +489,7 @@ class PerformanceController extends AbstractController
         $withTime = array_filter($routes, static fn ($r) => null !== $r->getRequestTime() && $r->getRequestTime() > 0);
         usort($withTime, static fn ($a, $b) => ($b->getRequestTime() ?? 0) <=> ($a->getRequestTime() ?? 0));
 
-        return array_slice(array_map(static fn (RouteDataWithAggregates $r) => [
+        return \array_slice(array_map(static fn (RouteDataWithAggregates $r) => [
             'name' => $r->getName() ?? 'N/A',
             'request_time' => $r->getRequestTime(),
         ], $withTime), 0, $limit);
