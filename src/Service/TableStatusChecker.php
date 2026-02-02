@@ -19,7 +19,7 @@ class TableStatusChecker
      * Cache TTL in seconds.
      */
     private const CACHE_TTL_SECONDS = 300;
-    
+
     /**
      * Cache service (optional, for caching table status).
      */
