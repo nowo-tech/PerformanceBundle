@@ -11,6 +11,13 @@ _Nothing yet._
 
 ---
 
+## [2.0.9] - 2026-02-02
+
+### Changed
+- **Statistics templates** – Normalized end-of-file in `_statistics_bootstrap.html.twig` and `_statistics_tailwind.html.twig` (no newline at EOF) for consistency.
+
+---
+
 ## [2.0.8] - 2026-01-28
 
 ### Added

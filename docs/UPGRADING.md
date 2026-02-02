@@ -6,6 +6,20 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.9 (2026-02-02)
+
+Minor release. No schema or configuration changes.
+
+**Changed:**
+- **Statistics templates** – Normalized end-of-file in Bootstrap and Tailwind statistics components.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.8 (2026-01-28)
 
 New filters and UX improvements. No schema or configuration changes.
