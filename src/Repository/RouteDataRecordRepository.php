@@ -266,8 +266,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Delete access records older than the given date.
      *
-     * @param \DateTimeImmutable $before Cutoff date (records with accessedAt < before are deleted)
-     * @param string|null        $env   Optional environment filter (null = all environments)
+     * @param \DateTimeImmutable $before    Cutoff date (records with accessedAt < before are deleted)
+     * @param string|null        $env       Optional environment filter (null = all environments)
      * @param int                $batchSize Max IDs per batch
      *
      * @return int Number of deleted records
