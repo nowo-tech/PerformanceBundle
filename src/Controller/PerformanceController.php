@@ -1065,6 +1065,8 @@ class PerformanceController extends AbstractController
             fputcsv($handle, [
                 'ID',
                 'Route Name',
+                'Path',
+                'Params',
                 'Environment',
                 'Accessed At',
                 'Status Code',
@@ -1078,9 +1080,12 @@ class PerformanceController extends AbstractController
             ]);
             foreach ($records as $r) {
                 $rd = $r->getRouteData();
+                $params = $r->getRouteParams();
                 fputcsv($handle, [
                     $r->getId() ?? '',
                     $rd?->getName() ?? '',
+                    $r->getRoutePath() ?? '',
+                    null !== $params ? json_encode($params) : '',
                     $rd?->getEnv() ?? '',
                     $r->getAccessedAt()?->format('Y-m-d H:i:s') ?? '',
                     $r->getStatusCode() ?? '',
@@ -1181,6 +1186,8 @@ class PerformanceController extends AbstractController
             return [
                 'id' => $r->getId(),
                 'route_name' => $rd?->getName(),
+                'path' => $r->getRoutePath(),
+                'params' => $r->getRouteParams(),
                 'environment' => $rd?->getEnv(),
                 'accessed_at' => $r->getAccessedAt()?->format('c'),
                 'status_code' => $r->getStatusCode(),

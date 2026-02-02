@@ -55,7 +55,8 @@ final class RecordMetricsMessageHandler
             $message->getRequestId(),
             $message->getReferer(),
             $message->getUserIdentifier(),
-            $message->getUserId()
+            $message->getUserId(),
+            $message->getRoutePath()
         );
     }
 }

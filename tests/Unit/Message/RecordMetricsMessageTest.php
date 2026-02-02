@@ -301,4 +301,32 @@ final class RecordMetricsMessageTest extends TestCase
 
         $this->assertSame('CONNECT', $message->getHttpMethod());
     }
+
+    public function testGetRoutePath(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_user_show',
+            'dev',
+            0.1,
+            5,
+            0.02,
+            ['id' => 123],
+            1024,
+            'GET',
+            null,
+            null,
+            null,
+            null,
+            '/user/123'
+        );
+
+        $this->assertSame('/user/123', $message->getRoutePath());
+    }
+
+    public function testGetRoutePathReturnsNullWhenNotProvided(): void
+    {
+        $message = new RecordMetricsMessage('app_home', 'dev');
+
+        $this->assertNull($message->getRoutePath());
+    }
 }

@@ -485,4 +485,42 @@ final class RouteDataRecordTest extends TestCase
         $this->assertSame(64, \strlen($result));
         $this->assertSame(substr($longUserId, 0, 64), $result);
     }
+
+    public function testRouteParamsIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getRouteParams());
+    }
+
+    public function testSetAndGetRouteParams(): void
+    {
+        $params = ['id' => 123, 'slug' => 'foo-bar'];
+        $this->record->setRouteParams($params);
+        $this->assertSame($params, $this->record->getRouteParams());
+
+        $this->record->setRouteParams(null);
+        $this->assertNull($this->record->getRouteParams());
+    }
+
+    public function testRoutePathIsInitiallyNull(): void
+    {
+        $this->assertNull($this->record->getRoutePath());
+    }
+
+    public function testSetAndGetRoutePath(): void
+    {
+        $this->record->setRoutePath('/user/123');
+        $this->assertSame('/user/123', $this->record->getRoutePath());
+
+        $this->record->setRoutePath(null);
+        $this->assertNull($this->record->getRoutePath());
+    }
+
+    public function testSetRoutePathTruncatesWhenExceedsMaxLength(): void
+    {
+        $longPath = '/'.str_repeat('a', 2100);
+        $this->record->setRoutePath($longPath);
+
+        $result = $this->record->getRoutePath();
+        $this->assertSame(2048, \strlen($result));
+    }
 }

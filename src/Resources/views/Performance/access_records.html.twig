@@ -77,6 +77,7 @@
                                 <tr>
                                     <th>{{ 'access_statistics.timestamp'|trans({}, 'nowo_performance') }}</th>
                                     <th>{{ 'access_statistics.route'|trans({}, 'nowo_performance') }}</th>
+                                    <th>{{ 'access_statistics.path'|trans({}, 'nowo_performance') }}</th>
                                     <th>{{ 'access_statistics.status_code'|trans({}, 'nowo_performance') }}</th>
                                     <th>{{ 'access_statistics.response_time'|trans({}, 'nowo_performance') }}</th>
                                     <th>{{ 'access_statistics.total_queries'|trans({}, 'nowo_performance') }}</th>
@@ -94,6 +95,15 @@
                                         </td>
                                         <td>
                                             <code>{{ record.routeData.name ?? 'N/A' }}</code>
+                                        </td>
+                                        <td>
+                                            {% if record.routePath %}
+                                                <a href="{{ record.routePath }}" title="{{ record.routePath }}">{{ record.routePath }}</a>
+                                            {% elseif record.routeParams is not empty %}
+                                                <code>{{ record.routeParams|json_encode }}</code>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             {% if record.statusCode %}
@@ -315,6 +325,7 @@
                     <tr>
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.timestamp'|trans({}, 'nowo_performance') }}</th>
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.route'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.path'|trans({}, 'nowo_performance') }}</th>
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.status_code'|trans({}, 'nowo_performance') }}</th>
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.response_time'|trans({}, 'nowo_performance') }}</th>
                         <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.total_queries'|trans({}, 'nowo_performance') }}</th>
@@ -329,6 +340,13 @@
                     <tr>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ record.accessedAt|date(dateTimeFormat) }}</td>
                         <td class="px-4 py-3 text-sm"><code class="bg-gray-100 px-1 rounded">{{ record.routeData.name ?? 'N/A' }}</code></td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if record.routePath %}
+                                <a href="{{ record.routePath }}" class="text-blue-600 hover:text-blue-800" title="{{ record.routePath }}">{{ record.routePath }}</a>
+                            {% elseif record.routeParams is not empty %}
+                                <code class="bg-gray-100 px-1 rounded">{{ record.routeParams|json_encode }}</code>
+                            {% else %}<span class="text-gray-400">—</span>{% endif %}
+                        </td>
                         <td class="px-4 py-3 text-sm">
                             {% if record.statusCode %}
                                 <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ record.statusCode >= 200 and record.statusCode < 300 ? 'bg-green-100 text-green-800' : (record.statusCode >= 400 and record.statusCode < 500 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800') }}">{{ record.statusCode }}</span>

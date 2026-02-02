@@ -492,6 +492,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 }
             }
 
+            $routePath = $request->getPathInfo();
+
             $result = $this->metricsService->recordMetrics(
                 $this->routeName,
                 $env,
@@ -506,7 +508,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $this->requestId,
                 $referer,
                 $userIdentifier,
-                $userId
+                $userId,
+                $routePath
             );
 
             LogHelper::logf(

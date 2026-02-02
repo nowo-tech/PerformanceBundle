@@ -191,6 +191,8 @@ access_statistics:
     response_time_ms: "Response Time (ms)"
     filters: "Filters"
     route: "Route"
+    path: "Path"
+    params: "Params"
     status_code: "Status Code"
     all_routes: "All Routes"
     all_status_codes: "All Status Codes"

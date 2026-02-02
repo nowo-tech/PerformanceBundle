@@ -6,6 +6,25 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.7 (2026-01-30)
+
+Access records now store route params and path. Schema change required.
+
+**New:**
+- **Route params and path in access records** – Each `RouteDataRecord` stores `route_params` (JSON) and `route_path` (VARCHAR 2048). The Access Records UI shows a Path column with a link to the exact URL; CSV/JSON exports include both fields.
+
+**Schema:**
+- **`routes_data_records`** – New columns `route_params` (JSON, nullable) and `route_path` (VARCHAR 2048, nullable).
+
+Run schema update after upgrading:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+php bin/console nowo:performance:create-records-table --update
+# or: php bin/console nowo:performance:sync-schema
+```
+
 ## Upgrading to 2.0.6 (2026-01-30)
 
 Cache improvements and dedicated pool. No schema or breaking changes.

@@ -104,6 +104,18 @@ class RouteDataRecord
     private ?string $userId = null;
 
     /**
+     * Route parameters for this specific request (e.g. ['id' => 123] for /user/123).
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $routeParams = null;
+
+    /**
+     * Request path (e.g. /user/123) for linking to the exact URL that was hit.
+     */
+    #[ORM\Column(type: Types::STRING, length: 2048, nullable: true)]
+    private ?string $routePath = null;
+
+    /**
      * Creates a new instance.
      */
     public function __construct()
@@ -359,6 +371,50 @@ class RouteDataRecord
     public function setUserId(?string $userId): self
     {
         $this->userId = null !== $userId && \strlen($userId) > 64 ? substr($userId, 0, 64) : $userId;
+
+        return $this;
+    }
+
+    /**
+     * Get the route parameters for this request.
+     *
+     * @return array|null Route params (e.g. ['id' => 123])
+     */
+    public function getRouteParams(): ?array
+    {
+        return $this->routeParams;
+    }
+
+    /**
+     * Set the route parameters for this request.
+     *
+     * @param array|null $routeParams Route params
+     */
+    public function setRouteParams(?array $routeParams): self
+    {
+        $this->routeParams = $routeParams;
+
+        return $this;
+    }
+
+    /**
+     * Get the request path (e.g. /user/123) for linking.
+     *
+     * @return string|null The path or null
+     */
+    public function getRoutePath(): ?string
+    {
+        return $this->routePath;
+    }
+
+    /**
+     * Set the request path.
+     *
+     * @param string|null $routePath The path (max 2048 chars)
+     */
+    public function setRoutePath(?string $routePath): self
+    {
+        $this->routePath = null !== $routePath && \strlen($routePath) > 2048 ? substr($routePath, 0, 2048) : $routePath;
 
         return $this;
     }

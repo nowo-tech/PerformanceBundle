@@ -165,6 +165,7 @@ class PerformanceMetricsService
      * @param string|null $referer          HTTP Referer header (page that linked to this request)
      * @param string|null $userIdentifier   Logged-in user identifier (e.g. username, email)
      * @param string|null $userId           Logged-in user ID (stringified, if available)
+     * @param string|null $routePath        Request path (e.g. /user/123) for access records
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -183,6 +184,7 @@ class PerformanceMetricsService
         ?string $referer = null,
         ?string $userIdentifier = null,
         ?string $userId = null,
+        ?string $routePath = null,
     ): array {
         LogHelper::logf(
             '[PerformanceBundle] recordMetrics: START - route=%s, env=%s, async=%s, requestTime=%s, totalQueries=%s',
@@ -232,7 +234,8 @@ class PerformanceMetricsService
                 $requestId,
                 $referer,
                 $userIdentifier,
-                $userId
+                $userId,
+                $routePath
             );
             $this->messageBus->dispatch($message);
 
@@ -243,7 +246,7 @@ class PerformanceMetricsService
         // Otherwise, record synchronously
         LogHelper::log('[PerformanceBundle] recordMetrics: Recording synchronously', $this->enableLogging);
 
-        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes, $requestId, $referer, $userIdentifier, $userId);
+        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $trackStatusCodes, $requestId, $referer, $userIdentifier, $userId, $routePath);
     }
 
     /**
@@ -263,6 +266,7 @@ class PerformanceMetricsService
      * @param string|null $referer          HTTP Referer header
      * @param string|null $userIdentifier   Logged-in user identifier (e.g. username, email)
      * @param string|null $userId           Logged-in user ID (stringified, if available)
+     * @param string|null $routePath        Request path (e.g. /user/123) for access records
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
@@ -281,6 +285,7 @@ class PerformanceMetricsService
         ?string $referer = null,
         ?string $userIdentifier = null,
         ?string $userId = null,
+        ?string $routePath = null,
     ): array {
         $isNew = false;
         $wasUpdated = false;
@@ -393,6 +398,12 @@ class PerformanceMetricsService
                     }
                     if (null !== $userId && '' !== $userId) {
                         $accessRecord->setUserId($userId);
+                    }
+                    if (null !== $params && [] !== $params) {
+                        $accessRecord->setRouteParams($params);
+                    }
+                    if (null !== $routePath && '' !== $routePath) {
+                        $accessRecord->setRoutePath($routePath);
                     }
 
                     $this->entityManager->persist($accessRecord);
