@@ -15,6 +15,10 @@ dashboard:
 # Componente Statistics
 statistics:
     total_routes: "Total de Rutas"
+    total_records: "Total de registros"
+    view_records: "Ver registros"
+    top_used_routes: "Rutas más usadas"
+    top_consumed_routes: "Rutas más consumidoras (por latencia)"
     total_queries: "Total de Consultas"
     avg_queries: "Media de Consultas"
     max_queries: "Máximo de Consultas"

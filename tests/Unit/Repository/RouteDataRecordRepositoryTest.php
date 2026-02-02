@@ -588,7 +588,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $repository->expects($this->once())->method('createQueryBuilder')->willReturn($qb);
 
-        $result = $repository->deleteByFilter('dev', null, null, null, null, null, null, null, null, 1000);
+        $result = $repository->deleteByFilter('dev', null, null, null, null, null, null, null, null, null, null, 1000);
 
         $this->assertSame(0, $result);
     }
@@ -607,6 +607,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $qb = $this->createMock(QueryBuilder::class);
         $qb->method('join')->willReturnSelf();
+        $qb->method('addSelect')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
         $qb->method('andWhere')->willReturnSelf();

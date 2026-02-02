@@ -1,5 +1,6 @@
 {# Paginator for index routes table. Expects: paginator (current_page, total_pages, total_count, per_page, from, to), template (bootstrap|tailwind) #}
 {% set queryParams = app.request.query.all|default({}) %}
+{% set _anchor = '#routes-table' %}
 {% if template == 'bootstrap' %}
 <div class="row mt-3">
     <div class="col-12">
@@ -10,21 +11,21 @@
                 </p>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item {{ paginator.current_page <= 1 ? 'disabled' : '' }}">
-                        <a class="page-link" href="{{ paginator.current_page <= 1 ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page - 1})) }}" aria-label="{{ 'paginator.previous'|trans({}, 'nowo_performance') }}">
+                        <a class="page-link" href="{{ paginator.current_page <= 1 ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page - 1})) ~ _anchor }}" aria-label="{{ 'paginator.previous'|trans({}, 'nowo_performance') }}">
                             {{ 'paginator.previous'|trans({}, 'nowo_performance') }}
                         </a>
                     </li>
                     {% for i in 1..paginator.total_pages %}
                         {% if paginator.total_pages <= 10 or i == 1 or i == paginator.total_pages or (i >= paginator.current_page - 2 and i <= paginator.current_page + 2) %}
                             <li class="page-item {{ i == paginator.current_page ? 'active' : '' }}">
-                                <a class="page-link" href="{{ path('nowo_performance.index', queryParams|merge({page: i})) }}">{{ i }}</a>
+                                <a class="page-link" href="{{ path('nowo_performance.index', queryParams|merge({page: i})) ~ _anchor }}">{{ i }}</a>
                             </li>
                         {% elseif i == paginator.current_page - 3 or i == paginator.current_page + 3 %}
                             <li class="page-item disabled"><span class="page-link">…</span></li>
                         {% endif %}
                     {% endfor %}
                     <li class="page-item {{ paginator.current_page >= paginator.total_pages ? 'disabled' : '' }}">
-                        <a class="page-link" href="{{ paginator.current_page >= paginator.total_pages ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page + 1})) }}" aria-label="{{ 'paginator.next'|trans({}, 'nowo_performance') }}">
+                        <a class="page-link" href="{{ paginator.current_page >= paginator.total_pages ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page + 1})) ~ _anchor }}" aria-label="{{ 'paginator.next'|trans({}, 'nowo_performance') }}">
                             {{ 'paginator.next'|trans({}, 'nowo_performance') }}
                         </a>
                     </li>
@@ -40,19 +41,19 @@
         {{ 'paginator.showing'|trans({'%from%': paginator.from, '%to%': paginator.to, '%total%': paginator.total_count}, 'nowo_performance') }}
     </p>
     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-        <a href="{{ paginator.current_page <= 1 ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page - 1})) }}" class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 text-sm font-medium {{ paginator.current_page <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+        <a href="{{ paginator.current_page <= 1 ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page - 1})) ~ _anchor }}" class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 text-sm font-medium {{ paginator.current_page <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
             {{ 'paginator.previous'|trans({}, 'nowo_performance') }}
         </a>
         {% for i in 1..paginator.total_pages %}
             {% if paginator.total_pages <= 10 or i == 1 or i == paginator.total_pages or (i >= paginator.current_page - 2 and i <= paginator.current_page + 2) %}
-                <a href="{{ path('nowo_performance.index', queryParams|merge({page: i})) }}" class="relative inline-flex items-center px-3 py-2 border text-sm font-medium {{ i == paginator.current_page ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50' }}">
+                <a href="{{ path('nowo_performance.index', queryParams|merge({page: i})) ~ _anchor }}" class="relative inline-flex items-center px-3 py-2 border text-sm font-medium {{ i == paginator.current_page ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50' }}">
                     {{ i }}
                 </a>
             {% elseif i == paginator.current_page - 3 or i == paginator.current_page + 3 %}
                 <span class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm text-gray-400">…</span>
             {% endif %}
         {% endfor %}
-        <a href="{{ paginator.current_page >= paginator.total_pages ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page + 1})) }}" class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 text-sm font-medium {{ paginator.current_page >= paginator.total_pages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+        <a href="{{ paginator.current_page >= paginator.total_pages ? '#' : path('nowo_performance.index', queryParams|merge({page: paginator.current_page + 1})) ~ _anchor }}" class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 text-sm font-medium {{ paginator.current_page >= paginator.total_pages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
             {{ 'paginator.next'|trans({}, 'nowo_performance') }}
         </a>
     </nav>

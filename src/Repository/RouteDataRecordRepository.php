@@ -269,6 +269,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         ?float $maxQueryTime = null,
         ?int $minMemoryUsage = null,
         ?int $maxMemoryUsage = null,
+        ?string $referer = null,
+        ?string $user = null,
         int $batchSize = 1000,
     ): int {
         $totalDeleted = 0;
@@ -281,7 +283,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
                 ->setParameter('env', $env)
                 ->setMaxResults($batchSize);
 
-            $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage);
+            $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 
             /** @var array<int, int> $ids */
             $ids = $qb->getQuery()->getSingleColumnResult();
@@ -326,6 +328,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         ?float $maxQueryTime = null,
         ?int $minMemoryUsage = null,
         ?int $maxMemoryUsage = null,
+        ?string $referer = null,
+        ?string $user = null,
     ): void {
         if (null !== $startDate) {
             $qb->andWhere('r.accessedAt >= :startDate')
@@ -365,6 +369,17 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         if (null !== $maxMemoryUsage) {
             $qb->andWhere('r.memoryUsage <= :maxMemoryUsage')
                 ->setParameter('maxMemoryUsage', $maxMemoryUsage);
+        }
+
+        if (null !== $referer && '' !== $referer) {
+            $qb->andWhere('r.referer LIKE :referer')
+                ->setParameter('referer', '%'.addcslashes($referer, '%_').'%');
+        }
+
+        if (null !== $user && '' !== $user) {
+            $userPattern = '%'.addcslashes($user, '%_').'%';
+            $qb->andWhere('r.userIdentifier LIKE :userFilter OR r.userId LIKE :userFilter')
+                ->setParameter('userFilter', $userPattern);
         }
     }
 
@@ -656,6 +671,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * @param float|null              $maxQueryTime   Optional max query time (s)
      * @param int|null                $minMemoryUsage Optional min memory (bytes)
      * @param int|null                $maxMemoryUsage Optional max memory (bytes)
+     * @param string|null             $referer        Optional referer filter (partial match)
+     * @param string|null             $user           Optional user filter (partial match on user_identifier or user_id)
      *
      * @return array{records: array, total: int, page: int, per_page: int, total_pages: int}
      */
@@ -671,14 +688,32 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         ?float $maxQueryTime = null,
         ?int $minMemoryUsage = null,
         ?int $maxMemoryUsage = null,
+        ?string $referer = null,
+        ?string $user = null,
+        ?string $sortBy = null,
+        string $order = 'DESC',
     ): array {
+        $sortFieldMap = [
+            'accessed_at' => 'r.accessedAt',
+            'route' => 'rd.name',
+            'path' => 'r.routePath',
+            'status_code' => 'r.statusCode',
+            'response_time' => 'r.responseTime',
+            'total_queries' => 'r.totalQueries',
+            'query_time' => 'r.queryTime',
+            'memory_usage' => 'r.memoryUsage',
+        ];
+        $sortField = $sortFieldMap[$sortBy ?? ''] ?? 'r.accessedAt';
+        $sortOrder = 'ASC' === strtoupper($order) ? 'ASC' : 'DESC';
+
         $qb = $this->createQueryBuilder('r')
             ->join('r.routeData', 'rd')
+            ->addSelect('rd')
             ->where('rd.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.accessedAt', 'DESC');
+            ->orderBy($sortField, $sortOrder);
 
-        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage);
+        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 
         // Get total count
         $totalQb = clone $qb;
@@ -716,6 +751,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * @param float|null              $maxQueryTime   Optional max query time (s)
      * @param int|null                $minMemoryUsage Optional min memory (bytes)
      * @param int|null                $maxMemoryUsage Optional max memory (bytes)
+     * @param string|null             $referer        Optional referer filter (partial match)
+     * @param string|null             $user           Optional user filter (partial match)
      * @param int                     $limit          Maximum records to return (default 50_000)
      *
      * @return array{records: RouteDataRecord[], total: int}
@@ -730,6 +767,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         ?float $maxQueryTime = null,
         ?int $minMemoryUsage = null,
         ?int $maxMemoryUsage = null,
+        ?string $referer = null,
+        ?string $user = null,
         int $limit = 50_000,
     ): array {
         $qb = $this->createQueryBuilder('r')
@@ -739,7 +778,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->setParameter('env', $env)
             ->orderBy('r.accessedAt', 'DESC');
 
-        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage);
+        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 
         $countQb = clone $qb;
         $total = (int) $countQb->select('COUNT(r.id)')->getQuery()->getSingleScalarResult();

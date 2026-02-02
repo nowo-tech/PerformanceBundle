@@ -131,7 +131,7 @@
     {# Components Section - Shared for both templates #}
     {% if useComponents and component is defined %}
         {# Statistics Component - Using Symfony UX Twig Component #}
-        {{ component('nowo_performance.Statistics', { stats: stats, template: template }) }}
+        {{ component('nowo_performance.Statistics', { stats: stats, template: template, enableAccessRecords: enableAccessRecords|default(false), environment: environment }) }}
 
         {# Filters Component - Using Symfony UX Twig Component #}
         {{ component('nowo_performance.Filters', { form: form, template: template }) }}

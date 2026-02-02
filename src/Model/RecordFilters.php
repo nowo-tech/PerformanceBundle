@@ -19,6 +19,8 @@ namespace Nowo\PerformanceBundle\Model;
  * @property float|null              $maxQueryTime   Maximum query time in seconds (records with query_time <= this).
  * @property int|null                $minMemoryUsage Minimum memory usage in bytes (records with memory_usage >= this).
  * @property int|null                $maxMemoryUsage Maximum memory usage in bytes (records with memory_usage <= this).
+ * @property string|null             $referer        Referer filter (partial match, LIKE %value%).
+ * @property string|null             $user           User filter (partial match on user_identifier or user_id, LIKE %value%).
  */
 final class RecordFilters
 {
@@ -32,6 +34,8 @@ final class RecordFilters
      * @param float|null              $maxQueryTime   maximum query time in seconds (filter records with query_time <= this)
      * @param int|null                $minMemoryUsage minimum memory usage in bytes (filter records with memory_usage >= this)
      * @param int|null                $maxMemoryUsage maximum memory usage in bytes (filter records with memory_usage <= this)
+     * @param string|null             $referer        referer filter (partial match)
+     * @param string|null             $user           user filter (partial match on user_identifier or user_id)
      */
     public function __construct(
         public ?\DateTimeImmutable $startDate = null,
@@ -43,6 +47,8 @@ final class RecordFilters
         public ?float $maxQueryTime = null,
         public ?int $minMemoryUsage = null,
         public ?int $maxMemoryUsage = null,
+        public ?string $referer = null,
+        public ?string $user = null,
     ) {
     }
 }

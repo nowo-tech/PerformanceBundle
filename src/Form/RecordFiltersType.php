@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Form;
 use Nowo\PerformanceBundle\Model\RecordFilters;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
@@ -132,6 +133,18 @@ class RecordFiltersType extends AbstractType
                 'data' => isset($options['data']) && null !== $options['data']->maxMemoryUsage
                     ? round($options['data']->maxMemoryUsage / 1024 / 1024, 2) : null,
                 'attr' => ['class' => 'form-control', 'placeholder' => '100', 'step' => '0.1'],
+            ])
+            ->add('referer', TextType::class, [
+                'label' => 'access_statistics.referer',
+                'translation_domain' => 'nowo_performance',
+                'required' => false,
+                'attr' => ['class' => 'form-control', 'placeholder' => 'example.com'],
+            ])
+            ->add('user', TextType::class, [
+                'label' => 'access_statistics.user',
+                'translation_domain' => 'nowo_performance',
+                'required' => false,
+                'attr' => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
             ])
         ;
         $builder->get('status_code')->addModelTransformer(new CallbackTransformer(

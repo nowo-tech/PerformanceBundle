@@ -22,6 +22,8 @@ namespace Nowo\PerformanceBundle\Model;
  * @property string|null $maxQueryTime   Maximum query time (seconds, string).
  * @property string|null $minMemoryUsage Minimum memory in bytes (string).
  * @property string|null $maxMemoryUsage Maximum memory in bytes (string).
+ * @property string|null $referer        Referer filter (partial match).
+ * @property string|null $user           User filter (partial match).
  */
 final class DeleteRecordsByFilterRequest
 {
@@ -36,6 +38,8 @@ final class DeleteRecordsByFilterRequest
      * @param string|null $maxQueryTime   max query time in seconds (string)
      * @param string|null $minMemoryUsage min memory usage in bytes (string)
      * @param string|null $maxMemoryUsage max memory usage in bytes (string)
+     * @param string|null $referer        referer filter (string)
+     * @param string|null $user           user filter (string)
      */
     public function __construct(
         public string $env = '',
@@ -48,6 +52,8 @@ final class DeleteRecordsByFilterRequest
         public ?string $maxQueryTime = null,
         public ?string $minMemoryUsage = null,
         public ?string $maxMemoryUsage = null,
+        public ?string $referer = null,
+        public ?string $user = null,
     ) {
     }
 }

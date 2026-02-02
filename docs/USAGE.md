@@ -45,7 +45,7 @@ These records contain:
 They power the **Access Statistics** and **Access Records** pages:
 
 - `/performance/access-statistics` – charts and heatmaps (by hour, day of week, month)
-- `/performance/access-records` – paginated list of individual hits with filters
+- `/performance/access-records` – paginated list of individual hits with filters (date range, route, status code, query time, memory, referer, user). Columns are sortable; the Path column shows a clickable link to the exact URL.
 
 The main `RouteData` entity remains an aggregate view (per route + environment), while
 `RouteDataRecord` is the normalized temporal log used for seasonality analysis.
@@ -250,8 +250,8 @@ The dashboard includes export functionality to download performance data:
 
 **Access records export (CSV / JSON):**
 - On the **Access Records** page (temporal records per route), use **Export Records (CSV)** or **Export Records (JSON)**.
-- Exports individual `RouteDataRecord` rows (id, route name, environment, accessed at, status code, response time, total queries, query time, memory usage, referer, user_identifier, user_id).
-- Uses the same filters as the records page: environment, date range, route, status code.
+- Exports individual `RouteDataRecord` rows (id, route name, path, params, environment, accessed at, status code, response time, total queries, query time, memory usage, referer, user_identifier, user_id).
+- Uses the same filters as the records page: environment, date range, route, status code, query time, memory, referer, user.
 - Requires `enable_access_records: true`. Subject to dashboard roles if configured.
 
 ### Record Management
@@ -274,7 +274,7 @@ When `enable_record_management` is enabled:
 
 **Delete records by filter:**
 - Available on **Access Records** and **Access Statistics** pages when `enable_record_management` is enabled
-- Deletes all `RouteDataRecord` rows matching the current filters (environment, date range, route, status code)
+- Deletes all `RouteDataRecord` rows matching the current filters (environment, date range, route, status code, query time, memory, referer, user)
 - Confirmation dialog before deletion
 - CSRF protection (`delete_records_by_filter` token)
 - Redirects back to the page you came from (Access Records or Access Statistics)

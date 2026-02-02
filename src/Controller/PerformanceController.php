@@ -266,12 +266,25 @@ class PerformanceController extends AbstractController
                     $allRoutes = $this->metricsService->getRoutesWithAggregates($env);
                 }
                 $stats = $this->calculateStats($allRoutes);
+                // Add record count and top rankings when access records enabled
+                if ($this->enableAccessRecords && null !== $this->recordRepository) {
+                    $stats['total_records'] = $this->recordRepository->getTotalAccessCount($env);
+                    $stats['top_used_routes'] = $this->getTopUsedRoutes($allRoutes, 5);
+                    $stats['top_consumed_routes'] = $this->getTopConsumedRoutes($allRoutes, 5);
+                } else {
+                    $stats['total_records'] = 0;
+                    $stats['top_used_routes'] = [];
+                    $stats['top_consumed_routes'] = [];
+                }
                 if (null !== $this->cacheService) {
                     $this->cacheService->cacheStatistics($env, $stats);
                 }
             }
         } catch (\Exception $e) {
             $stats = $this->calculateStats([]);
+            $stats['total_records'] = 0;
+            $stats['top_used_routes'] = [];
+            $stats['top_consumed_routes'] = [];
         }
 
         // Check dependencies
@@ -438,6 +451,44 @@ class PerformanceController extends AbstractController
             'max_request_time' => [] !== $requestTimes ? max($requestTimes) : 0.0,
             'max_query_time' => [] !== $queryTimes ? max($queryTimes) : 0.0,
         ];
+    }
+
+    /**
+     * Get top routes by access count (most used).
+     *
+     * @param RouteDataWithAggregates[] $routes All routes with aggregates
+     * @param int                      $limit  Max number to return
+     *
+     * @return array<int, array{name: string, access_count: int}>
+     */
+    private function getTopUsedRoutes(array $routes, int $limit = 5): array
+    {
+        $withCount = array_filter($routes, static fn ($r) => $r->getAccessCount() > 0);
+        usort($withCount, static fn ($a, $b) => $b->getAccessCount() <=> $a->getAccessCount());
+
+        return array_slice(array_map(static fn (RouteDataWithAggregates $r) => [
+            'name' => $r->getName() ?? 'N/A',
+            'access_count' => $r->getAccessCount(),
+        ], $withCount), 0, $limit);
+    }
+
+    /**
+     * Get top routes by request time (most resource-consuming by latency).
+     *
+     * @param RouteDataWithAggregates[] $routes All routes with aggregates
+     * @param int                      $limit  Max number to return
+     *
+     * @return array<int, array{name: string, request_time: float}>
+     */
+    private function getTopConsumedRoutes(array $routes, int $limit = 5): array
+    {
+        $withTime = array_filter($routes, static fn ($r) => null !== $r->getRequestTime() && $r->getRequestTime() > 0);
+        usort($withTime, static fn ($a, $b) => ($b->getRequestTime() ?? 0) <=> ($a->getRequestTime() ?? 0));
+
+        return array_slice(array_map(static fn (RouteDataWithAggregates $r) => [
+            'name' => $r->getName() ?? 'N/A',
+            'request_time' => $r->getRequestTime(),
+        ], $withTime), 0, $limit);
     }
 
     /**
@@ -1040,6 +1091,10 @@ class PerformanceController extends AbstractController
         $maxQueryTime = null !== $maxQt && '' !== $maxQt ? (float) $maxQt : null;
         $minMemoryUsage = null !== $minMb && '' !== $minMb ? (int) round((float) $minMb * 1024 * 1024) : null;
         $maxMemoryUsage = null !== $maxMb && '' !== $maxMb ? (int) round((float) $maxMb * 1024 * 1024) : null;
+        $refParam = $request->query->get('referer');
+        $userParam = $request->query->get('user');
+        $referer = \is_string($refParam) && '' !== $refParam ? $refParam : null;
+        $user = \is_string($userParam) && '' !== $userParam ? $userParam : null;
 
         try {
             $result = $this->recordRepository->getRecordsForExport(
@@ -1052,6 +1107,8 @@ class PerformanceController extends AbstractController
                 $maxQueryTime,
                 $minMemoryUsage,
                 $maxMemoryUsage,
+                $referer,
+                $user,
             );
         } catch (\Throwable $e) {
             $result = ['records' => [], 'total' => 0];
@@ -1163,6 +1220,10 @@ class PerformanceController extends AbstractController
         $maxQueryTime = null !== $maxQt && '' !== $maxQt ? (float) $maxQt : null;
         $minMemoryUsage = null !== $minMb && '' !== $minMb ? (int) round((float) $minMb * 1024 * 1024) : null;
         $maxMemoryUsage = null !== $maxMb && '' !== $maxMb ? (int) round((float) $maxMb * 1024 * 1024) : null;
+        $refParam = $request->query->get('referer');
+        $userParam = $request->query->get('user');
+        $referer = \is_string($refParam) && '' !== $refParam ? $refParam : null;
+        $user = \is_string($userParam) && '' !== $userParam ? $userParam : null;
 
         try {
             $result = $this->recordRepository->getRecordsForExport(
@@ -1175,6 +1236,8 @@ class PerformanceController extends AbstractController
                 $maxQueryTime,
                 $minMemoryUsage,
                 $maxMemoryUsage,
+                $referer,
+                $user,
             );
         } catch (\Throwable $e) {
             $result = ['records' => [], 'total' => 0];
@@ -2497,6 +2560,9 @@ class PerformanceController extends AbstractController
 
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = max(10, min(100, (int) $request->query->get('per_page', 50)));
+        $sortBy = $request->query->get('sort_by', 'accessed_at');
+        $order = strtoupper($request->query->get('order', 'DESC'));
+        $order = 'ASC' === $order ? 'ASC' : 'DESC';
 
         // Get environments and available routes for form
         try {
@@ -2524,6 +2590,8 @@ class PerformanceController extends AbstractController
         $maxQt = $request->query->get('max_query_time');
         $minMb = $request->query->get('min_memory_mb');
         $maxMb = $request->query->get('max_memory_mb');
+        $refererParam = $request->query->get('referer');
+        $userParam = $request->query->get('user');
         $filterData = new RecordFilters(
             $request->query->get('start_date') ? new \DateTimeImmutable($request->query->get('start_date')) : null,
             $request->query->get('end_date') ? new \DateTimeImmutable($request->query->get('end_date')) : null,
@@ -2534,6 +2602,8 @@ class PerformanceController extends AbstractController
             null !== $maxQt && '' !== $maxQt ? (float) $maxQt : null,
             null !== $minMb && '' !== $minMb ? (int) round((float) $minMb * 1024 * 1024) : null,
             null !== $maxMb && '' !== $maxMb ? (int) round((float) $maxMb * 1024 * 1024) : null,
+            \is_string($refererParam) && '' !== $refererParam ? $refererParam : null,
+            \is_string($userParam) && '' !== $userParam ? $userParam : null,
         );
         $filterForm = $this->createForm(RecordFiltersType::class, $filterData, [
             'environments' => $environments,
@@ -2575,7 +2645,11 @@ class PerformanceController extends AbstractController
                     $filterData->minQueryTime,
                     $filterData->maxQueryTime,
                     $filterData->minMemoryUsage,
-                    $filterData->maxMemoryUsage
+                    $filterData->maxMemoryUsage,
+                    $filterData->referer,
+                    $filterData->user,
+                    $sortBy,
+                    $order
                 );
             } catch (\Exception $e) {
                 $this->addFlash('error', 'Error fetching access records: '.$e->getMessage());
@@ -2596,6 +2670,8 @@ class PerformanceController extends AbstractController
             null !== $filterData->maxQueryTime ? (string) $filterData->maxQueryTime : null,
             null !== $filterData->minMemoryUsage ? (string) $filterData->minMemoryUsage : null,
             null !== $filterData->maxMemoryUsage ? (string) $filterData->maxMemoryUsage : null,
+            $filterData->referer,
+            $filterData->user,
         );
         $deleteByFilterForm = $this->createForm(DeleteRecordsByFilterType::class, $deleteByFilterData, [
             'from_value' => 'access_records',
@@ -2610,6 +2686,8 @@ class PerformanceController extends AbstractController
             'selected_status_code' => $statusCode,
             'start_date' => $startDate,
             'end_date' => $endDate,
+            'sort_by' => $sortBy,
+            'order' => $order,
             'template' => $this->template,
             'dateTimeFormat' => $this->dateTimeFormat,
             'dateFormat' => $this->dateFormat,
@@ -2685,6 +2763,8 @@ class PerformanceController extends AbstractController
         $maxQueryTime = null !== $data->maxQueryTime && '' !== $data->maxQueryTime ? (float) $data->maxQueryTime : null;
         $minMemoryUsage = null !== $data->minMemoryUsage && '' !== $data->minMemoryUsage ? (int) $data->minMemoryUsage : null;
         $maxMemoryUsage = null !== $data->maxMemoryUsage && '' !== $data->maxMemoryUsage ? (int) $data->maxMemoryUsage : null;
+        $referer = \is_string($data->referer ?? null) && '' !== $data->referer ? $data->referer : null;
+        $user = \is_string($data->user ?? null) && '' !== $data->user ? $data->user : null;
 
         $startDate = null;
         if (null !== $startDateParam && '' !== $startDateParam) {
@@ -2720,6 +2800,8 @@ class PerformanceController extends AbstractController
                 $maxQueryTime,
                 $minMemoryUsage,
                 $maxMemoryUsage,
+                $referer,
+                $user,
             );
         } catch (\Exception $e) {
             $this->addFlash('error', 'Error deleting records: '.$e->getMessage());
@@ -2741,6 +2823,12 @@ class PerformanceController extends AbstractController
             }
             if (null !== $maxMemoryUsage) {
                 $redirectParams['max_memory_mb'] = round($maxMemoryUsage / 1024 / 1024, 2);
+            }
+            if (null !== $referer) {
+                $redirectParams['referer'] = $referer;
+            }
+            if (null !== $user) {
+                $redirectParams['user'] = $user;
             }
 
             return $this->redirectToRoute('nowo_performance.access_records', $redirectParams);
@@ -2776,6 +2864,12 @@ class PerformanceController extends AbstractController
         }
         if (null !== $data->maxMemoryUsage && '' !== $data->maxMemoryUsage) {
             $redirectParams['max_memory_mb'] = round((int) $data->maxMemoryUsage / 1024 / 1024, 2);
+        }
+        if (null !== $data->referer && '' !== $data->referer) {
+            $redirectParams['referer'] = $data->referer;
+        }
+        if (null !== $data->user && '' !== $data->user) {
+            $redirectParams['user'] = $data->user;
         }
 
         $from = $data->from ?? 'access_records';

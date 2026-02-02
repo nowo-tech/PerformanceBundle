@@ -43,6 +43,8 @@ class DeleteRecordsByFilterType extends AbstractType
             ->add('max_query_time', HiddenType::class, ['property_path' => 'maxQueryTime'])
             ->add('min_memory_usage', HiddenType::class, ['property_path' => 'minMemoryUsage'])
             ->add('max_memory_usage', HiddenType::class, ['property_path' => 'maxMemoryUsage'])
+            ->add('referer', HiddenType::class)
+            ->add('user', HiddenType::class)
             ->add('submit', SubmitType::class, [
                 'label' => 'access_statistics.delete_records_matching_filter',
                 'translation_domain' => 'nowo_performance',

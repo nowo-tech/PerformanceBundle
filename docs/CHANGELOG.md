@@ -11,6 +11,17 @@ _Nothing yet._
 
 ---
 
+## [2.0.8] - 2026-01-28
+
+### Added
+- **Access records: Referer and User filters** – The Access Records page now supports filtering by Referer and User. Both use partial match (LIKE). The form includes Referer and User text fields; filters apply to pagination, export (CSV/JSON), and delete-by-filter. `RecordFilters`, `RouteDataRecordRepository`, `DeleteRecordsByFilterRequest`, and export endpoints support the new filters.
+- **Routes table: Scroll preservation** – When sorting by column or changing page in the routes table, the browser scrolls to the `#routes-table` anchor so the table stays in view instead of jumping to the top. Sort links and paginator links append the fragment.
+
+### Fixed
+- **RouteDataRecordRepository tests** – Fixed `testDeleteByFilterReturnsZeroWhenNoRecordsMatch` (updated call for new `referer` and `user` parameters) and `testGetPaginatedRecordsReturnsStructure` (added missing `addSelect` mock on QueryBuilder).
+
+---
+
 ## [2.0.7] - 2026-01-30
 
 ### Added

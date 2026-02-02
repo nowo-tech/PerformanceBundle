@@ -9,6 +9,17 @@
             </div>
         </div>
     </div>
+    {% if enableAccessRecords|default(false) and stats.total_records is defined %}
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'statistics.total_records'|trans({}, 'nowo_performance') }}</h5>
+                <h2 class="text-secondary">{{ stats.total_records|default(0)|number_format }}</h2>
+                <small><a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}">{{ 'statistics.view_records'|trans({}, 'nowo_performance') }}</a></small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     <div class="col">
         <div class="card">
             <div class="card-body">
@@ -42,3 +53,41 @@
         </div>
     </div>
 </div>
+{% if enableAccessRecords|default(false) and (stats.top_used_routes|default([])|length > 0 or stats.top_consumed_routes|default([])|length > 0) %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header py-2">
+                <h6 class="mb-0">{{ 'statistics.top_used_routes'|trans({}, 'nowo_performance') }}</h6>
+            </div>
+            <div class="card-body py-2">
+                <ul class="list-group list-group-flush list-group-numbered">
+                    {% for r in stats.top_used_routes|default([]) %}
+                    <li class="list-group-item d-flex justify-content-between py-1 px-0">
+                        <code class="small">{{ r.name }}</code>
+                        <span class="badge bg-primary">{{ r.access_count|number_format }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header py-2">
+                <h6 class="mb-0">{{ 'statistics.top_consumed_routes'|trans({}, 'nowo_performance') }}</h6>
+            </div>
+            <div class="card-body py-2">
+                <ul class="list-group list-group-flush list-group-numbered">
+                    {% for r in stats.top_consumed_routes|default([]) %}
+                    <li class="list-group-item d-flex justify-content-between py-1 px-0">
+                        <code class="small">{{ r.name }}</code>
+                        <span class="badge bg-danger">{{ (r.request_time * 1000)|number_format(0) }} ms</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

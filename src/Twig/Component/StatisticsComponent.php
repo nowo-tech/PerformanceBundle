@@ -26,4 +26,14 @@ final class StatisticsComponent
      * Template framework (bootstrap or tailwind).
      */
     public string $template = 'bootstrap';
+
+    /**
+     * Whether access records are enabled (shows total records and top rankings).
+     */
+    public bool $enableAccessRecords = false;
+
+    /**
+     * Current environment for links.
+     */
+    public string $environment = 'dev';
 }

@@ -6,6 +6,21 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.8 (2026-01-28)
+
+New filters and UX improvements. No schema or configuration changes.
+
+**New:**
+- **Access records: Referer and User filters** – Filter access records by Referer (HTTP Referer header) or User (user identifier / user ID). Both use partial match (LIKE). Available in the filter form, pagination, export, and delete-by-filter.
+- **Routes table: Scroll preservation** – When you sort by column or change page, the view scrolls to the routes table instead of jumping to the top.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.7 (2026-01-30)
 
 Access records now store route params and path. Schema change required.

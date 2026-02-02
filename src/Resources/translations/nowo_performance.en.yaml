@@ -15,6 +15,10 @@ dashboard:
 # Statistics component
 statistics:
     total_routes: "Total Routes"
+    total_records: "Total Records"
+    view_records: "View records"
+    top_used_routes: "Most used routes"
+    top_consumed_routes: "Most consumed routes (by latency)"
     total_queries: "Total Queries"
     avg_queries: "Avg Queries"
     max_queries: "Max Queries"
