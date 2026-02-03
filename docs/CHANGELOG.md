@@ -11,6 +11,14 @@ _Nothing yet._
 
 ---
 
+## [2.0.10] - 2026-02-03
+
+### Changed
+- **Documentation** – Updated BRANCHING.md and CONTRIBUTING.md.
+- **Demo** – Updated `bin/console` in Symfony 7 and Symfony 8 demo projects.
+
+---
+
 ## [2.0.9] - 2026-02-02
 
 ### Changed

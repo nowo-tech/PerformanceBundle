@@ -6,6 +6,21 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.10 (2026-02-03)
+
+Documentation and demo updates. No schema or configuration changes.
+
+**Changed:**
+- **Documentation** – BRANCHING.md and CONTRIBUTING.md updated.
+- **Demo** – `bin/console` updated in Symfony 7 and Symfony 8 demos.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.9 (2026-02-02)
 
 Minor release. No schema or configuration changes.
