@@ -1,6 +1,6 @@
 # Performance Bundle
 
-[![CI](https://github.com/nowo-tech/performance-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/performance-bundle/actions/workflows/ci.yml) [![Latest Stable Version](https://poser.pugx.org/nowo-tech/performance-bundle/v)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://poser.pugx.org/nowo-tech/performance-bundle/license)](https://packagist.org/packages/nowo-tech/performance-bundle) [![PHP Version Require](https://poser.pugx.org/nowo-tech/performance-bundle/require/php)](https://packagist.org/packages/nowo-tech/performance-bundle)
+[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle)  [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://poser.pugx.org/nowo-tech/performance-bundle/license)](https://packagist.org/packages/nowo-tech/performance-bundle) [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-6.1%20%7C%207%20%7C%208-000000?logo=symfony)](https://symfony.com)
 
 > ⭐ **Found this project useful?** Give it a star on GitHub! It helps us maintain and improve the project.
 
@@ -49,11 +49,41 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ **Symfony UX Twig Components** - Optional modern component system
 - ✅ Symfony 6.1+, 7.x, and 8.x compatible
 
+## Screenshots
+
+The bundle provides a web dashboard to monitor and analyze route performance. Below are the main views.
+
+### Performance Metrics Dashboard
+
+The main dashboard shows KPIs (total routes, records, average/max queries and request time), top routes by usage and by latency, filters (environment, sort, limit), an optional “Optional Dependencies Missing” alert with `composer require` hints, a **Performance Trends** chart (average and max request time over days), and a **Routes** table with columns: route name, HTTP method, status codes, access count, environment, request time, query time, total queries, memory usage, last accessed at, access records link, and review status.
+
+![Performance Metrics Dashboard](docs/images/dashboard-main.png)
+
+*Access: dashboard path configured in `nowo_performance.dashboard.path` (e.g. `/performance`). Use **Diagnose**, **Advanced Statistics**, **Export CSV/JSON**, **Access Statistics by Hour**, and **Clear All Records** from the toolbar.*
+
+### Advanced Performance Statistics
+
+This view provides statistical analysis to find optimization targets: **Performance Recommendations** (e.g. high average query count, request time outliers), **Correlation Analysis** (request time vs query time, query time vs query count, memory vs request time), **Efficiency Analysis** (query time ratio), **Traffic Distribution** and hot/bad routes, **Routes Needing Attention** (high request time or query count by percentile), and detailed **Request Time**, **Query Time**, **Query Count**, **Memory Usage**, and **Access Count** sections with min/mean/median/max, percentiles, and distribution histograms.
+
+![Advanced Performance Statistics](docs/images/dashboard-advanced-statistics.png)
+
+*Access: **Advanced Statistics** button from the main dashboard. Requires enough route data for meaningful stats.*
+
+### Access Statistics by Hour
+
+When **temporal access records** are enabled (`enable_access_records: true`), this page shows access patterns over time: filters (date range, environment, route, status code), **Total Accesses** and period, **Statistics by Hour of Day** (line chart: access count and average response time), **Statistics by Day of Week** and **by Month** (bar charts), **Access Heatmap** (day of week vs hour), and a detailed table by hour with access count, average response time, and status code breakdown. You can **Delete records matching filter** from here.
+
+![Access Statistics by Hour](docs/images/dashboard-access-statistics.png)
+
+*Access: **Access Statistics by Hour** from the main dashboard. Requires `enable_access_records: true` and the `routes_data_records` table (see [Configuration](docs/CONFIGURATION.md#enable_access_records)).*
+
 ## Installation
 
 ```bash
 composer require nowo-tech/performance-bundle
 ```
+
+[![Install from Packagist](https://img.shields.io/badge/Packagist-install-777BB4?logo=composer)](https://packagist.org/packages/nowo-tech/performance-bundle)
 
 Then, register the bundle in your `config/bundles.php`:
 
@@ -90,23 +120,26 @@ nowo_performance:
             roles: ['ROLE_ADMIN']  # Optional: restrict access
 ```
 
-2. **Create the database table**:
+2. **Create the database table(s)**:
 
-   **Option A: Using the bundle command (Recommended)**:
+   **Option A: Using the bundle commands (Recommended)**:
    ```bash
    php bin/console nowo:performance:create-table
+   # If you use temporal access records (enable_access_records: true):
+   php bin/console nowo:performance:create-records-table
+   # Or sync both tables in one go (add/alter columns from entities):
+   php bin/console nowo:performance:sync-schema
    ```
 
-   **Option B: Using Doctrine Schema Update**:
+   **Option B: Using Doctrine Schema**:
+   ```bash
+   php bin/console doctrine:schema:update --force
+   # or
+   php bin/console doctrine:migrations:diff
+   php bin/console doctrine:migrations:migrate
+   ```
 
-```bash
-php bin/console doctrine:schema:update --force
-# or
-php bin/console doctrine:migrations:diff
-php bin/console doctrine:migrations:migrate
-```
-
-3. **That's it!** The bundle will automatically track route performance metrics.
+3. **That's it!** The bundle will automatically track route performance metrics in the configured environments.
 
 For detailed installation steps (including sync-schema and migrations), see [Installation Guide](docs/INSTALLATION.md).
 
@@ -155,9 +188,9 @@ $worstRoutes = $metricsService->getWorstPerformingRoutes('dev', 10);
 ## Requirements
 
 - PHP >= 8.1, < 8.6
-- **Symfony >= 6.1** || >= 7.0 || >= 8.0
-- Doctrine ORM >= 2.13 || >= 3.0
-- Doctrine Bundle >= 2.8 || >= 3.0 (3.0 required for Symfony 8)
+- Symfony 6.1+, 7.x, or 8.x
+- Doctrine ORM ^2.13 || ^3.0
+- Doctrine Bundle ^2.8 || ^3.0 (3.0 required for Symfony 8)
 
 ## Configuration
 
@@ -188,11 +221,14 @@ nowo_performance:
 
 See [Commands](docs/COMMANDS.md) for full documentation. Main commands:
 
-- **`nowo:performance:set-route`** - Set or update route performance metrics
-- **`nowo:performance:create-table`** - Create or update the metrics table
-- **`nowo:performance:sync-schema`** - Sync database schema with entity metadata
-- **`nowo:performance:diagnose`** - Diagnostic report of bundle configuration and status
-- **`nowo:performance:check-dependencies`** - Check status of optional dependencies
+- **`nowo:performance:create-table`** - Create or update the main metrics table (`routes_data`)
+- **`nowo:performance:create-records-table`** - Create or update the access records table (`routes_data_records`); use when `enable_access_records: true`
+- **`nowo:performance:sync-schema`** - Sync both tables with entity metadata (add/alter columns)
+- **`nowo:performance:set-route`** - Set or update route performance metrics manually
+- **`nowo:performance:diagnose`** - Diagnostic report of bundle configuration, tables, and tracking status
+- **`nowo:performance:check-dependencies`** - Check status of optional dependencies (UX Icons, Messenger, Mailer)
+- **`nowo:performance:purge-records`** - Purge old access records (by age or all)
+- **`nowo:performance:rebuild-aggregates`** - Rebuild `RouteData` aggregates from access records
 
 ## Entity Structure
 
@@ -247,12 +283,12 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 
 ## Documentation
 
-- [**Documentation index**](docs/README.md) – Índice de toda la documentación con descripciones y referencias cruzadas
-- [Installation Guide](docs/INSTALLATION.md) – Step-by-step installation
-- [Configuration Guide](docs/CONFIGURATION.md) – Detailed configuration options (source of truth for defaults)
-- [Usage Guide](docs/USAGE.md) – Complete usage examples
-- [Commands](docs/COMMANDS.md) – Command documentation
-- [Events & priorities](docs/EVENTS.md) – Custom events and internal listener flow (relevant for `ignore_routes`)
+- [**Documentation index**](docs/README.md) – Index of all documentation with cross-references
+- [Installation Guide](docs/INSTALLATION.md) – Step-by-step installation (tables, sync-schema, verify)
+- [Configuration Guide](docs/CONFIGURATION.md) – All options and defaults (source of truth)
+- [Usage Guide](docs/USAGE.md) – Automatic tracking, manual commands, dashboard customization, events
+- [Commands](docs/COMMANDS.md) – All `nowo:performance:*` commands (create-table, create-records-table, sync-schema, diagnose, purge-records, etc.)
+- [Events & priorities](docs/EVENTS.md) – Custom events and listener flow (relevant for `ignore_routes`)
 - [Compatibility Guide](docs/COMPATIBILITY.md) – Doctrine and DBAL version compatibility
 - [Notifications](docs/NOTIFICATIONS.md) – Performance alert notifications (Email, Slack, Teams, Webhooks)
 - [CHANGELOG](docs/CHANGELOG.md) – Version history

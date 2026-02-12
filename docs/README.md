@@ -9,7 +9,7 @@ Documentación del **Performance Bundle**. Los enlaces son relativos a esta carp
 | [INSTALLATION.md](INSTALLATION.md) | Instalación paso a paso: requisitos, registro del bundle, configuración inicial, creación de tablas y verificación. |
 | [CONFIGURATION.md](CONFIGURATION.md) | Referencia completa de opciones de configuración. Valores por defecto y ejemplos. **Fuente de verdad** para defaults. |
 | [USAGE.md](USAGE.md) | Uso del bundle: tracking automático, comandos manuales, personalización del dashboard, eventos y buenas prácticas. |
-| [COMMANDS.md](COMMANDS.md) | Documentación de todos los comandos `nowo:performance:*` (create-table, set-route, sync-schema, diagnose, etc.). |
+| [COMMANDS.md](COMMANDS.md) | Documentación de todos los comandos `nowo:performance:*` (create-table, create-records-table, sync-schema, set-route, diagnose, purge-records, check-dependencies, rebuild-aggregates). |
 
 ## Temas específicos
 

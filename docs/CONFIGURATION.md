@@ -8,31 +8,52 @@ The bundle works with sensible defaults. You only need to configure it if you wa
 
 ## Full Configuration Example
 
+The following example includes the main options. All values match `Configuration.php` defaults unless noted. See the sections below for every option.
+
 ```yaml
 # config/packages/nowo_performance.yaml
 nowo_performance:
-    enabled: true                    # Enable/disable performance tracking
-    environments: ['prod', 'dev', 'test']  # Environments where tracking is enabled
-    connection: 'default'             # Doctrine connection name
-    table_name: 'routes_data'        # Table name for storing metrics
-    track_queries: true              # Track database query count and time
-    track_request_time: true         # Track request execution time
-    track_sub_requests: false         # Track sub-requests (ESI, fragments, etc.)
-    enable_access_records: false     # Enable temporal access records tracking
-    track_user: false                # Store logged-in user on access records (when enabled)
-    ignore_routes:                   # Routes to ignore (not tracked)
-        - '_wdt'                     # Web Debug Toolbar
-        - '_profiler'                # Symfony Profiler
-        - 'web_profiler*'            # Symfony WebProfilerBundle routes
-        - '_error'                   # Error pages
-    track_status_codes: [200, 404, 500, 503]  # HTTP status codes to track
-    cache:                            # Cache configuration (dedicated pool by default)
+    enabled: true
+    environments: ['prod', 'dev', 'test']
+    connection: 'default'
+    table_name: 'routes_data'
+    track_queries: true
+    track_request_time: true
+    track_sub_requests: false
+    ignore_routes:
+        - '_wdt'
+        - '_profiler'
+        - 'web_profiler*'
+        - '_error'
+    track_status_codes: [200, 404, 500, 503]
+    async: false
+    sampling_rate: 1.0
+    query_tracking_threshold: 0
+    enable_access_records: false
+    access_records_retention_days: null   # null = keep all
+    track_user: false
+    enable_logging: true
+    check_table_status: true
+    cache:
         pool: 'nowo_performance.cache'
-    dashboard:                       # Performance dashboard configuration
-        enabled: true                # Enable/disable the dashboard
-        path: '/performance'         # Route path for the dashboard
-        prefix: ''                   # Optional route prefix
-        roles: []                    # Required roles (empty = no restrictions)
+    thresholds:
+        request_time: { warning: 0.5, critical: 1.0 }
+        query_count: { warning: 20, critical: 50 }
+        memory_usage: { warning: 20.0, critical: 50.0 }
+    dashboard:
+        enabled: true
+        path: '/performance'
+        prefix: ''
+        roles: []
+        template: 'bootstrap'
+        enable_record_management: false
+        enable_review_system: false
+        date_formats: { datetime: 'Y-m-d H:i:s', date: 'Y-m-d H:i' }
+        auto_refresh_interval: 0
+        enable_ranking_queries: true
+    notifications:
+        enabled: false
+        # email, slack, teams, webhook: see NOTIFICATIONS.md
 ```
 
 ## Configuration Options

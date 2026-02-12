@@ -71,10 +71,12 @@ nowo_performance:
 
     # List of route names to ignore (not tracked)
     # Routes in this list will not have their performance metrics recorded
+    # Supports literal names and glob patterns (e.g. web_profiler*)
     ignore_routes:
-        - '_wdt'          # Web Debug Toolbar
-        - '_profiler'     # Web Profiler
-        - '_error'        # Error pages
+        - '_wdt'           # Web Debug Toolbar
+        - '_profiler'      # Symfony Profiler
+        - 'web_profiler*'  # WebProfilerBundle routes
+        - '_error'         # Error pages
 
     # HTTP status codes to track and calculate ratios for
     # Only the configured status codes will be tracked and displayed in the dashboard

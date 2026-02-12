@@ -79,6 +79,16 @@ This will:
 php bin/console nowo:performance:create-table --force
 ```
 
+**When using access records (`enable_access_records: true`)**
+
+Create or update the access records table as well:
+
+```bash
+php bin/console nowo:performance:create-records-table
+# or use sync-schema to update both tables in one go
+php bin/console nowo:performance:sync-schema
+```
+
 **Syncing both tables after entity changes**
 
 If you change entity mappings (add/remove/rename fields), sync the database with:
@@ -113,10 +123,12 @@ php bin/console list nowo:performance
 ```
 
 You should see at least:
-- `nowo:performance:create-table` - Create or update the metrics table
-- `nowo:performance:set-route` - Set or update route performance metrics
-- `nowo:performance:sync-schema` - Sync database schema with entity metadata (both tables)
+- `nowo:performance:create-table` - Create or update the main metrics table
+- `nowo:performance:create-records-table` - Create or update the access records table (when `enable_access_records: true`)
+- `nowo:performance:sync-schema` - Sync both tables with entity metadata
+- `nowo:performance:set-route` - Set or update route metrics manually
 - `nowo:performance:diagnose` - Diagnose configuration and tracking status
+- `nowo:performance:check-dependencies` - Check optional dependencies
 
 See [Commands](COMMANDS.md) for full command documentation.
 
