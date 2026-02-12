@@ -121,7 +121,7 @@ class QueryTrackingConnection implements Connection
 
     public function prepare(string $sql): Statement
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql);
+        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         $statement = $this->connection->prepare($sql);
@@ -153,7 +153,7 @@ class QueryTrackingConnection implements Connection
 
     public function query(string $sql): Result
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql);
+        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
@@ -169,7 +169,7 @@ class QueryTrackingConnection implements Connection
 
     public function exec(string $sql): int
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql);
+        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
