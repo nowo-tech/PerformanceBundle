@@ -10,7 +10,7 @@ help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
-	@echo "  up            Start Docker containers (PHP, MySQL, Nginx)"
+	@echo "  up            Start Docker containers (FrankenPHP, MySQL)"
 	@echo "  down          Stop Docker containers"
 	@echo "  shell         Open shell in PHP container"
 	@echo "  install       Install Composer dependencies"
@@ -88,8 +88,7 @@ setup:
 	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Demo setup complete!"
 	@echo ""
-	@echo "Access the application at: http://localhost:8000"
-	@echo "phpMyAdmin at: http://localhost:8080"
+	@echo "Access the application at: https://localhost:8001 (HTTPS, self-signed cert – accept in browser)"
 
 # Database commands
 db-create:

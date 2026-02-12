@@ -73,7 +73,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
             [],
             false,
             1.0,
-            true,
+            true,   // checkTableStatus
+            true,   // enableLogging
+            null,   // accessRecordsRetentionDays
         );
     }
 
@@ -149,7 +151,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['isGranted', 'createAccessDeniedException'])
             ->getMock();
@@ -205,7 +209,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -278,7 +284,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -351,7 +359,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -408,7 +418,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -473,7 +485,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -563,7 +577,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -634,7 +650,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -691,7 +709,9 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();

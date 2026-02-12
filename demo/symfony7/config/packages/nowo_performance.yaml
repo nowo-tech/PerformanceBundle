@@ -58,6 +58,10 @@ nowo_performance:
     # Example: 30 to suggest keeping only the last 30 days
     # access_records_retention_days: 30
 
+    # Check that routes_data and routes_data_records tables exist and are complete
+    # (Web Profiler, dashboard diagnose, CLI diagnose). Set to false to skip these checks and save DB queries.
+    check_table_status: true
+
     # List of route names to ignore (not tracked)
     # Routes in this list will not have their performance metrics recorded
     # Supports exact names, prefix (e.g. _wdt also ignores _wdt_open) and glob patterns (_wdt*, web_profiler*)

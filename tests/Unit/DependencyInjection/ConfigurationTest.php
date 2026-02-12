@@ -28,6 +28,7 @@ final class ConfigurationTest extends TestCase
         $this->assertSame('routes_data', $config['table_name']);
         $this->assertTrue($config['track_queries']);
         $this->assertTrue($config['track_request_time']);
+        $this->assertTrue($config['check_table_status']);
         $this->assertSame(['_wdt', '_profiler', 'web_profiler*', '_error'], $config['ignore_routes']);
         
         // Dashboard configuration defaults

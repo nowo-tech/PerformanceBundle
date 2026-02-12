@@ -55,6 +55,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter(Configuration::ALIAS.'.access_records_retention_days', $config['access_records_retention_days'] ?? null);
         $container->setParameter(Configuration::ALIAS.'.track_user', $config['track_user'] ?? false);
         $container->setParameter(Configuration::ALIAS.'.enable_logging', $config['enable_logging'] ?? true);
+        $container->setParameter(Configuration::ALIAS.'.check_table_status', $config['check_table_status'] ?? true);
 
         $cacheConfig = $config['cache'] ?? [];
         $container->setParameter(Configuration::ALIAS.'.cache.pool', $cacheConfig['pool'] ?? 'nowo_performance.cache');

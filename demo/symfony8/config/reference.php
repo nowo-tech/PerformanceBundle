@@ -1236,8 +1236,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     sampling_rate?: float|Param, // Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking). Reduces database load for frequently accessed routes. // Default: 1.0
  *     query_tracking_threshold?: int|Param, // Minimum query count to track query execution time. Queries below this threshold are counted but not timed individually. // Default: 0
  *     enable_access_records?: bool|Param, // Enable temporal access records tracking. Creates individual records for each route access with timestamp, status code, and response time. Useful for analyzing access patterns by time of day. // Default: false
+ *     access_records_retention_days?: int|Param, // Retention period for access records in days. Records older than this are eligible for purge. Omit or null = keep all. Use the purge command or UI to clean old records. Example: 30 to keep only the last 30 days. // Default: null
  *     track_user?: bool|Param, // When access records are enabled, store the logged-in user identifier and user ID (if available) on each record. Requires Symfony Security. Disabled by default for privacy. // Default: false
  *     enable_logging?: bool|Param, // Enable or disable bundle logging. When disabled, no error_log() calls will be made. Recommended to disable in production for better performance. // Default: true
+ *     check_table_status?: bool|Param, // Check that routes_data and routes_data_records tables exist and are complete (Web Profiler, dashboard diagnose, CLI diagnose). Set to false to skip these checks and save DB/introspection queries. Default true. // Default: true
  *     cache?: array{ // Cache configuration. The bundle registers a dedicated pool nowo_performance.cache (filesystem) by default.
  *         pool?: scalar|Param|null, // Cache pool service ID. Default: nowo_performance.cache (dedicated pool). Use cache.app to share with application cache. // Default: "nowo_performance.cache"
  *     },
@@ -1327,7 +1329,16 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     excluded_blocks?: list<scalar|Param|null>,
  *     enable_metrics?: bool|Param, // Enable collection of template usage metrics in DataCollector // Default: true
  *     optimize_output_buffering?: bool|Param, // Skip output buffering when inspector is disabled (performance optimization) // Default: true
+ *     inject_on_sub_requests?: bool|Param, // When true, inject comments also during sub-requests (e.g. when main content is rendered as fragment). Enable if all templates show "sub-request" and none get inspected. // Default: false
  *     cookie_name?: scalar|Param|null, // Name of the cookie used to enable/disable the inspector // Default: "twig_inspector_is_active"
+ *     max_injection_depth?: int|Param, // Maximum nesting depth for comment injection (0 = unlimited). Reduces overhead on very deep template trees. // Default: 0
+ *     excluded_templates_regex?: list<scalar|Param|null>,
+ *     excluded_templates_prefixes?: list<scalar|Param|null>,
+ *     excluded_blocks_regex?: list<scalar|Param|null>,
+ *     overlay_theme?: scalar|Param|null, // Overlay theme: "light", "dark", or "auto" (follow system preference). // Default: "light"
+ *     overlay_compact?: bool|Param, // Use compact tooltip style for the overlay. // Default: false
+ *     reduced_motion?: bool|Param, // Respect reduced motion (accessibility). When true or system prefers-reduced-motion, animations are minimized. // Default: false
+ *     keyboard_shortcut?: scalar|Param|null, // Keyboard shortcut to toggle inspector (e.g. "Ctrl+Shift+T"). Empty to disable. // Default: "Ctrl+Shift+T"
  * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,

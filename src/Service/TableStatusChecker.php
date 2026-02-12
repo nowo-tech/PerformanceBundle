@@ -126,6 +126,26 @@ class TableStatusChecker
     }
 
     /**
+     * Get main table status in a single batch (avoids N+1 when collector needs exists, complete, name, missing columns).
+     *
+     * @return array{exists: bool, complete: bool, table_name: string, missing_columns: array<string>}
+     */
+    public function getMainTableStatus(): array
+    {
+        $tableName = $this->tableName;
+        $exists = $this->tableExists();
+        $missingColumns = $exists ? $this->getMissingColumns() : [];
+        $complete = $exists && empty($missingColumns);
+
+        return [
+            'exists' => $exists,
+            'complete' => $complete,
+            'table_name' => $tableName,
+            'missing_columns' => $missingColumns,
+        ];
+    }
+
+    /**
      * Get the configured table name.
      *
      * @return string The configured table name
@@ -279,6 +299,7 @@ class TableStatusChecker
 
     /**
      * Check if the access records table exists (only when enable_access_records is true).
+     * Result is cached for CACHE_TTL_SECONDS to avoid repeated introspection.
      *
      * @return bool True if the table exists or access records are disabled, false otherwise
      */
@@ -288,15 +309,54 @@ class TableStatusChecker
             return true; // N/A, consider "ok"
         }
 
+        if (null !== $this->cacheService) {
+            $cacheKey = 'records_table_exists_'.$this->connectionName;
+            $cached = $this->cacheService->getCachedValue($cacheKey);
+            if (null !== $cached) {
+                return (bool) $cached;
+            }
+        }
+
         try {
             $connection = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
             $recordsTableName = $this->getRecordsTableName();
 
-            return $schemaManager->tablesExist([$recordsTableName]);
+            $exists = $schemaManager->tablesExist([$recordsTableName]);
+
+            if (null !== $this->cacheService) {
+                $cacheKey = 'records_table_exists_'.$this->connectionName;
+                $this->cacheService->cacheValue($cacheKey, $exists, self::CACHE_TTL_SECONDS);
+            }
+
+            return $exists;
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Get records table status in a single batch (avoids N+1 when collector needs exists, complete, name, missing columns).
+     *
+     * @return array{exists: bool, complete: bool, table_name: string, missing_columns: array<string>}|null Null when access records are disabled
+     */
+    public function getRecordsTableStatus(): ?array
+    {
+        if (!$this->enableAccessRecords) {
+            return null;
+        }
+
+        $tableName = $this->getRecordsTableName();
+        $exists = $this->recordsTableExists();
+        $missingColumns = $exists ? $this->getRecordsMissingColumns() : [];
+        $complete = $exists && empty($missingColumns);
+
+        return [
+            'exists' => $exists,
+            'complete' => $complete,
+            'table_name' => $tableName,
+            'missing_columns' => $missingColumns,
+        ];
     }
 
     /**
@@ -318,6 +378,7 @@ class TableStatusChecker
 
     /**
      * Get list of missing columns in the access records table.
+     * Result is cached for CACHE_TTL_SECONDS (same as getMissingColumns).
      *
      * @return array<string> List of missing column names (empty if access records disabled or table missing)
      */
@@ -325,6 +386,15 @@ class TableStatusChecker
     {
         if (!$this->enableAccessRecords) {
             return [];
+        }
+
+        $cacheKey = 'records_missing_columns_'.$this->connectionName;
+
+        if (null !== $this->cacheService) {
+            $cached = $this->cacheService->getCachedValue($cacheKey);
+            if (null !== $cached && \is_array($cached)) {
+                return $cached;
+            }
         }
 
         try {
@@ -336,7 +406,12 @@ class TableStatusChecker
             $recordsTableName = $this->getRecordsTableName();
 
             if (!$schemaManager->tablesExist([$recordsTableName])) {
-                return $this->getExpectedColumns($metadata);
+                $missing = $this->getExpectedColumns($metadata);
+                if (null !== $this->cacheService) {
+                    $this->cacheService->cacheValue($cacheKey, $missing, self::CACHE_TTL_SECONDS);
+                }
+
+                return $missing;
             }
 
             $table = $schemaManager->introspectTable($recordsTableName);
@@ -356,6 +431,10 @@ class TableStatusChecker
                 }
             }
 
+            if (null !== $this->cacheService) {
+                $this->cacheService->cacheValue($cacheKey, $missingColumns, self::CACHE_TTL_SECONDS);
+            }
+
             return $missingColumns;
         } catch (\Exception $e) {
             return [];
@@ -364,19 +443,35 @@ class TableStatusChecker
 
     /**
      * Get the access records table name (from RouteDataRecord entity metadata).
+     * Cached for CACHE_TTL_SECONDS to avoid repeated metadata lookups.
      *
      * @return string Table name (e.g. routes_data_records)
      */
     public function getRecordsTableName(): string
     {
+        if (null !== $this->cacheService) {
+            $cacheKey = 'records_table_name_'.$this->connectionName;
+            $cached = $this->cacheService->getCachedValue($cacheKey);
+            if (null !== $cached && \is_string($cached)) {
+                return $cached;
+            }
+        }
+
         try {
             $entityManager = $this->registry->getManager($this->connectionName);
             /** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
 
-            return method_exists($metadata, 'getTableName')
+            $name = method_exists($metadata, 'getTableName')
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName.'_records');
+
+            if (null !== $this->cacheService) {
+                $cacheKey = 'records_table_name_'.$this->connectionName;
+                $this->cacheService->cacheValue($cacheKey, $name, self::CACHE_TTL_SECONDS);
+            }
+
+            return $name;
         } catch (\Exception $e) {
             return $this->tableName.'_records';
         }

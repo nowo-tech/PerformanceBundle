@@ -225,6 +225,31 @@ nowo_performance:
 
 **Note:** When disabled, the bundle will still function normally but won't emit any log messages. This can help reduce I/O operations and improve performance in production.
 
+### `check_table_status`
+
+**Type:** `boolean`  
+**Default:** `true`
+
+When enabled, the bundle checks that the `routes_data` and (if access records are enabled) `routes_data_records` tables exist and have all required columns. This is used in:
+
+- **Web Profiler** (Performance panel): table status, missing columns, and suggestions to run `sync-schema` or `create-table --update`
+- **Dashboard diagnose view**: same information in the diagnostic section
+- **CLI** `nowo:performance:diagnose`: "Database Tables" section with existence, completeness, and missing columns
+
+These checks use the cache when available (see [Cache](#cache)), but still perform introspection when the cache is cold. Set to `false` to skip all table status checks and save DB/introspection queries.
+
+```yaml
+nowo_performance:
+    check_table_status: false  # Skip table checks (saves queries)
+```
+
+**Use cases:**
+- High-traffic production where you already know the schema is correct
+- Reducing queries when the Web Profiler or dashboard diagnose is loaded often
+- Environments where introspection (e.g. `information_schema`) is expensive
+
+**Note:** When disabled, the Web Profiler and diagnose views will not show table existence, completeness, or missing columns. Metrics recording still works; only the *display* of table status is skipped.
+
 ### `ignore_routes`
 
 **Type:** `array`  

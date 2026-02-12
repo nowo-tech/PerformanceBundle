@@ -75,7 +75,9 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
                 [],
                 false,
                 1.0,
-                true,
+                true,   // checkTableStatus
+                true,   // enableLogging
+                null,   // accessRecordsRetentionDays
             ])
             ->onlyMethods($mockGetParameter ? ['getParameter'] : [])
             ->getMock();

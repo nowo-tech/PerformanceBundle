@@ -124,11 +124,13 @@ final class DiagnoseCommandTest extends TestCase
         });
 
         $checker = $this->createMock(TableStatusChecker::class);
-        $checker->method('tableExists')->willReturn(true);
-        $checker->method('tableIsComplete')->willReturn(true);
-        $checker->method('getTableName')->willReturn('routes_data');
-        $checker->method('getMissingColumns')->willReturn([]);
-        $checker->method('isAccessRecordsEnabled')->willReturn(false);
+        $checker->method('getMainTableStatus')->willReturn([
+            'exists' => true,
+            'complete' => true,
+            'table_name' => 'routes_data',
+            'missing_columns' => [],
+        ]);
+        $checker->method('getRecordsTableStatus')->willReturn(null);
 
         $command = new DiagnoseCommand($this->parameterBag, $checker);
         $tester = new CommandTester($command);
@@ -154,15 +156,18 @@ final class DiagnoseCommandTest extends TestCase
         });
 
         $checker = $this->createMock(TableStatusChecker::class);
-        $checker->method('tableExists')->willReturn(true);
-        $checker->method('tableIsComplete')->willReturn(true);
-        $checker->method('getTableName')->willReturn('routes_data');
-        $checker->method('getMissingColumns')->willReturn([]);
-        $checker->method('isAccessRecordsEnabled')->willReturn(true);
-        $checker->method('recordsTableExists')->willReturn(true);
-        $checker->method('recordsTableIsComplete')->willReturn(false);
-        $checker->method('getRecordsTableName')->willReturn('routes_data_records');
-        $checker->method('getRecordsMissingColumns')->willReturn(['request_id']);
+        $checker->method('getMainTableStatus')->willReturn([
+            'exists' => true,
+            'complete' => true,
+            'table_name' => 'routes_data',
+            'missing_columns' => [],
+        ]);
+        $checker->method('getRecordsTableStatus')->willReturn([
+            'exists' => true,
+            'complete' => false,
+            'table_name' => 'routes_data_records',
+            'missing_columns' => ['request_id'],
+        ]);
 
         $command = new DiagnoseCommand($this->parameterBag, $checker);
         $tester = new CommandTester($command);

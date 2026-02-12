@@ -7,18 +7,20 @@
         "php": ">=8.1,<8.6",
         "doctrine/doctrine-bundle": "^2.8 || ^2.9 || ^2.10",
         "doctrine/orm": "^2.13 || ^3.0",
+        "nowo-tech/performance-bundle": "@dev",
         "symfony/asset": "^7.0",
         "symfony/console": "^7.0",
         "symfony/dotenv": "^7.0",
         "symfony/flex": "^2.0",
         "symfony/form": "^7.0",
         "symfony/framework-bundle": "^7.0",
+        "symfony/http-client": "7.0.*",
         "symfony/runtime": "^7.0",
         "symfony/security-bundle": "^7.0",
         "symfony/security-csrf": "7.0.*",
         "symfony/translation": "^7.0",
         "symfony/twig-bundle": "^7.0",
-        "symfony/ux-icons": "^2.0",
+        "symfony/ux-icons": "^2.32",
         "symfony/ux-twig-component": "*",
         "symfony/validator": "^7.0",
         "symfony/yaml": "^7.0"
@@ -75,13 +77,13 @@
     "repositories": [
         {
             "type": "path",
-            "url": "/bundles"
+            "url": "/var/performance-bundle"
         }
     ],
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "*",
-        "nowo-tech/performance-bundle": "*",
-        "symfony/debug-bundle": "^7.0",
+        "symfony/debug-bundle": "*",
+        "symfony/var-dumper": "*",
         "symfony/web-profiler-bundle": "^7.0"
     }
 }

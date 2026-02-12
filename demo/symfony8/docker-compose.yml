@@ -5,27 +5,25 @@ services:
       dockerfile: Dockerfile
     container_name: performance-demo-symfony8-php
     working_dir: /app
+    ports:
+      - "${PORT:-8001}:443"
     volumes:
       - .:/app
-      - ../../:/bundles
+      # Mount bundle root so the path repo symlink works and code changes are visible
+      - ../..:/var/performance-bundle
       - composer-cache:/root/.composer/cache
     environment:
       - COMPOSER_ALLOW_SUPERUSER=1
+      - APP_ENV=${APP_ENV:-dev}
       - DATABASE_URL=mysql://${MYSQL_USER:-demo_user}:${MYSQL_PASSWORD:-password}@mysql:3306/${MYSQL_DATABASE:-performance_demo}?serverVersion=8.0&charset=utf8mb4
-    command: ["php-fpm", "-F"]
-    networks:
-      - performance-demo-network
-
-  nginx:
-    image: nginx:alpine
-    container_name: performance-demo-symfony8-nginx
-    volumes:
-      - .:/app:ro
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    ports:
-      - "8001:80"
+      # Ensure 5xx errors return a response body (FrankenPHP/Caddy can sometimes return empty 500). Newlines required: Caddyfile forbids tokens after "{" on same line.
+      - |
+        CADDY_SERVER_EXTRA_DIRECTIVES=handle_errors 5xx {
+          respond "{err.status_code} {err.status_text}" {err.status_code}
+        }
     depends_on:
-      - php
+      mysql:
+        condition: service_healthy
     networks:
       - performance-demo-network
 
@@ -51,10 +49,6 @@ services:
 
 volumes:
   composer-cache:
-
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
     driver: local
 
 networks:

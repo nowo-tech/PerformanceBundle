@@ -73,6 +73,11 @@ class PerformanceDataCollector extends DataCollector
     private ?TableStatusChecker $tableStatusChecker = null;
 
     /**
+     * Whether to run table status checks (existence/completeness). When false, no DB introspection queries are made.
+     */
+    private bool $checkTableStatus = true;
+
+    /**
      * Dependency checker (optional, for checking optional dependencies).
      */
     private ?DependencyChecker $dependencyChecker = null;
@@ -110,6 +115,7 @@ class PerformanceDataCollector extends DataCollector
      * @param TableStatusChecker|null        $tableStatusChecker The table status checker (optional)
      * @param DependencyChecker|null         $dependencyChecker  The dependency checker (optional)
      * @param RouteDataRecordRepository|null $recordRepository   The route data record repository (optional)
+     * @param bool                           $checkTableStatus   Whether to check table existence/completeness (default true). Set false to save queries.
      */
     public function __construct(
         ?RouteDataRepository $repository = null,
@@ -117,12 +123,14 @@ class PerformanceDataCollector extends DataCollector
         ?TableStatusChecker $tableStatusChecker = null,
         ?DependencyChecker $dependencyChecker = null,
         ?RouteDataRecordRepository $recordRepository = null,
+        bool $checkTableStatus = true,
     ) {
         $this->repository = $repository;
         $this->kernel = $kernel;
         $this->tableStatusChecker = $tableStatusChecker;
         $this->dependencyChecker = $dependencyChecker;
         $this->recordRepository = $recordRepository;
+        $this->checkTableStatus = $checkTableStatus;
     }
 
     /**
@@ -328,25 +336,22 @@ class PerformanceDataCollector extends DataCollector
         $recordsTableName = null;
         $missingColumnsRecords = [];
 
-        if (null !== $this->tableStatusChecker) {
+        if (null !== $this->tableStatusChecker && $this->checkTableStatus) {
             try {
-                $tableExists = $this->tableStatusChecker->tableExists();
-                $tableIsComplete = $this->tableStatusChecker->tableIsComplete();
-                $tableName = $this->tableStatusChecker->getTableName();
+                // Single batch call to avoid N+1 (tableExists + tableIsComplete + getMissingColumns)
+                $mainStatus = $this->tableStatusChecker->getMainTableStatus();
+                $tableExists = $mainStatus['exists'];
+                $tableIsComplete = $mainStatus['complete'];
+                $tableName = $mainStatus['table_name'];
+                $missingColumns = $mainStatus['missing_columns'];
 
-                // Get missing columns if table exists but is incomplete
-                if ($tableExists && !$tableIsComplete) {
-                    $missingColumns = $this->tableStatusChecker->getMissingColumns();
-                }
-
-                // Records table status (only when enable_access_records is true)
-                if ($this->tableStatusChecker->isAccessRecordsEnabled()) {
-                    $recordsTableExists = $this->tableStatusChecker->recordsTableExists();
-                    $recordsTableIsComplete = $this->tableStatusChecker->recordsTableIsComplete();
-                    $recordsTableName = $this->tableStatusChecker->getRecordsTableName();
-                    if ($recordsTableExists && !$recordsTableIsComplete) {
-                        $missingColumnsRecords = $this->tableStatusChecker->getRecordsMissingColumns();
-                    }
+                // Records table status in one batch (only when enable_access_records is true)
+                $recordsStatus = $this->tableStatusChecker->getRecordsTableStatus();
+                if (null !== $recordsStatus) {
+                    $recordsTableExists = $recordsStatus['exists'];
+                    $recordsTableIsComplete = $recordsStatus['complete'];
+                    $recordsTableName = $recordsStatus['table_name'];
+                    $missingColumnsRecords = $recordsStatus['missing_columns'];
                 }
             } catch (\Exception $e) {
                 // Silently fail if table check fails

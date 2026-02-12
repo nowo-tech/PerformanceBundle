@@ -8,7 +8,7 @@ This demo shows how to use the Performance Bundle with Symfony 8.0, including au
 - **MySQL 8.0** as database
 - **Complete CRUD** for Products entity
 - **Automatic Performance Tracking** - All routes are automatically tracked
-- **Docker Compose** with PHP, MySQL, Nginx, and phpMyAdmin
+- **Docker Compose** with FrankenPHP (PHP 8.4 Alpine) and MySQL
 - **Makefile** with useful commands for development
 - **Example fixtures** with test data
 - **Web interface** to view performance metrics
@@ -26,7 +26,7 @@ This demo shows how to use the Performance Bundle with Symfony 8.0, including au
 make up
 ```
 
-This will automatically create the `.env` file if it doesn't exist and start all containers (PHP, MySQL, Nginx, phpMyAdmin).
+This will automatically create the `.env` file if it doesn't exist and start all containers (FrankenPHP, MySQL).
 
 ### 2. Setup the demo
 
@@ -42,9 +42,9 @@ This command:
 
 ### 3. Access Web Application
 
-Once containers are up, nginx is automatically running and serving the application.
+Once containers are up, FrankenPHP serves the application.
 
-Access the web application at: **http://localhost:8000**
+Access the web application at: **https://localhost:8001** (FrankenPHP serves HTTPS; the browser will warn about the self-signed certificate – accept to continue.)
 
 From there you can:
 - View home page with performance metrics
@@ -61,7 +61,7 @@ The bundle automatically tracks:
 View metrics:
 - In the home page (`/`)
 - Via command: `make db-view`
-- In phpMyAdmin: http://localhost:8080 (check `routes_data` table)
+- In the database (e.g. `docker-compose exec mysql mysql -u demo_user -ppassword performance_demo -e "SELECT * FROM routes_data"`)
 
 ## Available Routes
 
@@ -74,12 +74,10 @@ View metrics:
 
 ## Docker Services
 
-- **PHP**: PHP 8.4-FPM container
-- **Nginx**: Web server (port 8000)
-- **MySQL**: Database server (port 3307)
-- **phpMyAdmin**: Database management (port 8080)
+- **PHP**: FrankenPHP (PHP 8.4 Alpine) – HTTPS on port 8001 (container 443)
+- **MySQL**: Database server (port 3308)
 
-All services are connected via Docker network `performance-demo-network`.
+The bundle is mounted from the repo at `/var/performance-bundle` so you can develop the bundle and see changes in the demo. All services use the Docker network `performance-demo-network`.
 
 ## Makefile Commands
 
@@ -122,18 +120,10 @@ nowo_performance:
 ### Viewing Metrics
 
 1. **Via Web Interface**: Visit `/` to see worst performing routes
-2. **Via Database**: Check `routes_data` table in phpMyAdmin
+2. **Via Database**: Check `routes_data` table (e.g. `make db-view` or connect to MySQL)
 3. **Via Command**: `make db-view`
 
 ## Database Access
-
-### phpMyAdmin
-
-Access phpMyAdmin at: **http://localhost:8080**
-
-**Credentials:**
-- Username: `demo_user`
-- Password: `password`
 
 ### Direct MySQL
 
@@ -155,19 +145,21 @@ docker-compose exec mysql mysql -u demo_user -ppassword performance_demo
 make up
 make setup
 
-# Access application
-# http://localhost:8000
+# Access application (HTTPS, accept self-signed cert in browser)
+# https://localhost:8001
 
 # View metrics
 make db-view
 
-# Or check in phpMyAdmin
-# http://localhost:8080 -> routes_data table
+# Or: docker-compose exec mysql mysql -u demo_user -ppassword performance_demo -e "SELECT * FROM routes_data"
 ```
 
 ## Notes
 
+- **HTTPS**: FrankenPHP serves over HTTPS (port 443). The demo uses a self-signed certificate; your browser will show a security warning – accept it to access the app.
+- **dump() / dd()**: The demo loads `config/frankenphp_vardumper.php` from `public/index.php` so that Symfony’s `dump()` and `dd()` use a valid output stream under FrankenPHP (avoiding “fwrite(): Argument #1 ($stream) must be of type resource”).
 - Performance tracking is automatic - no code changes needed
 - Metrics are stored in `routes_data` table
 - Only routes in configured environments are tracked
+- **500 errors**: FrankenPHP/Caddy may not always show Symfony's exception page for 500s (e.g. empty body or connection reset in some cases). The demo sets `CADDY_SERVER_EXTRA_DIRECTIVES` so Caddy's `handle_errors 5xx` returns at least a minimal response body; for full control use Symfony's error controller and avoid fatal errors before the response is sent.
 - Ignored routes (profiler, debug toolbar) are not tracked

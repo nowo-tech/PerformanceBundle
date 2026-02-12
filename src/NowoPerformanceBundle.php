@@ -9,6 +9,7 @@ use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Symfony bundle for route performance metrics tracking.
@@ -31,6 +32,53 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  */
 class NowoPerformanceBundle extends Bundle
 {
+    /**
+     * Ensures dump()/dd() work when the default VarDumper stream is invalid (e.g. FrankenPHP).
+     */
+    public function boot(): void
+    {
+        parent::boot();
+
+        $kernel = $this->container->get('kernel');
+        if (!$kernel instanceof KernelInterface || !$kernel->isDebug()) {
+            return;
+        }
+
+        if (!class_exists(\Symfony\Component\VarDumper\VarDumper::class)) {
+            return;
+        }
+
+        \Symfony\Component\VarDumper\VarDumper::setHandler(function ($var, ...$moreVars): void {
+            $cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
+            $stream = null;
+            if ('cli' === \PHP_SAPI) {
+                $stream = @fopen('php://stderr', 'w') ?: (\defined('STDOUT') && \is_resource(\STDOUT) ? \STDOUT : null);
+            } else {
+                // Web: avoid php://output when headers not yet sent (e.g. redirects) to prevent
+                // "Cannot modify header information - headers already sent"
+                if (\headers_sent()) {
+                    $stream = @fopen('php://output', 'w');
+                }
+                if (false === $stream || null === $stream) {
+                    $stream = @fopen('php://stderr', 'w') ?: @fopen('php://output', 'w');
+                }
+                if (false === $stream) {
+                    $stream = \defined('STDOUT') && \is_resource(\STDOUT) ? \STDOUT : null;
+                }
+            }
+            if (null === $stream) {
+                return;
+            }
+            $dumper = 'cli' === \PHP_SAPI
+                ? new \Symfony\Component\VarDumper\Dumper\CliDumper($stream)
+                : new \Symfony\Component\VarDumper\Dumper\HtmlDumper($stream);
+            $dumper->dump($cloner->cloneVar($var));
+            foreach ($moreVars as $v) {
+                $dumper->dump($cloner->cloneVar($v));
+            }
+        });
+    }
+
     /**
      * Overridden to allow for the custom extension alias.
      *

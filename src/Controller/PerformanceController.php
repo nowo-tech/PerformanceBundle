@@ -116,6 +116,8 @@ class PerformanceController extends AbstractController
         private readonly bool $async = false,
         #[Autowire('%nowo_performance.sampling_rate%')]
         private readonly float $samplingRate = 1.0,
+        #[Autowire('%nowo_performance.check_table_status%')]
+        private readonly bool $checkTableStatus = true,
         #[Autowire('%nowo_performance.enable_logging%')]
         private readonly bool $enableLogging = true,
         #[Autowire('%nowo_performance.access_records_retention_days%')]
@@ -1482,19 +1484,28 @@ class PerformanceController extends AbstractController
             'records_missing_columns' => [],
         ];
 
-        if (null !== $this->tableStatusChecker) {
+        if (null !== $this->tableStatusChecker && $this->checkTableStatus) {
             try {
-                $tableStatus['main_table_exists'] = $this->tableStatusChecker->tableExists();
-                $tableStatus['main_table_complete'] = $this->tableStatusChecker->tableIsComplete();
-                $tableStatus['main_table_name'] = $this->tableStatusChecker->getTableName();
-                $tableStatus['missing_columns'] = $this->tableStatusChecker->getMissingColumns();
+                $mainStatus = $this->tableStatusChecker->getMainTableStatus();
+                $tableStatus['main_table_exists'] = $mainStatus['exists'];
+                $tableStatus['main_table_complete'] = $mainStatus['complete'];
+                $tableStatus['main_table_name'] = $mainStatus['table_name'];
+                $tableStatus['missing_columns'] = $mainStatus['missing_columns'];
+
+                $recordsStatus = $this->tableStatusChecker->getRecordsTableStatus();
+                if (null !== $recordsStatus) {
+                    $tableStatus['records_table_exists'] = $recordsStatus['exists'];
+                    $tableStatus['records_table_complete'] = $recordsStatus['complete'];
+                    $tableStatus['records_table_name'] = $recordsStatus['table_name'];
+                    $tableStatus['records_missing_columns'] = $recordsStatus['missing_columns'];
+                }
             } catch (\Exception $e) {
                 $tableStatus['error'] = $e->getMessage();
             }
         }
 
-        // Check records table if enabled (existence + completeness vs entity schema)
-        if ($this->enableAccessRecords && null !== $this->recordRepository) {
+        // When tableStatusChecker is not available, fall back to manual records table check (only if check is enabled)
+        if ($this->checkTableStatus && $this->enableAccessRecords && null !== $this->recordRepository && null === $this->tableStatusChecker) {
             try {
                 $entityManager = $this->recordRepository->getEntityManager();
                 $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');

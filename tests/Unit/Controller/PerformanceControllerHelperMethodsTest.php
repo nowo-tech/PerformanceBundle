@@ -57,7 +57,9 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
             [],
             false,
             1.0,
-            true,
+            true,   // checkTableStatus
+            true,   // enableLogging
+            null,   // accessRecordsRetentionDays
         );
     }
 

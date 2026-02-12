@@ -94,13 +94,15 @@ HELP
             ]
         );
 
-        // Check database tables (main + records table when enable_access_records)
-        if (null !== $this->tableStatusChecker) {
+        // Check database tables (main + records table when enable_access_records) — single batch to avoid N+1
+        $checkTableStatus = $this->parameterBag->get('nowo_performance.check_table_status') ?? true;
+        if (null !== $this->tableStatusChecker && $checkTableStatus) {
             $io->section('Database Tables');
-            $mainExists = $this->tableStatusChecker->tableExists();
-            $mainComplete = $this->tableStatusChecker->tableIsComplete();
-            $mainName = $this->tableStatusChecker->getTableName();
-            $mainMissing = $this->tableStatusChecker->getMissingColumns();
+            $mainStatus = $this->tableStatusChecker->getMainTableStatus();
+            $mainName = $mainStatus['table_name'];
+            $mainExists = $mainStatus['exists'];
+            $mainComplete = $mainStatus['complete'];
+            $mainMissing = $mainStatus['missing_columns'];
 
             $tableRows = [
                 [
@@ -110,16 +112,13 @@ HELP
                     empty($mainMissing) ? '—' : implode(', ', $mainMissing),
                 ],
             ];
-            if ($this->tableStatusChecker->isAccessRecordsEnabled()) {
-                $recordsExists = $this->tableStatusChecker->recordsTableExists();
-                $recordsComplete = $this->tableStatusChecker->recordsTableIsComplete();
-                $recordsName = $this->tableStatusChecker->getRecordsTableName();
-                $recordsMissing = $this->tableStatusChecker->getRecordsMissingColumns();
+            $recordsStatus = $this->tableStatusChecker->getRecordsTableStatus();
+            if (null !== $recordsStatus) {
                 $tableRows[] = [
-                    $recordsName,
-                    $recordsExists ? '✓ Yes' : '✗ No',
-                    $recordsComplete ? '✓ Yes' : '✗ No',
-                    empty($recordsMissing) ? '—' : implode(', ', $recordsMissing),
+                    $recordsStatus['table_name'],
+                    $recordsStatus['exists'] ? '✓ Yes' : '✗ No',
+                    $recordsStatus['complete'] ? '✓ Yes' : '✗ No',
+                    empty($recordsStatus['missing_columns']) ? '—' : implode(', ', $recordsStatus['missing_columns']),
                 ];
             }
             $io->table(['Table', 'Exists', 'Complete', 'Missing columns'], $tableRows);
@@ -129,13 +128,16 @@ HELP
             } elseif (!empty($mainMissing)) {
                 $io->note('Main table: php bin/console nowo:performance:create-table --update');
             }
-            if ($this->tableStatusChecker->isAccessRecordsEnabled()) {
-                if (!$recordsExists) {
+            if (null !== $recordsStatus) {
+                if (!$recordsStatus['exists']) {
                     $io->note('Records table: php bin/console nowo:performance:create-records-table');
-                } elseif (!empty($recordsMissing)) {
+                } elseif (!empty($recordsStatus['missing_columns'])) {
                     $io->note('Records table: php bin/console nowo:performance:sync-schema or nowo:performance:create-records-table --update');
                 }
             }
+        } elseif (null !== $this->tableStatusChecker && !$checkTableStatus) {
+            $io->section('Database Tables');
+            $io->note('Table status check is disabled (nowo_performance.check_table_status: false). Set to true to see table existence and missing columns here.');
         }
 
         // Check QueryTrackingMiddleware
