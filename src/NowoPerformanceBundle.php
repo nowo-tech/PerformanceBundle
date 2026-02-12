@@ -48,7 +48,7 @@ class NowoPerformanceBundle extends Bundle
             return;
         }
 
-        \Symfony\Component\VarDumper\VarDumper::setHandler(function ($var, ...$moreVars): void {
+        \Symfony\Component\VarDumper\VarDumper::setHandler(static function ($var, ...$moreVars): void {
             $cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
             $stream = null;
             if ('cli' === \PHP_SAPI) {
@@ -56,7 +56,7 @@ class NowoPerformanceBundle extends Bundle
             } else {
                 // Web: avoid php://output when headers not yet sent (e.g. redirects) to prevent
                 // "Cannot modify header information - headers already sent"
-                if (\headers_sent()) {
+                if (headers_sent()) {
                     $stream = @fopen('php://output', 'w');
                 }
                 if (false === $stream || null === $stream) {
