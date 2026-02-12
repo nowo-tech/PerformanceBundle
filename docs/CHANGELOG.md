@@ -356,8 +356,8 @@ See [UPGRADING](UPGRADING.md#upgrading-to-202-2026-01-29) for migration steps.
   - Detects Symfony Mailer availability for email notifications
   - Detects Symfony HttpClient availability for Slack, Teams, and webhook notifications
   - Provides information about missing dependencies with installation commands
-  - Modal informativo en el dashboard para mostrar dependencias faltantes
-  - Compatible con Bootstrap y Tailwind CSS templates
+  - Informative modal on the dashboard to show missing dependencies
+  - Compatible with Bootstrap and Tailwind CSS templates
 - **Automatic routes file creation** - Symfony Flex recipe now creates `config/routes/nowo_performance.yaml`
   - Routes are automatically imported when installing the bundle
   - Uses configured prefix and path from bundle configuration
