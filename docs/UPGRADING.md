@@ -6,6 +6,24 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.12 (2026-02-02)
+
+Behaviour and documentation improvements. No schema or configuration changes.
+
+**Changed:**
+- **VarDumper** – In web context the bundle no longer replaces the VarDumper handler; `dump()` / `dd()` output appears in the Web Debug Toolbar. In CLI the fallback (stderr) is still used. See [BEHAVIOUR_AND_CHANGES.md](BEHAVIOUR_AND_CHANGES.md#vardumper-dump--dd-behaviour-in-nowoperformancebundleboot).
+- **Documentation** – Docs index and config/installation references are now in English.
+
+**Fixed:**
+- **Query tracking** – Repeated execution of the same SQL (e.g. N+1) is now counted correctly; each execution has a unique id.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.11 (2026-02-12)
 
 Documentation and recipe updates. No schema or configuration changes.

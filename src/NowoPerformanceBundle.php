@@ -33,7 +33,8 @@ use Symfony\Component\HttpKernel\KernelInterface;
 class NowoPerformanceBundle extends Bundle
 {
     /**
-     * Ensures dump()/dd() work when the default VarDumper stream is invalid (e.g. FrankenPHP).
+     * In CLI, sets a VarDumper fallback handler (stderr) when the default stream is invalid (e.g. FrankenPHP).
+     * In web context we do not replace the handler so Symfony's DumpDataCollector is used and dumps appear in the Web Debug Toolbar.
      */
     public function boot(): void
     {
@@ -48,30 +49,17 @@ class NowoPerformanceBundle extends Bundle
             return;
         }
 
+        if ('cli' !== \PHP_SAPI) {
+            return;
+        }
+
         \Symfony\Component\VarDumper\VarDumper::setHandler(static function ($var, ...$moreVars): void {
             $cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
-            $stream = null;
-            if ('cli' === \PHP_SAPI) {
-                $stream = @fopen('php://stderr', 'w') ?: (\defined('STDOUT') && \is_resource(\STDOUT) ? \STDOUT : null);
-            } else {
-                // Web: avoid php://output when headers not yet sent (e.g. redirects) to prevent
-                // "Cannot modify header information - headers already sent"
-                if (headers_sent()) {
-                    $stream = @fopen('php://output', 'w');
-                }
-                if (false === $stream || null === $stream) {
-                    $stream = @fopen('php://stderr', 'w') ?: @fopen('php://output', 'w');
-                }
-                if (false === $stream) {
-                    $stream = \defined('STDOUT') && \is_resource(\STDOUT) ? \STDOUT : null;
-                }
-            }
+            $stream = @fopen('php://stderr', 'w') ?: (\defined('STDOUT') && \is_resource(\STDOUT) ? \STDOUT : null);
             if (null === $stream) {
                 return;
             }
-            $dumper = 'cli' === \PHP_SAPI
-                ? new \Symfony\Component\VarDumper\Dumper\CliDumper($stream)
-                : new \Symfony\Component\VarDumper\Dumper\HtmlDumper($stream);
+            $dumper = new \Symfony\Component\VarDumper\Dumper\CliDumper($stream);
             $dumper->dump($cloner->cloneVar($var));
             foreach ($moreVars as $v) {
                 $dumper->dump($cloner->cloneVar($v));

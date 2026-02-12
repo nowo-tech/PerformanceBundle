@@ -11,6 +11,20 @@ _Nothing yet._
 
 ---
 
+## [2.0.12] - 2026-02-02
+
+### Added
+- **BEHAVIOUR_AND_CHANGES.md** – New doc explaining notable behaviours and non-obvious changes (e.g. VarDumper in web vs CLI). Documentation index and root README updated to link to it.
+
+### Changed
+- **VarDumper in `NowoPerformanceBundle::boot()`** – In web context the bundle no longer replaces the VarDumper handler; it returns before calling `VarDumper::setHandler()`, so Symfony’s default handler (DumpDataCollector) is used and `dump()` / `dd()` output appears in the Web Debug Toolbar. The fallback handler (writing to stderr via CliDumper) is now registered only when `PHP_SAPI === 'cli'`. See [BEHAVIOUR_AND_CHANGES.md](BEHAVIOUR_AND_CHANGES.md#vardumper-dump--dd-behaviour-in-nowoperformancebundleboot).
+- **Documentation** – Docs index and references translated to English (docs/README.md, CONFIGURATION.md, INSTALLATION.md).
+
+### Fixed
+- **QueryTrackingMiddleware** – Each query execution now gets a unique `queryId` (using `uniqid`). Previously the same SQL reused the same id, so repeated executions (e.g. N+1) were under-counted in metrics.
+
+---
+
 ## [2.0.11] - 2026-02-12
 
 ### Added

@@ -1,6 +1,6 @@
 # Installation Guide
 
-> 📑 **Índice de documentación**: [docs/README.md](README.md)
+> 📑 **Documentation index**: [docs/README.md](README.md)
 
 ## Requirements
 

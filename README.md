@@ -289,6 +289,7 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 - [Usage Guide](docs/USAGE.md) – Automatic tracking, manual commands, dashboard customization, events
 - [Commands](docs/COMMANDS.md) – All `nowo:performance:*` commands (create-table, create-records-table, sync-schema, diagnose, purge-records, etc.)
 - [Events & priorities](docs/EVENTS.md) – Custom events and listener flow (relevant for `ignore_routes`)
+- [Behaviour and notable changes](docs/BEHAVIOUR_AND_CHANGES.md) – Why certain behaviours exist; detailed notes on non-obvious changes (e.g. VarDumper in web vs CLI)
 - [Compatibility Guide](docs/COMPATIBILITY.md) – Doctrine and DBAL version compatibility
 - [Notifications](docs/NOTIFICATIONS.md) – Performance alert notifications (Email, Slack, Teams, Webhooks)
 - [CHANGELOG](docs/CHANGELOG.md) – Version history
