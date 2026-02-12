@@ -11,6 +11,17 @@ _Nothing yet._
 
 ---
 
+## [2.0.11] - 2026-02-12
+
+### Added
+- **README screenshots** – New dashboard section with three screenshots (Performance Metrics Dashboard, Advanced Performance Statistics, Access Statistics by Hour) and brief descriptions. Images in `docs/images/`.
+
+### Changed
+- **Documentation** – Full configuration example in CONFIGURATION.md aligned with `Configuration.php` (all options and defaults). INSTALLATION.md Step 5 verify list now includes `create-records-table` and `check-dependencies`. README: badges fixed, Requirements normalized (Symfony/Doctrine), Commands list and Quick Start (table creation) updated; Documentation section descriptions clarified.
+- **Recipe** – Default `ignore_routes` now includes `web_profiler*` to match bundle default.
+
+---
+
 ## [2.0.10] - 2026-02-03
 
 ### Changed

@@ -6,6 +6,21 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.11 (2026-02-12)
+
+Documentation and recipe updates. No schema or configuration changes.
+
+**Changed:**
+- **Documentation** – README screenshots, CONFIGURATION full example, INSTALLATION verify list, README badges and Requirements. See [CHANGELOG](CHANGELOG.md#2011---2026-02-12).
+- **Recipe** – New installs get `web_profiler*` in `ignore_routes` by default. Existing projects can add it manually if desired.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.10 (2026-02-03)
 
 Documentation and demo updates. No schema or configuration changes.
