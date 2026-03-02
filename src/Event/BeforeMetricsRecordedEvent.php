@@ -19,13 +19,13 @@ final class BeforeMetricsRecordedEvent extends Event
     /**
      * Creates a new instance.
      *
-     * @param string     $routeName    The route name
-     * @param string     $env          The environment
-     * @param float|null $requestTime  Request execution time in seconds
-     * @param int|null   $totalQueries Total number of database queries
-     * @param float|null $queryTime    Total query execution time in seconds
-     * @param array|null $params       Route parameters
-     * @param int|null   $memoryUsage  Peak memory usage in bytes
+     * @param string $routeName The route name
+     * @param string $env The environment
+     * @param float|null $requestTime Request execution time in seconds
+     * @param int|null $totalQueries Total number of database queries
+     * @param float|null $queryTime Total query execution time in seconds
+     * @param array|null $params Route parameters
+     * @param int|null $memoryUsage Peak memory usage in bytes
      */
     public function __construct(
         private string $routeName,

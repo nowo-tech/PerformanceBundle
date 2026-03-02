@@ -9,8 +9,8 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for RouteDataRepository::deleteById() method.
@@ -22,7 +22,7 @@ final class RouteDataRepositoryDeleteByIdTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
+        $this->registry      = $this->createMock(ManagerRegistry::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->registry->method('getManager')->willReturn($this->entityManager);
         $this->registry->method('getManagerForClass')

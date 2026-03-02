@@ -7,6 +7,12 @@ namespace Nowo\PerformanceBundle\DBAL;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
+use ReflectionClass;
+use ReflectionException;
+use TypeError;
+
+use function dirname;
 
 /**
  * Registry that applies QueryTrackingMiddleware using different methods
@@ -20,9 +26,9 @@ class QueryTrackingMiddlewareRegistry
     /**
      * Apply middleware to a connection using the appropriate method for the Doctrine version.
      *
-     * @param ManagerRegistry         $registry       The Doctrine registry
-     * @param string                  $connectionName The connection name
-     * @param QueryTrackingMiddleware $middleware     The middleware instance
+     * @param ManagerRegistry $registry The Doctrine registry
+     * @param string $connectionName The connection name
+     * @param QueryTrackingMiddleware $middleware The middleware instance
      *
      * @return bool True if middleware was applied successfully, false otherwise
      */
@@ -37,11 +43,9 @@ class QueryTrackingMiddlewareRegistry
         }
 
         // Method 2: Try connection wrapper approach (fallback)
-        if (self::applyMiddlewareViaConnectionWrapper($registry, $connectionName, $middleware)) {
-            return true;
-        }
+        return (bool) (self::applyMiddlewareViaConnectionWrapper($registry, $connectionName, $middleware))
 
-        return false;
+        ;
     }
 
     /**
@@ -49,9 +53,9 @@ class QueryTrackingMiddlewareRegistry
      *
      * This method works with DoctrineBundle 3.x where the driver is a private property.
      *
-     * @param ManagerRegistry         $registry       The Doctrine registry
-     * @param string                  $connectionName The connection name
-     * @param QueryTrackingMiddleware $middleware     The middleware instance
+     * @param ManagerRegistry $registry The Doctrine registry
+     * @param string $connectionName The connection name
+     * @param QueryTrackingMiddleware $middleware The middleware instance
      *
      * @return bool True if successful
      */
@@ -67,7 +71,7 @@ class QueryTrackingMiddlewareRegistry
                 return false;
             }
 
-            $reflection = new \ReflectionClass($connection);
+            $reflection = new ReflectionClass($connection);
 
             // Try to find the driver property (may be named differently in different versions)
             // In DBAL 3.x, the driver is typically stored in a private property
@@ -125,9 +129,9 @@ class QueryTrackingMiddlewareRegistry
                                     // This is a placeholder for future implementation
                                     // For now, we rely on the driver wrapping method
                                     return true;
-                                } catch (\ReflectionException $e) {
+                                } catch (ReflectionException $e) {
                                     continue;
-                                } catch (\TypeError $e) {
+                                } catch (TypeError $e) {
                                     continue;
                                 }
                             }
@@ -137,10 +141,10 @@ class QueryTrackingMiddlewareRegistry
                         // which means new connections will be tracked
                         return true;
                     }
-                } catch (\ReflectionException $e) {
+                } catch (ReflectionException $e) {
                     // Continue to next property name
                     continue;
-                } catch (\TypeError $e) {
+                } catch (TypeError $e) {
                     // Property exists but type doesn't match, continue
                     continue;
                 }
@@ -148,7 +152,7 @@ class QueryTrackingMiddlewareRegistry
 
             // If we couldn't find the driver property, try accessing via parent class
             $parentClass = $reflection->getParentClass();
-            if (false !== $parentClass) {
+            if ($parentClass !== false) {
                 foreach ($driverPropertyNames as $propertyName) {
                     if (!$parentClass->hasProperty($propertyName)) {
                         continue;
@@ -171,14 +175,14 @@ class QueryTrackingMiddlewareRegistry
 
                             return true;
                         }
-                    } catch (\ReflectionException $e) {
+                    } catch (ReflectionException $e) {
                         continue;
-                    } catch (\TypeError $e) {
+                    } catch (TypeError $e) {
                         continue;
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Silently fail
         }
 
@@ -191,9 +195,9 @@ class QueryTrackingMiddlewareRegistry
      * This method wraps the connection object to intercept queries at the connection level.
      * This is needed when the connection is already created and cached.
      *
-     * @param ManagerRegistry         $registry       The Doctrine registry
-     * @param string                  $connectionName The connection name
-     * @param QueryTrackingMiddleware $middleware     The middleware instance
+     * @param ManagerRegistry $registry The Doctrine registry
+     * @param string $connectionName The connection name
+     * @param QueryTrackingMiddleware $middleware The middleware instance
      *
      * @return bool True if successful
      */
@@ -211,17 +215,17 @@ class QueryTrackingMiddlewareRegistry
 
             // Check if connection is already a QueryTrackingConnection
             $connectionClass = $connection::class;
-            if (str_contains($connectionClass, 'QueryTrackingConnection')) {
-                return true; // Already wrapped
-            }
+
+            return (bool) (str_contains($connectionClass, 'QueryTrackingConnection'))
+                  // Already wrapped
 
             // We can't easily wrap an existing connection object
             // The connection is already created and may be in use
             // This method is a placeholder for future implementation
             // For now, we rely on the driver wrapping method
 
-            return false;
-        } catch (\Exception $e) {
+            ;
+        } catch (Exception $e) {
             // Silently fail
         }
 
@@ -243,22 +247,22 @@ class QueryTrackingMiddlewareRegistry
         if (class_exists(\Composer\InstalledVersions::class)) {
             try {
                 $version = \Composer\InstalledVersions::getVersion('doctrine/doctrine-bundle');
-                if (null !== $version) {
+                if ($version !== null) {
                     // Remove 'v' prefix if present
                     return ltrim($version, 'v');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Continue to next method
             }
         }
 
         // Method 2: Try to read from composer.json
         try {
-            $reflection = new \ReflectionClass(\Doctrine\Bundle\DoctrineBundle\DoctrineBundle::class);
-            $filename = $reflection->getFileName();
+            $reflection = new ReflectionClass(\Doctrine\Bundle\DoctrineBundle\DoctrineBundle::class);
+            $filename   = $reflection->getFileName();
 
-            if (false !== $filename) {
-                $composerPath = \dirname($filename, 2).'/composer.json';
+            if ($filename !== false) {
+                $composerPath = dirname($filename, 2) . '/composer.json';
                 if (file_exists($composerPath)) {
                     $composer = json_decode(file_get_contents($composerPath), true);
                     if (isset($composer['version'])) {
@@ -266,7 +270,7 @@ class QueryTrackingMiddlewareRegistry
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Silently fail
         }
 
@@ -274,13 +278,13 @@ class QueryTrackingMiddlewareRegistry
         // DoctrineBundle 3.x has different structure than 2.x
         if (class_exists(\Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension::class)) {
             try {
-                $reflection = new \ReflectionClass(\Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension::class);
+                $reflection = new ReflectionClass(\Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension::class);
                 // Check if it has methods that indicate version 3.x
                 if ($reflection->hasMethod('getConfiguration')) {
                     // This is a heuristic - version 3.x typically has this structure
                     return '3.0.0'; // Assume 3.x
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Silently fail
             }
         }

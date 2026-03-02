@@ -6,8 +6,8 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
 use Nowo\PerformanceBundle\Command\DiagnoseCommand;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -19,7 +19,7 @@ final class DiagnoseCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->parameterBag = $this->createMock(ParameterBagInterface::class);
-        $this->command = new DiagnoseCommand($this->parameterBag);
+        $this->command      = new DiagnoseCommand($this->parameterBag);
     }
 
     public function testCommandName(): void
@@ -34,14 +34,14 @@ final class DiagnoseCommandTest extends TestCase
 
     public function testExecuteShowsConfiguration(): void
     {
-        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+        $this->parameterBag->method('get')->willReturnCallback(static function ($key) {
             return match ($key) {
-                'nowo_performance.enabled' => true,
-                'nowo_performance.track_queries' => true,
+                'nowo_performance.enabled'            => true,
+                'nowo_performance.track_queries'      => true,
                 'nowo_performance.track_request_time' => true,
-                'nowo_performance.connection' => 'default',
-                'nowo_performance.environments' => ['dev', 'test'],
-                default => null,
+                'nowo_performance.connection'         => 'default',
+                'nowo_performance.environments'       => ['dev', 'test'],
+                default                               => null,
             };
         });
 
@@ -58,14 +58,14 @@ final class DiagnoseCommandTest extends TestCase
 
     public function testExecuteShowsWarningWhenQueryTrackingDisabled(): void
     {
-        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+        $this->parameterBag->method('get')->willReturnCallback(static function ($key) {
             return match ($key) {
-                'nowo_performance.enabled' => false,
-                'nowo_performance.track_queries' => false,
+                'nowo_performance.enabled'            => false,
+                'nowo_performance.track_queries'      => false,
                 'nowo_performance.track_request_time' => true,
-                'nowo_performance.connection' => 'default',
-                'nowo_performance.environments' => ['dev'],
-                default => null,
+                'nowo_performance.connection'         => 'default',
+                'nowo_performance.environments'       => ['dev'],
+                default                               => null,
             };
         });
 
@@ -87,14 +87,14 @@ final class DiagnoseCommandTest extends TestCase
 
     public function testExecuteWhenEnabledShowsMiddlewareSection(): void
     {
-        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+        $this->parameterBag->method('get')->willReturnCallback(static function ($key) {
             return match ($key) {
-                'nowo_performance.enabled' => true,
-                'nowo_performance.track_queries' => true,
+                'nowo_performance.enabled'            => true,
+                'nowo_performance.track_queries'      => true,
                 'nowo_performance.track_request_time' => true,
-                'nowo_performance.connection' => 'default',
-                'nowo_performance.environments' => ['dev', 'prod'],
-                default => null,
+                'nowo_performance.connection'         => 'default',
+                'nowo_performance.environments'       => ['dev', 'prod'],
+                default                               => null,
             };
         });
 
@@ -112,28 +112,28 @@ final class DiagnoseCommandTest extends TestCase
 
     public function testExecuteShowsDatabaseTablesSectionWhenTableStatusCheckerInjected(): void
     {
-        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+        $this->parameterBag->method('get')->willReturnCallback(static function ($key) {
             return match ($key) {
-                'nowo_performance.enabled' => true,
-                'nowo_performance.track_queries' => true,
+                'nowo_performance.enabled'            => true,
+                'nowo_performance.track_queries'      => true,
                 'nowo_performance.track_request_time' => true,
-                'nowo_performance.connection' => 'default',
-                'nowo_performance.environments' => ['dev'],
-                default => null,
+                'nowo_performance.connection'         => 'default',
+                'nowo_performance.environments'       => ['dev'],
+                default                               => null,
             };
         });
 
         $checker = $this->createMock(TableStatusChecker::class);
         $checker->method('getMainTableStatus')->willReturn([
-            'exists' => true,
-            'complete' => true,
-            'table_name' => 'routes_data',
+            'exists'          => true,
+            'complete'        => true,
+            'table_name'      => 'routes_data',
             'missing_columns' => [],
         ]);
         $checker->method('getRecordsTableStatus')->willReturn(null);
 
         $command = new DiagnoseCommand($this->parameterBag, $checker);
-        $tester = new CommandTester($command);
+        $tester  = new CommandTester($command);
         $tester->execute([]);
 
         $this->assertSame(0, $tester->getStatusCode());
@@ -144,33 +144,33 @@ final class DiagnoseCommandTest extends TestCase
 
     public function testExecuteShowsRecordsTableRowAndNoteWhenAccessRecordsEnabledAndColumnsMissing(): void
     {
-        $this->parameterBag->method('get')->willReturnCallback(function ($key) {
+        $this->parameterBag->method('get')->willReturnCallback(static function ($key) {
             return match ($key) {
-                'nowo_performance.enabled' => true,
-                'nowo_performance.track_queries' => true,
+                'nowo_performance.enabled'            => true,
+                'nowo_performance.track_queries'      => true,
                 'nowo_performance.track_request_time' => true,
-                'nowo_performance.connection' => 'default',
-                'nowo_performance.environments' => ['dev'],
-                default => null,
+                'nowo_performance.connection'         => 'default',
+                'nowo_performance.environments'       => ['dev'],
+                default                               => null,
             };
         });
 
         $checker = $this->createMock(TableStatusChecker::class);
         $checker->method('getMainTableStatus')->willReturn([
-            'exists' => true,
-            'complete' => true,
-            'table_name' => 'routes_data',
+            'exists'          => true,
+            'complete'        => true,
+            'table_name'      => 'routes_data',
             'missing_columns' => [],
         ]);
         $checker->method('getRecordsTableStatus')->willReturn([
-            'exists' => true,
-            'complete' => false,
-            'table_name' => 'routes_data_records',
+            'exists'          => true,
+            'complete'        => false,
+            'table_name'      => 'routes_data_records',
             'missing_columns' => ['request_id'],
         ]);
 
         $command = new DiagnoseCommand($this->parameterBag, $checker);
-        $tester = new CommandTester($command);
+        $tester  = new CommandTester($command);
         $tester->execute([]);
 
         $this->assertSame(0, $tester->getStatusCode());

@@ -28,14 +28,14 @@ class ReviewRouteDataType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $routeData = $options['route_data'] ?? null;
+        $routeData   = $options['route_data'] ?? null;
         $queriesData = '';
-        $timeData = '';
+        $timeData    = '';
         if ($routeData instanceof RouteData) {
-            $q = $routeData->getQueriesImproved();
-            $queriesData = true === $q ? '1' : (false === $q ? '0' : '');
-            $t = $routeData->getTimeImproved();
-            $timeData = true === $t ? '1' : (false === $t ? '0' : '');
+            $q           = $routeData->getQueriesImproved();
+            $queriesData = $q === true ? '1' : ($q === false ? '0' : '');
+            $t           = $routeData->getTimeImproved();
+            $timeData    = $t === true ? '1' : ($t === false ? '0' : '');
         }
 
         $submitLabel = ($routeData instanceof RouteData && $routeData->isReviewed())
@@ -44,34 +44,34 @@ class ReviewRouteDataType extends AbstractType
 
         $builder
             ->add('queries_improved', ChoiceType::class, [
-                'label' => 'review.queries_improved',
+                'label'              => 'review.queries_improved',
                 'translation_domain' => 'nowo_performance',
-                'choices' => [
+                'choices'            => [
                     'review.not_specified' => '',
-                    'review.yes' => '1',
-                    'review.no' => '0',
+                    'review.yes'           => '1',
+                    'review.no'            => '0',
                 ],
                 'choice_translation_domain' => 'nowo_performance',
-                'required' => false,
-                'placeholder' => false,
-                'data' => $queriesData,
-                'attr' => [
+                'required'                  => false,
+                'placeholder'               => false,
+                'data'                      => $queriesData,
+                'attr'                      => [
                     'class' => 'form-select',
                 ],
             ])
             ->add('time_improved', ChoiceType::class, [
-                'label' => 'review.time_improved',
+                'label'              => 'review.time_improved',
                 'translation_domain' => 'nowo_performance',
-                'choices' => [
+                'choices'            => [
                     'review.not_specified' => '',
-                    'review.yes' => '1',
-                    'review.no' => '0',
+                    'review.yes'           => '1',
+                    'review.no'            => '0',
                 ],
                 'choice_translation_domain' => 'nowo_performance',
-                'required' => false,
-                'placeholder' => false,
-                'data' => $timeData,
-                'attr' => [
+                'required'                  => false,
+                'placeholder'               => false,
+                'data'                      => $timeData,
+                'attr'                      => [
                     'class' => 'form-select',
                 ],
             ]);
@@ -79,20 +79,20 @@ class ReviewRouteDataType extends AbstractType
         if ($options['enable_access_records'] ?? false) {
             $saveAccessRecordsData = ($routeData instanceof RouteData) ? $routeData->getSaveAccessRecords() : true;
             $builder->add('save_access_records', CheckboxType::class, [
-                'label' => 'review.save_access_records',
+                'label'              => 'review.save_access_records',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'data' => $saveAccessRecordsData,
-                'attr' => [
+                'required'           => false,
+                'data'               => $saveAccessRecordsData,
+                'attr'               => [
                     'class' => 'form-check-input',
                 ],
             ]);
         }
 
         $builder->add('submit', SubmitType::class, [
-            'label' => $submitLabel,
+            'label'              => $submitLabel,
             'translation_domain' => 'nowo_performance',
-            'attr' => [
+            'attr'               => [
                 'class' => 'btn btn-primary',
             ],
         ]);
@@ -106,11 +106,11 @@ class ReviewRouteDataType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'method' => 'POST',
-            'csrf_protection' => true,
-            'csrf_field_name' => '_token',
-            'csrf_token_id' => 'review_performance_record',
-            'route_data' => null,
+            'method'                => 'POST',
+            'csrf_protection'       => true,
+            'csrf_field_name'       => '_token',
+            'csrf_token_id'         => 'review_performance_record',
+            'route_data'            => null,
             'enable_access_records' => false,
         ]);
         $resolver->setAllowedTypes('route_data', [RouteData::class, 'null']);

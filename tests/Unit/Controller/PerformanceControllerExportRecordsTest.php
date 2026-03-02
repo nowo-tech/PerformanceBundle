@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -27,7 +29,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->metricsService = $this->createMock(PerformanceMetricsService::class);
+        $this->metricsService   = $this->createMock(PerformanceMetricsService::class);
         $this->recordRepository = $this->createMock(RouteDataRecordRepository::class);
     }
 
@@ -82,7 +84,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
     public function testExportRecordsCsvThrowsWhenDashboardDisabled(): void
     {
         $controller = $this->createController(enabled: false);
-        $request = new Request();
+        $request    = new Request();
         $request->query->set('env', 'dev');
 
         $this->expectException(NotFoundHttpException::class);
@@ -94,7 +96,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
     public function testExportRecordsCsvThrowsWhenAccessRecordsDisabled(): void
     {
         $controller = $this->createController(enableAccessRecords: false);
-        $request = new Request();
+        $request    = new Request();
         $request->query->set('env', 'dev');
 
         $this->expectException(NotFoundHttpException::class);
@@ -106,7 +108,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
     public function testExportRecordsCsvThrowsWhenRecordRepositoryNull(): void
     {
         $controller = $this->createController(enableAccessRecords: true, withRecordRepository: false);
-        $request = new Request();
+        $request    = new Request();
         $request->query->set('env', 'dev');
 
         $this->expectException(NotFoundHttpException::class);
@@ -224,7 +226,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
 
         $record = new RouteDataRecord();
         $record->setRouteData($routeData);
-        $record->setAccessedAt(new \DateTimeImmutable('2026-01-15 12:00:00'));
+        $record->setAccessedAt(new DateTimeImmutable('2026-01-15 12:00:00'));
         $record->setStatusCode(200);
         $record->setResponseTime(0.1);
         $record->setTotalQueries(5);
@@ -299,7 +301,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
 
         $record = new RouteDataRecord();
         $record->setRouteData($routeData);
-        $record->setAccessedAt(new \DateTimeImmutable('2026-01-22 09:00:00'));
+        $record->setAccessedAt(new DateTimeImmutable('2026-01-22 09:00:00'));
         $record->setStatusCode(200);
         $record->setResponseTime(0.1);
         $record->setReferer('https://external.site/landing');
@@ -371,7 +373,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
         $this->recordRepository
             ->expects(self::once())
             ->method('getRecordsForExport')
-            ->willThrowException(new \RuntimeException('DB error'));
+            ->willThrowException(new RuntimeException('DB error'));
 
         $request = new Request();
         $request->query->set('env', 'dev');
@@ -440,7 +442,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
     public function testExportRecordsJsonThrowsWhenAccessRecordsDisabled(): void
     {
         $controller = $this->createController(enableAccessRecords: false);
-        $request = new Request();
+        $request    = new Request();
         $request->query->set('env', 'dev');
 
         $this->expectException(NotFoundHttpException::class);
@@ -500,7 +502,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
 
         $record = new RouteDataRecord();
         $record->setRouteData($routeData);
-        $record->setAccessedAt(new \DateTimeImmutable('2026-01-20 14:30:00'));
+        $record->setAccessedAt(new DateTimeImmutable('2026-01-20 14:30:00'));
         $record->setStatusCode(201);
         $record->setResponseTime(0.2);
         $record->setTotalQueries(10);
@@ -592,7 +594,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
 
         $record = new RouteDataRecord();
         $record->setRouteData($routeData);
-        $record->setAccessedAt(new \DateTimeImmutable('2026-01-21 10:00:00'));
+        $record->setAccessedAt(new DateTimeImmutable('2026-01-21 10:00:00'));
         $record->setStatusCode(200);
         $record->setResponseTime(0.15);
         $record->setReferer('https://search.example/q=performance');
@@ -659,7 +661,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
 
         $controller->method('getParameter')->willReturnCallback(static fn (string $k) => $k === 'kernel.environment' ? 'dev' : null);
 
-        $this->recordRepository->method('getRecordsForExport')->willThrowException(new \RuntimeException('DB error'));
+        $this->recordRepository->method('getRecordsForExport')->willThrowException(new RuntimeException('DB error'));
 
         $request = new Request();
         $request->query->set('env', 'dev');
@@ -723,10 +725,10 @@ final class PerformanceControllerExportRecordsTest extends TestCase
             ->method('getRecordsForExport')
             ->with(
                 'test',
-                self::callback(static fn ($v) => $v instanceof \DateTimeImmutable && $v->format('Y-m-d') === '2026-01-01'),
-                self::callback(static fn ($v) => $v instanceof \DateTimeImmutable && $v->format('Y-m-d') === '2026-01-31'),
+                self::callback(static fn ($v) => $v instanceof DateTimeImmutable && $v->format('Y-m-d') === '2026-01-01'),
+                self::callback(static fn ($v) => $v instanceof DateTimeImmutable && $v->format('Y-m-d') === '2026-01-31'),
                 'app_user',
-                404
+                404,
             )
             ->willReturn(['records' => [], 'total' => 0]);
 

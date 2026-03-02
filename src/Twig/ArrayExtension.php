@@ -30,9 +30,9 @@ class ArrayExtension extends AbstractExtension
     /**
      * Sum all values in an array.
      *
-     * @param array<int|float> $array The array to sum
+     * @param array<float|int> $array The array to sum
      *
-     * @return int|float The sum of all values
+     * @return float|int The sum of all values
      */
     public function sum(array $array): int|float
     {

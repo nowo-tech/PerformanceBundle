@@ -27,17 +27,17 @@ class StatisticsEnvFilterType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $environments = $options['environments'] ?? ['dev', 'test', 'prod'];
-        $choices = array_combine(array_map('strtoupper', $environments), $environments);
+        $choices      = array_combine(array_map('strtoupper', $environments), $environments);
 
         $builder->add('env', ChoiceType::class, [
-            'label' => 'Environment',
-            'choices' => $choices,
+            'label'                     => 'Environment',
+            'choices'                   => $choices,
             'choice_translation_domain' => false,
-            'required' => true,
-            'placeholder' => false,
-            'attr' => array_merge(
+            'required'                  => true,
+            'placeholder'               => false,
+            'attr'                      => array_merge(
                 ['class' => $options['attr_class'] ?? 'form-select'],
-                $options['attr_extra'] ?? []
+                $options['attr_extra'] ?? [],
             ),
         ]);
     }
@@ -50,12 +50,12 @@ class StatisticsEnvFilterType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => StatisticsEnvFilter::class,
-            'method' => 'GET',
+            'data_class'      => StatisticsEnvFilter::class,
+            'method'          => 'GET',
             'csrf_protection' => false,
-            'environments' => ['dev', 'test', 'prod'],
-            'attr_class' => 'form-select',
-            'attr_extra' => [],
+            'environments'    => ['dev', 'test', 'prod'],
+            'attr_class'      => 'form-select',
+            'attr_extra'      => [],
         ]);
         $resolver->setAllowedTypes('environments', 'array');
     }

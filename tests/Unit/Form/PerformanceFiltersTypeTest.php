@@ -4,16 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
-use PHPUnit\Framework\TestCase;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\DateType;
-use Symfony\Component\Form\Extension\Core\Type\IntegerType;
-use Symfony\Component\Form\Extension\Core\Type\NumberType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\FormFactoryInterface;
-use Symfony\Component\Form\Forms;
 use Symfony\Component\Form\Test\TypeTestCase;
 
 final class PerformanceFiltersTypeTest extends TypeTestCase
@@ -30,7 +23,7 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
     {
         $form = $this->factory->create(PerformanceFiltersType::class, null, [
             'environments' => ['dev', 'test'],
-            'current_env' => 'dev',
+            'current_env'  => 'dev',
         ]);
 
         $this->assertTrue($form->has('env'));
@@ -50,12 +43,12 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
     public function testBuildFormSetsDefaultValues(): void
     {
         $form = $this->factory->create(PerformanceFiltersType::class, null, [
-            'environments' => ['dev', 'test'],
-            'current_env' => 'dev',
-            'current_route' => 'app_home',
+            'environments'    => ['dev', 'test'],
+            'current_env'     => 'dev',
+            'current_route'   => 'app_home',
             'current_sort_by' => 'requestTime',
-            'current_order' => 'DESC',
-            'current_limit' => 50,
+            'current_order'   => 'DESC',
+            'current_limit'   => 50,
         ]);
 
         $this->assertSame('dev', $form->get('env')->getData());
@@ -70,8 +63,8 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function ($defaults) {
-                return isset($defaults['method']) 
+            ->with($this->callback(static function ($defaults) {
+                return isset($defaults['method'])
                     && $defaults['method'] === 'GET'
                     && isset($defaults['csrf_protection'])
                     && $defaults['csrf_protection'] === false;
@@ -95,15 +88,15 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => 'app_home',
-            'sort' => 'requestTime',
-            'order' => 'DESC',
-            'limit' => 25,
+            'env'              => 'dev',
+            'route'            => 'app_home',
+            'sort'             => 'requestTime',
+            'order'            => 'DESC',
+            'limit'            => 25,
             'min_request_time' => '0.1',
             'max_request_time' => '1.0',
-            'min_query_count' => '5',
-            'max_query_count' => '50',
+            'min_query_count'  => '5',
+            'max_query_count'  => '50',
         ]);
 
         $this->assertTrue($form->isValid());
@@ -117,18 +110,18 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
 
     public function testFormBuildsWithCurrentDateFromAndDateTo(): void
     {
-        $from = new \DateTimeImmutable('2026-01-01');
-        $to = new \DateTimeImmutable('2026-01-31');
+        $from = new DateTimeImmutable('2026-01-01');
+        $to   = new DateTimeImmutable('2026-01-31');
         $form = $this->factory->create(PerformanceFiltersType::class, null, [
-            'environments' => ['dev'],
+            'environments'      => ['dev'],
             'current_date_from' => $from,
-            'current_date_to' => $to,
+            'current_date_to'   => $to,
         ]);
 
         $this->assertTrue($form->has('date_from'));
         $this->assertTrue($form->has('date_to'));
-        $this->assertInstanceOf(\DateTimeInterface::class, $form->get('date_from')->getData());
-        $this->assertInstanceOf(\DateTimeInterface::class, $form->get('date_to')->getData());
+        $this->assertInstanceOf(DateTimeInterface::class, $form->get('date_from')->getData());
+        $this->assertInstanceOf(DateTimeInterface::class, $form->get('date_to')->getData());
         $this->assertSame('2026-01-01', $form->get('date_from')->getData()->format('Y-m-d'));
         $this->assertSame('2026-01-31', $form->get('date_to')->getData()->format('Y-m-d'));
     }
@@ -140,20 +133,20 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         ]);
 
         $form->submit([
-            'env' => 'prod',
-            'route' => '',
-            'sort' => 'name',
-            'order' => 'ASC',
-            'limit' => 50,
+            'env'       => 'prod',
+            'route'     => '',
+            'sort'      => 'name',
+            'order'     => 'ASC',
+            'limit'     => 50,
             'date_from' => '2026-02-01',
-            'date_to' => '2026-02-28',
+            'date_to'   => '2026-02-28',
         ]);
 
         $this->assertTrue($form->isValid());
         $data = $form->getData();
         $this->assertSame('prod', $data['env']);
-        $this->assertInstanceOf(\DateTimeInterface::class, $data['date_from']);
-        $this->assertInstanceOf(\DateTimeInterface::class, $data['date_to']);
+        $this->assertInstanceOf(DateTimeInterface::class, $data['date_from']);
+        $this->assertInstanceOf(DateTimeInterface::class, $data['date_to']);
         $this->assertSame('2026-02-01', $data['date_from']->format('Y-m-d'));
         $this->assertSame('2026-02-28', $data['date_to']->format('Y-m-d'));
     }
@@ -171,7 +164,7 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
     {
         $form = $this->factory->create(PerformanceFiltersType::class, null, [
             'environments' => ['dev', 'stage', 'prod'],
-            'current_env' => 'stage',
+            'current_env'  => 'stage',
         ]);
 
         $this->assertTrue($form->has('env'));
@@ -185,9 +178,9 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         ]);
 
         $form->submit([
-            'env' => 'dev',
+            'env'   => 'dev',
             'route' => '',
-            'sort' => 'accessCount',
+            'sort'  => 'accessCount',
             'order' => 'ASC',
             'limit' => 25,
         ]);
@@ -205,9 +198,9 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
         ]);
 
         $form->submit([
-            'env' => 'dev',
+            'env'   => 'dev',
             'route' => '',
-            'sort' => 'queryTime',
+            'sort'  => 'queryTime',
             'order' => 'ASC',
             'limit' => 10,
         ]);
@@ -225,9 +218,9 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
             'environments' => ['dev'],
         ]);
         $form->submit([
-            'env' => 'dev',
+            'env'   => 'dev',
             'route' => '',
-            'sort' => 'createdAt',
+            'sort'  => 'createdAt',
             'order' => 'DESC',
             'limit' => 100,
         ]);
@@ -241,9 +234,9 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
             'environments' => ['dev'],
         ]);
         $form->submit([
-            'env' => 'dev',
+            'env'   => 'dev',
             'route' => '',
-            'sort' => 'totalQueries',
+            'sort'  => 'totalQueries',
             'order' => 'DESC',
             'limit' => 50,
         ]);
@@ -254,7 +247,7 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
     public function testFormBuildsWithCurrentMinAndMaxRequestTime(): void
     {
         $form = $this->factory->create(PerformanceFiltersType::class, null, [
-            'environments' => ['dev'],
+            'environments'             => ['dev'],
             'current_min_request_time' => 0.05,
             'current_max_request_time' => 2.0,
         ]);
@@ -265,7 +258,7 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
     public function testFormBuildsWithCurrentMinAndMaxQueryCount(): void
     {
         $form = $this->factory->create(PerformanceFiltersType::class, null, [
-            'environments' => ['dev'],
+            'environments'            => ['dev'],
             'current_min_query_count' => 5,
             'current_max_query_count' => 100,
         ]);
@@ -279,9 +272,9 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
             'environments' => ['dev'],
         ]);
         $form->submit([
-            'env' => 'dev',
+            'env'   => 'dev',
             'route' => '',
-            'sort' => 'lastAccessedAt',
+            'sort'  => 'lastAccessedAt',
             'order' => 'ASC',
             'limit' => 25,
         ]);

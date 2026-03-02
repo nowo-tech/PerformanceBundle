@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Entity;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Tests for RouteData entity (identity and metadata only; metrics are in RouteDataRecord/aggregates).
@@ -19,8 +21,8 @@ final class RouteDataTest extends TestCase
 
         $this->assertNotNull($routeData->getCreatedAt());
         $this->assertNotNull($routeData->getLastAccessedAt());
-        $this->assertInstanceOf(\DateTimeImmutable::class, $routeData->getCreatedAt());
-        $this->assertInstanceOf(\DateTimeImmutable::class, $routeData->getLastAccessedAt());
+        $this->assertInstanceOf(DateTimeImmutable::class, $routeData->getCreatedAt());
+        $this->assertInstanceOf(DateTimeImmutable::class, $routeData->getLastAccessedAt());
         $this->assertCount(0, $routeData->getAccessRecords());
         $this->assertTrue($routeData->getSaveAccessRecords());
     }
@@ -67,14 +69,14 @@ final class RouteDataTest extends TestCase
         $this->assertSame([], $routeData->getParams());
 
         // Test createdAt
-        $createdAt = new \DateTimeImmutable('2025-01-01 12:00:00');
+        $createdAt = new DateTimeImmutable('2025-01-01 12:00:00');
         $routeData->setCreatedAt($createdAt);
         $this->assertSame($createdAt, $routeData->getCreatedAt());
         $routeData->setCreatedAt(null);
         $this->assertNull($routeData->getCreatedAt());
 
         // Test lastAccessedAt
-        $lastAccessedAt = new \DateTimeImmutable('2025-01-01 14:00:00');
+        $lastAccessedAt = new DateTimeImmutable('2025-01-01 14:00:00');
         $routeData->setLastAccessedAt($lastAccessedAt);
         $this->assertSame($lastAccessedAt, $routeData->getLastAccessedAt());
         $routeData->setLastAccessedAt(null);
@@ -97,7 +99,7 @@ final class RouteDataTest extends TestCase
         $routeData = new RouteData();
 
         $this->assertNull($routeData->getReviewedAt());
-        $reviewedAt = new \DateTimeImmutable('2025-01-01 15:00:00');
+        $reviewedAt = new DateTimeImmutable('2025-01-01 15:00:00');
         $routeData->setReviewedAt($reviewedAt);
         $this->assertSame($reviewedAt, $routeData->getReviewedAt());
         $routeData->setReviewedAt(null);
@@ -170,8 +172,8 @@ final class RouteDataTest extends TestCase
 
     public function testToStringWithMinimalData(): void
     {
-        $routeData = new RouteData();
-        $reflection = new \ReflectionClass($routeData);
+        $routeData  = new RouteData();
+        $reflection = new ReflectionClass($routeData);
         $idProperty = $reflection->getProperty('id');
         $idProperty->setAccessible(true);
         $idProperty->setValue($routeData, 1);
@@ -195,8 +197,8 @@ final class RouteDataTest extends TestCase
 
         $this->assertNotNull($routeData->getCreatedAt());
         $this->assertNotNull($routeData->getLastAccessedAt());
-        $this->assertInstanceOf(\DateTimeImmutable::class, $routeData->getCreatedAt());
-        $this->assertInstanceOf(\DateTimeImmutable::class, $routeData->getLastAccessedAt());
+        $this->assertInstanceOf(DateTimeImmutable::class, $routeData->getCreatedAt());
+        $this->assertInstanceOf(DateTimeImmutable::class, $routeData->getLastAccessedAt());
     }
 
     public function testIdGetter(): void
@@ -205,7 +207,7 @@ final class RouteDataTest extends TestCase
 
         $this->assertNull($routeData->getId());
 
-        $reflection = new \ReflectionClass($routeData);
+        $reflection = new ReflectionClass($routeData);
         $idProperty = $reflection->getProperty('id');
         $idProperty->setAccessible(true);
         $idProperty->setValue($routeData, 123);
@@ -245,7 +247,7 @@ final class RouteDataTest extends TestCase
     public function testMarkAsReviewedUpdatesReviewedAt(): void
     {
         $routeData = new RouteData();
-        $routeData->setReviewedAt(new \DateTimeImmutable('2025-01-01 00:00:00'));
+        $routeData->setReviewedAt(new DateTimeImmutable('2025-01-01 00:00:00'));
         $initialReviewedAt = $routeData->getReviewedAt();
 
         usleep(2000);
@@ -291,7 +293,7 @@ final class RouteDataTest extends TestCase
     public function testAddAccessRecordIdempotentWhenAlreadyContained(): void
     {
         $routeData = new RouteData();
-        $record = new RouteDataRecord();
+        $record    = new RouteDataRecord();
         $routeData->addAccessRecord($record);
         $routeData->addAccessRecord($record);
 
@@ -301,7 +303,7 @@ final class RouteDataTest extends TestCase
     public function testRemoveAccessRecord(): void
     {
         $routeData = new RouteData();
-        $record = new RouteDataRecord();
+        $record    = new RouteDataRecord();
         $routeData->addAccessRecord($record);
 
         $result = $routeData->removeAccessRecord($record);
@@ -314,7 +316,7 @@ final class RouteDataTest extends TestCase
     public function testRemoveAccessRecordNotContainedNoOp(): void
     {
         $routeData = new RouteData();
-        $record = new RouteDataRecord();
+        $record    = new RouteDataRecord();
 
         $result = $routeData->removeAccessRecord($record);
 

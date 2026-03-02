@@ -9,13 +9,16 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Nowo\PerformanceBundle\EventSubscriber\RouteDataRecordTableNameSubscriber;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+
+use function is_array;
 
 final class RouteDataRecordTableNameSubscriberTest extends TestCase
 {
     public function testGetSubscribedEvents(): void
     {
         $subscriber = new RouteDataRecordTableNameSubscriber('routes_data');
-        $events = $subscriber->getSubscribedEvents();
+        $events     = $subscriber->getSubscribedEvents();
 
         $this->assertIsArray($events);
         $this->assertContains(Events::loadClassMetadata, $events);
@@ -37,15 +40,15 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
 
     public function testLoadClassMetadataForRouteDataRecordSetsTableName(): void
     {
-        $mainTable = 'custom_routes';
+        $mainTable            = 'custom_routes';
         $expectedRecordsTable = $mainTable . '_records';
-        $subscriber = new RouteDataRecordTableNameSubscriber($mainTable);
+        $subscriber           = new RouteDataRecordTableNameSubscriber($mainTable);
 
         $classMetadata = $this->createMock(ClassMetadata::class);
         $classMetadata->method('getName')->willReturn('Nowo\PerformanceBundle\Entity\RouteDataRecord');
         $classMetadata->method('getTableName')->willReturn('routes_data_records');
 
-        $ref = new \ReflectionClass($classMetadata);
+        $ref = new ReflectionClass($classMetadata);
         if ($ref->hasProperty('table')) {
             $p = $ref->getProperty('table');
             $p->setAccessible(true);
@@ -55,8 +58,9 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
         $actualTable = null;
         $classMetadata->expects($this->once())
             ->method('setPrimaryTable')
-            ->with($this->callback(function ($arg) use ($expectedRecordsTable, &$actualTable): bool {
+            ->with($this->callback(static function ($arg) use (&$actualTable): bool {
                 $actualTable = $arg;
+
                 return true;
             }));
 
@@ -67,7 +71,7 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
 
         $this->assertNotNull($actualTable);
         $this->assertIsArray($actualTable);
-        if (!\is_array($actualTable)) {
+        if (!is_array($actualTable)) {
             return;
         }
         $this->assertArrayHasKey('name', $actualTable);
@@ -100,7 +104,7 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
     public function testConstructorWithCustomMainTableName(): void
     {
         $subscriber = new RouteDataRecordTableNameSubscriber('perf_metrics');
-        $events = $subscriber->getSubscribedEvents();
+        $events     = $subscriber->getSubscribedEvents();
 
         $this->assertContains(Events::loadClassMetadata, $events);
     }
@@ -108,7 +112,7 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
     public function testConstructorWithDefaultTableName(): void
     {
         $subscriber = new RouteDataRecordTableNameSubscriber('routes_data');
-        $events = $subscriber->getSubscribedEvents();
+        $events     = $subscriber->getSubscribedEvents();
 
         $this->assertIsArray($events);
         $this->assertContains(Events::loadClassMetadata, $events);

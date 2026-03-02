@@ -6,6 +6,12 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Script;
 
 use PHPUnit\Framework\TestCase;
 
+use function defined;
+use function dirname;
+use function function_exists;
+
+use const PHP_BINARY;
+
 /**
  * Tests for scripts/validate-translations-yaml.php (exit codes, duplicate detection, valid YAML).
  */
@@ -18,7 +24,7 @@ final class ValidateTranslationsYamlTest extends TestCase
     {
         // tests/Unit/Script -> go up 3 levels to project root
         self::$projectRoot = dirname(__DIR__, 3);
-        self::$scriptPath = self::$projectRoot.'/scripts/validate-translations-yaml.php';
+        self::$scriptPath  = self::$projectRoot . '/scripts/validate-translations-yaml.php';
     }
 
     public function testScriptExists(): void
@@ -29,11 +35,11 @@ final class ValidateTranslationsYamlTest extends TestCase
     public function testExitCodeZeroWhenValidYamlNoDuplicates(): void
     {
         $dir = $this->createTempDir();
-        $this->addFile($dir.'/valid.yaml', "a: 1\nb: 2\n");
+        $this->addFile($dir . '/valid.yaml', "a: 1\nb: 2\n");
 
         [$code, $stdout, $stderr] = $this->runScript($dir);
 
-        $this->assertSame(0, $code, 'Expected exit 0. stderr: '.$stderr);
+        $this->assertSame(0, $code, 'Expected exit 0. stderr: ' . $stderr);
         $this->assertStringContainsString('valid', $stdout);
         $this->assertSame('', trim($stderr));
     }
@@ -41,7 +47,7 @@ final class ValidateTranslationsYamlTest extends TestCase
     public function testExitCodeOneWhenDuplicateKeySameBlock(): void
     {
         $dir = $this->createTempDir();
-        $this->addFile($dir.'/dup.yaml', "a: 1\nb: 2\na: 3\n");
+        $this->addFile($dir . '/dup.yaml', "a: 1\nb: 2\na: 3\n");
 
         [$code, $stdout, $stderr] = $this->runScript($dir);
 
@@ -53,19 +59,19 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     public function testSameKeyDifferentBlocksNotReportedAsDuplicate(): void
     {
-        $dir = $this->createTempDir();
+        $dir  = $this->createTempDir();
         $yaml = "foo:\n  x: 1\nbar:\n  x: 2\n";
-        $this->addFile($dir.'/same_key.yaml', $yaml);
+        $this->addFile($dir . '/same_key.yaml', $yaml);
 
         [$code, $stdout, $stderr] = $this->runScript($dir);
 
-        $this->assertSame(0, $code, 'Same key in different blocks should be valid. stderr: '.$stderr);
+        $this->assertSame(0, $code, 'Same key in different blocks should be valid. stderr: ' . $stderr);
         $this->assertSame('', $stderr);
     }
 
     public function testExitCodeOneWhenDirectoryNotFound(): void
     {
-        $bad = self::$projectRoot.'/nonexistent_translations_dir_'.uniqid('', true);
+        $bad = self::$projectRoot . '/nonexistent_translations_dir_' . uniqid('', true);
 
         [$code, , $stderr] = $this->runScript($bad);
 
@@ -76,7 +82,7 @@ final class ValidateTranslationsYamlTest extends TestCase
     public function testExitCodeOneWhenNoYamlFiles(): void
     {
         $dir = $this->createTempDir();
-        $this->addFile($dir.'/readme.txt', 'not yaml');
+        $this->addFile($dir . '/readme.txt', 'not yaml');
 
         [$code, , $stderr] = $this->runScript($dir);
 
@@ -86,25 +92,25 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     public function testRealTranslationsDirPasses(): void
     {
-        $dir = self::$projectRoot.'/src/Resources/translations';
+        $dir = self::$projectRoot . '/src/Resources/translations';
         if (!is_dir($dir)) {
             $this->markTestSkipped('Translations dir not found.');
         }
 
         [$code, $stdout, $stderr] = $this->runScript($dir);
 
-        $this->assertSame(0, $code, 'Real translations should pass. stderr: '.$stderr);
+        $this->assertSame(0, $code, 'Real translations should pass. stderr: ' . $stderr);
         $this->assertStringContainsString('valid', $stdout);
     }
 
     public function testExitCodeOneWhenInvalidYamlSyntax(): void
     {
-        if (!\function_exists('yaml_parse')) {
+        if (!function_exists('yaml_parse')) {
             $this->markTestSkipped('ext-yaml required to detect invalid YAML.');
         }
 
         $dir = $this->createTempDir();
-        $this->addFile($dir.'/bad.yaml', "a: 1\nb: [unclosed\n");
+        $this->addFile($dir . '/bad.yaml', "a: 1\nb: [unclosed\n");
 
         [$code, $stdout, $stderr] = $this->runScript($dir);
 
@@ -115,9 +121,9 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     public function testDuplicateInNestedBlockSameParentReported(): void
     {
-        $dir = $this->createTempDir();
+        $dir  = $this->createTempDir();
         $yaml = "parent:\n  level2:\n    key: 1\n    key: 2\n";
-        $this->addFile($dir.'/nested.yaml', $yaml);
+        $this->addFile($dir . '/nested.yaml', $yaml);
 
         [$code, , $stderr] = $this->runScript($dir);
 
@@ -129,21 +135,21 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     public function testThreeLevelNestingSameKeyDifferentBlocksValid(): void
     {
-        $dir = $this->createTempDir();
+        $dir  = $this->createTempDir();
         $yaml = "a:\n  x:\n    id: 1\nb:\n  x:\n    id: 2\n";
-        $this->addFile($dir.'/three.yaml', $yaml);
+        $this->addFile($dir . '/three.yaml', $yaml);
 
         [$code, $stdout, $stderr] = $this->runScript($dir);
 
-        $this->assertSame(0, $code, 'Same key at different nesting under different parents should be valid. stderr: '.$stderr);
+        $this->assertSame(0, $code, 'Same key at different nesting under different parents should be valid. stderr: ' . $stderr);
         $this->assertSame('', $stderr);
     }
 
     public function testCommentsAndBlankLinesDoNotBreakDuplicateDetection(): void
     {
-        $dir = $this->createTempDir();
+        $dir  = $this->createTempDir();
         $yaml = "section:\n  # comment\n  first: 1\n\n  second: 2\n  first: 3\n";
-        $this->addFile($dir.'/with_comments.yaml', $yaml);
+        $this->addFile($dir . '/with_comments.yaml', $yaml);
 
         [$code, , $stderr] = $this->runScript($dir);
 
@@ -154,9 +160,9 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     public function testDuplicateReportedLineNumberIsSecondOccurrence(): void
     {
-        $dir = $this->createTempDir();
+        $dir  = $this->createTempDir();
         $yaml = "root:\n  alpha: 1\n  beta: 2\n  alpha: 3\n";
-        $this->addFile($dir.'/lines.yaml', $yaml);
+        $this->addFile($dir . '/lines.yaml', $yaml);
 
         [$code, , $stderr] = $this->runScript($dir);
 
@@ -167,22 +173,22 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     public function testUsesDefaultTranslationsDirWhenNoArgument(): void
     {
-        $defaultDir = self::$projectRoot.'/src/Resources/translations';
+        $defaultDir = self::$projectRoot . '/src/Resources/translations';
         if (!is_dir($defaultDir)) {
             $this->markTestSkipped('Default translations dir not found.');
         }
 
         [$code, $stdout, $stderr] = $this->runScriptWithNoArg();
 
-        $this->assertSame(0, $code, 'Script with no arg should use default dir and pass. stderr: '.$stderr);
+        $this->assertSame(0, $code, 'Script with no arg should use default dir and pass. stderr: ' . $stderr);
         $this->assertStringContainsString('valid', $stdout);
     }
 
     public function testDuplicateAtRootLevelReported(): void
     {
-        $dir = $this->createTempDir();
+        $dir  = $this->createTempDir();
         $yaml = "foo: 1\nbar: 2\nfoo: 3\n";
-        $this->addFile($dir.'/root_dup.yaml', $yaml);
+        $this->addFile($dir . '/root_dup.yaml', $yaml);
 
         [$code, , $stderr] = $this->runScript($dir);
 
@@ -194,7 +200,7 @@ final class ValidateTranslationsYamlTest extends TestCase
 
     private function createTempDir(): string
     {
-        $dir = sys_get_temp_dir().'/nowo_perf_yaml_'.uniqid('', true);
+        $dir = sys_get_temp_dir() . '/nowo_perf_yaml_' . uniqid('', true);
         mkdir($dir, 0777, true);
 
         return $dir;
@@ -210,7 +216,7 @@ final class ValidateTranslationsYamlTest extends TestCase
      */
     private function runScript(string $translationsDir): array
     {
-        $php = \defined('PHP_BINARY') && \PHP_BINARY !== '' ? \PHP_BINARY : 'php';
+        $php = defined('PHP_BINARY') && PHP_BINARY !== '' ? PHP_BINARY : 'php';
         $cmd = [$php, self::$scriptPath, $translationsDir];
 
         $proc = proc_open(
@@ -222,7 +228,7 @@ final class ValidateTranslationsYamlTest extends TestCase
             ],
             $pipes,
             self::$projectRoot,
-            null
+            null,
         );
 
         $this->assertNotFalse($proc);
@@ -247,7 +253,7 @@ final class ValidateTranslationsYamlTest extends TestCase
      */
     private function runScriptWithNoArg(): array
     {
-        $php = \defined('PHP_BINARY') && \PHP_BINARY !== '' ? \PHP_BINARY : 'php';
+        $php = defined('PHP_BINARY') && PHP_BINARY !== '' ? PHP_BINARY : 'php';
         $cmd = [$php, self::$scriptPath];
 
         $proc = proc_open(
@@ -259,7 +265,7 @@ final class ValidateTranslationsYamlTest extends TestCase
             ],
             $pipes,
             self::$projectRoot,
-            null
+            null,
         );
 
         $this->assertNotFalse($proc);

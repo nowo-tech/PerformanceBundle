@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Model;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Model\RecordFilters;
 use PHPUnit\Framework\TestCase;
 
@@ -25,9 +26,9 @@ final class RecordFiltersTest extends TestCase
 
     public function testConstructorWithValues(): void
     {
-        $start = new \DateTimeImmutable('2026-01-01');
-        $end = new \DateTimeImmutable('2026-01-31');
-        $f = new RecordFilters($start, $end, 'prod', 'app_user', 404);
+        $start = new DateTimeImmutable('2026-01-01');
+        $end   = new DateTimeImmutable('2026-01-31');
+        $f     = new RecordFilters($start, $end, 'prod', 'app_user', 404);
         $this->assertSame($start, $f->startDate);
         $this->assertSame($end, $f->endDate);
         $this->assertSame('prod', $f->env);
@@ -41,9 +42,9 @@ final class RecordFiltersTest extends TestCase
 
     public function testConstructorWithQueryTimeAndMemoryFilters(): void
     {
-        $start = new \DateTimeImmutable('2026-01-01');
-        $end = new \DateTimeImmutable('2026-01-31');
-        $f = new RecordFilters(
+        $start = new DateTimeImmutable('2026-01-01');
+        $end   = new DateTimeImmutable('2026-01-31');
+        $f     = new RecordFilters(
             $start,
             $end,
             'dev',
@@ -52,7 +53,7 @@ final class RecordFiltersTest extends TestCase
             0.1,
             5.0,
             10 * 1024 * 1024,
-            100 * 1024 * 1024
+            100 * 1024 * 1024,
         );
         $this->assertSame($start, $f->startDate);
         $this->assertSame($end, $f->endDate);
@@ -82,14 +83,14 @@ final class RecordFiltersTest extends TestCase
 
     public function testPropertyAssignment(): void
     {
-        $f = new RecordFilters();
-        $start = new \DateTimeImmutable('2026-02-01');
-        $end = new \DateTimeImmutable('2026-02-28');
+        $f     = new RecordFilters();
+        $start = new DateTimeImmutable('2026-02-01');
+        $end   = new DateTimeImmutable('2026-02-28');
 
         $f->startDate = $start;
-        $f->endDate = $end;
-        $f->env = 'stage';
-        $f->route = 'api_bar';
+        $f->endDate   = $end;
+        $f->env       = 'stage';
+        $f->route     = 'api_bar';
 
         $this->assertSame($start, $f->startDate);
         $this->assertSame($end, $f->endDate);
@@ -106,9 +107,9 @@ final class RecordFiltersTest extends TestCase
 
     public function testOnlyDateFilters(): void
     {
-        $start = new \DateTimeImmutable('2026-03-01');
-        $end = new \DateTimeImmutable('2026-03-31');
-        $f = new RecordFilters($start, $end, null, null, null, null, null, null, null);
+        $start = new DateTimeImmutable('2026-03-01');
+        $end   = new DateTimeImmutable('2026-03-31');
+        $f     = new RecordFilters($start, $end, null, null, null, null, null, null, null);
         $this->assertSame($start, $f->startDate);
         $this->assertSame($end, $f->endDate);
         $this->assertNull($f->env);
@@ -146,7 +147,7 @@ final class RecordFiltersTest extends TestCase
 
     public function testAssignMinQueryTimeAndMaxQueryTimeAfterConstruction(): void
     {
-        $f = new RecordFilters();
+        $f               = new RecordFilters();
         $f->minQueryTime = 0.5;
         $f->maxQueryTime = 2.5;
         $this->assertSame(0.5, $f->minQueryTime);
@@ -155,7 +156,7 @@ final class RecordFiltersTest extends TestCase
 
     public function testAssignMinMemoryUsageAndMaxMemoryUsageAfterConstruction(): void
     {
-        $f = new RecordFilters();
+        $f                 = new RecordFilters();
         $f->minMemoryUsage = 1024;
         $f->maxMemoryUsage = 1048576;
         $this->assertSame(1024, $f->minMemoryUsage);
@@ -164,7 +165,7 @@ final class RecordFiltersTest extends TestCase
 
     public function testAssignStatusCodeAfterConstruction(): void
     {
-        $f = new RecordFilters();
+        $f             = new RecordFilters();
         $f->statusCode = 503;
         $this->assertSame(503, $f->statusCode);
     }
@@ -177,8 +178,8 @@ final class RecordFiltersTest extends TestCase
 
     public function testAssignRouteAndStatusCodeAfterConstruction(): void
     {
-        $f = new RecordFilters();
-        $f->route = 'api_users';
+        $f             = new RecordFilters();
+        $f->route      = 'api_users';
         $f->statusCode = 200;
 
         $this->assertSame('api_users', $f->route);
@@ -187,19 +188,19 @@ final class RecordFiltersTest extends TestCase
 
     public function testAssignRouteAfterConstruction(): void
     {
-        $f = new RecordFilters();
+        $f        = new RecordFilters();
         $f->route = 'api_dashboard';
         $this->assertSame('api_dashboard', $f->route);
     }
 
     public function testAssignStartDateAndEndDateAfterConstruction(): void
     {
-        $f = new RecordFilters();
-        $start = new \DateTimeImmutable('2026-04-01');
-        $end = new \DateTimeImmutable('2026-04-30');
+        $f     = new RecordFilters();
+        $start = new DateTimeImmutable('2026-04-01');
+        $end   = new DateTimeImmutable('2026-04-30');
 
         $f->startDate = $start;
-        $f->endDate = $end;
+        $f->endDate   = $end;
 
         $this->assertSame($start, $f->startDate);
         $this->assertSame($end, $f->endDate);
@@ -207,7 +208,7 @@ final class RecordFiltersTest extends TestCase
 
     public function testAssignEnvAfterConstruction(): void
     {
-        $f = new RecordFilters();
+        $f      = new RecordFilters();
         $f->env = 'stage';
 
         $this->assertSame('stage', $f->env);
@@ -215,17 +216,17 @@ final class RecordFiltersTest extends TestCase
 
     public function testAssignAllFiltersAfterConstruction(): void
     {
-        $f = new RecordFilters();
-        $start = new \DateTimeImmutable('2026-05-01');
-        $end = new \DateTimeImmutable('2026-05-31');
+        $f     = new RecordFilters();
+        $start = new DateTimeImmutable('2026-05-01');
+        $end   = new DateTimeImmutable('2026-05-31');
 
-        $f->startDate = $start;
-        $f->endDate = $end;
-        $f->env = 'prod';
-        $f->route = 'api_report';
-        $f->statusCode = 200;
-        $f->minQueryTime = 0.01;
-        $f->maxQueryTime = 2.0;
+        $f->startDate      = $start;
+        $f->endDate        = $end;
+        $f->env            = 'prod';
+        $f->route          = 'api_report';
+        $f->statusCode     = 200;
+        $f->minQueryTime   = 0.01;
+        $f->maxQueryTime   = 2.0;
         $f->minMemoryUsage = 1048576;
         $f->maxMemoryUsage = 52428800;
 

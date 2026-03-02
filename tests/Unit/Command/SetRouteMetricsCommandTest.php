@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
+use Exception;
 use Nowo\PerformanceBundle\Command\SetRouteMetricsCommand;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class SetRouteMetricsCommandTest extends TestCase
@@ -19,7 +20,7 @@ final class SetRouteMetricsCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->metricsService = $this->createMock(PerformanceMetricsService::class);
-        $this->command = new SetRouteMetricsCommand($this->metricsService);
+        $this->command        = new SetRouteMetricsCommand($this->metricsService);
     }
 
     public function testCommandName(): void
@@ -67,10 +68,10 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'app_home',
+            'route'          => 'app_home',
             '--request-time' => '0.5',
-            '--queries' => '10',
-            '--query-time' => '0.2',
+            '--queries'      => '10',
+            '--query-time'   => '0.2',
         ]);
 
         $this->assertSame(0, $commandTester->getStatusCode());
@@ -101,9 +102,9 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'app_home',
+            'route'          => 'app_home',
             '--request-time' => '0.8',
-            '--queries' => '15',
+            '--queries'      => '15',
         ]);
 
         $this->assertSame(0, $commandTester->getStatusCode());
@@ -129,10 +130,10 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'app_home',
-            '--env' => 'prod',
+            'route'          => 'app_home',
+            '--env'          => 'prod',
             '--request-time' => '1.2',
-            '--queries' => '25',
+            '--queries'      => '25',
         ]);
 
         $this->assertSame(0, $commandTester->getStatusCode());
@@ -159,9 +160,9 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'app_home',
+            'route'          => 'app_home',
             '--request-time' => '0.5',
-            '--params' => '{"id":123,"slug":"test"}',
+            '--params'       => '{"id":123,"slug":"test"}',
         ]);
 
         $this->assertSame(0, $commandTester->getStatusCode());
@@ -171,9 +172,9 @@ final class SetRouteMetricsCommandTest extends TestCase
     {
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'app_home',
+            'route'          => 'app_home',
             '--request-time' => '0.5',
-            '--params' => 'invalid json',
+            '--params'       => 'invalid json',
         ]);
 
         $this->assertSame(1, $commandTester->getStatusCode());
@@ -196,11 +197,11 @@ final class SetRouteMetricsCommandTest extends TestCase
         $this->metricsService
             ->expects($this->once())
             ->method('getRouteData')
-            ->willThrowException(new \Exception('Database error'));
+            ->willThrowException(new Exception('Database error'));
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'app_home',
+            'route'          => 'app_home',
             '--request-time' => '0.5',
         ]);
 
@@ -229,7 +230,7 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'api_foo',
+            'route'    => 'api_foo',
             '--memory' => '1048576',
         ]);
 
@@ -258,7 +259,7 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'app_bar',
+            'route'        => 'app_bar',
             '--query-time' => '0.15',
         ]);
 
@@ -310,8 +311,8 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute([
-            'route' => 'api_dashboard',
-            '--env' => 'stage',
+            'route'          => 'api_dashboard',
+            '--env'          => 'stage',
             '--request-time' => '0.5',
         ]);
 

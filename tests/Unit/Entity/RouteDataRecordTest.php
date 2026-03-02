@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Entity;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+
+use function strlen;
 
 final class RouteDataRecordTest extends TestCase
 {
@@ -24,7 +28,7 @@ final class RouteDataRecordTest extends TestCase
 
     public function testGetIdReturnsValueWhenSet(): void
     {
-        $reflection = new \ReflectionClass($this->record);
+        $reflection = new ReflectionClass($this->record);
         $idProperty = $reflection->getProperty('id');
         $idProperty->setAccessible(true);
         $idProperty->setValue($this->record, 42);
@@ -73,12 +77,12 @@ final class RouteDataRecordTest extends TestCase
 
     public function testAccessedAtIsSetOnConstruction(): void
     {
-        $this->assertInstanceOf(\DateTimeImmutable::class, $this->record->getAccessedAt());
+        $this->assertInstanceOf(DateTimeImmutable::class, $this->record->getAccessedAt());
     }
 
     public function testSetAndGetAccessedAt(): void
     {
-        $date = new \DateTimeImmutable('2024-01-01 12:00:00');
+        $date = new DateTimeImmutable('2024-01-01 12:00:00');
         $this->record->setAccessedAt($date);
 
         $this->assertSame($date, $this->record->getAccessedAt());
@@ -166,7 +170,7 @@ final class RouteDataRecordTest extends TestCase
     public function testFluentInterface(): void
     {
         $routeData = new RouteData();
-        $date = new \DateTimeImmutable();
+        $date      = new DateTimeImmutable();
 
         $result = $this->record
             ->setRouteData($routeData)
@@ -260,7 +264,7 @@ final class RouteDataRecordTest extends TestCase
     public function testFluentInterfaceIncludesReferer(): void
     {
         $routeData = new RouteData();
-        $date = new \DateTimeImmutable();
+        $date      = new DateTimeImmutable();
 
         $result = $this->record
             ->setRouteData($routeData)
@@ -370,7 +374,7 @@ final class RouteDataRecordTest extends TestCase
 
     public function testSetAccessedAtReturnsSelf(): void
     {
-        $date = new \DateTimeImmutable('2024-06-01 10:00:00');
+        $date   = new DateTimeImmutable('2024-06-01 10:00:00');
         $result = $this->record->setAccessedAt($date);
         $this->assertSame($this->record, $result);
     }
@@ -462,7 +466,7 @@ final class RouteDataRecordTest extends TestCase
         $this->record->setReferer($longUrl);
 
         $result = $this->record->getReferer();
-        $this->assertSame(2048, \strlen($result));
+        $this->assertSame(2048, strlen($result));
         $this->assertSame(substr($longUrl, 0, 2048), $result);
     }
 
@@ -472,7 +476,7 @@ final class RouteDataRecordTest extends TestCase
         $this->record->setUserIdentifier($longIdentifier);
 
         $result = $this->record->getUserIdentifier();
-        $this->assertSame(255, \strlen($result));
+        $this->assertSame(255, strlen($result));
         $this->assertSame(substr($longIdentifier, 0, 255), $result);
     }
 
@@ -482,7 +486,7 @@ final class RouteDataRecordTest extends TestCase
         $this->record->setUserId($longUserId);
 
         $result = $this->record->getUserId();
-        $this->assertSame(64, \strlen($result));
+        $this->assertSame(64, strlen($result));
         $this->assertSame(substr($longUserId, 0, 64), $result);
     }
 
@@ -517,10 +521,10 @@ final class RouteDataRecordTest extends TestCase
 
     public function testSetRoutePathTruncatesWhenExceedsMaxLength(): void
     {
-        $longPath = '/'.str_repeat('a', 2100);
+        $longPath = '/' . str_repeat('a', 2100);
         $this->record->setRoutePath($longPath);
 
         $result = $this->record->getRoutePath();
-        $this->assertSame(2048, \strlen($result));
+        $this->assertSame(2048, strlen($result));
     }
 }

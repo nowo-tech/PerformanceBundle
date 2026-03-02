@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Model;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 final class RouteDataWithAggregatesTest extends TestCase
 {
@@ -29,12 +30,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testAggregateGetters(): void
     {
         $aggregates = [
-            'request_time' => 0.15,
-            'query_time' => 0.05,
+            'request_time'  => 0.15,
+            'query_time'    => 0.05,
             'total_queries' => 8,
-            'memory_usage' => 1024,
-            'access_count' => 10,
-            'status_codes' => [200 => 9, 404 => 1],
+            'memory_usage'  => 1024,
+            'access_count'  => 10,
+            'status_codes'  => [200 => 9, 404 => 1],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -49,12 +50,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testAggregateGettersWithNulls(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 0,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 0,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -82,12 +83,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeCount(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 10,
-            'status_codes' => [200 => 8, 404 => 2],
+            'memory_usage'  => null,
+            'access_count'  => 10,
+            'status_codes'  => [200 => 8, 404 => 2],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -99,12 +100,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeRatio(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 10,
-            'status_codes' => [200 => 8, 404 => 2],
+            'memory_usage'  => null,
+            'access_count'  => 10,
+            'status_codes'  => [200 => 8, 404 => 2],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -116,12 +117,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeRatioEmptyCodes(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 0,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 0,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -131,12 +132,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetTotalResponses(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 5,
-            'status_codes' => [200 => 3, 404 => 2],
+            'memory_usage'  => null,
+            'access_count'  => 5,
+            'status_codes'  => [200 => 3, 404 => 2],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -146,12 +147,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetTotalResponsesEmpty(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 0,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 0,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -161,12 +162,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetMemoryUsageWithZero(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => 0,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => 0,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -176,12 +177,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetMemoryUsageWithLargeValue(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => 512 * 1024 * 1024,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => 512 * 1024 * 1024,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -191,7 +192,7 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testAggregateGettersWithMinimalAggregatesArray(): void
     {
         $aggregates = ['access_count' => 3, 'status_codes' => [200 => 3]];
-        $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
+        $dto        = new RouteDataWithAggregates($this->routeData, $aggregates);
 
         $this->assertNull($dto->getRequestTime());
         $this->assertNull($dto->getQueryTime());
@@ -206,12 +207,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeRatioWithZeroTotalReturnsZero(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 0,
-            'status_codes' => [200 => 0, 404 => 0],
+            'memory_usage'  => null,
+            'access_count'  => 0,
+            'status_codes'  => [200 => 0, 404 => 0],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -222,10 +223,10 @@ final class RouteDataWithAggregatesTest extends TestCase
 
     public function testDelegatesCreatedAtLastAccessedAtReviewedAtAndOtherGetters(): void
     {
-        $created = new \DateTimeImmutable('2026-01-01 10:00:00');
-        $lastAccessed = new \DateTimeImmutable('2026-01-15 12:00:00');
-        $reviewedAt = new \DateTimeImmutable('2026-01-10 09:00:00');
-        $params = ['id' => 1];
+        $created      = new DateTimeImmutable('2026-01-01 10:00:00');
+        $lastAccessed = new DateTimeImmutable('2026-01-15 12:00:00');
+        $reviewedAt   = new DateTimeImmutable('2026-01-10 09:00:00');
+        $params       = ['id' => 1];
 
         $this->routeData->method('getCreatedAt')->willReturn($created);
         $this->routeData->method('getLastAccessedAt')->willReturn($lastAccessed);
@@ -249,11 +250,11 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testAggregatesWithoutStatusCodesKey(): void
     {
         $aggregates = [
-            'request_time' => 0.1,
+            'request_time'  => 0.1,
             'total_queries' => 3,
-            'query_time' => 0.05,
-            'memory_usage' => 1024,
-            'access_count' => 1,
+            'query_time'    => 0.05,
+            'memory_usage'  => 1024,
+            'access_count'  => 1,
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -280,12 +281,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetRequestTimeWithZero(): void
     {
         $aggregates = [
-            'request_time' => 0.0,
-            'query_time' => null,
+            'request_time'  => 0.0,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -295,12 +296,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetAccessCountWithLargeNumber(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 9999,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 9999,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -310,12 +311,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetQueryTimeWithZero(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => 0.0,
+            'request_time'  => null,
+            'query_time'    => 0.0,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -325,12 +326,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetTotalQueriesWithZero(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => 0,
-            'memory_usage' => null,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -340,12 +341,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodesWithSingleStatusCode(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 1,
-            'status_codes' => [200 => 1],
+            'memory_usage'  => null,
+            'access_count'  => 1,
+            'status_codes'  => [200 => 1],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -357,12 +358,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetTotalResponsesWithMultipleStatusCodes(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 15,
-            'status_codes' => [200 => 12, 404 => 2, 500 => 1],
+            'memory_usage'  => null,
+            'access_count'  => 15,
+            'status_codes'  => [200 => 12, 404 => 2, 500 => 1],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -375,12 +376,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeRatioWithFiftyPercent(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 10,
-            'status_codes' => [200 => 5, 404 => 5],
+            'memory_usage'  => null,
+            'access_count'  => 10,
+            'status_codes'  => [200 => 5, 404 => 5],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -391,12 +392,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeRatioWithThirtyThreePercent(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 3,
-            'status_codes' => [200 => 1, 404 => 1, 500 => 1],
+            'memory_usage'  => null,
+            'access_count'  => 3,
+            'status_codes'  => [200 => 1, 404 => 1, 500 => 1],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -407,12 +408,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodesReturnsNullWhenEmpty(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 0,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 0,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -422,12 +423,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeCountReturnsZeroForNonExistentCode(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 5,
-            'status_codes' => [200 => 3, 404 => 2],
+            'memory_usage'  => null,
+            'access_count'  => 5,
+            'status_codes'  => [200 => 3, 404 => 2],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
@@ -438,12 +439,12 @@ final class RouteDataWithAggregatesTest extends TestCase
     public function testGetStatusCodeRatioReturnsZeroWithEmptyCodes(): void
     {
         $aggregates = [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 0,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 0,
+            'status_codes'  => [],
         ];
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 

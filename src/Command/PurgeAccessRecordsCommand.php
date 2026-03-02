@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Command;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -12,6 +13,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+
+use function is_string;
+use function sprintf;
 
 /**
  * Purge access records (RouteDataRecord) older than a given period or all records.
@@ -39,7 +43,8 @@ final class PurgeAccessRecordsCommand extends Command
             ->addOption('all', 'a', InputOption::VALUE_NONE, 'Delete all access records')
             ->addOption('env', 'e', InputOption::VALUE_REQUIRED, 'Limit to a specific environment (dev, prod, etc.)')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Show what would be deleted without actually deleting')
-            ->setHelp(<<<'HELP'
+            ->setHelp(
+                <<<'HELP'
 The <info>%command.name%</info> command deletes access records (RouteDataRecord) based on age or all at once.
 
 When <info>access_records_retention_days</info> is configured in <comment>nowo_performance</comment>,
@@ -73,58 +78,58 @@ HELP
             return Command::FAILURE;
         }
 
-        if (null === $this->recordRepository) {
+        if ($this->recordRepository === null) {
             $io->error('RouteDataRecordRepository is not available.');
 
             return Command::FAILURE;
         }
 
         $env = $input->getOption('env');
-        $env = \is_string($env) && '' !== $env ? $env : null;
+        $env = is_string($env) && $env !== '' ? $env : null;
 
         $dryRun = $input->getOption('dry-run');
 
         if ($input->getOption('all')) {
             if ($dryRun) {
-                $io->warning('Dry-run: would delete all access records'.($env ? " for env \"$env\"" : '').'.');
+                $io->warning('Dry-run: would delete all access records' . ($env ? " for env \"{$env}\"" : '') . '.');
                 $io->note('Run without --dry-run to actually delete.');
 
                 return Command::SUCCESS;
             }
 
             $deleted = $this->recordRepository->deleteAllRecords($env);
-            $io->success(\sprintf('Deleted %d access record(s).', $deleted));
+            $io->success(sprintf('Deleted %d access record(s).', $deleted));
 
             return Command::SUCCESS;
         }
 
-        $olderThan = $input->getOption('older-than');
+        $olderThan     = $input->getOption('older-than');
         $retentionDays = $this->parameterBag->get('nowo_performance.access_records_retention_days');
 
-        if (null === $olderThan && null === $retentionDays) {
+        if ($olderThan === null && $retentionDays === null) {
             $io->error('No retention configured and --older-than not specified. Configure access_records_retention_days or use --older-than=N or --all.');
 
             return Command::FAILURE;
         }
 
-        $days = null !== $olderThan ? (int) $olderThan : (int) $retentionDays;
+        $days = $olderThan !== null ? (int) $olderThan : (int) $retentionDays;
         if ($days < 1) {
             $io->error('Days must be at least 1.');
 
             return Command::FAILURE;
         }
 
-        $before = new \DateTimeImmutable('-'.$days.' days');
+        $before = new DateTimeImmutable('-' . $days . ' days');
 
         if ($dryRun) {
-            $io->warning(\sprintf('Dry-run: would delete records older than %s (%d days)'.($env ? " for env \"$env\"" : '').'.', $before->format('Y-m-d H:i'), $days));
+            $io->warning(sprintf('Dry-run: would delete records older than %s (%d days)' . ($env ? " for env \"{$env}\"" : '') . '.', $before->format('Y-m-d H:i'), $days));
             $io->note('Run without --dry-run to actually delete.');
 
             return Command::SUCCESS;
         }
 
         $deleted = $this->recordRepository->deleteOlderThan($before, $env);
-        $io->success(\sprintf('Deleted %d access record(s) older than %s (%d days).', $deleted, $before->format('Y-m-d'), $days));
+        $io->success(sprintf('Deleted %d access record(s) older than %s (%d days).', $deleted, $before->format('Y-m-d'), $days));
 
         return Command::SUCCESS;
     }

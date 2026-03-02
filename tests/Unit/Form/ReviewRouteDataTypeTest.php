@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
-use PHPUnit\Framework\TestCase;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Test\TypeTestCase;
 
 final class ReviewRouteDataTypeTest extends TypeTestCase
@@ -42,8 +39,8 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function ($defaults) {
-                return isset($defaults['method']) 
+            ->with($this->callback(static function ($defaults) {
+                return isset($defaults['method'])
                     && $defaults['method'] === 'POST'
                     && isset($defaults['csrf_protection'])
                     && $defaults['csrf_protection'] === true;
@@ -63,7 +60,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
         $form->submit([
             'queries_improved' => '1',
-            'time_improved' => '0',
+            'time_improved'    => '0',
         ]);
 
         $this->assertTrue($form->isValid());
@@ -78,7 +75,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
         $form->submit([
             'queries_improved' => '',
-            'time_improved' => '',
+            'time_improved'    => '',
         ]);
 
         $this->assertTrue($form->isValid());
@@ -93,7 +90,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
         $routeData->setSaveAccessRecords(true);
 
         $form = $this->factory->create(ReviewRouteDataType::class, null, [
-            'route_data' => $routeData,
+            'route_data'            => $routeData,
             'enable_access_records' => true,
         ]);
 
@@ -107,7 +104,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
         $routeData->setSaveAccessRecords(false);
 
         $form = $this->factory->create(ReviewRouteDataType::class, null, [
-            'route_data' => $routeData,
+            'route_data'            => $routeData,
             'enable_access_records' => true,
         ]);
 
@@ -131,8 +128,8 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
         ]);
 
         $form->submit([
-            'queries_improved' => '',
-            'time_improved' => '',
+            'queries_improved'    => '',
+            'time_improved'       => '',
             'save_access_records' => false,
         ]);
 
@@ -144,7 +141,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
     public function testBuildFormWithRouteDataNullAndEnableAccessRecordsDefaultsSaveAccessRecordsToTrue(): void
     {
         $form = $this->factory->create(ReviewRouteDataType::class, null, [
-            'route_data' => null,
+            'route_data'            => null,
             'enable_access_records' => true,
         ]);
 
@@ -158,7 +155,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
         $form->submit([
             'queries_improved' => '1',
-            'time_improved' => '1',
+            'time_improved'    => '1',
         ]);
 
         $this->assertTrue($form->isValid());

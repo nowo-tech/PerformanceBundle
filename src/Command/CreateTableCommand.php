@@ -6,6 +6,10 @@ namespace Nowo\PerformanceBundle\Command;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
+use ReflectionClass;
+use ReflectionException;
+use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,6 +17,16 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+
+use function count;
+use function get_class;
+use function in_array;
+use function is_array;
+use function is_bool;
+use function is_string;
+use function sprintf;
+
+use const PHP_VERSION_ID;
 
 /**
  * Command to create the performance metrics table.
@@ -29,9 +43,9 @@ class CreateTableCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param ManagerRegistry $registry       Doctrine registry
-     * @param string          $connectionName The name of the Doctrine connection to use
-     * @param string          $tableName      The configured table name
+     * @param ManagerRegistry $registry Doctrine registry
+     * @param string $connectionName The name of the Doctrine connection to use
+     * @param string $tableName The configured table name
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
@@ -50,7 +64,8 @@ class CreateTableCommand extends Command
      */
     protected function configure(): void
     {
-        $this->setHelp(<<<'HELP'
+        $this->setHelp(
+            <<<'HELP'
 The <info>%command.name%</info> command creates the performance metrics database table with all necessary columns and indexes.
 
 This command will:
@@ -106,13 +121,13 @@ HELP
 
             return $getSchemaManager();
         }
-        throw new \RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
+        throw new RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
     }
 
     /**
      * Execute the command.
      *
-     * @param InputInterface  $input  The input interface
+     * @param InputInterface $input The input interface
      * @param OutputInterface $output The output interface
      *
      * @return int Command exit code
@@ -123,12 +138,12 @@ HELP
         $io->title('Nowo Performance Bundle - Create Table');
 
         try {
-            $connection = $this->registry->getConnection($this->connectionName);
+            $connection    = $this->registry->getConnection($this->connectionName);
             $schemaManager = $this->getSchemaManager($connection);
 
             // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
+            $metadata      = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
             // Get table name from metadata (compatible with different Doctrine versions)
             $actualTableName = isset($metadata->table['name'])
                 ? $metadata->table['name']
@@ -137,7 +152,7 @@ HELP
             $tableExists = $schemaManager->tablesExist([$actualTableName]);
 
             if ($tableExists && !$input->getOption('force') && !$input->getOption('update')) {
-                $io->warning(\sprintf('Table "%s" already exists.', $actualTableName));
+                $io->warning(sprintf('Table "%s" already exists.', $actualTableName));
                 $io->note('Use --update to add missing columns without losing data.');
                 $io->note('Use --force to drop and recreate the table (WARNING: This will delete all data).');
                 $io->note('Alternatively, use Doctrine migrations to update the schema:');
@@ -152,13 +167,13 @@ HELP
             if ($tableExists && $input->getOption('update')) {
                 $io->section('Updating Table Schema');
                 $io->text([
-                    \sprintf('Table name: <info>%s</info>', $actualTableName),
-                    \sprintf('Connection: <info>%s</info>', $this->connectionName),
+                    sprintf('Table name: <info>%s</info>', $actualTableName),
+                    sprintf('Connection: <info>%s</info>', $this->connectionName),
                 ]);
 
                 $this->updateTableSchema($entityManager, $io, $input->getOption('drop-obsolete'));
 
-                $io->success(\sprintf('Table "%s" updated successfully!', $actualTableName));
+                $io->success(sprintf('Table "%s" updated successfully!', $actualTableName));
 
                 // Also update records table if access records are enabled
                 if ($this->enableAccessRecords) {
@@ -171,21 +186,21 @@ HELP
             }
 
             if ($tableExists && $input->getOption('force')) {
-                $io->warning(\sprintf('Dropping existing table "%s"...', $actualTableName));
+                $io->warning(sprintf('Dropping existing table "%s"...', $actualTableName));
                 $schemaManager->dropTable($actualTableName);
                 $io->success('Table dropped.');
             }
 
             $io->section('Creating Table');
             $io->text([
-                \sprintf('Table name: <info>%s</info>', $actualTableName),
-                \sprintf('Connection: <info>%s</info>', $this->connectionName),
+                sprintf('Table name: <info>%s</info>', $actualTableName),
+                sprintf('Connection: <info>%s</info>', $this->connectionName),
             ]);
 
             // Use Doctrine's schema tool to create the table
             $this->createTableUsingSchemaTool($entityManager, $io);
 
-            $io->success(\sprintf('Table "%s" created successfully!', $actualTableName));
+            $io->success(sprintf('Table "%s" created successfully!', $actualTableName));
             $io->note('The table is now ready to store performance metrics.');
 
             // Also create records table if access records are enabled
@@ -196,8 +211,8 @@ HELP
             }
 
             return Command::SUCCESS;
-        } catch (\Exception $e) {
-            $io->error(\sprintf('Failed to create table: %s', $e->getMessage()));
+        } catch (Exception $e) {
+            $io->error(sprintf('Failed to create table: %s', $e->getMessage()));
             $io->note('You can also use Doctrine\'s standard commands:');
             $io->text([
                 '  php bin/console doctrine:schema:update --force',
@@ -214,20 +229,20 @@ HELP
      * Create the table using Doctrine's schema tool.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io            The Symfony style output
+     * @param SymfonyStyle $io The Symfony style output
      */
     private function createTableUsingSchemaTool(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
         $schemaTool = new \Doctrine\ORM\Tools\SchemaTool($entityManager);
-        $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
+        $metadata   = $entityManager->getMetadataFactory()->getAllMetadata();
 
         // Filter to only RouteData entity
         $routeDataMetadata = array_filter($metadata, static function ($meta) {
-            return 'Nowo\PerformanceBundle\Entity\RouteData' === $meta->getName();
+            return $meta->getName() === 'Nowo\PerformanceBundle\Entity\RouteData';
         });
 
         if (empty($routeDataMetadata)) {
-            throw new \RuntimeException('RouteData entity metadata not found.');
+            throw new RuntimeException('RouteData entity metadata not found.');
         }
 
         $io->text('Generating SQL statements...');
@@ -240,12 +255,12 @@ HELP
         }
 
         $connection = $entityManager->getConnection();
-        $platform = $connection->getDatabasePlatform();
+        $platform   = $connection->getDatabasePlatform();
 
         foreach ($sql as $statement) {
             // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
             $platformClass = $platform::class;
-            $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+            $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
 
@@ -259,7 +274,7 @@ HELP
                     $statement = preg_replace(
                         '/([`]?id[`]?\s+INT(?:EGER)?[^,)]*?)(\s+NOT\s+NULL)(?=\s*[,)]|$)/i',
                         '$1$2 AUTO_INCREMENT',
-                        $statement
+                        $statement,
                     );
                 }
             }
@@ -269,17 +284,17 @@ HELP
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00\s+00:00:00'/i",
                 '',
-                $statement
+                $statement,
             );
 
             // Also remove DEFAULT '0000-00-00' for date columns
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00'/i",
                 '',
-                $statement
+                $statement,
             );
 
-            $io->text(\sprintf('  <comment>%s</comment>', $statement));
+            $io->text(sprintf('  <comment>%s</comment>', $statement));
             $connection->executeStatement($statement);
         }
 
@@ -290,12 +305,12 @@ HELP
      * Update the table schema by adding missing columns, updating existing ones, and optionally dropping obsolete columns.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io            The Symfony style output
-     * @param bool                   $dropObsolete  Whether to drop columns that exist in DB but not in entity
+     * @param SymfonyStyle $io The Symfony style output
+     * @param bool $dropObsolete Whether to drop columns that exist in DB but not in entity
      */
     private function updateTableSchema(EntityManagerInterface $entityManager, SymfonyStyle $io, bool $dropObsolete = false): void
     {
-        $connection = $entityManager->getConnection();
+        $connection    = $entityManager->getConnection();
         $schemaManager = $this->getSchemaManager($connection);
 
         // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
@@ -307,22 +322,22 @@ HELP
 
         // Verify table exists
         if (!$schemaManager->tablesExist([$actualTableName])) {
-            $io->error(\sprintf('Table "%s" does not exist. Use the create command without --update to create it.', $actualTableName));
+            $io->error(sprintf('Table "%s" does not exist. Use the create command without --update to create it.', $actualTableName));
 
             return;
         }
 
-        $table = $schemaManager->introspectTable($actualTableName);
+        $table              = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
-            $columnName = $this->getColumnName($column, $connection);
+            $columnName                                  = $this->getColumnName($column, $connection);
             $existingColumnsMap[strtolower($columnName)] = $column;
         }
 
         // Check if id column has AUTO_INCREMENT (MySQL/MariaDB)
-        $platform = $connection->getDatabasePlatform();
+        $platform      = $connection->getDatabasePlatform();
         $platformClass = $platform::class;
-        $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+        $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
             || str_contains(strtolower($platformClass), 'mysql')
             || str_contains(strtolower($platformClass), 'mariadb');
 
@@ -332,13 +347,13 @@ HELP
             $columnType = $idColumn->getType();
             // Check SQL declaration to determine if it's an integer type (works for both DBAL 2.x and 3.x)
             $sqlDeclaration = strtolower($columnType->getSQLDeclaration([], $platform));
-            $isIntegerType = str_contains($sqlDeclaration, 'int') && !str_contains($sqlDeclaration, 'bigint');
+            $isIntegerType  = str_contains($sqlDeclaration, 'int') && !str_contains($sqlDeclaration, 'bigint');
 
             if ($isIntegerType) {
                 // Check if AUTO_INCREMENT is missing by querying the database
-                $checkSql = \sprintf(
+                $checkSql = sprintf(
                     "SELECT COLUMN_NAME, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'id'",
-                    $platform->quoteStringLiteral($actualTableName)
+                    $platform->quoteStringLiteral($actualTableName),
                 );
                 try {
                     $result = $connection->fetchAssociative($checkSql);
@@ -349,19 +364,19 @@ HELP
                             $schemaManager,
                             $platform,
                             $actualTableName,
-                            $io
+                            $io,
                         );
                         $io->success('✓ Column "id" now has AUTO_INCREMENT');
                         // Refresh table schema
-                        $table = $schemaManager->introspectTable($actualTableName);
+                        $table              = $schemaManager->introspectTable($actualTableName);
                         $existingColumnsMap = [];
                         foreach ($table->getColumns() as $column) {
-                            $columnName = $this->getColumnName($column, $connection);
+                            $columnName                                  = $this->getColumnName($column, $connection);
                             $existingColumnsMap[strtolower($columnName)] = $column;
                         }
                     }
-                } catch (\Exception $e) {
-                    $io->warning(\sprintf('Could not check/fix AUTO_INCREMENT for id column: %s', $e->getMessage()));
+                } catch (Exception $e) {
+                    $io->warning(sprintf('Could not check/fix AUTO_INCREMENT for id column: %s', $e->getMessage()));
                 }
             }
         }
@@ -372,8 +387,8 @@ HELP
             $columnName = $metadata->getColumnName($fieldName);
 
             // getFieldMapping() returns array in DBAL 2.x, FieldMapping object in DBAL 3.x
-            $fieldMapping = $metadata->getFieldMapping($fieldName);
-            $fieldMappingArray = \is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
+            $fieldMapping      = $metadata->getFieldMapping($fieldName);
+            $fieldMappingArray = is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
 
             $options = $fieldMappingArray['options'] ?? [];
 
@@ -386,36 +401,36 @@ HELP
             if ($metadata->isIdentifier($fieldName)) {
                 $fieldType = $metadata->getTypeOfField($fieldName);
                 // Check if it's an integer type (integer, smallint, bigint)
-                if (\in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
+                if (in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
                     // Check generator type if available
                     $generatorType = $metadata->generatorType ?? null;
                     // If generatorType is AUTO, IDENTITY, or SEQUENCE (for MySQL, AUTO and IDENTITY are the same)
                     // Or if generatorType is null/not set, assume AUTO for integer IDs
-                    if (null === $generatorType
-                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO === $generatorType
-                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY === $generatorType
-                        || isset($fieldMappingArray['generated']) && true === $fieldMappingArray['generated']) {
+                    if ($generatorType === null
+                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO
+                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY
+                        || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
                         $isAutoincrement = true;
                     }
                 }
             }
 
             $expectedColumns[strtolower($columnName)] = [
-                'field' => $fieldName,
-                'column' => $columnName,
-                'type' => $metadata->getTypeOfField($fieldName),
-                'nullable' => $metadata->isNullable($fieldName),
-                'options' => $options,
-                'length' => $fieldMappingArray['length'] ?? null,
-                'default' => $defaultValue,
+                'field'         => $fieldName,
+                'column'        => $columnName,
+                'type'          => $metadata->getTypeOfField($fieldName),
+                'nullable'      => $metadata->isNullable($fieldName),
+                'options'       => $options,
+                'length'        => $fieldMappingArray['length'] ?? null,
+                'default'       => $defaultValue,
                 'autoincrement' => $isAutoincrement,
             ];
         }
 
-        $columnsToAdd = [];
+        $columnsToAdd    = [];
         $columnsToUpdate = [];
-        $columnsToDrop = [];
-        $platform = $connection->getDatabasePlatform();
+        $columnsToDrop   = [];
+        $platform        = $connection->getDatabasePlatform();
 
         // Compare each expected column with existing ones
         foreach ($expectedColumns as $columnNameLower => $expectedInfo) {
@@ -427,7 +442,7 @@ HELP
             } else {
                 // Column exists, check if it needs to be updated
                 $existingColumn = $existingColumnsMap[$columnNameLower];
-                $needsUpdate = $this->columnNeedsUpdate($existingColumn, $expectedInfo, $platform);
+                $needsUpdate    = $this->columnNeedsUpdate($existingColumn, $expectedInfo, $platform);
 
                 if ($needsUpdate) {
                     $columnsToUpdate[$columnName] = [
@@ -441,10 +456,10 @@ HELP
         // Columns that exist in DB but not in entity (obsolete) - only when --drop-obsolete
         if ($dropObsolete) {
             foreach ($table->getColumns() as $column) {
-                $columnName = $this->getColumnName($column, $connection);
+                $columnName      = $this->getColumnName($column, $connection);
                 $columnNameLower = strtolower($columnName);
                 // Never drop primary key column
-                if ('id' === $columnNameLower) {
+                if ($columnNameLower === 'id') {
                     continue;
                 }
                 if (!isset($expectedColumns[$columnNameLower])) {
@@ -463,56 +478,56 @@ HELP
             return;
         }
 
-        $io->text(\sprintf('Using table name: <info>%s</info>', $actualTableName));
+        $io->text(sprintf('Using table name: <info>%s</info>', $actualTableName));
         $io->newLine();
 
         // Drop obsolete columns first (before adding/altering, to avoid conflicts)
         if (!empty($columnsToDrop)) {
-            $io->section(\sprintf('Dropping <info>%d</info> obsolete column(s):', \count($columnsToDrop)));
+            $io->section(sprintf('Dropping <info>%d</info> obsolete column(s):', count($columnsToDrop)));
             foreach ($columnsToDrop as $columnName) {
-                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
-                $sql = \sprintf(
+                $io->text(sprintf('  - <comment>%s</comment>', $columnName));
+                $sql = sprintf(
                     'ALTER TABLE %s DROP COLUMN %s',
                     $this->quoteIdentifier($platform, $actualTableName),
-                    $this->quoteIdentifier($platform, $columnName)
+                    $this->quoteIdentifier($platform, $columnName),
                 );
                 try {
                     $connection->executeStatement($sql);
-                    $io->text(\sprintf('  ✓ Dropped column <info>%s</info>', $columnName));
-                } catch (\Exception $e) {
-                    $io->error(\sprintf('  ✗ Failed to drop column %s: %s', $columnName, $e->getMessage()));
+                    $io->text(sprintf('  ✓ Dropped column <info>%s</info>', $columnName));
+                } catch (Exception $e) {
+                    $io->error(sprintf('  ✗ Failed to drop column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
             $io->newLine();
             // Refresh table schema after drops
-            $table = $schemaManager->introspectTable($actualTableName);
+            $table              = $schemaManager->introspectTable($actualTableName);
             $existingColumnsMap = [];
             foreach ($table->getColumns() as $column) {
-                $columnName = $this->getColumnName($column, $connection);
+                $columnName                                  = $this->getColumnName($column, $connection);
                 $existingColumnsMap[strtolower($columnName)] = $column;
             }
         }
 
         // Add missing columns
         if (!empty($columnsToAdd)) {
-            $io->section(\sprintf('Adding <info>%d</info> missing column(s):', \count($columnsToAdd)));
+            $io->section(sprintf('Adding <info>%d</info> missing column(s):', count($columnsToAdd)));
             foreach ($columnsToAdd as $columnName => $columnInfo) {
-                $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
+                $io->text(sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
                 $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-                $sql = \sprintf(
+                $sql              = sprintf(
                     'ALTER TABLE %s ADD COLUMN %s %s',
                     $this->quoteIdentifier($platform, $actualTableName),
                     $this->quoteIdentifier($platform, $columnName),
-                    $columnDefinition
+                    $columnDefinition,
                 );
 
                 try {
                     $connection->executeStatement($sql);
-                    $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
-                } catch (\Exception $e) {
-                    $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
+                    $io->text(sprintf('  ✓ Added column <info>%s</info>', $columnName));
+                } catch (Exception $e) {
+                    $io->error(sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
@@ -521,48 +536,48 @@ HELP
 
         // Update existing columns that have differences
         if (!empty($columnsToUpdate)) {
-            $io->section(\sprintf('Updating <info>%d</info> column(s) with differences:', \count($columnsToUpdate)));
+            $io->section(sprintf('Updating <info>%d</info> column(s) with differences:', count($columnsToUpdate)));
             foreach ($columnsToUpdate as $columnName => $columnData) {
                 $expected = $columnData['expected'];
                 $existing = $columnData['existing'];
 
-                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
+                $io->text(sprintf('  - <comment>%s</comment>', $columnName));
 
                 // Show what's different
                 $differences = $this->getColumnDifferences($existing, $expected, $platform);
                 if (!empty($differences)) {
-                    $io->text('    Differences: '.implode(', ', $differences));
+                    $io->text('    Differences: ' . implode(', ', $differences));
                 }
 
                 // Special handling for id column with AUTO_INCREMENT when foreign keys exist
-                if ('id' === strtolower($columnName) && ($expected['autoincrement'] ?? false)) {
+                if (strtolower($columnName) === 'id' && ($expected['autoincrement'] ?? false)) {
                     try {
                         $this->fixAutoIncrementWithForeignKeys(
                             $connection,
                             $schemaManager,
                             $platform,
                             $actualTableName,
-                            $io
+                            $io,
                         );
-                        $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
-                    } catch (\Exception $e) {
-                        $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
+                        $io->text(sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                    } catch (Exception $e) {
+                        $io->error(sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
                         throw $e;
                     }
                 } else {
                     $columnDefinition = $this->getColumnDefinition($expected, $platform);
-                    $sql = \sprintf(
+                    $sql              = sprintf(
                         'ALTER TABLE %s MODIFY COLUMN %s %s',
                         $this->quoteIdentifier($platform, $actualTableName),
                         $this->quoteIdentifier($platform, $columnName),
-                        $columnDefinition
+                        $columnDefinition,
                     );
 
                     try {
                         $connection->executeStatement($sql);
-                        $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
-                    } catch (\Exception $e) {
-                        $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
+                        $io->text(sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                    } catch (Exception $e) {
+                        $io->error(sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
                         throw $e;
                     }
                 }
@@ -577,9 +592,9 @@ HELP
     /**
      * Check if a column needs to be updated.
      *
-     * @param \Doctrine\DBAL\Schema\Column              $existingColumn The existing column
-     * @param array<string, mixed>                      $expectedInfo   Expected column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform       Database platform
+     * @param \Doctrine\DBAL\Schema\Column $existingColumn The existing column
+     * @param array<string, mixed> $expectedInfo Expected column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
      *
      * @return bool True if column needs update
      */
@@ -597,18 +612,18 @@ HELP
         $expectedType = $this->getColumnSQLType($expectedInfo, $platform);
         // Build column array for getSQLDeclaration (compatible with DBAL 2.x and 3.x)
         $columnArray = [
-            'length' => $existingColumn->getLength(),
-            'precision' => $existingColumn->getPrecision(),
-            'scale' => $existingColumn->getScale(),
-            'unsigned' => $existingColumn->getUnsigned(),
-            'fixed' => $existingColumn->getFixed(),
-            'notnull' => $existingColumn->getNotnull(),
-            'default' => $existingColumn->getDefault(),
+            'length'        => $existingColumn->getLength(),
+            'precision'     => $existingColumn->getPrecision(),
+            'scale'         => $existingColumn->getScale(),
+            'unsigned'      => $existingColumn->getUnsigned(),
+            'fixed'         => $existingColumn->getFixed(),
+            'notnull'       => $existingColumn->getNotnull(),
+            'default'       => $existingColumn->getDefault(),
             'autoincrement' => $existingColumn->getAutoincrement(),
         ];
         $existingType = $existingColumn->getType()->getSQLDeclaration(
             $columnArray,
-            $platform
+            $platform,
         );
 
         // Normalize types for comparison (remove length, etc.)
@@ -620,7 +635,7 @@ HELP
         }
 
         // Check length for string types
-        if ('string' === $expectedInfo['type'] && null !== $expectedInfo['length']) {
+        if ($expectedInfo['type'] === 'string' && $expectedInfo['length'] !== null) {
             $existingLength = $existingColumn->getLength();
             if ($existingLength !== $expectedInfo['length']) {
                 return true;
@@ -632,16 +647,16 @@ HELP
         $existingDefault = $existingColumn->getDefault();
 
         // Normalize comparison: both null means no default
-        if (null === $expectedDefault && null === $existingDefault) {
+        if ($expectedDefault === null && $existingDefault === null) {
             // Both are null, no difference
         } elseif ($expectedDefault !== $existingDefault) {
             // Handle boolean defaults
-            if (\is_bool($expectedDefault) && null !== $existingDefault) {
-                $normalizedExisting = \in_array(strtolower((string) $existingDefault), ['1', 'true', 'yes'], true);
+            if (is_bool($expectedDefault) && $existingDefault !== null) {
+                $normalizedExisting = in_array(strtolower((string) $existingDefault), ['1', 'true', 'yes'], true);
                 if ($normalizedExisting !== $expectedDefault) {
                     return true;
                 }
-            } elseif (is_numeric($expectedDefault) && null !== $existingDefault) {
+            } elseif (is_numeric($expectedDefault) && $existingDefault !== null) {
                 // Compare numeric defaults (handle string vs int/float)
                 // MySQL stores numeric defaults as strings, so we need to compare values
                 if ((float) $expectedDefault !== (float) $existingDefault) {
@@ -657,7 +672,7 @@ HELP
         $existingAutoincrement = $existingColumn->getAutoincrement();
         if ($expectedAutoincrement !== $existingAutoincrement) {
             $platformClass = $platform::class;
-            $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+            $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
             // Only check for MySQL/MariaDB as AUTO_INCREMENT is MySQL-specific
@@ -672,9 +687,9 @@ HELP
     /**
      * Get human-readable list of column differences.
      *
-     * @param \Doctrine\DBAL\Schema\Column              $existingColumn The existing column
-     * @param array<string, mixed>                      $expectedInfo   Expected column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform       Database platform
+     * @param \Doctrine\DBAL\Schema\Column $existingColumn The existing column
+     * @param array<string, mixed> $expectedInfo Expected column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
      *
      * @return array<string> List of differences
      */
@@ -687,10 +702,10 @@ HELP
 
         // Check nullable
         if ($existingColumn->getNotnull() !== !$expectedInfo['nullable']) {
-            $differences[] = \sprintf(
+            $differences[] = sprintf(
                 'nullable: %s → %s',
                 $existingColumn->getNotnull() ? 'NOT NULL' : 'NULL',
-                $expectedInfo['nullable'] ? 'NULL' : 'NOT NULL'
+                $expectedInfo['nullable'] ? 'NULL' : 'NOT NULL',
             );
         }
 
@@ -699,18 +714,18 @@ HELP
         $expectedSQLType = $this->getColumnSQLType($expectedInfo, $platform);
         // Build column array for getSQLDeclaration (compatible with DBAL 2.x and 3.x)
         $columnArray = [
-            'length' => $existingColumn->getLength(),
-            'precision' => $existingColumn->getPrecision(),
-            'scale' => $existingColumn->getScale(),
-            'unsigned' => $existingColumn->getUnsigned(),
-            'fixed' => $existingColumn->getFixed(),
-            'notnull' => $existingColumn->getNotnull(),
-            'default' => $existingColumn->getDefault(),
+            'length'        => $existingColumn->getLength(),
+            'precision'     => $existingColumn->getPrecision(),
+            'scale'         => $existingColumn->getScale(),
+            'unsigned'      => $existingColumn->getUnsigned(),
+            'fixed'         => $existingColumn->getFixed(),
+            'notnull'       => $existingColumn->getNotnull(),
+            'default'       => $existingColumn->getDefault(),
             'autoincrement' => $existingColumn->getAutoincrement(),
         ];
         $existingSQLType = $existingColumn->getType()->getSQLDeclaration(
             $columnArray,
-            $platform
+            $platform,
         );
 
         // Normalize types for comparison (remove length, etc.)
@@ -718,15 +733,15 @@ HELP
         $normalizedExisting = strtolower(preg_replace('/\([^)]+\)/', '', $existingSQLType));
 
         if ($normalizedExisting !== $normalizedExpected) {
-            $existingTypeName = \get_class($existingColumn->getType());
-            $differences[] = \sprintf('type: %s → %s', $existingTypeName, $expectedInfo['type']);
+            $existingTypeName = get_class($existingColumn->getType());
+            $differences[]    = sprintf('type: %s → %s', $existingTypeName, $expectedInfo['type']);
         }
 
         // Check length
-        if (null !== $expectedInfo['length']) {
+        if ($expectedInfo['length'] !== null) {
             $existingLength = $existingColumn->getLength();
             if ($existingLength !== $expectedInfo['length']) {
-                $differences[] = \sprintf('length: %s → %s', $existingLength ?? 'NULL', $expectedInfo['length']);
+                $differences[] = sprintf('length: %s → %s', $existingLength ?? 'NULL', $expectedInfo['length']);
             }
         }
 
@@ -734,7 +749,7 @@ HELP
         $expectedDefault = $expectedInfo['default'] ?? null;
         $existingDefault = $existingColumn->getDefault();
         if ($expectedDefault !== $existingDefault) {
-            $differences[] = \sprintf('default: %s → %s', $existingDefault ?? 'NULL', $expectedDefault ?? 'NULL');
+            $differences[] = sprintf('default: %s → %s', $existingDefault ?? 'NULL', $expectedDefault ?? 'NULL');
         }
 
         return $differences;
@@ -744,16 +759,16 @@ HELP
      * Create the access records table using Doctrine's schema tool.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io            The Symfony style output
+     * @param SymfonyStyle $io The Symfony style output
      */
     private function createRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
         $schemaTool = new \Doctrine\ORM\Tools\SchemaTool($entityManager);
-        $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
+        $metadata   = $entityManager->getMetadataFactory()->getAllMetadata();
 
         // Filter to only RouteDataRecord entity
         $routeDataRecordMetadata = array_filter($metadata, static function ($meta) {
-            return 'Nowo\PerformanceBundle\Entity\RouteDataRecord' === $meta->getName();
+            return $meta->getName() === 'Nowo\PerformanceBundle\Entity\RouteDataRecord';
         });
 
         if (empty($routeDataRecordMetadata)) {
@@ -767,9 +782,9 @@ HELP
         // Get table name from metadata (compatible with different Doctrine versions)
         $actualTableName = isset($recordMetadata->table['name'])
             ? $recordMetadata->table['name']
-            : ($this->tableName.'_records');
+            : ($this->tableName . '_records');
 
-        $io->text(\sprintf('Table name: <info>%s</info>', $actualTableName));
+        $io->text(sprintf('Table name: <info>%s</info>', $actualTableName));
         $io->text('Generating SQL statements...');
 
         $sql = $schemaTool->getCreateSchemaSql($routeDataRecordMetadata);
@@ -781,12 +796,12 @@ HELP
         }
 
         $connection = $entityManager->getConnection();
-        $platform = $connection->getDatabasePlatform();
+        $platform   = $connection->getDatabasePlatform();
 
         foreach ($sql as $statement) {
             // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
             $platformClass = $platform::class;
-            $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+            $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
 
@@ -800,7 +815,7 @@ HELP
                     $statement = preg_replace(
                         '/([`]?id[`]?\s+INT(?:EGER)?[^,)]*?)(\s+NOT\s+NULL)(?=\s*[,)]|$)/i',
                         '$1$2 AUTO_INCREMENT',
-                        $statement
+                        $statement,
                     );
                 }
             }
@@ -809,55 +824,55 @@ HELP
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00\s+00:00:00'/i",
                 '',
-                $statement
+                $statement,
             );
 
             // Also remove DEFAULT '0000-00-00' for date columns
             $statement = preg_replace(
                 "/DEFAULT\s+'0000-00-00'/i",
                 '',
-                $statement
+                $statement,
             );
 
-            $io->text(\sprintf('  <comment>%s</comment>', $statement));
+            $io->text(sprintf('  <comment>%s</comment>', $statement));
             $connection->executeStatement($statement);
         }
 
-        $io->success(\sprintf('Access records table "%s" created successfully!', $actualTableName));
+        $io->success(sprintf('Access records table "%s" created successfully!', $actualTableName));
     }
 
     /**
      * Update the access records table schema by adding missing columns, updating existing ones, and optionally dropping obsolete columns.
      *
      * @param EntityManagerInterface $entityManager The entity manager
-     * @param SymfonyStyle           $io            The Symfony style output
-     * @param bool                   $dropObsolete  Whether to drop columns that exist in DB but not in entity
+     * @param SymfonyStyle $io The Symfony style output
+     * @param bool $dropObsolete Whether to drop columns that exist in DB but not in entity
      */
     private function updateRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io, bool $dropObsolete = false): void
     {
-        $connection = $entityManager->getConnection();
+        $connection    = $entityManager->getConnection();
         $schemaManager = $this->getSchemaManager($connection);
 
         // Get the actual table name from entity metadata
-        $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+        $metadata        = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
         $actualTableName = method_exists($metadata, 'getTableName')
             ? $metadata->getTableName()
-            : ($metadata->table['name'] ?? $this->tableName.'_records');
+            : ($metadata->table['name'] ?? $this->tableName . '_records');
 
         // Verify table exists
         if (!$schemaManager->tablesExist([$actualTableName])) {
-            $io->note(\sprintf('Access records table "%s" does not exist. Creating it...', $actualTableName));
+            $io->note(sprintf('Access records table "%s" does not exist. Creating it...', $actualTableName));
             $this->createRecordsTable($entityManager, $io);
 
             return;
         }
 
-        $io->text(\sprintf('Table name: <info>%s</info>', $actualTableName));
+        $io->text(sprintf('Table name: <info>%s</info>', $actualTableName));
 
-        $table = $schemaManager->introspectTable($actualTableName);
+        $table              = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
-            $columnName = $this->getColumnName($column, $connection);
+            $columnName                                  = $this->getColumnName($column, $connection);
             $existingColumnsMap[strtolower($columnName)] = $column;
         }
 
@@ -867,8 +882,8 @@ HELP
             $columnName = $metadata->getColumnName($fieldName);
 
             // getFieldMapping() returns array in DBAL 2.x, FieldMapping object in DBAL 3.x
-            $fieldMapping = $metadata->getFieldMapping($fieldName);
-            $fieldMappingArray = \is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
+            $fieldMapping      = $metadata->getFieldMapping($fieldName);
+            $fieldMappingArray = is_array($fieldMapping) ? $fieldMapping : (array) $fieldMapping;
 
             $options = $fieldMappingArray['options'] ?? [];
 
@@ -880,36 +895,36 @@ HELP
             if ($metadata->isIdentifier($fieldName)) {
                 $fieldType = $metadata->getTypeOfField($fieldName);
                 // Check if it's an integer type (integer, smallint, bigint)
-                if (\in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
+                if (in_array(strtolower($fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
                     // Check generator type if available
                     $generatorType = $metadata->generatorType ?? null;
                     // If generatorType is AUTO, IDENTITY, or SEQUENCE (for MySQL, AUTO and IDENTITY are the same)
                     // Or if generatorType is null/not set, assume AUTO for integer IDs
-                    if (null === $generatorType
-                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO === $generatorType
-                        || \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY === $generatorType
-                        || isset($fieldMappingArray['generated']) && true === $fieldMappingArray['generated']) {
+                    if ($generatorType === null
+                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO
+                        || $generatorType === \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY
+                        || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
                         $isAutoincrement = true;
                     }
                 }
             }
 
             $expectedColumns[strtolower($columnName)] = [
-                'field' => $fieldName,
-                'column' => $columnName,
-                'type' => $metadata->getTypeOfField($fieldName),
-                'nullable' => $metadata->isNullable($fieldName),
-                'options' => $options,
-                'length' => $fieldMappingArray['length'] ?? null,
-                'default' => $defaultValue,
+                'field'         => $fieldName,
+                'column'        => $columnName,
+                'type'          => $metadata->getTypeOfField($fieldName),
+                'nullable'      => $metadata->isNullable($fieldName),
+                'options'       => $options,
+                'length'        => $fieldMappingArray['length'] ?? null,
+                'default'       => $defaultValue,
                 'autoincrement' => $isAutoincrement,
             ];
         }
 
-        $columnsToAdd = [];
+        $columnsToAdd    = [];
         $columnsToUpdate = [];
-        $columnsToDrop = [];
-        $platform = $connection->getDatabasePlatform();
+        $columnsToDrop   = [];
+        $platform        = $connection->getDatabasePlatform();
 
         // Compare each expected column with existing ones
         foreach ($expectedColumns as $columnNameLower => $expectedInfo) {
@@ -930,9 +945,9 @@ HELP
 
         if ($dropObsolete) {
             foreach ($table->getColumns() as $column) {
-                $columnName = $this->getColumnName($column, $connection);
+                $columnName      = $this->getColumnName($column, $connection);
                 $columnNameLower = strtolower($columnName);
-                if ('id' === $columnNameLower) {
+                if ($columnNameLower === 'id') {
                     continue;
                 }
                 if (!isset($expectedColumns[$columnNameLower])) {
@@ -954,49 +969,49 @@ HELP
 
         // Drop obsolete columns first
         if (!empty($columnsToDrop)) {
-            $io->section(\sprintf('Dropping <info>%d</info> obsolete column(s) (records table):', \count($columnsToDrop)));
+            $io->section(sprintf('Dropping <info>%d</info> obsolete column(s) (records table):', count($columnsToDrop)));
             foreach ($columnsToDrop as $columnName) {
-                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
-                $sql = \sprintf(
+                $io->text(sprintf('  - <comment>%s</comment>', $columnName));
+                $sql = sprintf(
                     'ALTER TABLE %s DROP COLUMN %s',
                     $this->quoteIdentifier($platform, $actualTableName),
-                    $this->quoteIdentifier($platform, $columnName)
+                    $this->quoteIdentifier($platform, $columnName),
                 );
                 try {
                     $connection->executeStatement($sql);
-                    $io->text(\sprintf('  ✓ Dropped column <info>%s</info>', $columnName));
-                } catch (\Exception $e) {
-                    $io->error(\sprintf('  ✗ Failed to drop column %s: %s', $columnName, $e->getMessage()));
+                    $io->text(sprintf('  ✓ Dropped column <info>%s</info>', $columnName));
+                } catch (Exception $e) {
+                    $io->error(sprintf('  ✗ Failed to drop column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
             $io->newLine();
-            $table = $schemaManager->introspectTable($actualTableName);
+            $table              = $schemaManager->introspectTable($actualTableName);
             $existingColumnsMap = [];
             foreach ($table->getColumns() as $column) {
-                $columnName = $this->getColumnName($column, $connection);
+                $columnName                                  = $this->getColumnName($column, $connection);
                 $existingColumnsMap[strtolower($columnName)] = $column;
             }
         }
 
         // Update existing columns
         if (!empty($columnsToUpdate)) {
-            $io->section(\sprintf('Updating <info>%d</info> column(s) (records table):', \count($columnsToUpdate)));
+            $io->section(sprintf('Updating <info>%d</info> column(s) (records table):', count($columnsToUpdate)));
             foreach ($columnsToUpdate as $columnName => $columnData) {
                 $expected = $columnData['expected'];
-                $io->text(\sprintf('  - <comment>%s</comment>', $columnName));
+                $io->text(sprintf('  - <comment>%s</comment>', $columnName));
                 $columnDefinition = $this->getColumnDefinition($expected, $platform);
-                $sql = \sprintf(
+                $sql              = sprintf(
                     'ALTER TABLE %s MODIFY COLUMN %s %s',
                     $this->quoteIdentifier($platform, $actualTableName),
                     $this->quoteIdentifier($platform, $columnName),
-                    $columnDefinition
+                    $columnDefinition,
                 );
                 try {
                     $connection->executeStatement($sql);
-                    $io->text(\sprintf('  ✓ Updated column <info>%s</info>', $columnName));
-                } catch (\Exception $e) {
-                    $io->error(\sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
+                    $io->text(sprintf('  ✓ Updated column <info>%s</info>', $columnName));
+                } catch (Exception $e) {
+                    $io->error(sprintf('  ✗ Failed to update column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
@@ -1005,23 +1020,23 @@ HELP
 
         // Add missing columns
         if (!empty($columnsToAdd)) {
-            $io->section(\sprintf('Adding <info>%d</info> missing column(s) (records table):', \count($columnsToAdd)));
+            $io->section(sprintf('Adding <info>%d</info> missing column(s) (records table):', count($columnsToAdd)));
             foreach ($columnsToAdd as $columnName => $columnInfo) {
-                $io->text(\sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
+                $io->text(sprintf('  - <comment>%s</comment> (%s)', $columnName, $columnInfo['type']));
 
                 $columnDefinition = $this->getColumnDefinition($columnInfo, $platform);
-                $sql = \sprintf(
+                $sql              = sprintf(
                     'ALTER TABLE %s ADD COLUMN %s %s',
                     $this->quoteIdentifier($platform, $actualTableName),
                     $this->quoteIdentifier($platform, $columnName),
-                    $columnDefinition
+                    $columnDefinition,
                 );
 
                 try {
                     $connection->executeStatement($sql);
-                    $io->text(\sprintf('  ✓ Added column <info>%s</info>', $columnName));
-                } catch (\Exception $e) {
-                    $io->error(\sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
+                    $io->text(sprintf('  ✓ Added column <info>%s</info>', $columnName));
+                } catch (Exception $e) {
+                    $io->error(sprintf('  ✗ Failed to add column %s: %s', $columnName, $e->getMessage()));
                     throw $e;
                 }
             }
@@ -1029,25 +1044,25 @@ HELP
         }
 
         $this->addMissingIndexesRecordsTable($entityManager, $io, $table, $actualTableName);
-        $io->success(\sprintf('Access records table "%s" updated successfully!', $actualTableName));
+        $io->success(sprintf('Access records table "%s" updated successfully!', $actualTableName));
     }
 
     /**
      * Add missing indexes to the access records table.
      *
-     * @param EntityManagerInterface      $entityManager   The entity manager
-     * @param SymfonyStyle                $io              The Symfony style output
-     * @param \Doctrine\DBAL\Schema\Table $table           The table schema
-     * @param string                      $actualTableName The table name
+     * @param EntityManagerInterface $entityManager The entity manager
+     * @param SymfonyStyle $io The Symfony style output
+     * @param \Doctrine\DBAL\Schema\Table $table The table schema
+     * @param string $actualTableName The table name
      */
     private function addMissingIndexesRecordsTable(EntityManagerInterface $entityManager, SymfonyStyle $io, \Doctrine\DBAL\Schema\Table $table, string $actualTableName): void
     {
-        $connection = $entityManager->getConnection();
-        $platform = $connection->getDatabasePlatform();
-        $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+        $connection      = $entityManager->getConnection();
+        $platform        = $connection->getDatabasePlatform();
+        $metadata        = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
         $expectedIndexes = [];
 
-        if (isset($metadata->table['indexes']) && \is_array($metadata->table['indexes'])) {
+        if (isset($metadata->table['indexes']) && is_array($metadata->table['indexes'])) {
             foreach ($metadata->table['indexes'] as $indexName => $indexDefinition) {
                 $columns = $indexDefinition['columns'] ?? [];
                 if (!empty($columns)) {
@@ -1056,26 +1071,26 @@ HELP
             }
         }
 
-        if (\PHP_VERSION_ID >= 80000) {
+        if (PHP_VERSION_ID >= 80000) {
             try {
-                $reflection = new \ReflectionClass('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+                $reflection = new ReflectionClass('Nowo\PerformanceBundle\Entity\RouteDataRecord');
                 $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\Index::class);
                 foreach ($attributes as $attribute) {
-                    $index = $attribute->newInstance();
+                    $index     = $attribute->newInstance();
                     $indexName = $index->name ?? null;
-                    $columns = $index->columns ?? [];
+                    $columns   = $index->columns ?? [];
                     if ($indexName && !empty($columns)) {
                         $expectedIndexes[$indexName] = $columns;
                     }
                 }
-            } catch (\ReflectionException $e) {
+            } catch (ReflectionException $e) {
                 // Ignore
             }
         }
 
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
-            $indexName = $this->getAssetName($index, $connection);
+            $indexName                               = $this->getAssetName($index, $connection);
             $existingIndexes[strtolower($indexName)] = $index;
         }
 
@@ -1094,17 +1109,17 @@ HELP
                 continue;
             }
             $quotedColumns = array_map(fn ($col) => $this->quoteIdentifier($platform, $col), $columns);
-            $sql = \sprintf(
+            $sql           = sprintf(
                 'CREATE INDEX %s ON %s (%s)',
                 $this->quoteIdentifier($platform, $indexName),
                 $this->quoteIdentifier($platform, $actualTableName),
-                implode(', ', $quotedColumns)
+                implode(', ', $quotedColumns),
             );
             try {
                 $connection->executeStatement($sql);
-                $io->text(\sprintf('  ✓ Created index <info>%s</info> on records table', $indexName));
-            } catch (\Exception $e) {
-                $io->warning(\sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
+                $io->text(sprintf('  ✓ Created index <info>%s</info> on records table', $indexName));
+            } catch (Exception $e) {
+                $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
         }
     }
@@ -1112,17 +1127,17 @@ HELP
     /**
      * Get SQL column definition for a column.
      *
-     * @param array<string, mixed>                      $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   Database platform
+     * @param array<string, mixed> $columnInfo Column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
      *
      * @return string SQL column definition
      */
     private function getColumnDefinition(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
     {
-        $sqlType = $this->getColumnSQLType($columnInfo, $platform);
-        $nullable = $columnInfo['nullable'];
-        $options = $columnInfo['options'];
-        $type = $columnInfo['type'];
+        $sqlType         = $this->getColumnSQLType($columnInfo, $platform);
+        $nullable        = $columnInfo['nullable'];
+        $options         = $columnInfo['options'];
+        $type            = $columnInfo['type'];
         $isAutoincrement = $columnInfo['autoincrement'] ?? false;
 
         // Handle default values
@@ -1134,13 +1149,13 @@ HELP
             $defaultValue = $columnInfo['default'] ?? $options['default'];
 
             // Skip default for datetime types (they should be nullable or use CURRENT_TIMESTAMP explicitly)
-            if (null !== $defaultValue && !\in_array($type, ['datetime', 'datetime_immutable', 'date', 'time'], true)) {
-                if (\is_bool($defaultValue)) {
-                    $default = ' DEFAULT '.($defaultValue ? '1' : '0');
+            if ($defaultValue !== null && !in_array($type, ['datetime', 'datetime_immutable', 'date', 'time'], true)) {
+                if (is_bool($defaultValue)) {
+                    $default = ' DEFAULT ' . ($defaultValue ? '1' : '0');
                 } elseif (is_numeric($defaultValue)) {
-                    $default = ' DEFAULT '.$defaultValue;
-                } elseif (\is_string($defaultValue)) {
-                    $default = ' DEFAULT '.$platform->quoteStringLiteral($defaultValue);
+                    $default = ' DEFAULT ' . $defaultValue;
+                } elseif (is_string($defaultValue)) {
+                    $default = ' DEFAULT ' . $platform->quoteStringLiteral($defaultValue);
                 }
             }
         }
@@ -1151,7 +1166,7 @@ HELP
         $autoincrement = '';
         if ($isAutoincrement) {
             $platformClass = $platform::class;
-            $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+            $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
 
@@ -1160,14 +1175,14 @@ HELP
             }
         }
 
-        return $sqlType.$nullConstraint.$default.$autoincrement;
+        return $sqlType . $nullConstraint . $default . $autoincrement;
     }
 
     /**
      * Quote a single identifier (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   The database platform
-     * @param string                                    $identifier The identifier to quote
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform The database platform
+     * @param string $identifier The identifier to quote
      *
      * @return string The quoted identifier
      */
@@ -1185,8 +1200,8 @@ HELP
     /**
      * Get column name from Column object (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Schema\Column $column     The column object
-     * @param \Doctrine\DBAL\Connection    $connection The database connection
+     * @param \Doctrine\DBAL\Schema\Column $column The column object
+     * @param \Doctrine\DBAL\Connection $connection The database connection
      *
      * @return string The column name
      */
@@ -1202,18 +1217,18 @@ HELP
             $name = $column->getName();
 
             // getName() might return a Name object in DBAL 3.x, convert to string
-            return \is_string($name) ? $name : (string) $name;
+            return is_string($name) ? $name : (string) $name;
         }
 
         // Last resort: try reflection to get name
         try {
-            $reflection = new \ReflectionClass($column);
+            $reflection   = new ReflectionClass($column);
             $nameProperty = $reflection->getProperty('name');
             $nameProperty->setAccessible(true);
             $name = $nameProperty->getValue($column);
 
-            return \is_string($name) ? $name : (string) $name;
-        } catch (\Exception $e) {
+            return is_string($name) ? $name : (string) $name;
+        } catch (Exception $e) {
             return '';
         }
     }
@@ -1221,8 +1236,8 @@ HELP
     /**
      * Get asset name from AbstractAsset object (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Schema\AbstractAsset $asset      The asset object (Column, Index, etc.)
-     * @param \Doctrine\DBAL\Connection           $connection The database connection
+     * @param \Doctrine\DBAL\Schema\AbstractAsset $asset The asset object (Column, Index, etc.)
+     * @param \Doctrine\DBAL\Connection $connection The database connection
      *
      * @return string The asset name
      */
@@ -1238,18 +1253,18 @@ HELP
             $name = $asset->getName();
 
             // getName() might return a Name object in DBAL 3.x, convert to string
-            return \is_string($name) ? $name : (string) $name;
+            return is_string($name) ? $name : (string) $name;
         }
 
         // Last resort: try reflection to get name
         try {
-            $reflection = new \ReflectionClass($asset);
+            $reflection   = new ReflectionClass($asset);
             $nameProperty = $reflection->getProperty('name');
             $nameProperty->setAccessible(true);
             $name = $nameProperty->getValue($asset);
 
-            return \is_string($name) ? $name : (string) $name;
-        } catch (\Exception $e) {
+            return is_string($name) ? $name : (string) $name;
+        } catch (Exception $e) {
             return '';
         }
     }
@@ -1257,16 +1272,16 @@ HELP
     /**
      * Get SQL type string for a column.
      *
-     * @param array<string, mixed>                      $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform   Database platform
+     * @param array<string, mixed> $columnInfo Column information
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
      *
      * @return string SQL type declaration
      */
     private function getColumnSQLType(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
     {
-        $type = $columnInfo['type'];
-        $options = $columnInfo['options'] ?? [];
-        $length = $columnInfo['length'] ?? null;
+        $type       = $columnInfo['type'];
+        $options    = $columnInfo['options'] ?? [];
+        $length     = $columnInfo['length'] ?? null;
         $columnName = $columnInfo['column'] ?? 'column'; // Default fallback name
 
         // Use Doctrine's type system to get proper SQL type
@@ -1282,12 +1297,12 @@ HELP
                 $doctrineType = \Doctrine\DBAL\Types\Type::getType($type);
             }
 
-            if (null !== $doctrineType) {
+            if ($doctrineType !== null) {
                 $column = [];
                 // DBAL 3.x requires 'name' key in the column array (mandatory)
                 $column['name'] = $columnName;
 
-                if (null !== $length) {
+                if ($length !== null) {
                     $column['length'] = $length;
                 } elseif (isset($options['length'])) {
                     $column['length'] = $options['length'];
@@ -1313,26 +1328,26 @@ HELP
 
                 return $doctrineType->getSQLDeclaration($column, $platform);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Fall through to fallback mapping
         }
 
         // Fallback to manual mapping (used if Type system fails or is not available)
         $typeMap = [
-            'boolean' => 'BOOLEAN',
-            'integer' => 'INTEGER',
-            'float' => 'FLOAT',
-            'string' => 'VARCHAR(255)',
+            'boolean'            => 'BOOLEAN',
+            'integer'            => 'INTEGER',
+            'float'              => 'FLOAT',
+            'string'             => 'VARCHAR(255)',
             'datetime_immutable' => 'DATETIME',
-            'json' => 'JSON',
-            'bigint' => 'BIGINT',
+            'json'               => 'JSON',
+            'bigint'             => 'BIGINT',
         ];
         $sqlType = $typeMap[strtolower($type)] ?? 'VARCHAR(255)';
 
         // Handle string length
-        if ('string' === $type) {
+        if ($type === 'string') {
             $finalLength = $length ?? $options['length'] ?? 255;
-            $sqlType = \sprintf('VARCHAR(%d)', $finalLength);
+            $sqlType     = sprintf('VARCHAR(%d)', $finalLength);
         }
 
         return $sqlType;
@@ -1341,22 +1356,22 @@ HELP
     /**
      * Add missing indexes to the table.
      *
-     * @param EntityManagerInterface      $entityManager The entity manager
-     * @param SymfonyStyle                $io            The Symfony style output
-     * @param \Doctrine\DBAL\Schema\Table $table         The table schema
+     * @param EntityManagerInterface $entityManager The entity manager
+     * @param SymfonyStyle $io The Symfony style output
+     * @param \Doctrine\DBAL\Schema\Table $table The table schema
      */
     private function addMissingIndexes(EntityManagerInterface $entityManager, SymfonyStyle $io, \Doctrine\DBAL\Schema\Table $table): void
     {
-        $connection = $entityManager->getConnection();
-        $platform = $connection->getDatabasePlatform();
+        $connection    = $entityManager->getConnection();
+        $platform      = $connection->getDatabasePlatform();
         $schemaManager = $this->getSchemaManager($connection);
 
         // Get expected indexes from entity metadata
-        $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
+        $metadata        = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
         $expectedIndexes = [];
 
         // Get indexes from table metadata (Doctrine ORM 2.x style)
-        if (isset($metadata->table['indexes']) && \is_array($metadata->table['indexes'])) {
+        if (isset($metadata->table['indexes']) && is_array($metadata->table['indexes'])) {
             foreach ($metadata->table['indexes'] as $indexName => $indexDefinition) {
                 $columns = $indexDefinition['columns'] ?? [];
                 if (!empty($columns)) {
@@ -1366,26 +1381,26 @@ HELP
         }
 
         // Also check for Index attributes (Doctrine ORM 3.x style with PHP 8 attributes)
-        if (\PHP_VERSION_ID >= 80000) {
+        if (PHP_VERSION_ID >= 80000) {
             try {
-                $reflection = new \ReflectionClass('Nowo\PerformanceBundle\Entity\RouteData');
+                $reflection = new ReflectionClass('Nowo\PerformanceBundle\Entity\RouteData');
                 $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\Index::class);
                 foreach ($attributes as $attribute) {
-                    $index = $attribute->newInstance();
+                    $index     = $attribute->newInstance();
                     $indexName = $index->name ?? null;
-                    $columns = $index->columns ?? [];
+                    $columns   = $index->columns ?? [];
                     if ($indexName && !empty($columns)) {
                         $expectedIndexes[$indexName] = $columns;
                     }
                 }
-            } catch (\ReflectionException $e) {
+            } catch (ReflectionException $e) {
                 // Ignore reflection errors
             }
         }
 
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
-            $indexName = $this->getAssetName($index, $connection);
+            $indexName                               = $this->getAssetName($index, $connection);
             $existingIndexes[strtolower($indexName)] = $index;
         }
 
@@ -1411,7 +1426,7 @@ HELP
             return;
         }
 
-        $io->text(\sprintf('Adding <info>%d</info> missing index(es):', \count($indexesToAdd)));
+        $io->text(sprintf('Adding <info>%d</info> missing index(es):', count($indexesToAdd)));
 
         foreach ($indexesToAdd as $indexName => $columns) {
             $quotedColumns = array_map(function ($col) use ($platform) {
@@ -1423,18 +1438,18 @@ HELP
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName);
 
-            $sql = \sprintf(
+            $sql = sprintf(
                 'CREATE INDEX %s ON %s (%s)',
                 $this->quoteIdentifier($platform, $indexName),
                 $this->quoteIdentifier($platform, $actualTableName),
-                implode(', ', $quotedColumns)
+                implode(', ', $quotedColumns),
             );
 
             try {
                 $connection->executeStatement($sql);
-                $io->text(\sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
-            } catch (\Exception $e) {
-                $io->warning(\sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
+                $io->text(sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
+            } catch (Exception $e) {
+                $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
         }
     }
@@ -1442,11 +1457,11 @@ HELP
     /**
      * Fix AUTO_INCREMENT for id column, handling foreign key constraints.
      *
-     * @param \Doctrine\DBAL\Connection                   $connection    The database connection
+     * @param \Doctrine\DBAL\Connection $connection The database connection
      * @param \Doctrine\DBAL\Schema\AbstractSchemaManager $schemaManager The schema manager
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform   $platform      The database platform
-     * @param string                                      $tableName     The table name
-     * @param SymfonyStyle                                $io            The Symfony style output
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform The database platform
+     * @param string $tableName The table name
+     * @param SymfonyStyle $io The Symfony style output
      */
     private function fixAutoIncrementWithForeignKeys(
         \Doctrine\DBAL\Connection $connection,
@@ -1456,16 +1471,16 @@ HELP
         SymfonyStyle $io,
     ): void {
         $platformClass = $platform::class;
-        $isMySQL = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+        $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
             || str_contains(strtolower($platformClass), 'mysql')
             || str_contains(strtolower($platformClass), 'mariadb');
 
         if (!$isMySQL) {
             // Only MySQL/MariaDB need this special handling
-            $alterSql = \sprintf(
+            $alterSql = sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s INT NOT NULL AUTO_INCREMENT',
                 $this->quoteIdentifier($platform, $tableName),
-                $this->quoteIdentifier($platform, 'id')
+                $this->quoteIdentifier($platform, 'id'),
             );
             $connection->executeStatement($alterSql);
 
@@ -1478,7 +1493,7 @@ HELP
         try {
             // Query INFORMATION_SCHEMA to find foreign keys referencing this table's id column
             // Need to JOIN KEY_COLUMN_USAGE with REFERENTIAL_CONSTRAINTS to get UPDATE_RULE and DELETE_RULE
-            $fkQuery = \sprintf(
+            $fkQuery = sprintf(
                 "SELECT 
                     kcu.CONSTRAINT_NAME,
                     kcu.TABLE_NAME,
@@ -1495,53 +1510,53 @@ HELP
                     AND kcu.REFERENCED_TABLE_NAME = %s
                     AND kcu.REFERENCED_COLUMN_NAME = 'id'
                     AND kcu.CONSTRAINT_NAME != 'PRIMARY'",
-                $platform->quoteStringLiteral($tableName)
+                $platform->quoteStringLiteral($tableName),
             );
 
             $foreignKeys = $connection->fetchAllAssociative($fkQuery);
 
             // Drop foreign keys that reference this table's id column
             foreach ($foreignKeys as $fk) {
-                $fkName = $fk['CONSTRAINT_NAME'];
+                $fkName  = $fk['CONSTRAINT_NAME'];
                 $fkTable = $fk['TABLE_NAME'];
 
                 // Store FK info for restoration
                 $foreignKeysToRestore[] = [
-                    'name' => $fkName,
-                    'table' => $fkTable,
-                    'column' => $fk['COLUMN_NAME'],
-                    'referenced_table' => $fk['REFERENCED_TABLE_NAME'],
+                    'name'              => $fkName,
+                    'table'             => $fkTable,
+                    'column'            => $fk['COLUMN_NAME'],
+                    'referenced_table'  => $fk['REFERENCED_TABLE_NAME'],
                     'referenced_column' => $fk['REFERENCED_COLUMN_NAME'],
-                    'update_rule' => $fk['UPDATE_RULE'],
-                    'delete_rule' => $fk['DELETE_RULE'],
+                    'update_rule'       => $fk['UPDATE_RULE'],
+                    'delete_rule'       => $fk['DELETE_RULE'],
                 ];
 
                 // Drop the foreign key
-                $dropFkSql = \sprintf(
+                $dropFkSql = sprintf(
                     'ALTER TABLE %s DROP FOREIGN KEY %s',
                     $this->quoteIdentifier($platform, $fkTable),
-                    $this->quoteIdentifier($platform, $fkName)
+                    $this->quoteIdentifier($platform, $fkName),
                 );
 
                 try {
                     $connection->executeStatement($dropFkSql);
-                    $io->text(\sprintf('  Temporarily dropped foreign key <comment>%s</comment> from table <info>%s</info>', $fkName, $fkTable));
-                } catch (\Exception $e) {
-                    $io->warning(\sprintf('  Could not drop foreign key %s: %s', $fkName, $e->getMessage()));
+                    $io->text(sprintf('  Temporarily dropped foreign key <comment>%s</comment> from table <info>%s</info>', $fkName, $fkTable));
+                } catch (Exception $e) {
+                    $io->warning(sprintf('  Could not drop foreign key %s: %s', $fkName, $e->getMessage()));
                 }
             }
 
             // Now modify the id column to add AUTO_INCREMENT
-            $alterSql = \sprintf(
+            $alterSql = sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s INT NOT NULL AUTO_INCREMENT',
                 $this->quoteIdentifier($platform, $tableName),
-                $this->quoteIdentifier($platform, 'id')
+                $this->quoteIdentifier($platform, 'id'),
             );
             $connection->executeStatement($alterSql);
 
             // Restore foreign keys
             foreach ($foreignKeysToRestore as $fkInfo) {
-                $restoreFkSql = \sprintf(
+                $restoreFkSql = sprintf(
                     'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s',
                     $this->quoteIdentifier($platform, $fkInfo['table']),
                     $this->quoteIdentifier($platform, $fkInfo['name']),
@@ -1549,22 +1564,22 @@ HELP
                     $this->quoteIdentifier($platform, $fkInfo['referenced_table']),
                     $this->quoteIdentifier($platform, $fkInfo['referenced_column']),
                     $fkInfo['update_rule'],
-                    $fkInfo['delete_rule']
+                    $fkInfo['delete_rule'],
                 );
 
                 try {
                     $connection->executeStatement($restoreFkSql);
-                    $io->text(\sprintf('  Restored foreign key <comment>%s</comment> on table <info>%s</info>', $fkInfo['name'], $fkInfo['table']));
-                } catch (\Exception $e) {
-                    $io->error(\sprintf('  Failed to restore foreign key %s: %s', $fkInfo['name'], $e->getMessage()));
+                    $io->text(sprintf('  Restored foreign key <comment>%s</comment> on table <info>%s</info>', $fkInfo['name'], $fkInfo['table']));
+                } catch (Exception $e) {
+                    $io->error(sprintf('  Failed to restore foreign key %s: %s', $fkInfo['name'], $e->getMessage()));
                     throw $e;
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // If something went wrong, try to restore foreign keys before rethrowing
             foreach ($foreignKeysToRestore as $fkInfo) {
                 try {
-                    $restoreFkSql = \sprintf(
+                    $restoreFkSql = sprintf(
                         'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s',
                         $this->quoteIdentifier($platform, $fkInfo['table']),
                         $this->quoteIdentifier($platform, $fkInfo['name']),
@@ -1572,12 +1587,12 @@ HELP
                         $this->quoteIdentifier($platform, $fkInfo['referenced_table']),
                         $this->quoteIdentifier($platform, $fkInfo['referenced_column']),
                         $fkInfo['update_rule'],
-                        $fkInfo['delete_rule']
+                        $fkInfo['delete_rule'],
                     );
                     $connection->executeStatement($restoreFkSql);
-                } catch (\Exception $restoreException) {
+                } catch (Exception $restoreException) {
                     // Log but don't throw - we want to throw the original exception
-                    $io->error(\sprintf('  Failed to restore foreign key %s during error recovery: %s', $fkInfo['name'], $restoreException->getMessage()));
+                    $io->error(sprintf('  Failed to restore foreign key %s during error recovery: %s', $fkInfo['name'], $restoreException->getMessage()));
                 }
             }
             throw $e;

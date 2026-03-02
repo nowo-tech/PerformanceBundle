@@ -27,7 +27,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
     public function testSettersModifyValues(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordReviewedEvent($routeData, null, null, null);
+        $event     = new BeforeRecordReviewedEvent($routeData, null, null, null);
 
         $event->setQueriesImproved(true);
         $event->setTimeImproved(false);
@@ -41,7 +41,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
     public function testPreventReview(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordReviewedEvent($routeData, null, null, null);
+        $event     = new BeforeRecordReviewedEvent($routeData, null, null, null);
 
         $this->assertFalse($event->isReviewPrevented());
 
@@ -53,7 +53,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
     public function testPreventReviewCalledMultipleTimesRemainsPrevented(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordReviewedEvent($routeData, null, null, null);
+        $event     = new BeforeRecordReviewedEvent($routeData, null, null, null);
 
         $event->preventReview();
         $event->preventReview();
@@ -74,7 +74,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
     public function testExtendsSymfonyEvent(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordReviewedEvent($routeData, null, null, null);
+        $event     = new BeforeRecordReviewedEvent($routeData, null, null, null);
 
         $this->assertInstanceOf(Event::class, $event);
     }
@@ -82,7 +82,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
     public function testSetReviewedByWithEmptyString(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordReviewedEvent($routeData, null, null, 'original');
+        $event     = new BeforeRecordReviewedEvent($routeData, null, null, 'original');
 
         $event->setReviewedBy('');
 
@@ -104,7 +104,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
     public function testSetQueriesImprovedAndTimeImprovedBothTrue(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordReviewedEvent($routeData, false, false, null);
+        $event     = new BeforeRecordReviewedEvent($routeData, false, false, null);
 
         $event->setQueriesImproved(true);
         $event->setTimeImproved(true);
@@ -126,7 +126,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
     public function testSetReviewedByWithNull(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordReviewedEvent($routeData, null, null, 'original');
+        $event     = new BeforeRecordReviewedEvent($routeData, null, null, 'original');
 
         $event->setReviewedBy(null);
 

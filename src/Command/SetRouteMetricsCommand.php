@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Command;
 
+use Exception;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -12,6 +13,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+
+use function sprintf;
+
+use const JSON_ERROR_NONE;
 
 /**
  * Command to set or update route performance metrics.
@@ -41,7 +46,8 @@ final class SetRouteMetricsCommand extends Command
      */
     protected function configure(): void
     {
-        $this->setHelp(<<<'HELP'
+        $this->setHelp(
+            <<<'HELP'
 The <info>%command.name%</info> command allows you to manually set or update performance metrics for a specific route.
 
 This is useful for:
@@ -76,7 +82,7 @@ HELP
     /**
      * Execute the command.
      *
-     * @param InputInterface  $input  The input interface
+     * @param InputInterface $input The input interface
      * @param OutputInterface $output The output interface
      *
      * @return int Command exit code (0 for success, 1 for failure)
@@ -85,26 +91,26 @@ HELP
     {
         $io = new SymfonyStyle($input, $output);
 
-        $routeName = $input->getArgument('route');
-        $env = $input->getOption('env');
-        $requestTime = null !== $input->getOption('request-time') ? (float) $input->getOption('request-time') : null;
-        $totalQueries = null !== $input->getOption('queries') ? (int) $input->getOption('queries') : null;
-        $queryTime = null !== $input->getOption('query-time') ? (float) $input->getOption('query-time') : null;
-        $memoryUsage = null !== $input->getOption('memory') ? (int) $input->getOption('memory') : null;
-        $paramsJson = $input->getOption('params');
-        $params = null;
+        $routeName    = $input->getArgument('route');
+        $env          = $input->getOption('env');
+        $requestTime  = $input->getOption('request-time') !== null ? (float) $input->getOption('request-time') : null;
+        $totalQueries = $input->getOption('queries') !== null ? (int) $input->getOption('queries') : null;
+        $queryTime    = $input->getOption('query-time') !== null ? (float) $input->getOption('query-time') : null;
+        $memoryUsage  = $input->getOption('memory') !== null ? (int) $input->getOption('memory') : null;
+        $paramsJson   = $input->getOption('params');
+        $params       = null;
 
-        if (null !== $paramsJson) {
+        if ($paramsJson !== null) {
             $params = json_decode($paramsJson, true);
-            if (\JSON_ERROR_NONE !== json_last_error()) {
-                $io->error(\sprintf('Invalid JSON in params: %s', json_last_error_msg()));
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $io->error(sprintf('Invalid JSON in params: %s', json_last_error_msg()));
 
                 return Command::FAILURE;
             }
         }
 
         // Validate that at least one metric is provided
-        if (null === $requestTime && null === $totalQueries && null === $queryTime && null === $memoryUsage) {
+        if ($requestTime === null && $totalQueries === null && $queryTime === null && $memoryUsage === null) {
             $io->error('At least one metric must be provided (--request-time, --queries, --query-time, or --memory)');
 
             return Command::FAILURE;
@@ -114,10 +120,10 @@ HELP
             // Check if route exists
             $existingRoute = $this->metricsService->getRouteData($routeName, $env);
 
-            if (null === $existingRoute) {
-                $io->info(\sprintf('Creating new route metrics for "%s" in environment "%s"', $routeName, $env));
+            if ($existingRoute === null) {
+                $io->info(sprintf('Creating new route metrics for "%s" in environment "%s"', $routeName, $env));
             } else {
-                $io->info(\sprintf('Updating route metrics for "%s" in environment "%s"', $routeName, $env));
+                $io->info(sprintf('Updating route metrics for "%s" in environment "%s"', $routeName, $env));
             }
 
             // Record metrics
@@ -128,13 +134,13 @@ HELP
                 $totalQueries,
                 $queryTime,
                 $params,
-                $memoryUsage
+                $memoryUsage,
             );
 
             $routeData = $this->metricsService->getRouteData($routeName, $env);
-            if (null !== $routeData) {
+            if ($routeData !== null) {
                 $routesWithAgg = $this->metricsService->getRoutesWithAggregates($env);
-                $display = null;
+                $display       = null;
                 foreach ($routesWithAgg as $r) {
                     if ($r->getName() === $routeName) {
                         $display = $r;
@@ -147,18 +153,18 @@ HELP
                     [
                         ['Route Name', $routeData->getName() ?? 'N/A'],
                         ['Environment', $routeData->getEnv() ?? 'N/A'],
-                        ['Request Time', null !== $display?->getRequestTime() ? \sprintf('%.4f s', $display->getRequestTime()) : 'N/A (from records)'],
+                        ['Request Time', $display?->getRequestTime() !== null ? sprintf('%.4f s', $display->getRequestTime()) : 'N/A (from records)'],
                         ['Total Queries', $display?->getTotalQueries() ?? 'N/A'],
-                        ['Query Time', null !== $display?->getQueryTime() ? \sprintf('%.4f s', $display->getQueryTime()) : 'N/A'],
-                        ['Memory Usage', null !== $display?->getMemoryUsage() ? \sprintf('%s MB', number_format($display->getMemoryUsage() / 1024 / 1024, 2)) : 'N/A'],
+                        ['Query Time', $display?->getQueryTime() !== null ? sprintf('%.4f s', $display->getQueryTime()) : 'N/A'],
+                        ['Memory Usage', $display?->getMemoryUsage() !== null ? sprintf('%s MB', number_format($display->getMemoryUsage() / 1024 / 1024, 2)) : 'N/A'],
                         ['Last Accessed', $routeData->getLastAccessedAt()?->format('Y-m-d H:i:s') ?? 'N/A'],
-                    ]
+                    ],
                 );
             }
 
             return Command::SUCCESS;
-        } catch (\Exception $e) {
-            $io->error(\sprintf('Error saving route metrics: %s', $e->getMessage()));
+        } catch (Exception $e) {
+            $io->error(sprintf('Error saving route metrics: %s', $e->getMessage()));
 
             return Command::FAILURE;
         }

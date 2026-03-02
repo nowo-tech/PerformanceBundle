@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Model;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
 
 /**
@@ -56,12 +57,12 @@ final class RouteDataWithAggregates
         return $this->routeData->getParams();
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->routeData->getCreatedAt();
     }
 
-    public function getLastAccessedAt(): ?\DateTimeImmutable
+    public function getLastAccessedAt(): ?DateTimeImmutable
     {
         return $this->routeData->getLastAccessedAt();
     }
@@ -71,7 +72,7 @@ final class RouteDataWithAggregates
         return $this->routeData->isReviewed();
     }
 
-    public function getReviewedAt(): ?\DateTimeImmutable
+    public function getReviewedAt(): ?DateTimeImmutable
     {
         return $this->routeData->getReviewedAt();
     }
@@ -148,7 +149,7 @@ final class RouteDataWithAggregates
             return 0.0;
         }
         $total = array_sum($codes);
-        if (0 === $total) {
+        if ($total === 0) {
             return 0.0;
         }
 

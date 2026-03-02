@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DataCollector;
 
+use Exception;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
@@ -12,6 +13,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Throwable;
+
+use function is_array;
+use function sprintf;
 
 /**
  * Data collector for Performance Bundle.
@@ -110,12 +115,12 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Creates a new instance.
      *
-     * @param RouteDataRepository|null       $repository         The route data repository (optional)
-     * @param KernelInterface|null           $kernel             The kernel interface (optional)
-     * @param TableStatusChecker|null        $tableStatusChecker The table status checker (optional)
-     * @param DependencyChecker|null         $dependencyChecker  The dependency checker (optional)
-     * @param RouteDataRecordRepository|null $recordRepository   The route data record repository (optional)
-     * @param bool                           $checkTableStatus   Whether to check table existence/completeness (default true). Set false to save queries.
+     * @param RouteDataRepository|null $repository The route data repository (optional)
+     * @param KernelInterface|null $kernel The kernel interface (optional)
+     * @param TableStatusChecker|null $tableStatusChecker The table status checker (optional)
+     * @param DependencyChecker|null $dependencyChecker The dependency checker (optional)
+     * @param RouteDataRecordRepository|null $recordRepository The route data record repository (optional)
+     * @param bool $checkTableStatus Whether to check table existence/completeness (default true). Set false to save queries.
      */
     public function __construct(
         ?RouteDataRepository $repository = null,
@@ -125,12 +130,12 @@ class PerformanceDataCollector extends DataCollector
         ?RouteDataRecordRepository $recordRepository = null,
         bool $checkTableStatus = true,
     ) {
-        $this->repository = $repository;
-        $this->kernel = $kernel;
+        $this->repository         = $repository;
+        $this->kernel             = $kernel;
         $this->tableStatusChecker = $tableStatusChecker;
-        $this->dependencyChecker = $dependencyChecker;
-        $this->recordRepository = $recordRepository;
-        $this->checkTableStatus = $checkTableStatus;
+        $this->dependencyChecker  = $dependencyChecker;
+        $this->recordRepository   = $recordRepository;
+        $this->checkTableStatus   = $checkTableStatus;
     }
 
     /**
@@ -146,13 +151,13 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Set query metrics.
      *
-     * @param int   $queryCount The total number of queries
-     * @param float $queryTime  The total query execution time in seconds
+     * @param int $queryCount The total number of queries
+     * @param float $queryTime The total query execution time in seconds
      */
     public function setQueryMetrics(int $queryCount, float $queryTime): void
     {
         $this->queryCount = $queryCount;
-        $this->queryTime = $queryTime;
+        $this->queryTime  = $queryTime;
     }
 
     /**
@@ -248,136 +253,136 @@ class PerformanceDataCollector extends DataCollector
     /**
      * Set record operation information.
      *
-     * @param bool $isNew      Whether a new record was created
+     * @param bool $isNew Whether a new record was created
      * @param bool $wasUpdated Whether an existing record was updated
      */
     public function setRecordOperation(bool $isNew, bool $wasUpdated): void
     {
-        $this->recordWasNew = $isNew;
+        $this->recordWasNew     = $isNew;
         $this->recordWasUpdated = $wasUpdated;
 
         // Also update the data array if it has been initialized (collect() has been called)
         // This ensures the information is available even if setRecordOperation() is called after collect()
-        if (isset($this->data) && \is_array($this->data)) {
-            $this->data['record_was_new'] = $isNew;
+        if (isset($this->data) && is_array($this->data)) {
+            $this->data['record_was_new']     = $isNew;
             $this->data['record_was_updated'] = $wasUpdated;
         }
     }
 
-    public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
+    public function collect(Request $request, Response $response, ?Throwable $exception = null): void
     {
         $routeName = $this->routeName ?? $request->attributes->get('_route');
-        $env = $this->kernel?->getEnvironment() ?? 'dev';
+        $env       = $this->kernel?->getEnvironment() ?? 'dev';
 
         // When tracking is disabled (bundle disabled or route ignored): avoid any expensive work
         // (no DB, no QueryTrackingMiddleware, no table/repository/dependency checks)
         if (!$this->enabled) {
             $this->data = [
-                'enabled' => false,
-                'route_name' => $routeName,
-                'request_time' => null,
-                'query_count' => 0,
-                'query_time' => 0.0,
-                'access_count' => null,
-                'ranking_by_request_time' => null,
-                'ranking_by_query_count' => null,
-                'total_routes' => null,
-                'async' => false,
-                'table_exists' => false,
-                'table_is_complete' => false,
-                'table_name' => null,
-                'missing_columns' => [],
-                'records_table_exists' => null,
+                'enabled'                   => false,
+                'route_name'                => $routeName,
+                'request_time'              => null,
+                'query_count'               => 0,
+                'query_time'                => 0.0,
+                'access_count'              => null,
+                'ranking_by_request_time'   => null,
+                'ranking_by_query_count'    => null,
+                'total_routes'              => null,
+                'async'                     => false,
+                'table_exists'              => false,
+                'table_is_complete'         => false,
+                'table_name'                => null,
+                'missing_columns'           => [],
+                'records_table_exists'      => null,
                 'records_table_is_complete' => null,
-                'records_table_name' => null,
-                'missing_columns_records' => [],
-                'enable_access_records' => false,
-                'record_was_new' => null,
-                'record_was_updated' => null,
-                'configured_environments' => $this->configuredEnvironments,
-                'current_environment' => $this->currentEnvironment ?? $env,
-                'disabled_reason' => $this->disabledReason,
-                'missing_dependencies' => [],
-                'dependency_status' => [],
+                'records_table_name'        => null,
+                'missing_columns_records'   => [],
+                'enable_access_records'     => false,
+                'record_was_new'            => null,
+                'record_was_updated'        => null,
+                'configured_environments'   => $this->configuredEnvironments,
+                'current_environment'       => $this->currentEnvironment ?? $env,
+                'disabled_reason'           => $this->disabledReason,
+                'missing_dependencies'      => [],
+                'dependency_status'         => [],
             ];
 
             return;
         }
 
         $requestTime = null;
-        if (null !== $this->startTime) {
+        if ($this->startTime !== null) {
             $requestTime = microtime(true) - $this->startTime;
         }
 
         // Try to get query metrics directly from QueryTrackingMiddleware if not already set
         // This ensures we have the latest values even if collect() is called before onKernelTerminate
         $queryCount = $this->queryCount;
-        $queryTime = $this->queryTime;
+        $queryTime  = $this->queryTime;
 
-        if (null === $queryCount || null === $queryTime) {
+        if ($queryCount === null || $queryTime === null) {
             try {
                 $queryCount = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getQueryCount();
-                $queryTime = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getTotalQueryTime();
-            } catch (\Exception $e) {
+                $queryTime  = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getTotalQueryTime();
+            } catch (Exception $e) {
                 // Fallback to stored values or 0
                 $queryCount = $queryCount ?? 0;
-                $queryTime = $queryTime ?? 0.0;
+                $queryTime  = $queryTime ?? 0.0;
             }
         }
 
         // Check if table exists and is complete
-        $tableExists = false;
+        $tableExists     = false;
         $tableIsComplete = false;
-        $tableName = null;
-        $missingColumns = [];
+        $tableName       = null;
+        $missingColumns  = [];
 
-        $recordsTableExists = null;
+        $recordsTableExists     = null;
         $recordsTableIsComplete = null;
-        $recordsTableName = null;
-        $missingColumnsRecords = [];
+        $recordsTableName       = null;
+        $missingColumnsRecords  = [];
 
-        if (null !== $this->tableStatusChecker && $this->checkTableStatus) {
+        if ($this->tableStatusChecker !== null && $this->checkTableStatus) {
             try {
                 // Single batch call to avoid N+1 (tableExists + tableIsComplete + getMissingColumns)
-                $mainStatus = $this->tableStatusChecker->getMainTableStatus();
-                $tableExists = $mainStatus['exists'];
+                $mainStatus      = $this->tableStatusChecker->getMainTableStatus();
+                $tableExists     = $mainStatus['exists'];
                 $tableIsComplete = $mainStatus['complete'];
-                $tableName = $mainStatus['table_name'];
-                $missingColumns = $mainStatus['missing_columns'];
+                $tableName       = $mainStatus['table_name'];
+                $missingColumns  = $mainStatus['missing_columns'];
 
                 // Records table status in one batch (only when enable_access_records is true)
                 $recordsStatus = $this->tableStatusChecker->getRecordsTableStatus();
-                if (null !== $recordsStatus) {
-                    $recordsTableExists = $recordsStatus['exists'];
+                if ($recordsStatus !== null) {
+                    $recordsTableExists     = $recordsStatus['exists'];
                     $recordsTableIsComplete = $recordsStatus['complete'];
-                    $recordsTableName = $recordsStatus['table_name'];
-                    $missingColumnsRecords = $recordsStatus['missing_columns'];
+                    $recordsTableName       = $recordsStatus['table_name'];
+                    $missingColumnsRecords  = $recordsStatus['missing_columns'];
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Silently fail if table check fails
             }
         }
 
         // Get ranking and access count information if repository is available
         // Only execute ranking queries if enabled (they can be expensive)
-        $accessCount = null;
+        $accessCount          = null;
         $rankingByRequestTime = null;
-        $rankingByQueryCount = null;
-        $totalRoutes = null;
+        $rankingByQueryCount  = null;
+        $totalRoutes          = null;
 
         // Check if ranking queries are enabled (default: true for backward compatibility)
         $enableRankingQueries = true;
         try {
             $enableRankingQueries = $this->kernel?->getContainer()?->getParameter('nowo_performance.dashboard.enable_ranking_queries') ?? true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // If parameter doesn't exist or container is not available, use default (true)
         }
 
-        if (null !== $this->repository && null !== $routeName) {
+        if ($this->repository !== null && $routeName !== null) {
             try {
                 $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
-                if (null !== $routeData) {
-                    $accessCount = null !== $this->recordRepository
+                if ($routeData !== null) {
+                    $accessCount = $this->recordRepository !== null
                         ? $this->recordRepository->countByRouteData($routeData)
                         : null;
 
@@ -385,70 +390,70 @@ class PerformanceDataCollector extends DataCollector
                     if ($enableRankingQueries) {
                         // Pass the RouteData entity directly to avoid duplicate queries
                         $rankingByRequestTime = $this->repository->getRankingByRequestTime($routeData);
-                        $rankingByQueryCount = $this->repository->getRankingByQueryCount($routeData);
-                        $totalRoutes = $this->repository->getTotalRoutesCount($env);
+                        $rankingByQueryCount  = $this->repository->getRankingByQueryCount($routeData);
+                        $totalRoutes          = $this->repository->getTotalRoutesCount($env);
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Silently fail if repository query fails (e.g., table doesn't exist yet)
             }
         }
 
         // Get dependency information
         $missingDependencies = [];
-        $dependencyStatus = [];
-        if (null !== $this->dependencyChecker) {
+        $dependencyStatus    = [];
+        if ($this->dependencyChecker !== null) {
             $missingDependencies = $this->dependencyChecker->getMissingDependencies();
-            $dependencyStatus = $this->dependencyChecker->getDependencyStatus();
+            $dependencyStatus    = $this->dependencyChecker->getDependencyStatus();
         }
 
         $this->data = [
-            'enabled' => $this->enabled,
-            'route_name' => $routeName,
-            'request_time' => $requestTime,
-            'query_count' => $queryCount,
-            'query_time' => $queryTime,
-            'access_count' => $accessCount,
-            'ranking_by_request_time' => $rankingByRequestTime,
-            'ranking_by_query_count' => $rankingByQueryCount,
-            'total_routes' => $totalRoutes,
-            'async' => $this->async && $this->isMessengerAvailable(),
-            'table_exists' => $tableExists,
-            'table_is_complete' => $tableIsComplete,
-            'table_name' => $tableName,
-            'missing_columns' => $missingColumns,
-            'records_table_exists' => $recordsTableExists,
+            'enabled'                   => $this->enabled,
+            'route_name'                => $routeName,
+            'request_time'              => $requestTime,
+            'query_count'               => $queryCount,
+            'query_time'                => $queryTime,
+            'access_count'              => $accessCount,
+            'ranking_by_request_time'   => $rankingByRequestTime,
+            'ranking_by_query_count'    => $rankingByQueryCount,
+            'total_routes'              => $totalRoutes,
+            'async'                     => $this->async && $this->isMessengerAvailable(),
+            'table_exists'              => $tableExists,
+            'table_is_complete'         => $tableIsComplete,
+            'table_name'                => $tableName,
+            'missing_columns'           => $missingColumns,
+            'records_table_exists'      => $recordsTableExists,
             'records_table_is_complete' => $recordsTableIsComplete,
-            'records_table_name' => $recordsTableName,
-            'missing_columns_records' => $missingColumnsRecords,
-            'enable_access_records' => $this->tableStatusChecker?->isAccessRecordsEnabled() ?? false,
+            'records_table_name'        => $recordsTableName,
+            'missing_columns_records'   => $missingColumnsRecords,
+            'enable_access_records'     => $this->tableStatusChecker?->isAccessRecordsEnabled() ?? false,
             // Note: record_was_new and record_was_updated are set by setRecordOperation()
             // which is called in onKernelTerminate (after collect()). These values will be
             // updated in setRecordOperation() if the array already exists.
-            'record_was_new' => $this->recordWasNew ?? null,
-            'record_was_updated' => $this->recordWasUpdated ?? null,
+            'record_was_new'          => $this->recordWasNew ?? null,
+            'record_was_updated'      => $this->recordWasUpdated ?? null,
             'configured_environments' => $this->configuredEnvironments,
-            'current_environment' => $this->currentEnvironment ?? $env,
-            'disabled_reason' => $this->disabledReason,
-            'missing_dependencies' => $missingDependencies,
-            'dependency_status' => $dependencyStatus,
+            'current_environment'     => $this->currentEnvironment ?? $env,
+            'disabled_reason'         => $this->disabledReason,
+            'missing_dependencies'    => $missingDependencies,
+            'dependency_status'       => $dependencyStatus,
         ];
     }
 
     public function reset(): void
     {
-        $this->data = [];
-        $this->startTime = null;
-        $this->queryCount = null;
-        $this->queryTime = null;
-        $this->routeName = null;
-        $this->async = false;
-        $this->enabled = false;
-        $this->recordWasNew = null;
-        $this->recordWasUpdated = null;
+        $this->data                   = [];
+        $this->startTime              = null;
+        $this->queryCount             = null;
+        $this->queryTime              = null;
+        $this->routeName              = null;
+        $this->async                  = false;
+        $this->enabled                = false;
+        $this->recordWasNew           = null;
+        $this->recordWasUpdated       = null;
         $this->configuredEnvironments = null;
-        $this->currentEnvironment = null;
-        $this->disabledReason = null;
+        $this->currentEnvironment     = null;
+        $this->disabledReason         = null;
         // enabled is set per-request in onKernelRequest; reset to false so toolbar/profiler
         // sub-requests don't show stale "enabled" from the previous (page) request
     }
@@ -503,7 +508,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function getRequestTime(): ?float
     {
-        return null !== $this->data['request_time'] ? $this->data['request_time'] * 1000 : null;
+        return $this->data['request_time'] !== null ? $this->data['request_time'] * 1000 : null;
     }
 
     /**
@@ -536,14 +541,14 @@ class PerformanceDataCollector extends DataCollector
     public function getFormattedRequestTime(): string
     {
         $time = $this->getRequestTime();
-        if (null === $time) {
+        if ($time === null) {
             return 'N/A';
         }
 
         return match (true) {
-            $time < 1 => \sprintf('%.2f ms', $time),
-            $time < 1000 => \sprintf('%.0f ms', $time),
-            default => \sprintf('%.2f s', $time / 1000),
+            $time < 1    => sprintf('%.2f ms', $time),
+            $time < 1000 => sprintf('%.0f ms', $time),
+            default      => sprintf('%.2f s', $time / 1000),
         };
     }
 
@@ -559,9 +564,9 @@ class PerformanceDataCollector extends DataCollector
         $time = $this->getQueryTime();
 
         return match (true) {
-            $time < 1 => \sprintf('%.2f ms', $time),
-            $time < 1000 => \sprintf('%.0f ms', $time),
-            default => \sprintf('%.2f s', $time / 1000),
+            $time < 1    => sprintf('%.2f ms', $time),
+            $time < 1000 => sprintf('%.0f ms', $time),
+            default      => sprintf('%.2f s', $time / 1000),
         };
     }
 
@@ -675,7 +680,7 @@ class PerformanceDataCollector extends DataCollector
         // Check property first (set by setRecordOperation() in onKernelTerminate)
         // This is important because setRecordOperation() is called AFTER collect() is executed
         // The property will be available even after serialization
-        if (null !== $this->recordWasNew) {
+        if ($this->recordWasNew !== null) {
             return $this->recordWasNew;
         }
 
@@ -703,7 +708,7 @@ class PerformanceDataCollector extends DataCollector
         // Check property first (set by setRecordOperation() in onKernelTerminate)
         // This is important because setRecordOperation() is called AFTER collect() is executed
         // The property will be available even after serialization
-        if (null !== $this->recordWasUpdated) {
+        if ($this->recordWasUpdated !== null) {
             return $this->recordWasUpdated;
         }
 
@@ -778,18 +783,18 @@ class PerformanceDataCollector extends DataCollector
      */
     public function getRecordOperationStatus(): string
     {
-        $isNew = $this->wasRecordNew();
+        $isNew      = $this->wasRecordNew();
         $wasUpdated = $this->wasRecordUpdated();
 
-        if (true === $isNew) {
+        if ($isNew === true) {
             return 'New record created';
         }
 
-        if (true === $wasUpdated) {
+        if ($wasUpdated === true) {
             return 'Existing record updated';
         }
 
-        if (false === $isNew && false === $wasUpdated) {
+        if ($isNew === false && $wasUpdated === false) {
             return 'No changes (metrics not worse than existing)';
         }
 

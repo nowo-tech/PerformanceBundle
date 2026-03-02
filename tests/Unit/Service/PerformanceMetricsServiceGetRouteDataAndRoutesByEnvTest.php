@@ -10,8 +10,9 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * Tests for PerformanceMetricsService::getRouteData() and getRoutesByEnvironment().
@@ -26,9 +27,9 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->repository = $this->createMock(RouteDataRepository::class);
+        $this->registry         = $this->createMock(ManagerRegistry::class);
+        $this->entityManager    = $this->createMock(EntityManagerInterface::class);
+        $this->repository       = $this->createMock(RouteDataRepository::class);
         $this->recordRepository = $this->createMock(RouteDataRecordRepository::class);
 
         $this->registry
@@ -53,7 +54,7 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     public function testSetMessageBusAcceptsObject(): void
     {
-        $bus = new \stdClass();
+        $bus = new stdClass();
         $this->service->setMessageBus($bus);
         $this->addToAssertionCount(1);
     }

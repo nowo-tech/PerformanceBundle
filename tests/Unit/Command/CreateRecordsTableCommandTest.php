@@ -10,8 +10,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Command\CreateRecordsTableCommand;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class CreateRecordsTableCommandTest extends TestCase
@@ -25,10 +26,10 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->connection = $this->createMock(Connection::class);
-        $this->schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->registry        = $this->createMock(ManagerRegistry::class);
+        $this->connection      = $this->createMock(Connection::class);
+        $this->schemaManager   = $this->createMock(AbstractSchemaManager::class);
+        $this->entityManager   = $this->createMock(EntityManagerInterface::class);
         $this->metadataFactory = $this->createMock(ClassMetadataFactory::class);
 
         $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
@@ -110,7 +111,7 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     public function testExecuteReturnsFailureOnException(): void
     {
-        $this->registry->method('getConnection')->willThrowException(new \RuntimeException('Connection failed'));
+        $this->registry->method('getConnection')->willThrowException(new RuntimeException('Connection failed'));
 
         $tester = new CommandTester($this->command);
         $tester->execute([]);

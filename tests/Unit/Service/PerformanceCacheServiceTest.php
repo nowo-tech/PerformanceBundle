@@ -109,7 +109,7 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testCacheEnvironmentsAndGetCachedEnvironments(): void
     {
-        $envs = ['dev', 'prod'];
+        $envs    = ['dev', 'prod'];
         $hitItem = $this->createMock(CacheItemInterface::class);
         $hitItem->method('isHit')->willReturn(true);
         $hitItem->method('get')->willReturn($envs);

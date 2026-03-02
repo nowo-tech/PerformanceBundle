@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Repository;
 
+use DateTimeImmutable;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -20,7 +21,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
+        $this->registry   = $this->createMock(ManagerRegistry::class);
         $this->repository = new RouteDataRepository($this->registry);
     }
 
@@ -114,6 +115,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
                 if ($key === 'route_pattern') {
                     $this->assertSame('%api%', $value);
                 }
+
                 return $queryBuilder;
             });
         $queryBuilder->method('getQuery')->willReturn($query);
@@ -132,8 +134,8 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $dateFrom = new \DateTimeImmutable('2025-01-01');
-        $dateTo = new \DateTimeImmutable('2025-01-31');
+        $dateFrom = new DateTimeImmutable('2025-01-01');
+        $dateTo   = new DateTimeImmutable('2025-01-31');
 
         $query = $this->createMock(Query::class);
         $query->method('getSingleScalarResult')->willReturn('10');
@@ -153,7 +155,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
 
         $result = $repository->countWithFilters('dev', [
             'date_from' => $dateFrom,
-            'date_to' => $dateTo,
+            'date_to'   => $dateTo,
         ]);
 
         $this->assertSame(10, $result);
@@ -166,7 +168,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $dateFrom = new \DateTimeImmutable('2025-01-01');
+        $dateFrom = new DateTimeImmutable('2025-01-01');
 
         $query = $this->createMock(Query::class);
         $query->method('getSingleScalarResult')->willReturn('7');
@@ -186,7 +188,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
 
         $result = $repository->countWithFilters('prod', [
             'route_names' => ['route1', 'route2'],
-            'date_from' => $dateFrom,
+            'date_from'   => $dateFrom,
         ]);
 
         $this->assertSame(7, $result);
@@ -199,7 +201,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $dateTo = new \DateTimeImmutable('2025-12-31');
+        $dateTo = new DateTimeImmutable('2025-12-31');
 
         $query = $this->createMock(Query::class);
         $query->method('getSingleScalarResult')->willReturn('4');
@@ -230,7 +232,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $dateFrom = new \DateTimeImmutable('2026-01-01');
+        $dateFrom = new DateTimeImmutable('2026-01-01');
 
         $query = $this->createMock(Query::class);
         $query->method('getSingleScalarResult')->willReturn('6');

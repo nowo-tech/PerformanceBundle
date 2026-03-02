@@ -16,6 +16,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+use function count;
+use function sprintf;
+
 /**
  * Command to rebuild RouteData aggregates from RouteDataRecord entries.
  *
@@ -33,9 +36,9 @@ final class RebuildAggregatesCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param EntityManagerInterface    $entityManager       Doctrine entity manager
-     * @param RouteDataRepository       $routeDataRepository Repository for RouteData
-     * @param RouteDataRecordRepository $recordRepository    Repository for RouteDataRecord
+     * @param EntityManagerInterface $entityManager Doctrine entity manager
+     * @param RouteDataRepository $routeDataRepository Repository for RouteData
+     * @param RouteDataRecordRepository $recordRepository Repository for RouteDataRecord
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -47,7 +50,8 @@ final class RebuildAggregatesCommand extends Command
 
     protected function configure(): void
     {
-        $this->setHelp(<<<'HELP'
+        $this->setHelp(
+            <<<'HELP'
 The <info>nowo:performance:rebuild-aggregates</info> command rebuilds RouteData aggregates from RouteDataRecord entries.
 
 Updates lastAccessedAt and related metadata on RouteData from records (normalized: metrics live in records).
@@ -86,27 +90,27 @@ HELP
         $io->title('[NowoPerformanceBundle] Rebuilding RouteData aggregates from RouteDataRecord');
 
         $criteria = [];
-        if (null !== $envFilter) {
+        if ($envFilter !== null) {
             $criteria['env'] = $envFilter;
-            $io->text(\sprintf('Restricting rebuild to environment: <info>%s</info>', $envFilter));
+            $io->text(sprintf('Restricting rebuild to environment: <info>%s</info>', $envFilter));
         } else {
             $io->text('Rebuilding aggregates for all environments.');
         }
 
         /** @var list<RouteData> $routes */
         $routes = $this->routeDataRepository->findBy($criteria, ['env' => 'ASC', 'name' => 'ASC']);
-        $total = \count($routes);
+        $total  = count($routes);
 
-        if (0 === $total) {
+        if ($total === 0) {
             $io->warning('No RouteData records found for the given criteria. Nothing to rebuild.');
 
             return Command::SUCCESS;
         }
 
-        $io->text(\sprintf('Found <info>%d</info> RouteData records to process.', $total));
+        $io->text(sprintf('Found <info>%d</info> RouteData records to process.', $total));
         $io->progressStart($total);
 
-        $processed = 0;
+        $processed  = 0;
         $batchIndex = 0;
 
         foreach ($routes as $routeData) {
@@ -114,11 +118,11 @@ HELP
 
             $this->rebuildAggregatesForRoute($routeData);
 
-            if (0 === $processed % $batchSize) {
+            if ($processed % $batchSize === 0) {
                 ++$batchIndex;
                 $this->entityManager->flush();
                 $this->entityManager->clear();
-                $io->text(\sprintf('Processed batch %d (%d records).', $batchIndex, $processed));
+                $io->text(sprintf('Processed batch %d (%d records).', $batchIndex, $processed));
             }
 
             $io->progressAdvance();
@@ -129,7 +133,7 @@ HELP
         $this->entityManager->clear();
 
         $io->progressFinish();
-        $io->success(\sprintf('Rebuilt aggregates for %d RouteData records.', $total));
+        $io->success(sprintf('Rebuilt aggregates for %d RouteData records.', $total));
 
         return Command::SUCCESS;
     }
@@ -142,7 +146,7 @@ HELP
         // Reload the managed instance from EntityManager in case we cleared earlier
         /** @var RouteData|null $managed */
         $managed = $this->entityManager->getRepository(RouteData::class)->find($routeData->getId());
-        if (null === $managed) {
+        if ($managed === null) {
             return;
         }
 
@@ -163,7 +167,7 @@ HELP
 
         // Normalized: RouteData only has lastAccessedAt; metrics live in RouteDataRecord
         $lastAccessedAt = end($records)?->getAccessedAt();
-        if (null !== $lastAccessedAt) {
+        if ($lastAccessedAt !== null) {
             $managed->setLastAccessedAt($lastAccessedAt);
         }
     }

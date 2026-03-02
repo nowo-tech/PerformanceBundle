@@ -11,6 +11,12 @@ use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\HttpKernel\KernelInterface;
 
+use function defined;
+use function is_resource;
+
+use const PHP_SAPI;
+use const STDOUT;
+
 /**
  * Symfony bundle for route performance metrics tracking.
  *
@@ -49,14 +55,14 @@ class NowoPerformanceBundle extends Bundle
             return;
         }
 
-        if ('cli' !== \PHP_SAPI) {
+        if ('cli' !== PHP_SAPI) {
             return;
         }
 
         \Symfony\Component\VarDumper\VarDumper::setHandler(static function ($var, ...$moreVars): void {
             $cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
-            $stream = @fopen('php://stderr', 'w') ?: (\defined('STDOUT') && \is_resource(\STDOUT) ? \STDOUT : null);
-            if (null === $stream) {
+            $stream = @fopen('php://stderr', 'w') ?: (defined('STDOUT') && is_resource(STDOUT) ? STDOUT : null);
+            if ($stream === null) {
                 return;
             }
             $dumper = new \Symfony\Component\VarDumper\Dumper\CliDumper($stream);

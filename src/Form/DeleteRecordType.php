@@ -43,10 +43,10 @@ class DeleteRecordType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'method' => 'POST',
-            'csrf_protection' => true,
-            'csrf_field_name' => '_token',
-            'csrf_token_id' => 'delete_performance_record',
+            'method'            => 'POST',
+            'csrf_protection'   => true,
+            'csrf_field_name'   => '_token',
+            'csrf_token_id'     => 'delete_performance_record',
             'submit_attr_class' => 'btn btn-danger btn-sm',
         ]);
         $resolver->setRequired('csrf_token_id');

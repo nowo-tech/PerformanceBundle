@@ -87,8 +87,8 @@ class QueryLogger
      */
     public function reset(): void
     {
-        $this->queryCount = 0;
-        $this->totalQueryTime = 0.0;
+        $this->queryCount      = 0;
+        $this->totalQueryTime  = 0.0;
         $this->queryStartTimes = [];
     }
 }

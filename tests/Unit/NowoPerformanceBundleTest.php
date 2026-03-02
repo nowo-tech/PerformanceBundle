@@ -46,7 +46,7 @@ final class NowoPerformanceBundleTest extends TestCase
 
     public function testBuildRegistersCompilerPass(): void
     {
-        $bundle = new NowoPerformanceBundle();
+        $bundle    = new NowoPerformanceBundle();
         $container = $this->createMock(ContainerBuilder::class);
 
         $container->expects($this->once())
@@ -58,7 +58,7 @@ final class NowoPerformanceBundleTest extends TestCase
 
     public function testBuildCallsParentBuild(): void
     {
-        $bundle = new NowoPerformanceBundle();
+        $bundle    = new NowoPerformanceBundle();
         $container = $this->createMock(ContainerBuilder::class);
 
         // Verify that addCompilerPass is called (which means build is executed)
@@ -72,14 +72,14 @@ final class NowoPerformanceBundleTest extends TestCase
     public function testGetPathReturnsString(): void
     {
         $bundle = new NowoPerformanceBundle();
-        $path = $bundle->getPath();
+        $path   = $bundle->getPath();
         $this->assertIsString($path);
         $this->assertNotEmpty($path);
     }
 
     public function testBuildReceivesContainerBuilder(): void
     {
-        $bundle = new NowoPerformanceBundle();
+        $bundle    = new NowoPerformanceBundle();
         $container = new ContainerBuilder();
 
         $bundle->build($container);

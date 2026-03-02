@@ -72,7 +72,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -83,7 +83,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -95,7 +95,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -107,7 +107,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -132,7 +132,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -149,7 +149,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setDisabledReason('Route ignored');
         $collector->setEnabled(false);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -162,7 +162,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -174,7 +174,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -188,7 +188,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -216,7 +216,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setStartTime(microtime(true) - 0.5);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -231,7 +231,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setQueryMetrics(7, 0.15);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -245,7 +245,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setAsync(true);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -268,7 +268,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setQueryCount(3);
         $collector->setQueryTime(0.12);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -282,7 +282,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setRequestTime(0.5);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 

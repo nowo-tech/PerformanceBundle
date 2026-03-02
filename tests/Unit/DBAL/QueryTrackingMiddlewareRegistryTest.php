@@ -8,6 +8,10 @@ use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use stdClass;
+
+use function is_string;
 
 final class QueryTrackingMiddlewareRegistryTest extends TestCase
 {
@@ -24,7 +28,7 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
     public function testDetectDoctrineBundleVersionReturnsNullOrString(): void
     {
         $version = QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
-        $this->assertTrue($version === null || \is_string($version));
+        $this->assertTrue($version === null || is_string($version));
         if ($version !== null) {
             $this->assertNotEmpty($version);
         }
@@ -33,7 +37,7 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
     public function testApplyMiddlewareReturnsFalseWhenRegistryReturnsNonConnection(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->with('default')->willReturn(new \stdClass());
+        $registry->method('getConnection')->with('default')->willReturn(new stdClass());
 
         $middleware = $this->createMock(QueryTrackingMiddleware::class);
 
@@ -43,7 +47,7 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
     public function testApplyMiddlewareReturnsFalseWhenRegistryThrows(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->willThrowException(new \RuntimeException('no connection'));
+        $registry->method('getConnection')->willThrowException(new RuntimeException('no connection'));
 
         $middleware = $this->createMock(QueryTrackingMiddleware::class);
 
@@ -56,7 +60,7 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
         $registry->expects($this->atLeastOnce())
             ->method('getConnection')
             ->with('custom_conn')
-            ->willReturn(new \stdClass());
+            ->willReturn(new stdClass());
 
         $middleware = $this->createMock(QueryTrackingMiddleware::class);
 

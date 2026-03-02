@@ -8,8 +8,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -32,9 +32,9 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
     protected function setUp(): void
     {
         $this->metricsService = $this->createMock(PerformanceMetricsService::class);
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->dataCollector = $this->createMock(PerformanceDataCollector::class);
-        $this->kernel = $this->createMock(HttpKernelInterface::class);
+        $this->registry       = $this->createMock(ManagerRegistry::class);
+        $this->dataCollector  = $this->createMock(PerformanceDataCollector::class);
+        $this->kernel         = $this->createMock(HttpKernelInterface::class);
     }
 
     public function testDataNotSavedWhenCollectorDisabledBetweenRequestAndTerminate(): void
@@ -58,14 +58,14 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $request = Request::create('/');
         $request->server->set('APP_ENV', 'dev');
         $request->attributes->set('_route', 'app_home');
         $requestEvent = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
-        
+
         // In REQUEST, collector is enabled
         $this->dataCollector
             ->expects($this->once())
@@ -117,7 +117,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $request = Request::create('/');
@@ -171,7 +171,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $request = Request::create('/');
@@ -225,13 +225,13 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $request = Request::create('/');
         $request->server->set('APP_ENV', 'dev');
         $request->attributes->set('_route', 'app_home');
-        
+
         // Simulate that startTime was not set (edge case)
         // This could happen if onKernelRequest was not called or failed silently
         $requestEvent = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
@@ -279,7 +279,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 $this->anything(), // requestId
                 $this->anything(), // referer
                 null,   // userIdentifier
-                null    // userId
+                null,    // userId
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -308,13 +308,13 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $request = Request::create('/');
         $request->server->set('APP_ENV', 'dev');
         $request->attributes->set('_route', 'app_home');
-        
+
         // Simulate that startMemory was not set
         $requestEvent = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         // Don't call onKernelRequest to simulate startMemory being null
@@ -361,7 +361,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 $this->anything(), // requestId
                 $this->anything(), // referer
                 null,   // userIdentifier
-                null    // userId
+                null,    // userId
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -390,7 +390,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $request = Request::create('/');
@@ -430,7 +430,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
                 $this->isType('string'), // requestId (set in onKernelRequest)
                 null,  // referer (no Referer header)
                 null,  // userIdentifier
-                null   // userId
+                null,   // userId
             )
             ->willReturn(['is_new' => true, 'was_updated' => false]);
 
@@ -461,7 +461,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $request = Request::create('/');

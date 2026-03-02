@@ -21,7 +21,7 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testBuildFormCreatesExpectedFields(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev', 'test', 'prod'],
+            'environments'     => ['dev', 'test', 'prod'],
             'available_routes' => ['app_home', 'api_foo'],
         ]);
 
@@ -42,7 +42,7 @@ final class RecordFiltersTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function (array $defaults): bool {
+            ->with($this->callback(static function (array $defaults): bool {
                 return isset($defaults['data_class'])
                     && $defaults['data_class'] === RecordFilters::class
                     && isset($defaults['method'])
@@ -67,7 +67,7 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormBuildsWithCustomAllRoutesAndAllStatusLabels(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => ['api_foo'],
             'all_routes_label' => 'All routes',
             'all_status_label' => 'All statuses',
@@ -80,12 +80,12 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithPartialData(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev', 'prod'],
+            'environments'     => ['dev', 'prod'],
             'available_routes' => ['app_home', 'api_foo'],
         ]);
 
         $form->submit([
-            'env' => 'prod',
+            'env'   => 'prod',
             'route' => 'api_foo',
         ]);
 
@@ -99,7 +99,7 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormBuildsWithEmptyAvailableRoutes(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => [],
         ]);
 
@@ -112,13 +112,13 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithStatusCodeTransformsToInt(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev', 'prod'],
+            'environments'     => ['dev', 'prod'],
             'available_routes' => ['app_home'],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => '',
+            'env'         => 'dev',
+            'route'       => '',
             'status_code' => '404',
         ]);
 
@@ -131,13 +131,13 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithStatusCode503(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => [],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => '',
+            'env'         => 'dev',
+            'route'       => '',
             'status_code' => '503',
         ]);
 
@@ -149,13 +149,13 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithStatusCode500(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => [],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => '',
+            'env'         => 'dev',
+            'route'       => '',
             'status_code' => '500',
         ]);
 
@@ -167,13 +167,13 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithStatusCode200(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => [],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => '',
+            'env'         => 'dev',
+            'route'       => '',
             'status_code' => '200',
         ]);
 
@@ -185,13 +185,13 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithEmptyStatusCodeTransformsToNull(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => [],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => '',
+            'env'         => 'dev',
+            'route'       => '',
             'status_code' => '',
         ]);
 
@@ -204,14 +204,14 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithQueryTimeFilters(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev', 'prod'],
+            'environments'     => ['dev', 'prod'],
             'available_routes' => ['app_home'],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => 'app_home',
-            'status_code' => '',
+            'env'            => 'dev',
+            'route'          => 'app_home',
+            'status_code'    => '',
             'min_query_time' => '0.1',
             'max_query_time' => '2.5',
         ]);
@@ -226,7 +226,7 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormBuildsWithMemoryFields(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => ['app_home'],
         ]);
 
@@ -238,13 +238,13 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithStageEnvironment(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev', 'stage', 'prod'],
+            'environments'     => ['dev', 'stage', 'prod'],
             'available_routes' => ['app_home'],
         ]);
 
         $form->submit([
-            'env' => 'stage',
-            'route' => '',
+            'env'         => 'stage',
+            'route'       => '',
             'status_code' => '',
         ]);
 
@@ -256,7 +256,7 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormMethodIsGet(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => [],
         ]);
 
@@ -265,12 +265,12 @@ final class RecordFiltersTypeTest extends TypeTestCase
 
     public function testFormBuildsWithDataHavingMemoryUsageInitializesMemoryFields(): void
     {
-        $filters = new RecordFilters();
+        $filters                 = new RecordFilters();
         $filters->minMemoryUsage = 2 * 1024 * 1024; // 2 MB
         $filters->maxMemoryUsage = 50 * 1024 * 1024; // 50 MB
 
         $form = $this->factory->create(RecordFiltersType::class, $filters, [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => ['app_home'],
         ]);
 
@@ -281,14 +281,14 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithMinAndMaxQueryTime(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => ['app_home'],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => 'app_home',
-            'status_code' => '',
+            'env'            => 'dev',
+            'route'          => 'app_home',
+            'status_code'    => '',
             'min_query_time' => '0.001',
             'max_query_time' => '0.5',
         ]);
@@ -302,13 +302,13 @@ final class RecordFiltersTypeTest extends TypeTestCase
     public function testFormSubmissionWithEmptyStatusCodeBindsToNull(): void
     {
         $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => [],
         ]);
 
         $form->submit([
-            'env' => 'dev',
-            'route' => '',
+            'env'         => 'dev',
+            'route'       => '',
             'status_code' => '',
         ]);
 
@@ -319,11 +319,11 @@ final class RecordFiltersTypeTest extends TypeTestCase
 
     public function testFormWithInitialStatusCode200DisplaysCorrectly(): void
     {
-        $filters = new RecordFilters();
+        $filters             = new RecordFilters();
         $filters->statusCode = 200;
 
         $form = $this->factory->create(RecordFiltersType::class, $filters, [
-            'environments' => ['dev'],
+            'environments'     => ['dev'],
             'available_routes' => ['app_home'],
         ]);
 

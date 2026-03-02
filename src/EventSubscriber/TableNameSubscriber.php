@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Events;
+use ReflectionClass;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -50,7 +51,7 @@ class TableNameSubscriber implements EventSubscriber
         $classMetadata = $eventArgs->getClassMetadata();
 
         // Only modify RouteData entity
-        if ('Nowo\PerformanceBundle\Entity\RouteData' !== $classMetadata->getName()) {
+        if ($classMetadata->getName() !== 'Nowo\PerformanceBundle\Entity\RouteData') {
             return;
         }
 
@@ -62,7 +63,7 @@ class TableNameSubscriber implements EventSubscriber
 
         if ($currentTableName !== $this->tableName) {
             // Get existing table configuration to preserve indexes
-            $reflection = new \ReflectionClass($classMetadata);
+            $reflection    = new ReflectionClass($classMetadata);
             $tableProperty = $reflection->getProperty('table');
             $tableProperty->setAccessible(true);
             $existingTable = $tableProperty->getValue($classMetadata);
@@ -72,7 +73,7 @@ class TableNameSubscriber implements EventSubscriber
 
             // Set the table name with all existing indexes
             $classMetadata->setPrimaryTable([
-                'name' => $this->tableName,
+                'name'    => $this->tableName,
                 'indexes' => $existingIndexes,
             ]);
         }

@@ -32,7 +32,7 @@ class DeleteRecordsByFilterType extends AbstractType
         $builder
             ->add('_from', HiddenType::class, [
                 'property_path' => 'from',
-                'data' => $options['from_value'],
+                'data'          => $options['from_value'],
             ])
             ->add('env', HiddenType::class)
             ->add('start_date', HiddenType::class, ['property_path' => 'startDate'])
@@ -46,9 +46,9 @@ class DeleteRecordsByFilterType extends AbstractType
             ->add('referer', HiddenType::class)
             ->add('user', HiddenType::class)
             ->add('submit', SubmitType::class, [
-                'label' => 'access_statistics.delete_records_matching_filter',
+                'label'              => 'access_statistics.delete_records_matching_filter',
                 'translation_domain' => 'nowo_performance',
-                'attr' => ['class' => 'btn btn-danger'],
+                'attr'               => ['class' => 'btn btn-danger'],
             ]);
     }
 
@@ -60,12 +60,12 @@ class DeleteRecordsByFilterType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => DeleteRecordsByFilterRequest::class,
-            'method' => 'POST',
+            'data_class'      => DeleteRecordsByFilterRequest::class,
+            'method'          => 'POST',
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
-            'csrf_token_id' => 'delete_records_by_filter',
-            'from_value' => 'access_records',
+            'csrf_token_id'   => 'delete_records_by_filter',
+            'from_value'      => 'access_records',
         ]);
     }
 

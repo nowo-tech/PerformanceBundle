@@ -6,11 +6,11 @@ namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\EventSubscriber\QueryTrackingConnectionSubscriber;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 final class QueryTrackingConnectionSubscriberTest extends TestCase
 {
@@ -32,7 +32,7 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
         $this->registry->expects($this->never())->method($this->anything());
 
         $subscriber = new QueryTrackingConnectionSubscriber($this->registry, false, true, 'default');
-        $event = new RequestEvent(
+        $event      = new RequestEvent(
             $this->createMock(HttpKernelInterface::class),
             new Request(),
             HttpKernelInterface::MAIN_REQUEST,
@@ -45,7 +45,7 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
         $this->registry->expects($this->never())->method($this->anything());
 
         $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, false, 'default');
-        $event = new RequestEvent(
+        $event      = new RequestEvent(
             $this->createMock(HttpKernelInterface::class),
             new Request(),
             HttpKernelInterface::MAIN_REQUEST,

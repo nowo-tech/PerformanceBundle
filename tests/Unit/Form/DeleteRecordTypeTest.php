@@ -22,7 +22,7 @@ final class DeleteRecordTypeTest extends TypeTestCase
     {
         $form = $this->factory->create(DeleteRecordType::class, null, [
             'csrf_protection' => false,
-            'csrf_token_id' => 'delete_performance_record',
+            'csrf_token_id'   => 'delete_performance_record',
         ]);
 
         $this->assertFalse($form->has('submit'));
@@ -34,7 +34,7 @@ final class DeleteRecordTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function (array $defaults): bool {
+            ->with($this->callback(static function (array $defaults): bool {
                 return isset($defaults['method']) && $defaults['method'] === 'POST'
                     && isset($defaults['csrf_protection']) && $defaults['csrf_protection'] === true
                     && isset($defaults['csrf_field_name']) && $defaults['csrf_field_name'] === '_token'
@@ -57,8 +57,8 @@ final class DeleteRecordTypeTest extends TypeTestCase
     public function testFormAcceptsSubmitAttrClassOption(): void
     {
         $form = $this->factory->create(DeleteRecordType::class, null, [
-            'csrf_protection' => false,
-            'csrf_token_id' => 'delete_performance_record',
+            'csrf_protection'   => false,
+            'csrf_token_id'     => 'delete_performance_record',
             'submit_attr_class' => 'custom-btn custom-danger',
         ]);
 
@@ -70,7 +70,7 @@ final class DeleteRecordTypeTest extends TypeTestCase
     {
         $form = $this->factory->create(DeleteRecordType::class, null, [
             'csrf_protection' => false,
-            'csrf_token_id' => 'custom_delete_token',
+            'csrf_token_id'   => 'custom_delete_token',
         ]);
 
         $this->assertCount(0, $form);
@@ -89,7 +89,7 @@ final class DeleteRecordTypeTest extends TypeTestCase
     {
         $form = $this->factory->create(DeleteRecordType::class, null, [
             'csrf_protection' => false,
-            'csrf_token_id' => 'delete_performance_record',
+            'csrf_token_id'   => 'delete_performance_record',
         ]);
 
         $this->assertSame('POST', $form->getConfig()->getOption('method'));
@@ -99,7 +99,7 @@ final class DeleteRecordTypeTest extends TypeTestCase
     {
         $form = $this->factory->create(DeleteRecordType::class, null, [
             'csrf_protection' => false,
-            'csrf_token_id' => 'delete_performance_record',
+            'csrf_token_id'   => 'delete_performance_record',
         ]);
 
         $this->assertSame('_token', $form->getConfig()->getOption('csrf_field_name'));

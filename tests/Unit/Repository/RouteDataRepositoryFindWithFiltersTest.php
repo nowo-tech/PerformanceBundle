@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Repository;
 
+use DateTimeImmutable;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -194,7 +195,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $dateFrom = new \DateTimeImmutable('2026-01-01');
+        $dateFrom = new DateTimeImmutable('2026-01-01');
 
         $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([]);
@@ -221,7 +222,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $dateTo = new \DateTimeImmutable('2026-12-31');
+        $dateTo = new DateTimeImmutable('2026-12-31');
 
         $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([]);
@@ -315,7 +316,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $dateFrom = new \DateTimeImmutable('2026-06-01');
+        $dateFrom = new DateTimeImmutable('2026-06-01');
 
         $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([]);
@@ -333,7 +334,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
 
         $repository->findWithFilters('dev', [
             'route_names' => ['api_foo', 'api_bar'],
-            'date_from' => $dateFrom,
+            'date_from'   => $dateFrom,
         ]);
     }
 

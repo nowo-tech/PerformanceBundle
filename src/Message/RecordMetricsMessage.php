@@ -18,19 +18,19 @@ final class RecordMetricsMessage
     /**
      * Creates a new record metrics message for async processing.
      *
-     * @param string      $routeName      The route name
-     * @param string      $env            The environment (e.g. dev, prod)
-     * @param float|null  $requestTime    Request execution time in seconds
-     * @param int|null    $totalQueries   Total number of database queries
-     * @param float|null  $queryTime      Total query execution time in seconds
-     * @param array|null  $params         Route parameters
-     * @param int|null    $memoryUsage    Peak memory usage in bytes
-     * @param string|null $httpMethod     HTTP method (GET, POST, PUT, DELETE, etc.)
-     * @param string|null $requestId      Unique request ID for deduplication of access records
-     * @param string|null $referer        HTTP Referer header (page that linked to this request)
+     * @param string $routeName The route name
+     * @param string $env The environment (e.g. dev, prod)
+     * @param float|null $requestTime Request execution time in seconds
+     * @param int|null $totalQueries Total number of database queries
+     * @param float|null $queryTime Total query execution time in seconds
+     * @param array|null $params Route parameters
+     * @param int|null $memoryUsage Peak memory usage in bytes
+     * @param string|null $httpMethod HTTP method (GET, POST, PUT, DELETE, etc.)
+     * @param string|null $requestId Unique request ID for deduplication of access records
+     * @param string|null $referer HTTP Referer header (page that linked to this request)
      * @param string|null $userIdentifier Logged-in user identifier (e.g. username, email)
-     * @param string|null $userId         Logged-in user ID (stringified, if available)
-     * @param string|null $routePath      Request path including query string (e.g. /user/123?page=2) for access records
+     * @param string|null $userId Logged-in user ID (stringified, if available)
+     * @param string|null $routePath Request path including query string (e.g. /user/123?page=2) for access records
      */
     public function __construct(
         private readonly string $routeName,

@@ -9,14 +9,14 @@ use Rector\Symfony\Set\SymfonySetList;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->paths([
-        __DIR__.'/src',
-        __DIR__.'/tests',
+        __DIR__ . '/src',
+        __DIR__ . '/tests',
     ]);
 
     $rectorConfig->skip([
-        __DIR__.'/vendor',
-        __DIR__.'/demo',
-        __DIR__.'/coverage',
+        __DIR__ . '/vendor',
+        __DIR__ . '/demo',
+        __DIR__ . '/coverage',
     ]);
 
     // PHP version

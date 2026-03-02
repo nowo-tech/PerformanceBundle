@@ -12,8 +12,9 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Command\CreateTableCommand;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class CreateTableCommandTest extends TestCase
@@ -28,12 +29,12 @@ final class CreateTableCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->connection = $this->createMock(Connection::class);
-        $this->schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->registry        = $this->createMock(ManagerRegistry::class);
+        $this->connection      = $this->createMock(Connection::class);
+        $this->schemaManager   = $this->createMock(AbstractSchemaManager::class);
+        $this->entityManager   = $this->createMock(EntityManagerInterface::class);
         $this->metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $this->platform = $this->createMock(AbstractPlatform::class);
+        $this->platform        = $this->createMock(AbstractPlatform::class);
 
         $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
         if (method_exists($this->connection, 'createSchemaManager')) {
@@ -47,8 +48,8 @@ final class CreateTableCommandTest extends TestCase
         $this->entityManager->method('getMetadataFactory')->willReturn($this->metadataFactory);
         $this->entityManager->method('getConnection')->willReturn($this->connection);
 
-        $this->platform->method('quoteIdentifier')->willReturnCallback(fn (string $name) => "`$name`");
-        $this->platform->method('quoteStringLiteral')->willReturnCallback(fn (string $str) => "'$str'");
+        $this->platform->method('quoteIdentifier')->willReturnCallback(static fn (string $name) => "`{$name}`");
+        $this->platform->method('quoteStringLiteral')->willReturnCallback(static fn (string $str) => "'{$str}'");
 
         $this->command = new CreateTableCommand($this->registry, 'default', 'routes_data', false);
     }
@@ -99,7 +100,7 @@ final class CreateTableCommandTest extends TestCase
 
     public function testExecuteWhenTableExistsWithoutOptions(): void
     {
-        $metadata = $this->createMock(ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
         $metadata->table = ['name' => 'routes_data'];
 
         $this->metadataFactory->method('getMetadataFor')->with('Nowo\PerformanceBundle\Entity\RouteData')->willReturn($metadata);
@@ -116,7 +117,7 @@ final class CreateTableCommandTest extends TestCase
 
     public function testExecuteReturnsFailureOnException(): void
     {
-        $this->registry->method('getConnection')->willThrowException(new \RuntimeException('Connection failed'));
+        $this->registry->method('getConnection')->willThrowException(new RuntimeException('Connection failed'));
 
         $tester = new CommandTester($this->command);
         $tester->execute([]);

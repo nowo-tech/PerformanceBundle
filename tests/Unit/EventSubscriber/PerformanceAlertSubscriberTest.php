@@ -19,7 +19,7 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->never())->method('sendAlert');
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, false);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('app_home')->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, 2.0, 100, 100 * 1024 * 1024);
 
@@ -29,7 +29,7 @@ final class PerformanceAlertSubscriberTest extends TestCase
     public function testOnAfterMetricsRecordedDoesNothingWhenNotificationServiceNull(): void
     {
         $subscriber = new PerformanceAlertSubscriber(null, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('app_home')->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, 2.0, 100, 100 * 1024 * 1024);
 
@@ -45,7 +45,7 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->never())->method('sendAlert');
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('app_home')->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, 2.0, 100, 100 * 1024 * 1024);
 
@@ -59,16 +59,16 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
             ->with(
-                $this->callback(function (PerformanceAlert $a): bool {
+                $this->callback(static function (PerformanceAlert $a): bool {
                     return $a->getType() === PerformanceAlert::TYPE_REQUEST_TIME
                         && $a->getSeverity() === PerformanceAlert::SEVERITY_CRITICAL
                         && $a->isCritical();
                 }),
-                $this->isInstanceOf(AfterMetricsRecordedEvent::class)
+                $this->isInstanceOf(AfterMetricsRecordedEvent::class),
             );
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('api_slow')->setEnv('prod');
         $event = new AfterMetricsRecordedEvent($route, true, 1.5, null, null);
 
@@ -82,16 +82,16 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
             ->with(
-                $this->callback(function (PerformanceAlert $a): bool {
+                $this->callback(static function (PerformanceAlert $a): bool {
                     return $a->getType() === PerformanceAlert::TYPE_REQUEST_TIME
                         && $a->getSeverity() === PerformanceAlert::SEVERITY_WARNING
                         && $a->isWarning();
                 }),
-                $this->isInstanceOf(AfterMetricsRecordedEvent::class)
+                $this->isInstanceOf(AfterMetricsRecordedEvent::class),
             );
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('api_warn')->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, 0.6, null, null);
 
@@ -105,15 +105,15 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
             ->with(
-                $this->callback(function (PerformanceAlert $a): bool {
+                $this->callback(static function (PerformanceAlert $a): bool {
                     return $a->getType() === PerformanceAlert::TYPE_QUERY_COUNT
                         && $a->getSeverity() === PerformanceAlert::SEVERITY_CRITICAL;
                 }),
-                $this->anything()
+                $this->anything(),
             );
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('api_n1')->setEnv('prod');
         $event = new AfterMetricsRecordedEvent($route, true, null, 60, null);
 
@@ -127,15 +127,15 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
             ->with(
-                $this->callback(function (PerformanceAlert $a): bool {
+                $this->callback(static function (PerformanceAlert $a): bool {
                     return $a->getType() === PerformanceAlert::TYPE_QUERY_COUNT
                         && $a->getSeverity() === PerformanceAlert::SEVERITY_WARNING;
                 }),
-                $this->anything()
+                $this->anything(),
             );
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('api_queries')->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, null, 25, null);
 
@@ -149,15 +149,15 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
             ->with(
-                $this->callback(function (PerformanceAlert $a): bool {
+                $this->callback(static function (PerformanceAlert $a): bool {
                     return $a->getType() === PerformanceAlert::TYPE_MEMORY_USAGE
                         && $a->getSeverity() === PerformanceAlert::SEVERITY_CRITICAL;
                 }),
-                $this->anything()
+                $this->anything(),
             );
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('api_mem')->setEnv('prod');
         $event = new AfterMetricsRecordedEvent($route, true, null, null, 60 * 1024 * 1024);
 
@@ -171,15 +171,15 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
             ->with(
-                $this->callback(function (PerformanceAlert $a): bool {
+                $this->callback(static function (PerformanceAlert $a): bool {
                     return $a->getType() === PerformanceAlert::TYPE_MEMORY_USAGE
                         && $a->getSeverity() === PerformanceAlert::SEVERITY_WARNING;
                 }),
-                $this->anything()
+                $this->anything(),
             );
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('api_mem')->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, null, null, 25 * 1024 * 1024);
 
@@ -193,7 +193,7 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->never())->method('sendAlert');
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setName('app_fast')->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, 0.1, 5, 10 * 1024 * 1024);
 
@@ -207,14 +207,14 @@ final class PerformanceAlertSubscriberTest extends TestCase
         $notification->expects($this->atLeastOnce())
             ->method('sendAlert')
             ->with(
-                $this->callback(function (PerformanceAlert $a): bool {
+                $this->callback(static function (PerformanceAlert $a): bool {
                     return str_contains($a->getMessage(), 'Unknown');
                 }),
-                $this->anything()
+                $this->anything(),
             );
 
         $subscriber = new PerformanceAlertSubscriber($notification, 0.5, 1.0, 20, 50, 20.0, 50.0, true);
-        $route = new RouteData();
+        $route      = new RouteData();
         $route->setEnv('dev');
         $event = new AfterMetricsRecordedEvent($route, true, 1.5, null, null);
 

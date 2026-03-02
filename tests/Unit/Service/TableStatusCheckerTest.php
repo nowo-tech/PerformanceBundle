@@ -12,13 +12,14 @@ use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class TableStatusCheckerTest extends TestCase
 {
     public function testGetTableName(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
         $this->assertSame('routes_data', $checker->getTableName());
     }
@@ -26,7 +27,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testIsAccessRecordsEnabledWhenTrue(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', true);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', true);
 
         $this->assertTrue($checker->isAccessRecordsEnabled());
     }
@@ -34,7 +35,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testIsAccessRecordsEnabledWhenFalse(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
         $this->assertFalse($checker->isAccessRecordsEnabled());
     }
@@ -42,8 +43,8 @@ final class TableStatusCheckerTest extends TestCase
     public function testSetCacheService(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
-        $cache = $this->createMock(PerformanceCacheService::class);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $cache    = $this->createMock(PerformanceCacheService::class);
 
         $checker->setCacheService($cache);
         $this->addToAssertionCount(1);
@@ -52,7 +53,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testSetCacheServiceNull(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
         $checker->setCacheService(null);
         $this->addToAssertionCount(1);
@@ -61,7 +62,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testRecordsTableExistsWhenAccessRecordsDisabled(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
         $this->assertTrue($checker->recordsTableExists());
     }
@@ -69,7 +70,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testRecordsTableIsCompleteWhenAccessRecordsDisabled(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
         $this->assertTrue($checker->recordsTableIsComplete());
     }
@@ -77,7 +78,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testGetRecordsMissingColumnsWhenAccessRecordsDisabled(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
         $this->assertSame([], $checker->getRecordsMissingColumns());
     }
@@ -85,7 +86,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testGetRecordsTableNameWhenExceptionReturnsSuffix(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getManager')->willThrowException(new \RuntimeException('no manager'));
+        $registry->method('getManager')->willThrowException(new RuntimeException('no manager'));
 
         $checker = new TableStatusChecker($registry, 'default', 'my_table', true);
 
@@ -95,7 +96,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testGetTableNameWithCustomTableName(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'custom_conn', 'custom_performance_table', false);
+        $checker  = new TableStatusChecker($registry, 'custom_conn', 'custom_performance_table', false);
 
         $this->assertSame('custom_performance_table', $checker->getTableName());
     }
@@ -103,7 +104,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testGetRecordsTableNameWithCustomBaseTableReturnsSuffixWhenException(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getManager')->willThrowException(new \RuntimeException('no manager'));
+        $registry->method('getManager')->willThrowException(new RuntimeException('no manager'));
 
         $checker = new TableStatusChecker($registry, 'default', 'perf_metrics', true);
 
@@ -118,7 +119,7 @@ final class TableStatusCheckerTest extends TestCase
             ->willReturn(true);
 
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
         $checker->setCacheService($cache);
 
         $registry->expects($this->never())->method('getConnection');
@@ -134,7 +135,7 @@ final class TableStatusCheckerTest extends TestCase
             ->willReturn(false);
 
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
         $checker->setCacheService($cache);
 
         $registry->expects($this->never())->method('getConnection');
@@ -149,14 +150,14 @@ final class TableStatusCheckerTest extends TestCase
         $cache->expects($this->once())->method('cacheValue')->with(
             $this->stringContains('table_exists'),
             true,
-            300
+            300,
         );
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $connection      = $this->createMock(Connection::class);
+        $schemaManager   = $this->createMock(AbstractSchemaManager::class);
+        $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadataFactory->method('getMetadataFor')->willReturn($metadata);
@@ -182,7 +183,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testTableExistsReturnsFalseWhenConnectionThrowsException(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->willThrowException(new \RuntimeException('Connection failed'));
+        $registry->method('getConnection')->willThrowException(new RuntimeException('Connection failed'));
 
         $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
@@ -193,12 +194,12 @@ final class TableStatusCheckerTest extends TestCase
     {
         $cache = $this->createMock(PerformanceCacheService::class);
         $cache->method('getCachedValue')
-            ->willReturnCallback(function (string $key): bool {
+            ->willReturnCallback(static function (string $key): bool {
                 return true;
             });
 
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
         $checker->setCacheService($cache);
 
         $registry->expects($this->never())->method('getConnection');
@@ -212,11 +213,11 @@ final class TableStatusCheckerTest extends TestCase
         $cache->method('getCachedValue')->willReturn(null);
         $cache->expects($this->atLeastOnce())->method('cacheValue');
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $connection      = $this->createMock(Connection::class);
+        $schemaManager   = $this->createMock(AbstractSchemaManager::class);
+        $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadataFactory->method('getMetadataFor')->willReturn($metadata);
@@ -242,8 +243,8 @@ final class TableStatusCheckerTest extends TestCase
     public function testRecordsTableExistsReturnsFalseWhenConnectionFails(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->willThrowException(new \RuntimeException('Connection failed'));
-        $registry->method('getManager')->willThrowException(new \RuntimeException('No manager'));
+        $registry->method('getConnection')->willThrowException(new RuntimeException('Connection failed'));
+        $registry->method('getManager')->willThrowException(new RuntimeException('No manager'));
 
         $checker = new TableStatusChecker($registry, 'default', 'routes_data', true);
 
@@ -253,7 +254,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testGetMissingColumnsReturnsEmptyArrayWhenException(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->willThrowException(new \RuntimeException('Connection failed'));
+        $registry->method('getConnection')->willThrowException(new RuntimeException('Connection failed'));
 
         $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
@@ -263,13 +264,13 @@ final class TableStatusCheckerTest extends TestCase
     public function testGetMissingColumnsReturnsCachedValueWhenCacheHit(): void
     {
         $cachedMissing = ['missing_col_a', 'missing_col_b'];
-        $cache = $this->createMock(PerformanceCacheService::class);
+        $cache         = $this->createMock(PerformanceCacheService::class);
         $cache->method('getCachedValue')
             ->with($this->stringContains('missing_columns'))
             ->willReturn($cachedMissing);
 
         $registry = $this->createMock(ManagerRegistry::class);
-        $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', false);
         $checker->setCacheService($cache);
 
         $registry->expects($this->never())->method('getConnection');

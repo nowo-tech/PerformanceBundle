@@ -15,6 +15,8 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+use function is_int;
+
 /**
  * Form type for record/access statistics filters (GET).
  *
@@ -31,139 +33,139 @@ class RecordFiltersType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $environments = $options['environments'] ?? ['dev', 'test', 'prod'];
+        $environments    = $options['environments'] ?? ['dev', 'test', 'prod'];
         $availableRoutes = $options['available_routes'] ?? [];
         $availableRoutes = array_values(array_unique($availableRoutes));
         sort($availableRoutes);
-        $choicesEnv = array_combine(array_map('strtoupper', $environments), $environments);
+        $choicesEnv     = array_combine(array_map('strtoupper', $environments), $environments);
         $allRoutesLabel = $options['all_routes_label'];
         $allStatusLabel = $options['all_status_label'];
-        $choicesRoute = [$allRoutesLabel => ''] + array_combine($availableRoutes, $availableRoutes);
-        $choicesStatus = [
-            $allStatusLabel => '',
-            '200 OK' => '200',
-            '404 Not Found' => '404',
-            '500 Server Error' => '500',
+        $choicesRoute   = [$allRoutesLabel => ''] + array_combine($availableRoutes, $availableRoutes);
+        $choicesStatus  = [
+            $allStatusLabel           => '',
+            '200 OK'                  => '200',
+            '404 Not Found'           => '404',
+            '500 Server Error'        => '500',
             '503 Service Unavailable' => '503',
         ];
 
         $builder
             ->add('start_date', DateTimeType::class, [
-                'label' => 'access_statistics.start_date',
+                'label'              => 'access_statistics.start_date',
                 'translation_domain' => 'nowo_performance',
-                'widget' => 'single_text',
+                'widget'             => 'single_text',
                 // 'html5' => false,
                 // 'format' => 'yyyy-MM-dd',
-                'required' => false,
+                'required'      => false,
                 'property_path' => 'startDate',
-                'input' => 'datetime_immutable',
-                'with_seconds' => false,
-                'attr' => ['class' => 'form-control'],
+                'input'         => 'datetime_immutable',
+                'with_seconds'  => false,
+                'attr'          => ['class' => 'form-control'],
             ])
             ->add('end_date', DateTimeType::class, [
-                'label' => 'access_statistics.end_date',
+                'label'              => 'access_statistics.end_date',
                 'translation_domain' => 'nowo_performance',
-                'widget' => 'single_text',
+                'widget'             => 'single_text',
                 // 'html5' => false,
                 // 'format' => 'yyyy-MM-dd',
-                'required' => false,
+                'required'      => false,
                 'property_path' => 'endDate',
-                'input' => 'datetime_immutable',
-                'with_seconds' => false,
-                'attr' => ['class' => 'form-control'],
+                'input'         => 'datetime_immutable',
+                'with_seconds'  => false,
+                'attr'          => ['class' => 'form-control'],
             ])
             ->add('env', ChoiceType::class, [
-                'label' => 'access_statistics.environment',
-                'translation_domain' => 'nowo_performance',
-                'choices' => $choicesEnv,
+                'label'                     => 'access_statistics.environment',
+                'translation_domain'        => 'nowo_performance',
+                'choices'                   => $choicesEnv,
                 'choice_translation_domain' => false,
-                'required' => false,
-                'placeholder' => false,
-                'attr' => ['class' => 'form-select'],
+                'required'                  => false,
+                'placeholder'               => false,
+                'attr'                      => ['class' => 'form-select'],
             ])
             ->add('route', ChoiceType::class, [
-                'label' => 'access_statistics.route',
-                'translation_domain' => 'nowo_performance',
-                'choices' => $choicesRoute,
+                'label'                     => 'access_statistics.route',
+                'translation_domain'        => 'nowo_performance',
+                'choices'                   => $choicesRoute,
                 'choice_translation_domain' => false,
-                'required' => false,
-                'placeholder' => false,
-                'attr' => ['class' => 'form-select'],
+                'required'                  => false,
+                'placeholder'               => false,
+                'attr'                      => ['class' => 'form-select'],
             ])
             ->add('status_code', ChoiceType::class, [
-                'label' => 'access_statistics.status_code',
-                'translation_domain' => 'nowo_performance',
-                'choices' => $choicesStatus,
+                'label'                     => 'access_statistics.status_code',
+                'translation_domain'        => 'nowo_performance',
+                'choices'                   => $choicesStatus,
                 'choice_translation_domain' => false,
-                'required' => false,
-                'placeholder' => false,
-                'property_path' => 'statusCode',
-                'attr' => ['class' => 'form-select'],
+                'required'                  => false,
+                'placeholder'               => false,
+                'property_path'             => 'statusCode',
+                'attr'                      => ['class' => 'form-select'],
             ])
             ->add('min_query_time', NumberType::class, [
-                'label' => 'access_statistics.min_query_time',
+                'label'              => 'access_statistics.min_query_time',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'property_path' => 'minQueryTime',
-                'scale' => 3,
-                'attr' => ['class' => 'form-control', 'placeholder' => '0.001', 'step' => '0.001'],
+                'required'           => false,
+                'property_path'      => 'minQueryTime',
+                'scale'              => 3,
+                'attr'               => ['class' => 'form-control', 'placeholder' => '0.001', 'step' => '0.001'],
             ])
             ->add('max_query_time', NumberType::class, [
-                'label' => 'access_statistics.max_query_time',
+                'label'              => 'access_statistics.max_query_time',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'property_path' => 'maxQueryTime',
-                'scale' => 3,
-                'attr' => ['class' => 'form-control', 'placeholder' => '5', 'step' => '0.001'],
+                'required'           => false,
+                'property_path'      => 'maxQueryTime',
+                'scale'              => 3,
+                'attr'               => ['class' => 'form-control', 'placeholder' => '5', 'step' => '0.001'],
             ])
             ->add('min_memory_mb', NumberType::class, [
-                'label' => 'access_statistics.min_memory_mb',
+                'label'              => 'access_statistics.min_memory_mb',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'mapped' => false,
-                'data' => isset($options['data']) && null !== $options['data']->minMemoryUsage
+                'required'           => false,
+                'mapped'             => false,
+                'data'               => isset($options['data']) && $options['data']->minMemoryUsage !== null
                     ? round($options['data']->minMemoryUsage / 1024 / 1024, 2) : null,
                 'attr' => ['class' => 'form-control', 'placeholder' => '0', 'step' => '0.1'],
             ])
             ->add('max_memory_mb', NumberType::class, [
-                'label' => 'access_statistics.max_memory_mb',
+                'label'              => 'access_statistics.max_memory_mb',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'mapped' => false,
-                'data' => isset($options['data']) && null !== $options['data']->maxMemoryUsage
+                'required'           => false,
+                'mapped'             => false,
+                'data'               => isset($options['data']) && $options['data']->maxMemoryUsage !== null
                     ? round($options['data']->maxMemoryUsage / 1024 / 1024, 2) : null,
                 'attr' => ['class' => 'form-control', 'placeholder' => '100', 'step' => '0.1'],
             ])
             ->add('referer', TextType::class, [
-                'label' => 'access_statistics.referer',
+                'label'              => 'access_statistics.referer',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'attr' => ['class' => 'form-control', 'placeholder' => 'example.com'],
+                'required'           => false,
+                'attr'               => ['class' => 'form-control', 'placeholder' => 'example.com'],
             ])
             ->add('user', TextType::class, [
-                'label' => 'access_statistics.user',
+                'label'              => 'access_statistics.user',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'attr' => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
+                'required'           => false,
+                'attr'               => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
             ])
         ;
         $builder->get('status_code')->addModelTransformer(new CallbackTransformer(
             static function (?int $value): string {
-                return null !== $value ? (string) $value : '';
+                return $value !== null ? (string) $value : '';
             },
             static function (mixed $value): ?int {
-                if (null === $value || '' === $value) {
+                if ($value === null || $value === '') {
                     return null;
                 }
 
-                return \is_int($value) ? $value : (int) $value;
-            }
+                return is_int($value) ? $value : (int) $value;
+            },
         ));
         $builder
             ->add('filter', SubmitType::class, [
-                'label' => 'access_statistics.filter',
+                'label'              => 'access_statistics.filter',
                 'translation_domain' => 'nowo_performance',
-                'attr' => ['class' => 'btn btn-primary'],
+                'attr'               => ['class' => 'btn btn-primary'],
             ]);
     }
 
@@ -175,10 +177,10 @@ class RecordFiltersType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => RecordFilters::class,
-            'method' => 'GET',
-            'csrf_protection' => false,
-            'environments' => ['dev', 'test', 'prod'],
+            'data_class'       => RecordFilters::class,
+            'method'           => 'GET',
+            'csrf_protection'  => false,
+            'environments'     => ['dev', 'test', 'prod'],
             'available_routes' => [],
             'all_routes_label' => 'access_statistics.all_routes',
             'all_status_label' => 'access_statistics.all_status_codes',

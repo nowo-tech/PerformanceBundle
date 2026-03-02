@@ -33,7 +33,7 @@ final class ClearPerformanceDataTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function (array $defaults): bool {
+            ->with($this->callback(static function (array $defaults): bool {
                 return isset($defaults['data_class'])
                     && $defaults['data_class'] === ClearPerformanceDataRequest::class
                     && isset($defaults['method'])

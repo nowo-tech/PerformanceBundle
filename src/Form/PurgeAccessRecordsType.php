@@ -27,52 +27,52 @@ class PurgeAccessRecordsType extends AbstractType
         sort($environments);
         $choicesEnv = ['access_statistics.all_environments' => ''] + array_combine(
             array_map('strtoupper', $environments),
-            $environments
+            $environments,
         );
 
         $builder
             ->add('purgeType', ChoiceType::class, [
-                'label' => 'access_statistics.purge_type',
+                'label'              => 'access_statistics.purge_type',
                 'translation_domain' => 'nowo_performance',
-                'choices' => [
-                    'access_statistics.purge_all' => PurgeAccessRecordsRequest::PURGE_ALL,
+                'choices'            => [
+                    'access_statistics.purge_all'        => PurgeAccessRecordsRequest::PURGE_ALL,
                     'access_statistics.purge_older_than' => PurgeAccessRecordsRequest::PURGE_OLDER_THAN,
                 ],
                 'choice_translation_domain' => 'nowo_performance',
-                'attr' => ['class' => 'form-select purge-type-select'],
+                'attr'                      => ['class' => 'form-select purge-type-select'],
             ])
             ->add('days', IntegerType::class, [
-                'label' => 'access_statistics.older_than_days',
+                'label'              => 'access_statistics.older_than_days',
                 'translation_domain' => 'nowo_performance',
-                'required' => false,
-                'data' => $options['default_days'] ?? 30,
-                'attr' => ['class' => 'form-control', 'min' => 1, 'placeholder' => '30'],
+                'required'           => false,
+                'data'               => $options['default_days'] ?? 30,
+                'attr'               => ['class' => 'form-control', 'min' => 1, 'placeholder' => '30'],
             ])
             ->add('env', ChoiceType::class, [
-                'label' => 'access_statistics.environment',
-                'translation_domain' => 'nowo_performance',
-                'choices' => $choicesEnv,
+                'label'                     => 'access_statistics.environment',
+                'translation_domain'        => 'nowo_performance',
+                'choices'                   => $choicesEnv,
                 'choice_translation_domain' => 'nowo_performance',
-                'required' => false,
-                'attr' => ['class' => 'form-select'],
+                'required'                  => false,
+                'attr'                      => ['class' => 'form-select'],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'access_statistics.purge_records',
+                'label'              => 'access_statistics.purge_records',
                 'translation_domain' => 'nowo_performance',
-                'attr' => ['class' => 'btn btn-warning'],
+                'attr'               => ['class' => 'btn btn-warning'],
             ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => PurgeAccessRecordsRequest::class,
-            'method' => 'POST',
+            'data_class'      => PurgeAccessRecordsRequest::class,
+            'method'          => 'POST',
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
-            'csrf_token_id' => 'purge_access_records',
-            'environments' => ['dev', 'test', 'prod'],
-            'default_days' => 30,
+            'csrf_token_id'   => 'purge_access_records',
+            'environments'    => ['dev', 'test', 'prod'],
+            'default_days'    => 30,
         ]);
         $resolver->setAllowedTypes('environments', 'array');
     }

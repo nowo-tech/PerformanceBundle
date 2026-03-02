@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -29,9 +30,9 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
     protected function setUp(): void
     {
         $this->metricsService = $this->createMock(PerformanceMetricsService::class);
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->dataCollector = $this->createMock(PerformanceDataCollector::class);
-        $this->kernel = $this->createMock(HttpKernelInterface::class);
+        $this->registry       = $this->createMock(ManagerRegistry::class);
+        $this->dataCollector  = $this->createMock(PerformanceDataCollector::class);
+        $this->kernel         = $this->createMock(HttpKernelInterface::class);
     }
 
     public function testOnKernelRequestWithLoggingDisabledDoesNotLog(): void
@@ -55,7 +56,7 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             null,  // requestStack
             null,  // security
             null,  // stopwatch
-            null   // kernel
+            null,   // kernel
         );
 
         $request = Request::create('/');
@@ -101,7 +102,7 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             null,  // requestStack
             null,  // security
             null,  // stopwatch
-            null   // kernel
+            null,   // kernel
         );
 
         $request = Request::create('/');
@@ -175,7 +176,7 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             null,  // requestStack
             null,  // security
             null,  // stopwatch
-            null   // kernel
+            null,   // kernel
         );
 
         $request = Request::create('/');
@@ -208,7 +209,7 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
         $this->metricsService
             ->expects($this->once())
             ->method('recordMetrics')
-            ->willThrowException(new \Exception('Database error'));
+            ->willThrowException(new Exception('Database error'));
 
         // Should not throw exception, should fail silently (no logging)
         $terminateEvent = new TerminateEvent($this->kernel, $request, new Response());
@@ -237,7 +238,7 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             null,  // requestStack
             null,  // security
             null,  // stopwatch
-            null   // kernel
+            null,   // kernel
         );
 
         $request = Request::create('/');
@@ -283,7 +284,7 @@ final class PerformanceMetricsSubscriberLoggingTest extends TestCase
             null,  // requestStack
             null,  // security
             null,  // stopwatch
-            null   // kernel
+            null,   // kernel
         );
 
         $request = Request::create('/');

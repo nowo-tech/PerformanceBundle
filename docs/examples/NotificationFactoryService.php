@@ -41,7 +41,7 @@ class NotificationFactoryService
     public function createNotificationService(): NotificationService
     {
         $channels = $this->configService->createChannelsFromDatabase();
-        $enabled = $this->configService->areNotificationsEnabled();
+        $enabled  = $this->configService->areNotificationsEnabled();
 
         return new NotificationService($channels, $enabled);
     }
@@ -55,9 +55,9 @@ class NotificationFactoryService
      */
     public function createNotificationServiceWithAdditionalChannels(array $additionalChannels): NotificationService
     {
-        $channels = $this->configService->createChannelsFromDatabase();
+        $channels    = $this->configService->createChannelsFromDatabase();
         $allChannels = array_merge($channels, $additionalChannels);
-        $enabled = $this->configService->areNotificationsEnabled();
+        $enabled     = $this->configService->areNotificationsEnabled();
 
         return new NotificationService($allChannels, $enabled);
     }

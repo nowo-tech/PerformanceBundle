@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Exception;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+
+use function array_slice;
 
 class HomeController extends AbstractController
 {
@@ -22,19 +25,19 @@ class HomeController extends AbstractController
         $env = $this->getParameter('kernel.environment');
 
         try {
-            $routes = $this->metricsService->getRoutesByEnvironment($env);
+            $routes         = $this->metricsService->getRoutesByEnvironment($env);
             $withAggregates = $this->metricsService->getRoutesWithAggregates($env);
-            $worstRoutes = \array_slice($withAggregates, 0, 10);
-        } catch (\Exception $e) {
+            $worstRoutes    = array_slice($withAggregates, 0, 10);
+        } catch (Exception $e) {
             // If metrics table doesn't exist yet, show empty state
-            $routes = [];
+            $routes      = [];
             $worstRoutes = [];
         }
 
         return $this->render('home/index.html.twig', [
-            'routes' => $routes,
+            'routes'      => $routes,
             'worstRoutes' => $worstRoutes,
-            'env' => $env,
+            'env'         => $env,
         ]);
     }
 }

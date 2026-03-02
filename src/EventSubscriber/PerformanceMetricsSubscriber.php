@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 
 use Doctrine\DBAL\Logging\Middleware;
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Nowo\PerformanceBundle\Helper\LogHelper;
@@ -21,6 +22,12 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\Profiler\Profiler;
 use Symfony\Component\Stopwatch\Stopwatch;
+
+use function in_array;
+use function is_string;
+use function sprintf;
+
+use const FNM_NOESCAPE;
 
 /**
  * Event subscriber for tracking route performance metrics.
@@ -82,8 +89,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * Creates a new instance.
      *
      * @param PerformanceMetricsService $metricsService Service for recording metrics
-     * @param ManagerRegistry           $registry       Doctrine registry for entity manager access
-     * @param PerformanceDataCollector  $dataCollector  Data collector for WebProfiler
+     * @param ManagerRegistry $registry Doctrine registry for entity manager access
+     * @param PerformanceDataCollector $dataCollector Data collector for WebProfiler
      */
     public function __construct(
         private readonly PerformanceMetricsService $metricsService,
@@ -124,7 +131,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         $this->dataCollector->setEnabled($enabled);
         $this->dataCollector->setAsync($async);
         $this->stopwatch = $stopwatch;
-        $this->kernel = $kernel;
+        $this->kernel    = $kernel;
     }
 
     /**
@@ -138,7 +145,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => 'onKernelRequest',
+            KernelEvents::REQUEST   => 'onKernelRequest',
             KernelEvents::TERMINATE => 'onKernelTerminate',
         ];
     }
@@ -161,7 +168,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Minimal setup for collector (route + env) so toolbar can show "disabled" with context
         $env = null;
-        if (null !== $this->kernel) {
+        if ($this->kernel !== null) {
             $env = $this->kernel->getEnvironment();
         } elseif ($request->server->has('APP_ENV')) {
             $env = $request->server->get('APP_ENV');
@@ -193,26 +200,28 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             LogHelper::logf(
                 '[PerformanceBundle] DataCollector setEnabled(false) - reason: Sub-request, isEnabled()=%s',
                 $this->enableLogging,
-                $this->dataCollector->isEnabled() ? 'true' : 'false'
+                $this->dataCollector->isEnabled() ? 'true' : 'false',
             );
 
             return;
         }
 
-        LogHelper::logf('[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s', $this->enableLogging,
-            null !== $this->kernel ? $this->kernel->getEnvironment() : 'null',
+        LogHelper::logf(
+            '[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s',
+            $this->enableLogging,
+            $this->kernel !== null ? $this->kernel->getEnvironment() : 'null',
             $env,
-            implode(', ', $this->environments)
+            implode(', ', $this->environments),
         );
 
-        if (!\in_array($env, $this->environments, true)) {
+        if (!in_array($env, $this->environments, true)) {
             LogHelper::logf('[PerformanceBundle] Tracking disabled: env=%s not in allowed environments: %s', $this->enableLogging, $env, implode(', ', $this->environments));
             $this->dataCollector->setEnabled(false);
-            $this->dataCollector->setDisabledReason(\sprintf('Environment "%s" is not in allowed environments: %s', $env, implode(', ', $this->environments)));
+            $this->dataCollector->setDisabledReason(sprintf('Environment "%s" is not in allowed environments: %s', $env, implode(', ', $this->environments)));
             LogHelper::logf(
                 '[PerformanceBundle] DataCollector setEnabled(false) - reason: Environment not allowed, isEnabled()=%s',
                 $this->enableLogging,
-                $this->dataCollector->isEnabled() ? 'true' : 'false'
+                $this->dataCollector->isEnabled() ? 'true' : 'false',
             );
 
             return;
@@ -223,7 +232,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         LogHelper::logf(
             '[PerformanceBundle] DataCollector setEnabled(true) - isEnabled()=%s',
             $this->enableLogging,
-            $this->dataCollector->isEnabled() ? 'true' : 'false'
+            $this->dataCollector->isEnabled() ? 'true' : 'false',
         );
 
         LogHelper::logf(
@@ -233,20 +242,20 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $env,
             $this->trackQueries ? 'true' : 'false',
             $this->trackRequestTime ? 'true' : 'false',
-            $this->trackSubRequests ? 'true' : 'false'
+            $this->trackSubRequests ? 'true' : 'false',
         );
 
         // When route is ignored: stop all tracking for this request (no metrics, no query tracking, no DB)
-        if (null !== $this->routeName && $this->isRouteIgnored($this->routeName)) {
+        if ($this->routeName !== null && $this->isRouteIgnored($this->routeName)) {
             $this->dataCollector->setEnabled(false);
-            $this->dataCollector->setDisabledReason(\sprintf('Route "%s" is in ignore_routes list', $this->routeName));
+            $this->dataCollector->setDisabledReason(sprintf('Route "%s" is in ignore_routes list', $this->routeName));
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
         }
 
         // Only log if route name is available (to reduce noise from asset/profiler routes)
-        if (null !== $this->routeName) {
+        if ($this->routeName !== null) {
             $requestType = $event->isMainRequest() ? 'main' : 'sub';
             LogHelper::logf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=%s', $this->enableLogging, $this->routeName, $env, $requestType);
         }
@@ -267,13 +276,13 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         } else {
             // Use RequestStack to support Symfony < 5.3 where Request::getMainRequest() does not exist
             $mainRequest = null;
-            if (null !== $this->requestStack) {
+            if ($this->requestStack !== null) {
                 $mainRequest = method_exists($this->requestStack, 'getMainRequest')
                     ? $this->requestStack->getMainRequest()
                     : $this->requestStack->getMasterRequest();
             }
             // Request does not have getMainRequest(); only RequestStack does. Use current request if we have no stack.
-            if (null === $mainRequest) {
+            if ($mainRequest === null) {
                 $mainRequest = $request;
             }
             $this->requestId = $mainRequest?->attributes->get('_performance_request_id');
@@ -319,7 +328,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Try multiple methods to detect environment
         $env = null;
-        if (null !== $this->kernel) {
+        if ($this->kernel !== null) {
             $env = $this->kernel->getEnvironment();
         } elseif ($request->server->has('APP_ENV')) {
             $env = $request->server->get('APP_ENV');
@@ -334,7 +343,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // Get route name here, as it should be resolved by now.
         // If request no longer has _route at terminate (route lost), clear and skip saving.
         $routeNameFromRequest = $request->attributes->get('_route');
-        if (null === $routeNameFromRequest) {
+        if ($routeNameFromRequest === null) {
             $this->routeName = null;
         } else {
             $this->routeName = $this->routeName ?? $routeNameFromRequest;
@@ -345,10 +354,10 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             '[PerformanceBundle] onKernelTerminate: Route check - storedRoute=%s, requestRoute=%s',
             $this->enableLogging,
             $this->routeName ?? 'null',
-            $routeNameFromRequest ?? 'null'
+            $routeNameFromRequest ?? 'null',
         );
 
-        if (null === $this->routeName) {
+        if ($this->routeName === null) {
             LogHelper::log('[PerformanceBundle] onKernelTerminate: routeName is null, skipping', $this->enableLogging);
             // Inform collector that no route name was available
             $this->dataCollector->setRecordOperation(false, false);
@@ -356,12 +365,12 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (!\in_array($env, $this->environments, true)) {
+        if (!in_array($env, $this->environments, true)) {
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: env=%s not in allowed environments (%s), skipping',
                 $this->enableLogging,
                 $env,
-                implode(', ', $this->environments)
+                implode(', ', $this->environments),
             );
             // Inform collector that environment is not allowed
             $this->dataCollector->setRecordOperation(false, false);
@@ -371,37 +380,37 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Calculate request time
         $requestTime = null;
-        if ($this->trackRequestTime && null !== $this->startTime) {
+        if ($this->trackRequestTime && $this->startTime !== null) {
             $requestTime = microtime(true) - $this->startTime;
             $this->dataCollector->setRequestTime($requestTime);
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: Request time calculated: %s seconds',
                 $this->enableLogging,
-                (string) $requestTime
+                (string) $requestTime,
             );
         } else {
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: Request time not tracked (trackRequestTime=%s, startTime=%s)',
                 $this->enableLogging,
                 $this->trackRequestTime ? 'true' : 'false',
-                null !== $this->startTime ? 'set' : 'null'
+                $this->startTime !== null ? 'set' : 'null',
             );
         }
 
         // Get query metrics BEFORE stopping query tracking
         $queryCount = null;
-        $queryTime = null;
+        $queryTime  = null;
         if ($this->trackQueries) {
-            $metrics = $this->getQueryMetrics($request);
+            $metrics    = $this->getQueryMetrics($request);
             $queryCount = $metrics['count'];
-            $queryTime = $metrics['time'];
+            $queryTime  = $metrics['time'];
             $this->dataCollector->setQueryCount($queryCount);
             $this->dataCollector->setQueryTime($queryTime);
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: Query metrics: count=%s, time=%s',
                 $this->enableLogging,
                 (string) $queryCount,
-                (string) $queryTime
+                (string) $queryTime,
             );
         } else {
             LogHelper::log('[PerformanceBundle] onKernelTerminate: Query tracking disabled', $this->enableLogging);
@@ -409,8 +418,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Calculate peak memory usage
         $memoryUsage = null;
-        if (null !== $this->startMemory) {
-            $peakMemory = memory_get_peak_usage(true);
+        if ($this->startMemory !== null) {
+            $peakMemory  = memory_get_peak_usage(true);
             $memoryUsage = $peakMemory - $this->startMemory;
             // Ensure non-negative (in case memory was freed)
             if ($memoryUsage < 0) {
@@ -419,7 +428,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: Memory usage: %s bytes',
                 $this->enableLogging,
-                (string) $memoryUsage
+                (string) $memoryUsage,
             );
         } else {
             LogHelper::log('[PerformanceBundle] onKernelTerminate: Memory tracking not started (startMemory is null)', $this->enableLogging);
@@ -430,8 +439,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Get HTTP status code from response
         $statusCode = null;
-        $response = $event->getResponse();
-        if (null !== $response) {
+        $response   = $event->getResponse();
+        if ($response !== null) {
             $statusCode = $response->getStatusCode();
         }
 
@@ -441,7 +450,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: skipping due to sampling (rate=%.2f%%)',
                 $this->enableLogging,
-                $this->samplingRate * 100
+                $this->samplingRate * 100,
             );
             // Inform collector that no data was saved due to sampling
             $this->dataCollector->setRecordOperation(false, false);
@@ -456,9 +465,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
             // Use output buffering to catch any potential output
             // Only start a new buffer if we're not already in one (to avoid closing buffers we didn't open)
-            $obLevel = ob_get_level();
+            $obLevel   = ob_get_level();
             $obStarted = false;
-            if (0 === $obLevel) {
+            if ($obLevel === 0) {
                 ob_start();
                 $obStarted = true;
             }
@@ -469,32 +478,32 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $this->routeName ?? 'null',
                 $env,
                 $httpMethod,
-                null !== $statusCode ? (string) $statusCode : 'null',
-                null !== $requestTime ? (string) $requestTime : 'null',
-                null !== $queryCount ? (string) $queryCount : 'null',
-                null !== $queryTime ? (string) $queryTime : 'null',
-                null !== $memoryUsage ? (string) $memoryUsage : 'null',
-                (string) ($this->samplingRate * 100).'%'
+                $statusCode !== null ? (string) $statusCode : 'null',
+                $requestTime !== null ? (string) $requestTime : 'null',
+                $queryCount !== null ? (string) $queryCount : 'null',
+                $queryTime !== null ? (string) $queryTime : 'null',
+                $memoryUsage !== null ? (string) $memoryUsage : 'null',
+                (string) ($this->samplingRate * 100) . '%',
             );
 
             $referer = $request->headers->get('Referer');
 
             $userIdentifier = null;
-            $userId = null;
-            if ($this->trackUser && null !== $this->security) {
+            $userId         = null;
+            if ($this->trackUser && $this->security !== null) {
                 $user = $this->security->getUser();
-                if (null !== $user) {
+                if ($user !== null) {
                     $userIdentifier = $user->getUserIdentifier();
                     if (method_exists($user, 'getId')) {
-                        $id = $user->getId();
-                        $userId = null !== $id ? (string) $id : null;
+                        $id     = $user->getId();
+                        $userId = $id !== null ? (string) $id : null;
                     }
                 }
             }
 
-            $pathInfo = $request->getPathInfo();
+            $pathInfo    = $request->getPathInfo();
             $queryString = $request->getQueryString();
-            $routePath = $pathInfo.(\is_string($queryString) && '' !== $queryString ? '?'.$queryString : '');
+            $routePath   = $pathInfo . (is_string($queryString) && $queryString !== '' ? '?' . $queryString : '');
 
             $result = $this->metricsService->recordMetrics(
                 $this->routeName,
@@ -511,14 +520,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $referer,
                 $userIdentifier,
                 $userId,
-                $routePath
+                $routePath,
             );
 
             LogHelper::logf(
                 '[PerformanceBundle] recordMetrics returned: is_new=%s, was_updated=%s',
                 $this->enableLogging,
                 $result['is_new'] ? 'true' : 'false',
-                $result['was_updated'] ? 'true' : 'false'
+                $result['was_updated'] ? 'true' : 'false',
             );
 
             // Set record operation information in the collector
@@ -531,7 +540,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                     $this->enableLogging,
                     $this->routeName ?? 'null',
                     $result['is_new'] ? 'true' : 'false',
-                    $result['was_updated'] ? 'true' : 'false'
+                    $result['was_updated'] ? 'true' : 'false',
                 );
             } else {
                 // If result doesn't have the expected keys, log warning and assume no operation occurred
@@ -539,7 +548,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                     '[PerformanceBundle] WARNING: recordMetrics returned unexpected result format for route: %s. Result keys: %s',
                     $this->enableLogging,
                     $this->routeName ?? 'null',
-                    implode(', ', array_keys($result))
+                    implode(', ', array_keys($result)),
                 );
                 // Still set the operation to indicate we tried (even if it failed)
                 $this->dataCollector->setRecordOperation(false, false);
@@ -552,7 +561,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
             // Restore error reporting
             error_reporting($errorReporting);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Restore error reporting
             if (isset($errorReporting)) {
                 error_reporting($errorReporting);
@@ -570,10 +579,10 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $this->routeName ?? 'null',
                 $e->getMessage(),
                 $e->getFile(),
-                $e->getLine()
+                $e->getLine(),
             );
 
-            $msg = $e->getMessage();
+            $msg        = $e->getMessage();
             $schemaHint = str_contains($msg, 'Unknown column') || str_contains($msg, 'Column not found')
                 || str_contains($msg, 'total_queries')
                 || str_contains($msg, "Field 'id' doesn't have a default value")
@@ -581,7 +590,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             if ($this->enableLogging && $schemaHint) {
                 LogHelper::logf(
                     '[PerformanceBundle] Hint: If routes_data_records has schema issues (missing columns, id without AUTO_INCREMENT), run: php bin/console nowo:performance:sync-schema',
-                    $this->enableLogging
+                    $this->enableLogging,
                 );
             }
 
@@ -593,7 +602,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         } finally {
             // Ensure setRecordOperation is always called, even if there was an unexpected error
             // This prevents "Unknown" status in the collector
-            if (null === $this->dataCollector->wasRecordNew() && null === $this->dataCollector->wasRecordUpdated()) {
+            if ($this->dataCollector->wasRecordNew() === null && $this->dataCollector->wasRecordUpdated() === null) {
                 // If we reach here and the operation status is still null, something went wrong
                 // Set it to indicate we tried but failed
                 $this->dataCollector->setRecordOperation(false, false);
@@ -613,7 +622,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      */
     private function startQueryTracking(): void
     {
-        if (null === $this->queryLogger) {
+        if ($this->queryLogger === null) {
             return;
         }
 
@@ -621,7 +630,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         $this->queryLogger->reset();
 
         // Start stopwatch for query tracking
-        if (null !== $this->stopwatch) {
+        if ($this->stopwatch !== null) {
             $this->stopwatch->reset();
             $this->stopwatch->start('doctrine.queries');
         }
@@ -635,7 +644,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     private function stopQueryTracking(): void
     {
         // Stop stopwatch if it was started
-        if (null !== $this->stopwatch && $this->stopwatch->isStarted('doctrine.queries')) {
+        if ($this->stopwatch !== null && $this->stopwatch->isStarted('doctrine.queries')) {
             $this->stopwatch->stop('doctrine.queries');
         }
     }
@@ -650,28 +659,28 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     private function getQueryMetrics(?\Symfony\Component\HttpFoundation\Request $request = null): array
     {
         $queryCount = 0;
-        $queryTime = 0.0;
+        $queryTime  = 0.0;
 
         // Priority 1: Try to get metrics from QueryTrackingMiddleware (most reliable for our use case)
         try {
             $queryCount = QueryTrackingMiddleware::getQueryCount();
-            $queryTime = QueryTrackingMiddleware::getTotalQueryTime();
+            $queryTime  = QueryTrackingMiddleware::getTotalQueryTime();
 
             // Even if count is 0, return it if we got valid data (time might be 0 for very fast queries)
             // Only fallback if both are 0 AND we have a request to check profiler
-            if ($queryCount > 0 || ($queryTime > 0 && null === $request)) {
+            if ($queryCount > 0 || ($queryTime > 0 && $request === null)) {
                 return ['count' => $queryCount, 'time' => $queryTime];
             }
 
             // If middleware returned 0/0, it might not be working, try fallback
             // But only if we have a request to check profiler
-            if (0 === $queryCount && 0.0 === $queryTime && null !== $request) {
+            if ($queryCount === 0 && $queryTime === 0.0 && $request !== null) {
                 // Continue to fallback methods
             } else {
                 // Return what we got from middleware
                 return ['count' => $queryCount, 'time' => $queryTime];
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Silently fail and try next method
         }
 
@@ -681,29 +690,29 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Priority 3: Try to get from request attributes (fallback)
         // Use provided request or get from RequestStack
-        if (null === $request && null !== $this->requestStack) {
+        if ($request === null && $this->requestStack !== null) {
             $request = $this->requestStack->getMainRequest();
         }
 
-        if (null !== $request) {
+        if ($request !== null) {
             try {
                 // Try multiple ways to get the profiler from request
                 $profilerProfile = $request->attributes->get('_profiler');
 
                 // If not in attributes, try to get from parent request (for sub-requests)
-                if (null === $profilerProfile && null !== $this->requestStack) {
+                if ($profilerProfile === null && $this->requestStack !== null) {
                     $parentRequest = $this->requestStack->getParentRequest();
-                    if (null !== $parentRequest) {
+                    if ($parentRequest !== null) {
                         $profilerProfile = $parentRequest->attributes->get('_profiler');
                     }
                 }
 
                 // Also try _profiler_profile (alternative attribute name)
-                if (null === $profilerProfile) {
+                if ($profilerProfile === null) {
                     $profilerProfile = $request->attributes->get('_profiler_profile');
                 }
 
-                if (null !== $profilerProfile) {
+                if ($profilerProfile !== null) {
                     // Try to get DoctrineDataCollector
                     $doctrineCollector = null;
 
@@ -713,20 +722,20 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                     }
 
                     // Method 2: getCollector() method
-                    if (null === $doctrineCollector && method_exists($profilerProfile, 'getCollector')) {
+                    if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollector')) {
                         $doctrineCollector = $profilerProfile->getCollector('doctrine');
                     }
 
                     // Method 3: getCollectors() and find 'db' or 'doctrine'
-                    if (null === $doctrineCollector && method_exists($profilerProfile, 'getCollectors')) {
-                        $collectors = $profilerProfile->getCollectors();
+                    if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollectors')) {
+                        $collectors        = $profilerProfile->getCollectors();
                         $doctrineCollector = $collectors['db'] ?? $collectors['doctrine'] ?? null;
                     }
 
                     if ($doctrineCollector instanceof DoctrineDataCollector) {
                         // Get query count and time from Doctrine DataCollector
                         $queryCount = $doctrineCollector->getQueryCount();
-                        $queryTime = $doctrineCollector->getTime() / 1000.0; // Convert from milliseconds to seconds
+                        $queryTime  = $doctrineCollector->getTime() / 1000.0; // Convert from milliseconds to seconds
 
                         // If we got valid data, return it
                         if ($queryCount > 0 || $queryTime > 0) {
@@ -734,22 +743,22 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                         }
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Silently fail and try fallback
             }
         }
 
         // Priority 3: Fallback to Stopwatch for time tracking only
         // Note: Stopwatch won't give us accurate query count
-        if (null !== $this->stopwatch) {
+        if ($this->stopwatch !== null) {
             try {
                 if ($this->stopwatch->isStarted('doctrine.queries')) {
                     $event = $this->stopwatch->getEvent('doctrine.queries');
-                    if (null !== $event) {
+                    if ($event !== null) {
                         $queryTime = $event->getDuration() / 1000.0; // Convert from milliseconds to seconds
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Silently fail
             }
         }
@@ -769,17 +778,17 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      */
     private function isRouteIgnored(?string $routeName): bool
     {
-        if (null === $routeName || '' === $routeName) {
+        if ($routeName === null || $routeName === '') {
             return false;
         }
         foreach ($this->ignoreRoutes as $ignored) {
             $ignored = (string) $ignored;
-            if ('' === $ignored) {
+            if ($ignored === '') {
                 continue;
             }
             // Pattern: entry contains glob wildcards
             if (str_contains($ignored, '*') || str_contains($ignored, '?')) {
-                if (fnmatch($ignored, $routeName, \FNM_NOESCAPE)) {
+                if (fnmatch($ignored, $routeName, FNM_NOESCAPE)) {
                     return true;
                 }
                 continue;
@@ -788,7 +797,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             if ($routeName === $ignored) {
                 return true;
             }
-            if (str_starts_with($routeName, $ignored.'_')) {
+            if (str_starts_with($routeName, $ignored . '_')) {
                 return true;
             }
         }
@@ -799,14 +808,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         if (str_starts_with($routeName, 'web_profiler_')) {
             foreach ($this->ignoreRoutes as $ignored) {
                 $ignored = (string) $ignored;
-                if ('' === $ignored) {
+                if ($ignored === '') {
                     continue;
                 }
                 $ig = strtolower($ignored);
-                if ('_wdt' === $ig || str_starts_with($ig, '_wdt') || '_profiler' === $ig || str_starts_with($ig, '_profiler') || str_starts_with($ig, 'web_profiler')) {
+                if ($ig === '_wdt' || str_starts_with($ig, '_wdt') || $ig === '_profiler' || str_starts_with($ig, '_profiler') || str_starts_with($ig, 'web_profiler')) {
                     return true;
                 }
-                if (str_contains($ignored, '*') && fnmatch($ignored, $routeName, \FNM_NOESCAPE)) {
+                if (str_contains($ignored, '*') && fnmatch($ignored, $routeName, FNM_NOESCAPE)) {
                     return true;
                 }
             }

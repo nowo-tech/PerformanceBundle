@@ -7,8 +7,8 @@ namespace Nowo\PerformanceBundle\Tests\Unit\MessageHandler;
 use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
 use Nowo\PerformanceBundle\MessageHandler\RecordMetricsMessageHandler;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 final class RecordMetricsMessageHandlerTest extends TestCase
 {
@@ -29,7 +29,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             0.2,
             ['id' => 123],
             1048576,
-            'GET'
+            'GET',
         );
 
         $this->metricsService->expects($this->once())
@@ -48,7 +48,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 null,
-                null
+                null,
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -65,7 +65,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             null,
             null,
             null,
-            null
+            null,
         );
 
         $this->metricsService->expects($this->once())
@@ -84,7 +84,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 null,
-                null
+                null,
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -102,7 +102,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             null,
             null,
             'GET',
-            'req-abc123'
+            'req-abc123',
         );
 
         $this->metricsService->expects($this->once())
@@ -121,7 +121,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 'req-abc123',
                 null,
                 null,
-                null
+                null,
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -140,7 +140,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             null,
             'GET',
             null,
-            'https://referer.example/'
+            'https://referer.example/',
         );
 
         $this->metricsService->expects($this->once())
@@ -159,7 +159,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 'https://referer.example/',
                 null,
-                null
+                null,
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -186,7 +186,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 null,
-                null
+                null,
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -207,7 +207,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             null,
             null,
             'user@example.com',
-            '42'
+            '42',
         );
 
         $this->metricsService->expects($this->once())
@@ -226,7 +226,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 'user@example.com',
-                '42'
+                '42',
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
@@ -243,7 +243,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             0.05,
             [],
             null,
-            'GET'
+            'GET',
         );
 
         $this->metricsService->expects($this->once())
@@ -262,7 +262,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 null,
-                null
+                null,
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);

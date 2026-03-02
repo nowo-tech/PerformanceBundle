@@ -6,8 +6,8 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
 use Nowo\PerformanceBundle\Command\CheckDependenciesCommand;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class CheckDependenciesCommandTest extends TestCase
@@ -18,7 +18,7 @@ final class CheckDependenciesCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->dependencyChecker = $this->createMock(DependencyChecker::class);
-        $this->command = new CheckDependenciesCommand($this->dependencyChecker);
+        $this->command           = new CheckDependenciesCommand($this->dependencyChecker);
     }
 
     public function testCommandName(): void
@@ -36,13 +36,13 @@ final class CheckDependenciesCommandTest extends TestCase
         $this->dependencyChecker->method('getDependencyStatus')->willReturn([
             'twig_component' => [
                 'available' => true,
-                'package' => 'symfony/ux-twig-component',
-                'required' => false,
+                'package'   => 'symfony/ux-twig-component',
+                'required'  => false,
             ],
             'icons' => [
                 'available' => true,
-                'package' => 'symfony/ux-icons',
-                'required' => false,
+                'package'   => 'symfony/ux-icons',
+                'required'  => false,
             ],
         ]);
 
@@ -60,23 +60,23 @@ final class CheckDependenciesCommandTest extends TestCase
         $this->dependencyChecker->method('getDependencyStatus')->willReturn([
             'twig_component' => [
                 'available' => false,
-                'package' => 'symfony/ux-twig-component',
-                'required' => false,
+                'package'   => 'symfony/ux-twig-component',
+                'required'  => false,
             ],
             'icons' => [
                 'available' => true,
-                'package' => 'symfony/ux-icons',
-                'required' => false,
+                'package'   => 'symfony/ux-icons',
+                'required'  => false,
             ],
         ]);
 
         $this->dependencyChecker->method('getMissingDependencies')->willReturn([
             'twig_component' => [
-                'required' => false,
-                'package' => 'symfony/ux-twig-component',
-                'message' => 'Symfony UX Twig Component is not installed.',
+                'required'        => false,
+                'package'         => 'symfony/ux-twig-component',
+                'message'         => 'Symfony UX Twig Component is not installed.',
                 'install_command' => 'composer require symfony/ux-twig-component',
-                'feature' => 'Twig Components',
+                'feature'         => 'Twig Components',
             ],
         ]);
 
@@ -112,23 +112,23 @@ final class CheckDependenciesCommandTest extends TestCase
         $this->dependencyChecker->method('getDependencyStatus')->willReturn([
             'twig_component' => [
                 'available' => true,
-                'package' => 'symfony/ux-twig-component',
-                'required' => false,
+                'package'   => 'symfony/ux-twig-component',
+                'required'  => false,
             ],
             'icons' => [
                 'available' => false,
-                'package' => 'symfony/ux-icons',
-                'required' => false,
+                'package'   => 'symfony/ux-icons',
+                'required'  => false,
             ],
         ]);
 
         $this->dependencyChecker->method('getMissingDependencies')->willReturn([
             'icons' => [
-                'required' => false,
-                'package' => 'symfony/ux-icons',
-                'message' => 'Symfony UX Icons is not installed.',
+                'required'        => false,
+                'package'         => 'symfony/ux-icons',
+                'message'         => 'Symfony UX Icons is not installed.',
                 'install_command' => 'composer require symfony/ux-icons',
-                'feature' => 'UX Icons',
+                'feature'         => 'UX Icons',
             ],
         ]);
 
@@ -147,18 +147,18 @@ final class CheckDependenciesCommandTest extends TestCase
         $this->dependencyChecker->method('getDependencyStatus')->willReturn([
             'icons' => [
                 'available' => false,
-                'package' => 'symfony/ux-icons',
-                'required' => true,
+                'package'   => 'symfony/ux-icons',
+                'required'  => true,
             ],
         ]);
 
         $this->dependencyChecker->method('getMissingDependencies')->willReturn([
             'icons' => [
-                'required' => true,
-                'package' => 'symfony/ux-icons',
-                'message' => 'Symfony UX Icons is required.',
+                'required'        => true,
+                'package'         => 'symfony/ux-icons',
+                'message'         => 'Symfony UX Icons is required.',
                 'install_command' => 'composer require symfony/ux-icons',
-                'feature' => 'UX Icons',
+                'feature'         => 'UX Icons',
             ],
         ]);
 

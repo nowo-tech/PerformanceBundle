@@ -11,6 +11,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+use function sprintf;
+
 /**
  * Command to check if required dependencies are installed.
  *
@@ -36,7 +38,8 @@ final class CheckDependenciesCommand extends Command
 
     protected function configure(): void
     {
-        $this->setHelp(<<<'HELP'
+        $this->setHelp(
+            <<<'HELP'
 The <info>%command.name%</info> command checks the status of optional dependencies for the Performance Bundle.
 
 This command verifies:
@@ -63,17 +66,17 @@ HELP
         $io = new SymfonyStyle($input, $output);
         $io->title('Performance Bundle - Dependency Check');
 
-        $status = $this->dependencyChecker->getDependencyStatus();
+        $status  = $this->dependencyChecker->getDependencyStatus();
         $missing = $this->dependencyChecker->getMissingDependencies();
 
         $hasIssues = false;
 
         foreach ($status as $feature => $info) {
             if ($info['available']) {
-                $io->success(\sprintf('%s: ✓ Installed (%s)', $feature, $info['package']));
+                $io->success(sprintf('%s: ✓ Installed (%s)', $feature, $info['package']));
             } else {
                 $hasIssues = true;
-                $io->warning(\sprintf('%s: ✗ Not installed (%s)', $feature, $info['package']));
+                $io->warning(sprintf('%s: ✗ Not installed (%s)', $feature, $info['package']));
             }
         }
 
@@ -93,13 +96,13 @@ HELP
 
             $io->table(
                 ['Feature', 'Package', 'Message', 'Install Command'],
-                $rows
+                $rows,
             );
 
             $io->newLine();
             $io->info('To install all missing optional dependencies, run:');
             foreach ($missing as $dep) {
-                $io->text(\sprintf('  <comment>%s</comment>', $dep['install_command']));
+                $io->text(sprintf('  <comment>%s</comment>', $dep['install_command']));
             }
         } else {
             $io->success('All optional dependencies are installed!');

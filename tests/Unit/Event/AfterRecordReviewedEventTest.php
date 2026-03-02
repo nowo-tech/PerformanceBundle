@@ -35,7 +35,7 @@ final class AfterRecordReviewedEventTest extends TestCase
     public function testExtendsSymfonyEvent(): void
     {
         $routeData = new RouteData();
-        $event = new AfterRecordReviewedEvent($routeData);
+        $event     = new AfterRecordReviewedEvent($routeData);
 
         $this->assertInstanceOf(Event::class, $event);
     }

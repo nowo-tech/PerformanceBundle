@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Repository;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for RouteDataRepository::deleteAll() method.
@@ -22,7 +21,7 @@ final class RouteDataRepositoryDeleteAllTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
+        $this->registry   = $this->createMock(ManagerRegistry::class);
         $this->repository = new RouteDataRepository($this->registry);
     }
 

@@ -44,7 +44,7 @@ final class AfterMetricsRecordedEventTest extends TestCase
             true,
             0.25,
             12,
-            1048576
+            1048576,
         );
 
         $this->assertSame(0.25, $event->getRequestTime());
@@ -55,7 +55,7 @@ final class AfterMetricsRecordedEventTest extends TestCase
     public function testOptionalMetricsDefaultToNull(): void
     {
         $routeData = new RouteData();
-        $event = new AfterMetricsRecordedEvent($routeData, true);
+        $event     = new AfterMetricsRecordedEvent($routeData, true);
 
         $this->assertNull($event->getRequestTime());
         $this->assertNull($event->getTotalQueries());
@@ -85,7 +85,7 @@ final class AfterMetricsRecordedEventTest extends TestCase
     public function testExtendsSymfonyEvent(): void
     {
         $routeData = new RouteData();
-        $event = new AfterMetricsRecordedEvent($routeData, true);
+        $event     = new AfterMetricsRecordedEvent($routeData, true);
 
         $this->assertInstanceOf(Event::class, $event);
     }

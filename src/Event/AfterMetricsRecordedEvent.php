@@ -19,11 +19,11 @@ use Symfony\Contracts\EventDispatcher\Event;
 final class AfterMetricsRecordedEvent extends Event
 {
     /**
-     * @param RouteData  $routeData    The route data entity
-     * @param bool       $isNew        Whether this is a new record (true) or an update (false)
-     * @param float|null $requestTime  The request time just recorded (for alerts)
-     * @param int|null   $totalQueries The total queries just recorded (for alerts)
-     * @param int|null   $memoryUsage  The memory usage just recorded (for alerts)
+     * @param RouteData $routeData The route data entity
+     * @param bool $isNew Whether this is a new record (true) or an update (false)
+     * @param float|null $requestTime The request time just recorded (for alerts)
+     * @param int|null $totalQueries The total queries just recorded (for alerts)
+     * @param int|null $memoryUsage The memory usage just recorded (for alerts)
      */
     public function __construct(
         private readonly RouteData $routeData,

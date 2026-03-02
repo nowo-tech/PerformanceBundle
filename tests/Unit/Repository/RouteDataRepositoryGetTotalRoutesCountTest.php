@@ -20,7 +20,7 @@ final class RouteDataRepositoryGetTotalRoutesCountTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
+        $this->registry   = $this->createMock(ManagerRegistry::class);
         $this->repository = new RouteDataRepository($this->registry);
     }
 

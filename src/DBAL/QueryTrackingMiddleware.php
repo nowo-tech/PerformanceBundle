@@ -11,6 +11,8 @@ use Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware;
 use Doctrine\DBAL\Driver\Middleware\AbstractStatementMiddleware;
 use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\Statement;
+use Exception;
+use PDO;
 
 /**
  * DBAL Middleware for tracking database queries.
@@ -46,7 +48,7 @@ class QueryTrackingMiddleware implements Middleware
             public function connect(array $params): Connection
             {
                 return new QueryTrackingConnection(
-                    parent::connect($params)
+                    parent::connect($params),
                 );
             }
         };
@@ -77,8 +79,8 @@ class QueryTrackingMiddleware implements Middleware
      */
     public static function reset(): void
     {
-        self::$queryCount = 0;
-        self::$totalQueryTime = 0.0;
+        self::$queryCount      = 0;
+        self::$totalQueryTime  = 0.0;
         self::$queryStartTimes = [];
     }
 
@@ -121,7 +123,7 @@ class QueryTrackingConnection implements Connection
 
     public function prepare(string $sql): Statement
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
+        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         $statement = $this->connection->prepare($sql);
@@ -143,7 +145,7 @@ class QueryTrackingConnection implements Connection
                     QueryTrackingMiddleware::stopQuery($this->queryId);
 
                     return $result;
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     QueryTrackingMiddleware::stopQuery($this->queryId);
                     throw $e;
                 }
@@ -153,7 +155,7 @@ class QueryTrackingConnection implements Connection
 
     public function query(string $sql): Result
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
+        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
@@ -161,7 +163,7 @@ class QueryTrackingConnection implements Connection
             QueryTrackingMiddleware::stopQuery($queryId);
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             QueryTrackingMiddleware::stopQuery($queryId);
             throw $e;
         }
@@ -169,7 +171,7 @@ class QueryTrackingConnection implements Connection
 
     public function exec(string $sql): int
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
+        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
@@ -177,7 +179,7 @@ class QueryTrackingConnection implements Connection
             QueryTrackingMiddleware::stopQuery($queryId);
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             QueryTrackingMiddleware::stopQuery($queryId);
             throw $e;
         }
@@ -203,7 +205,7 @@ class QueryTrackingConnection implements Connection
         return $this->connection->getServerVersion() ?? '';
     }
 
-    public function quote(string $value, int $type = \PDO::PARAM_STR): string
+    public function quote(string $value, int $type = PDO::PARAM_STR): string
     {
         return $this->connection->quote($value, $type);
     }

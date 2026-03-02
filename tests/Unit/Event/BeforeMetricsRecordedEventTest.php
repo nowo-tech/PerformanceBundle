@@ -19,7 +19,7 @@ final class BeforeMetricsRecordedEventTest extends TestCase
             10,
             0.2,
             ['id' => 123],
-            1048576
+            1048576,
         );
 
         $this->assertSame('app_home', $event->getRouteName());
@@ -41,7 +41,7 @@ final class BeforeMetricsRecordedEventTest extends TestCase
             10,
             0.2,
             ['id' => 123],
-            1048576
+            1048576,
         );
 
         $event->setRequestTime(0.8);
@@ -77,7 +77,7 @@ final class BeforeMetricsRecordedEventTest extends TestCase
             10,
             0.2,
             ['id' => 123],
-            1048576
+            1048576,
         );
 
         $event->setRequestTime(null);

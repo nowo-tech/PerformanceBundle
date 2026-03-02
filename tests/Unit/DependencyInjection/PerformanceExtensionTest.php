@@ -36,7 +36,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertTrue($this->container->getParameter('nowo_performance.track_queries'));
         $this->assertTrue($this->container->getParameter('nowo_performance.track_request_time'));
         $this->assertSame(['_wdt', '_profiler', 'web_profiler*', '_error'], $this->container->getParameter('nowo_performance.ignore_routes'));
-        
+
         // Dashboard configuration defaults
         $this->assertTrue($this->container->getParameter('nowo_performance.dashboard.enabled'));
         $this->assertSame('/performance', $this->container->getParameter('nowo_performance.dashboard.path'));
@@ -48,18 +48,18 @@ final class PerformanceExtensionTest extends TestCase
     public function testLoadCustomConfiguration(): void
     {
         $config = [
-            'enabled' => false,
-            'environments' => ['prod'],
-            'connection' => 'custom_connection',
-            'table_name' => 'custom_table',
-            'track_queries' => false,
+            'enabled'            => false,
+            'environments'       => ['prod'],
+            'connection'         => 'custom_connection',
+            'table_name'         => 'custom_table',
+            'track_queries'      => false,
             'track_request_time' => false,
-            'ignore_routes' => ['_custom'],
-            'dashboard' => [
+            'ignore_routes'      => ['_custom'],
+            'dashboard'          => [
                 'enabled' => false,
-                'path' => '/metrics',
-                'prefix' => '/admin',
-                'roles' => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
+                'path'    => '/metrics',
+                'prefix'  => '/admin',
+                'roles'   => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
             ],
         ];
 
@@ -72,7 +72,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertFalse($this->container->getParameter('nowo_performance.track_queries'));
         $this->assertFalse($this->container->getParameter('nowo_performance.track_request_time'));
         $this->assertSame(['_custom'], $this->container->getParameter('nowo_performance.ignore_routes'));
-        
+
         // Dashboard configuration
         $this->assertFalse($this->container->getParameter('nowo_performance.dashboard.enabled'));
         $this->assertSame('/metrics', $this->container->getParameter('nowo_performance.dashboard.path'));
@@ -94,13 +94,13 @@ final class PerformanceExtensionTest extends TestCase
         // Create a mock extension that implements the interface
         $twigExtension = $this->createMock(\Symfony\Component\DependencyInjection\Extension\ExtensionInterface::class);
         $twigExtension->method('getAlias')->willReturn('twig');
-        
+
         // Register twig extension manually
         $this->container->registerExtension($twigExtension);
-        
+
         // Should not throw exception
         $this->extension->prepend($this->container);
-        
+
         // Verify that prepend was called (we can't easily verify the exact config without more setup)
         $this->assertTrue(true);
     }

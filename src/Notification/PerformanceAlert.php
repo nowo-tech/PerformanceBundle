@@ -15,25 +15,25 @@ final class PerformanceAlert
     /**
      * Alert severity levels.
      */
-    public const SEVERITY_WARNING = 'warning';
+    public const SEVERITY_WARNING  = 'warning';
     public const SEVERITY_CRITICAL = 'critical';
 
     /**
      * Alert types.
      */
     public const TYPE_REQUEST_TIME = 'request_time';
-    public const TYPE_QUERY_COUNT = 'query_count';
-    public const TYPE_QUERY_TIME = 'query_time';
+    public const TYPE_QUERY_COUNT  = 'query_count';
+    public const TYPE_QUERY_TIME   = 'query_time';
     public const TYPE_MEMORY_USAGE = 'memory_usage';
-    public const TYPE_OUTLIER = 'outlier';
+    public const TYPE_OUTLIER      = 'outlier';
 
     /**
      * Creates a new instance.
      *
-     * @param string               $type     Alert type (request_time, query_count, etc.)
-     * @param string               $severity Alert severity (warning, critical)
-     * @param string               $message  Alert message
-     * @param array<string, mixed> $context  Additional context data
+     * @param string $type Alert type (request_time, query_count, etc.)
+     * @param string $severity Alert severity (warning, critical)
+     * @param string $message Alert message
+     * @param array<string, mixed> $context Additional context data
      */
     public function __construct(
         private readonly string $type,
@@ -80,8 +80,8 @@ final class PerformanceAlert
     /**
      * Get a context value by key.
      *
-     * @param string $key     The context key
-     * @param mixed  $default Default value if key doesn't exist
+     * @param string $key The context key
+     * @param mixed $default Default value if key doesn't exist
      */
     public function getContextValue(string $key, mixed $default = null): mixed
     {
@@ -93,7 +93,7 @@ final class PerformanceAlert
      */
     public function isCritical(): bool
     {
-        return self::SEVERITY_CRITICAL === $this->severity;
+        return $this->severity === self::SEVERITY_CRITICAL;
     }
 
     /**
@@ -101,6 +101,6 @@ final class PerformanceAlert
      */
     public function isWarning(): bool
     {
-        return self::SEVERITY_WARNING === $this->severity;
+        return $this->severity === self::SEVERITY_WARNING;
     }
 }

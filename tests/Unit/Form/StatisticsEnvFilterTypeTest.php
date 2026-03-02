@@ -32,7 +32,7 @@ final class StatisticsEnvFilterTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function (array $defaults): bool {
+            ->with($this->callback(static function (array $defaults): bool {
                 return isset($defaults['data_class'])
                     && $defaults['data_class'] === StatisticsEnvFilter::class
                     && isset($defaults['method'])
@@ -130,8 +130,8 @@ final class StatisticsEnvFilterTypeTest extends TypeTestCase
     {
         $form = $this->factory->create(StatisticsEnvFilterType::class, null, [
             'environments' => ['dev', 'prod'],
-            'attr_class' => 'custom-select',
-            'attr_extra' => ['data-test' => 'env-filter'],
+            'attr_class'   => 'custom-select',
+            'attr_extra'   => ['data-test' => 'env-filter'],
         ]);
 
         $attr = $form->get('env')->getConfig()->getOption('attr');

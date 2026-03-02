@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
+use function function_exists;
+
 /**
  * Service for checking if required dependencies are installed.
  *
@@ -30,14 +32,12 @@ class DependencyChecker
             || interface_exists(\Symfony\UX\TwigComponent\ComponentInterface::class)
             || class_exists(\Symfony\UX\TwigComponent\Attribute\AsTwigComponent::class);
 
-        if (!$classesExist) {
-            return false;
-        }
+        return !(!$classesExist)
 
         // Also verify that the Twig function is available
         // This is a runtime check that can only be done when Twig is initialized
         // For now, we rely on the template checking 'component is defined'
-        return true;
+        ;
     }
 
     /**
@@ -47,9 +47,9 @@ class DependencyChecker
      */
     public function isIconsAvailable(): bool
     {
-        return \function_exists('ux_icon')
+        return function_exists('ux_icon')
             || class_exists(\Symfony\UX\Icons\Twig\IconExtension::class)
-            || \function_exists('twig_get_function') && null !== twig_get_function('ux_icon');
+            || function_exists('twig_get_function') && twig_get_function('ux_icon') !== null;
     }
 
     /**
@@ -96,51 +96,51 @@ class DependencyChecker
 
         if (!$this->isTwigComponentAvailable()) {
             $missing['twig_component'] = [
-                'required' => false,
-                'package' => 'symfony/ux-twig-component',
-                'message' => 'Symfony UX Twig Component is not installed. Components will use fallback includes.',
+                'required'        => false,
+                'package'         => 'symfony/ux-twig-component',
+                'message'         => 'Symfony UX Twig Component is not installed. Components will use fallback includes.',
                 'install_command' => 'composer require symfony/ux-twig-component',
-                'feature' => 'Twig Components (better performance)',
+                'feature'         => 'Twig Components (better performance)',
             ];
         }
 
         if (!$this->isIconsAvailable()) {
             $missing['icons'] = [
-                'required' => true,
-                'package' => 'symfony/ux-icons',
-                'message' => 'Symfony UX Icons is required. Install it to render icons in the Performance bundle.',
+                'required'        => true,
+                'package'         => 'symfony/ux-icons',
+                'message'         => 'Symfony UX Icons is required. Install it to render icons in the Performance bundle.',
                 'install_command' => 'composer require symfony/ux-icons',
-                'feature' => 'UX Icons (required for icon rendering)',
+                'feature'         => 'UX Icons (required for icon rendering)',
             ];
         }
 
         if (!$this->isMessengerAvailable()) {
             $missing['messenger'] = [
-                'required' => false,
-                'package' => 'symfony/messenger',
-                'message' => 'Symfony Messenger is not installed. Async metrics recording is not available.',
+                'required'        => false,
+                'package'         => 'symfony/messenger',
+                'message'         => 'Symfony Messenger is not installed. Async metrics recording is not available.',
                 'install_command' => 'composer require symfony/messenger',
-                'feature' => 'Async metrics recording',
+                'feature'         => 'Async metrics recording',
             ];
         }
 
         if (!$this->isMailerAvailable()) {
             $missing['mailer'] = [
-                'required' => false,
-                'package' => 'symfony/mailer',
-                'message' => 'Symfony Mailer is not installed. Email notifications are not available.',
+                'required'        => false,
+                'package'         => 'symfony/mailer',
+                'message'         => 'Symfony Mailer is not installed. Email notifications are not available.',
                 'install_command' => 'composer require symfony/mailer',
-                'feature' => 'Email notifications',
+                'feature'         => 'Email notifications',
             ];
         }
 
         if (!$this->isHttpClientAvailable()) {
             $missing['http_client'] = [
-                'required' => false,
-                'package' => 'symfony/http-client',
-                'message' => 'Symfony HttpClient is not installed. Slack, Teams, and webhook notifications are not available.',
+                'required'        => false,
+                'package'         => 'symfony/http-client',
+                'message'         => 'Symfony HttpClient is not installed. Slack, Teams, and webhook notifications are not available.',
                 'install_command' => 'composer require symfony/http-client',
-                'feature' => 'Slack, Teams, and webhook notifications',
+                'feature'         => 'Slack, Teams, and webhook notifications',
             ];
         }
 
@@ -158,11 +158,11 @@ class DependencyChecker
     {
         return match ($feature) {
             'twig_component' => $this->isTwigComponentAvailable(),
-            'icons' => $this->isIconsAvailable(),
-            'messenger' => $this->isMessengerAvailable(),
-            'mailer' => $this->isMailerAvailable(),
-            'http_client' => $this->isHttpClientAvailable(),
-            default => true,
+            'icons'          => $this->isIconsAvailable(),
+            'messenger'      => $this->isMessengerAvailable(),
+            'mailer'         => $this->isMailerAvailable(),
+            'http_client'    => $this->isHttpClientAvailable(),
+            default          => true,
         };
     }
 
@@ -176,28 +176,28 @@ class DependencyChecker
         return [
             'twig_component' => [
                 'available' => $this->isTwigComponentAvailable(),
-                'package' => 'symfony/ux-twig-component',
-                'required' => false,
+                'package'   => 'symfony/ux-twig-component',
+                'required'  => false,
             ],
             'icons' => [
                 'available' => $this->isIconsAvailable(),
-                'package' => 'symfony/ux-icons',
-                'required' => true,
+                'package'   => 'symfony/ux-icons',
+                'required'  => true,
             ],
             'messenger' => [
                 'available' => $this->isMessengerAvailable(),
-                'package' => 'symfony/messenger',
-                'required' => false,
+                'package'   => 'symfony/messenger',
+                'required'  => false,
             ],
             'mailer' => [
                 'available' => $this->isMailerAvailable(),
-                'package' => 'symfony/mailer',
-                'required' => false,
+                'package'   => 'symfony/mailer',
+                'required'  => false,
             ],
             'http_client' => [
                 'available' => $this->isHttpClientAvailable(),
-                'package' => 'symfony/http-client',
-                'required' => false,
+                'package'   => 'symfony/http-client',
+                'required'  => false,
             ],
         ];
     }

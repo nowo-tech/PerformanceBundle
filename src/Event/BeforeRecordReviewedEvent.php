@@ -22,10 +22,10 @@ final class BeforeRecordReviewedEvent extends Event
     /**
      * Creates a new instance.
      *
-     * @param RouteData   $routeData       The route data entity to be reviewed
-     * @param bool|null   $queriesImproved Whether queries improved
-     * @param bool|null   $timeImproved    Whether time improved
-     * @param string|null $reviewedBy      The reviewer username
+     * @param RouteData $routeData The route data entity to be reviewed
+     * @param bool|null $queriesImproved Whether queries improved
+     * @param bool|null $timeImproved Whether time improved
+     * @param string|null $reviewedBy The reviewer username
      */
     public function __construct(
         private readonly RouteData $routeData,

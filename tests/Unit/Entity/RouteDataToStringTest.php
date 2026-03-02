@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Entity;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Tests for RouteData::__toString() method.
@@ -89,8 +90,8 @@ final class RouteDataToStringTest extends TestCase
 
     public function testToStringWithNoFieldsReturnsId(): void
     {
-        $routeData = new RouteData();
-        $reflection = new \ReflectionClass($routeData);
+        $routeData  = new RouteData();
+        $reflection = new ReflectionClass($routeData);
         $idProperty = $reflection->getProperty('id');
         $idProperty->setAccessible(true);
         $idProperty->setValue($routeData, 42);

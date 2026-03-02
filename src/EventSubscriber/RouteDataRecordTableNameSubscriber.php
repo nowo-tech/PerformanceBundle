@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Events;
+use ReflectionClass;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -53,12 +54,12 @@ class RouteDataRecordTableNameSubscriber implements EventSubscriber
         $classMetadata = $eventArgs->getClassMetadata();
 
         // Only modify RouteDataRecord entity
-        if ('Nowo\PerformanceBundle\Entity\RouteDataRecord' !== $classMetadata->getName()) {
+        if ($classMetadata->getName() !== 'Nowo\PerformanceBundle\Entity\RouteDataRecord') {
             return;
         }
 
         // Table name is main table name + '_records'
-        $recordsTableName = $this->mainTableName.'_records';
+        $recordsTableName = $this->mainTableName . '_records';
 
         // Get existing table configuration to preserve indexes
         $currentTableName = method_exists($classMetadata, 'getTableName')
@@ -67,15 +68,15 @@ class RouteDataRecordTableNameSubscriber implements EventSubscriber
 
         if ($currentTableName !== $recordsTableName) {
             // Get existing indexes
-            $reflection = new \ReflectionClass($classMetadata);
+            $reflection    = new ReflectionClass($classMetadata);
             $tableProperty = $reflection->getProperty('table');
             $tableProperty->setAccessible(true);
-            $existingTable = $tableProperty->getValue($classMetadata);
+            $existingTable   = $tableProperty->getValue($classMetadata);
             $existingIndexes = $existingTable['indexes'] ?? [];
 
             // Set the table name with all existing indexes
             $classMetadata->setPrimaryTable([
-                'name' => $recordsTableName,
+                'name'    => $recordsTableName,
                 'indexes' => $existingIndexes,
             ]);
         }

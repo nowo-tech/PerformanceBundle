@@ -13,6 +13,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
+use function sprintf;
+
 /**
  * Command to diagnose performance bundle configuration and status.
  *
@@ -28,7 +30,7 @@ final class DiagnoseCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param ParameterBagInterface   $parameterBag       Parameter bag to check configuration
+     * @param ParameterBagInterface $parameterBag Parameter bag to check configuration
      * @param TableStatusChecker|null $tableStatusChecker Table status checker (optional)
      */
     public function __construct(
@@ -40,7 +42,8 @@ final class DiagnoseCommand extends Command
 
     protected function configure(): void
     {
-        $this->setHelp(<<<'HELP'
+        $this->setHelp(
+            <<<'HELP'
 The <info>%command.name%</info> command provides a comprehensive diagnostic report of the Performance Bundle configuration and status.
 
 This command displays:
@@ -77,11 +80,11 @@ HELP
 
         // Check configuration
         $io->section('Configuration');
-        $enabled = $this->parameterBag->get('nowo_performance.enabled');
-        $trackQueries = $this->parameterBag->get('nowo_performance.track_queries');
+        $enabled          = $this->parameterBag->get('nowo_performance.enabled');
+        $trackQueries     = $this->parameterBag->get('nowo_performance.track_queries');
         $trackRequestTime = $this->parameterBag->get('nowo_performance.track_request_time');
-        $connection = $this->parameterBag->get('nowo_performance.connection');
-        $environments = $this->parameterBag->get('nowo_performance.environments');
+        $connection       = $this->parameterBag->get('nowo_performance.connection');
+        $environments     = $this->parameterBag->get('nowo_performance.environments');
 
         $io->table(
             ['Setting', 'Value'],
@@ -91,18 +94,18 @@ HELP
                 ['Track Request Time', $trackRequestTime ? '✓ Yes' : '✗ No'],
                 ['Connection', $connection],
                 ['Environments', implode(', ', $environments)],
-            ]
+            ],
         );
 
         // Check database tables (main + records table when enable_access_records) — single batch to avoid N+1
         $checkTableStatus = $this->parameterBag->get('nowo_performance.check_table_status') ?? true;
-        if (null !== $this->tableStatusChecker && $checkTableStatus) {
+        if ($this->tableStatusChecker !== null && $checkTableStatus) {
             $io->section('Database Tables');
-            $mainStatus = $this->tableStatusChecker->getMainTableStatus();
-            $mainName = $mainStatus['table_name'];
-            $mainExists = $mainStatus['exists'];
+            $mainStatus   = $this->tableStatusChecker->getMainTableStatus();
+            $mainName     = $mainStatus['table_name'];
+            $mainExists   = $mainStatus['exists'];
             $mainComplete = $mainStatus['complete'];
-            $mainMissing = $mainStatus['missing_columns'];
+            $mainMissing  = $mainStatus['missing_columns'];
 
             $tableRows = [
                 [
@@ -113,7 +116,7 @@ HELP
                 ],
             ];
             $recordsStatus = $this->tableStatusChecker->getRecordsTableStatus();
-            if (null !== $recordsStatus) {
+            if ($recordsStatus !== null) {
                 $tableRows[] = [
                     $recordsStatus['table_name'],
                     $recordsStatus['exists'] ? '✓ Yes' : '✗ No',
@@ -128,14 +131,14 @@ HELP
             } elseif (!empty($mainMissing)) {
                 $io->note('Main table: php bin/console nowo:performance:create-table --update');
             }
-            if (null !== $recordsStatus) {
+            if ($recordsStatus !== null) {
                 if (!$recordsStatus['exists']) {
                     $io->note('Records table: php bin/console nowo:performance:create-records-table');
                 } elseif (!empty($recordsStatus['missing_columns'])) {
                     $io->note('Records table: php bin/console nowo:performance:sync-schema or nowo:performance:create-records-table --update');
                 }
             }
-        } elseif (null !== $this->tableStatusChecker && !$checkTableStatus) {
+        } elseif ($this->tableStatusChecker !== null && !$checkTableStatus) {
             $io->section('Database Tables');
             $io->note('Table status check is disabled (nowo_performance.check_table_status: false). Set to true to see table existence and missing columns here.');
         }
@@ -153,10 +156,10 @@ HELP
         // Test middleware
         QueryTrackingMiddleware::reset();
         $initialCount = QueryTrackingMiddleware::getQueryCount();
-        $initialTime = QueryTrackingMiddleware::getTotalQueryTime();
+        $initialTime  = QueryTrackingMiddleware::getTotalQueryTime();
 
-        $io->text(\sprintf('Initial query count: %d', $initialCount));
-        $io->text(\sprintf('Initial query time: %.4f seconds', $initialTime));
+        $io->text(sprintf('Initial query count: %d', $initialCount));
+        $io->text(sprintf('Initial query time: %.4f seconds', $initialTime));
 
         // Check if middleware class exists
         if (class_exists(QueryTrackingMiddleware::class)) {
@@ -170,7 +173,7 @@ HELP
         // Instructions
         $io->section('Query Tracking Status');
 
-        if (0 === $initialCount && 0.0 === $initialTime) {
+        if ($initialCount === 0 && $initialTime === 0.0) {
             $io->info('QueryTrackingMiddleware is initialized correctly.');
         } else {
             $io->warning('QueryTrackingMiddleware has existing data. This may indicate it\'s working but not being reset between requests.');
@@ -180,11 +183,11 @@ HELP
 
         // Detect DoctrineBundle version and method used
         $doctrineVersion = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
-        $method = 'Event Subscriber (Reflection)';
+        $method          = 'Event Subscriber (Reflection)';
 
         $io->text([
-            'DoctrineBundle Version: '.($doctrineVersion ?? 'Unknown'),
-            'Registration Method: '.$method,
+            'DoctrineBundle Version: ' . ($doctrineVersion ?? 'Unknown'),
+            'Registration Method: ' . $method,
             '',
             'The bundle uses Event Subscriber with reflection to apply middleware:',
             '',
@@ -193,9 +196,9 @@ HELP
             '• Applies middleware at runtime using reflection',
             '',
             'If queries are not being tracked, check:',
-            '1. That track_queries is enabled (currently: '.($trackQueries ? '✓' : '✗').')',
-            '2. That the bundle is enabled (currently: '.($enabled ? '✓' : '✗').')',
-            '3. That you\'re in a configured environment: '.implode(', ', $environments),
+            '1. That track_queries is enabled (currently: ' . ($trackQueries ? '✓' : '✗') . ')',
+            '2. That the bundle is enabled (currently: ' . ($enabled ? '✓' : '✗') . ')',
+            '3. That you\'re in a configured environment: ' . implode(', ', $environments),
             '',
             'Fallback methods (if middleware fails):',
             '• DoctrineDataCollector (from Symfony profiler)',

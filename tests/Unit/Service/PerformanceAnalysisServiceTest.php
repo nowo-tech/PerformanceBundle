@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 final class PerformanceAnalysisServiceTest extends TestCase
 {
@@ -105,7 +106,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
         $this->assertIsArray($result);
         $corr = $result['request_time_vs_query_time'] ?? null;
-        if (null !== $corr && isset($corr['strength'])) {
+        if ($corr !== null && isset($corr['strength'])) {
             $this->assertContains($corr['strength'], ['very_strong', 'strong', 'moderate', 'weak', 'none']);
         }
     }
@@ -136,7 +137,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
     public function testAnalyzeEfficiencyWithMockedRoutes(): void
     {
-        $efficient = $this->routeMock(0.1, 0.02, 5, null, 1);
+        $efficient   = $this->routeMock(0.1, 0.02, 5, null, 1);
         $inefficient = $this->routeMock(1.5, 0.3, 60, null, 10);
 
         $result = $this->service->analyzeEfficiency([$efficient, $inefficient]);
@@ -163,7 +164,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
     public function testGenerateRecommendationsWithHighQueryCount(): void
     {
         $routes = [];
-        $stats = [
+        $stats  = [
             'query_count' => ['mean' => 35],
         ];
 
@@ -178,7 +179,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
     public function testGenerateRecommendationsWithSlowP95(): void
     {
-        $stats = ['request_time' => ['p95' => 2.5]];
+        $stats  = ['request_time' => ['p95' => 2.5]];
         $result = $this->service->generateRecommendations([], $stats);
 
         $this->assertNotEmpty($result);
@@ -194,7 +195,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
     public function testGenerateRecommendationsWithHighMemory(): void
     {
-        $stats = ['memory_usage' => ['mean' => 60]];
+        $stats  = ['memory_usage' => ['mean' => 60]];
         $result = $this->service->generateRecommendations([], $stats);
 
         $this->assertNotEmpty($result);
@@ -210,7 +211,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
     public function testGenerateRecommendationsWithOutliers(): void
     {
-        $stats = ['request_time' => ['outliers_count' => 3]];
+        $stats  = ['request_time' => ['outliers_count' => 3]];
         $result = $this->service->generateRecommendations([], $stats);
 
         $this->assertNotEmpty($result);
@@ -227,7 +228,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
     public function testGenerateRecommendationsWithTrafficDistribution(): void
     {
-        $stats = ['access_count' => ['std_dev' => 100, 'mean' => 10]];
+        $stats  = ['access_count' => ['std_dev' => 100, 'mean' => 10]];
         $result = $this->service->generateRecommendations([], $stats);
 
         $this->assertNotEmpty($result);
@@ -243,9 +244,9 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
     public function testGenerateRecommendationsWithCorrelationBottleneck(): void
     {
-        $r1 = $this->routeMock(1.0, 0.5, 5, null, 1);
-        $r2 = $this->routeMock(2.0, 1.0, 10, null, 2);
-        $r3 = $this->routeMock(3.0, 1.5, 15, null, 3);
+        $r1     = $this->routeMock(1.0, 0.5, 5, null, 1);
+        $r2     = $this->routeMock(2.0, 1.0, 10, null, 2);
+        $r3     = $this->routeMock(3.0, 1.5, 15, null, 3);
         $routes = [$r1, $r2, $r3];
         $result = $this->service->generateRecommendations($routes, []);
 
@@ -267,7 +268,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
         ?int $memoryUsage,
         int $accessCount,
     ): object {
-        $r = $this->getMockBuilder(\stdClass::class)
+        $r = $this->getMockBuilder(stdClass::class)
             ->addMethods([
                 'getRequestTime',
                 'getQueryTime',
