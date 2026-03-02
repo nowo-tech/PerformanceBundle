@@ -71,6 +71,9 @@
             "Nowo\\PerformanceBundle\\Tests\\": "tests/"
         }
     },
+    "archive": {
+        "exclude": ["/demo"]
+    },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
@@ -81,7 +84,7 @@
     "prefer-stable": true,
     "scripts": {
         "test": "phpunit",
-        "test-coverage": "phpunit --coverage-html coverage --coverage-clover coverage.xml",
+        "test-coverage": "phpunit --coverage-html coverage --coverage-clover coverage.xml --coverage-text",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
         "rector": "rector process src tests --dry-run",

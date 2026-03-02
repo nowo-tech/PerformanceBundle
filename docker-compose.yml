@@ -1,3 +1,5 @@
+# Single compose for dev and tests (PHP + MySQL + PostgreSQL for integration tests; PCOV in Dockerfile for coverage)
+name: performance-bundle
 services:
   php:
     build:
@@ -8,11 +10,51 @@ services:
     volumes:
       - .:/app
       - composer-cache:/root/.composer/cache
+      - coverage-data:/app/coverage
     environment:
       - COMPOSER_ALLOW_SUPERUSER=1
+      - DATABASE_URL=mysql://root:password@mysql:3306/performance_test?serverVersion=8.0
+      - DATABASE_URL_PG=postgresql://postgres:password@postgres:5432/performance_test?serverVersion=15
     command: ["tail", "-f", "/dev/null"]
     networks:
       - performance-bundle-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    container_name: performance-bundle-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: performance_test
+    ports:
+      - "3307:3306"
+    networks:
+      - performance-bundle-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: performance-bundle-postgres
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: performance_test
+    ports:
+      - "5433:5432"
+    networks:
+      - performance-bundle-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   composer-cache:

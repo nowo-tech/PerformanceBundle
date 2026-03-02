@@ -293,6 +293,8 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 - [Compatibility Guide](docs/COMPATIBILITY.md) – Doctrine and DBAL version compatibility
 - [Notifications](docs/NOTIFICATIONS.md) – Performance alert notifications (Email, Slack, Teams, Webhooks)
 - [CHANGELOG](docs/CHANGELOG.md) – Version history
+- [Release process](docs/RELEASE.md) – Versioning and release steps
+- [Security policy](docs/SECURITY.md) – How to report vulnerabilities
 - [UPGRADING](docs/UPGRADING.md) – Upgrade instructions
 - [ROADMAP](docs/ROADMAP.md) – Future improvements and features
 

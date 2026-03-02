@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle Demo - Symfony 7
 # Simplifies Docker commands for the demo
 
-.PHONY: help up down shell install clean setup
+.PHONY: help up down restart build shell install clean setup update-bundle ensure-up test test-coverage
 
 # Default target
 help:
@@ -12,11 +12,16 @@ help:
 	@echo "Targets:"
 	@echo "  up            Start Docker containers (FrankenPHP, MySQL)"
 	@echo "  down          Stop Docker containers"
+	@echo "  restart       Restart containers (docker compose restart)"
+	@echo "  build         Rebuild image (no cache)"
 	@echo "  shell         Open shell in PHP container"
 	@echo "  install       Install Composer dependencies"
 	@echo "  setup         Complete setup (install + DB + fixtures)"
 	@echo "  clean         Remove vendor, var, and cache"
 	@echo "  logs          Show container logs"
+	@echo "  update-bundle Update bundle from path repo and clear cache"
+	@echo "  test          Run tests"
+	@echo "  test-coverage Run tests with coverage (console output)"
 	@echo ""
 	@echo "Database:"
 	@echo "  db-create     Create database"
@@ -45,19 +50,17 @@ up:
 		echo "MYSQL_PASSWORD=password" >> .env; \
 		echo "✅ .env file created"; \
 	fi
-	docker-compose build
-	docker-compose up -d
+	docker-compose up -d --build
 	@echo "⏳ Waiting for MySQL to be ready..."
 	@sleep 8
 	@echo "✅ Containers started!"
 	@echo "📦 Installing dependencies..."
-	docker-compose exec -T php composer install --no-interaction
+	docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@echo "📦 Installing symfony/ux-icons..."
 	docker-compose exec -T php composer require symfony/ux-icons --no-interaction || echo "⚠️  ux-icons already installed or error occurred"
 	@echo "✅ Dependencies installed!"
-	@echo ""
-	@echo "Next steps:"
-	@echo "  make setup      - Complete setup (DB + fixtures)"
+	@echo "Creating database, schema and loading fixtures..."
+	@$(MAKE) setup
 
 # Stop containers
 down:
@@ -65,23 +68,43 @@ down:
 	docker-compose down
 	@echo "✅ Containers stopped!"
 
+# Restart containers (no down/up)
+restart: ensure-up
+	@echo "🔄 Restarting containers..."
+	docker-compose restart
+	@echo "✅ Containers restarted!"
+
+# Rebuild image without cache
+build:
+	@echo "🔨 Rebuilding image (no cache)..."
+	docker-compose build --no-cache
+	@echo "✅ Image rebuilt!"
+
+# Ensure container is running (start if not). Used by install, shell, setup, update-bundle, etc.
+ensure-up:
+	@if ! docker-compose exec -T php true 2>/dev/null; then \
+		echo "Starting container..."; \
+		docker-compose up -d; \
+		sleep 5; \
+	fi
+
 # Open shell in PHP container
-shell:
+shell: ensure-up
 	docker-compose exec php sh
 
 # Install dependencies
-install:
+install: ensure-up
 	@echo "📦 Installing dependencies..."
-	docker-compose exec -T php composer install --no-interaction
+	docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@echo "✅ Dependencies installed!"
 
 # Complete setup
-setup:
+setup: ensure-up
 	@echo "🔧 Setting up demo..."
 	@echo "Waiting for MySQL to be ready..."
 	@sleep 3
 	@echo "Installing dependencies..."
-	-docker-compose exec -T php composer install --no-interaction --ignore-platform-reqs 2>/dev/null || docker-compose exec -T php composer install --no-interaction
+	-docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction --ignore-platform-reqs 2>/dev/null || docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@echo "Creating database..."
 	-docker-compose exec -T php php bin/console doctrine:database:create --if-not-exists --no-interaction
 	@echo "Creating schema..."
@@ -92,7 +115,7 @@ setup:
 	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Demo setup complete!"
 	@echo ""
-	@echo "Access the application at: https://localhost:8000 (HTTPS, self-signed cert – accept in browser)"
+	@echo "Access the application at: http://localhost:8000 (HTTP on port 80)"
 
 # Database commands
 db-create:
@@ -136,6 +159,18 @@ performance-sync-drop:
 # Show logs
 logs:
 	docker-compose logs -f
+
+# Update bundle from path repo
+update-bundle: ensure-up
+	docker-compose exec -T php composer update nowo-tech/performance-bundle --no-interaction
+	docker-compose exec -T php php bin/console cache:clear
+	@echo "Bundle updated."
+
+test: ensure-up
+	docker-compose exec -T php composer test 2>/dev/null || docker-compose exec -T php php bin/console list
+
+test-coverage: ensure-up
+	docker-compose exec -T php composer test-coverage 2>/dev/null || docker-compose exec -T php composer test
 
 # Clean vendor and cache
 clean:

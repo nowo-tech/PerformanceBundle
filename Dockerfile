@@ -1,30 +1,27 @@
-FROM php:8.4-cli
+# PHP 8.2 Alpine for Performance Bundle (dev and tests; includes pdo_mysql/pdo_pgsql for integration tests)
+FROM php:8.2-cli-alpine
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     git \
     unzip \
+    bash \
     libzip-dev \
-    libpq-dev \
-    && docker-php-ext-install zip pdo pdo_mysql pdo_pgsql \
+    postgresql-dev
+
+RUN docker-php-ext-install -j$(nproc) zip pdo pdo_mysql pdo_pgsql
+
+# PCOV for code coverage
+RUN apk add --no-cache $PHPIZE_DEPS \
     && pecl install pcov \
     && docker-php-ext-enable pcov \
-    && rm -rf /var/lib/apt/lists/*
+    && apk del $PHPIZE_DEPS
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+RUN git config --global --add safe.directory /app
+
 WORKDIR /app
 
-# Copy composer files
-COPY composer.json composer.lock* ./
-
-# Install dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
-
-# Copy application files
-COPY . .
-
-# Default command
-CMD ["tail", "-f", "/dev/null"]
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV PATH="/app/vendor/bin:${PATH}"

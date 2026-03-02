@@ -44,7 +44,7 @@ This command:
 
 Once containers are up, FrankenPHP serves the application.
 
-Access the web application at: **https://localhost:8000** (FrankenPHP serves HTTPS; the browser will warn about the self-signed certificate – accept to continue.)
+Access the web application at: **http://localhost:8000** (FrankenPHP serves HTTP on port 80.)
 
 From there you can:
 - View home page with performance metrics
@@ -146,7 +146,7 @@ make up
 make setup
 
 # Access application (HTTPS, accept self-signed cert in browser)
-# https://localhost:8000
+# http://localhost:8000
 
 # View metrics
 make db-view

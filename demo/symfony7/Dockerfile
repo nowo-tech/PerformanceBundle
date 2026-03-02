@@ -21,6 +21,9 @@ RUN git config --global --add safe.directory /app
 
 WORKDIR /app
 
+# Caddyfile: HTTP on :80, runtime worker (canonical for Nowo demos)
+COPY docker/frankenphp/Caddyfile /etc/frankenphp/Caddyfile
+
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PATH="/app/vendor/bin:${PATH}"
 
