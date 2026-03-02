@@ -6,6 +6,22 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.13 (2026-03-02)
+
+Docker, CI, and development tooling improvements. No schema or bundle configuration changes for applications using the bundle.
+
+**Changed:**
+- **Docker** – Dockerfiles use PHP 8.2 Alpine; docker-compose and demos updated.
+- **CI** – GitHub Actions workflow refactored; tests run via main docker-compose.
+- **Development** – PHP-CS-Fixer and Makefile improvements; RELEASE.md and SECURITY.md added.
+
+No upgrade steps required for applications. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.12 (2026-02-02)
 
 Behaviour and documentation improvements. No schema or configuration changes.

@@ -11,6 +11,21 @@ _Nothing yet._
 
 ---
 
+## [2.0.13] - 2026-03-02
+
+### Added
+- **Docker and development** – Dockerfiles updated to PHP 8.2 Alpine; docker-compose streamlined with consistent HTTP ports across demos; Makefile gains commands for rebuilding images, restarting containers, and updating the bundle; PHP-CS-Fixer configuration enhanced with Symfony conventions; RELEASE.md and SECURITY.md added under docs.
+- **Demo** – FrankenPHP Caddyfile for Symfony 7 and 8 demos; demo Makefiles and READMEs updated with access URLs and setup instructions.
+
+### Changed
+- **CI** – GitHub Actions workflow simplified; testing integrated into main docker-compose setup.
+- **Demo** – Removed deprecated `docker-compose.test.yml`; demo docker-compose and Makefiles refactored.
+
+### Removed
+- **docker-compose.test.yml** – Deprecated test compose file removed; use main docker-compose for tests.
+
+---
+
 ## [2.0.12] - 2026-02-02
 
 ### Added
