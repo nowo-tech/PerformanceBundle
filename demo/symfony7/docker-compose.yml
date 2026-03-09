@@ -18,11 +18,6 @@ services:
       - COMPOSER_ALLOW_SUPERUSER=1
       - APP_ENV=${APP_ENV:-dev}
       - DATABASE_URL=mysql://${MYSQL_USER:-demo_user}:${MYSQL_PASSWORD:-password}@mysql:3306/${MYSQL_DATABASE:-performance_demo}?serverVersion=8.0&charset=utf8mb4
-      # Ensure 5xx errors return a response body (FrankenPHP/Caddy can sometimes return empty 500). Newlines required: Caddyfile forbids tokens after "{" on same line.
-      - |
-        CADDY_SERVER_EXTRA_DIRECTIVES=handle_errors 5xx {
-          respond "{err.status_code} {err.status_text}" {err.status_code}
-        }
     depends_on:
       mysql:
         condition: service_healthy

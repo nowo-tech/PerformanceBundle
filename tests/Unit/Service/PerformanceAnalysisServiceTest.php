@@ -8,6 +8,7 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 final class PerformanceAnalysisServiceTest extends TestCase
 {

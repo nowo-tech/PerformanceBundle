@@ -33,6 +33,9 @@ help:
 	@echo "  build-<demo>    Construir imágenes Docker de una demo"
 	@echo "  up-<demo>       Levantar una demo específica"
 	@echo "  down-<demo>     Bajar una demo específica"
+	@echo "  restart-<demo>  Reiniciar contenedores de una demo (docker compose restart)"
+	@echo "  build-<demo>    Reconstruir imagen sin cache de una demo"
+	@echo "  install-<demo>  Instalar dependencias (composer) en una demo"
 	@echo "  setup-<demo>    Configurar una demo específica"
 	@echo "  clean-<demo>    Limpiar una demo específica"
 	@echo "  logs-<demo>     Ver logs de una demo específica"
@@ -50,6 +53,7 @@ help:
 	@echo "  make up-all           # Levantar todas las demos"
 	@echo "  make down-symfony7    # Bajar solo symfony7"
 	@echo "  make setup-symfony7   # Configurar symfony7 completamente"
+	@echo "  release-verify       Start each demo, healthcheck (HTTP 200), then stop (for release-check)"
 
 # Construir imágenes de todas las demos
 build-all:
@@ -83,6 +87,21 @@ up-all:
 	done
 	@echo ""
 	@echo "✅ Proceso completado!"
+
+# Release verify: for each demo, up → sleep → healthcheck (HTTP 200) → down
+release-verify:
+	@for demo in $(DEMOS); do \
+		port=$$(grep '^PORT=' $$demo/.env 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
+		[ -z "$$port" ] && port=$$(case $$demo in symfony7) echo 8000;; symfony8) echo 8001;; *) echo 8000;; esac); \
+		echo "🔍 Release verify: $$demo (port $$port)..."; \
+		$(MAKE) up-$$demo; \
+		echo "⏳ Waiting for $$demo to be ready..."; sleep 15; \
+		code=$$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:$$port 2>/dev/null || echo "000"); \
+		$(MAKE) down-$$demo 2>/dev/null || true; \
+		if [ "$$code" != "200" ]; then echo "❌ $$demo healthcheck failed (HTTP $$code)"; exit 1; fi; \
+		echo "✅ $$demo OK (HTTP $$code)"; \
+	done
+	@echo "✅ All demos passed release-verify."
 
 # Bajar todas las demos
 down-all:
@@ -151,6 +170,20 @@ down-symfony7:
 	@echo "🛑 Bajando demo: symfony7"
 	@$(MAKE) -C symfony7 down
 
+restart-symfony7:
+	@$(MAKE) -C symfony7 restart
+
+build-symfony7:
+	@$(MAKE) -C symfony7 build
+
+install-symfony7:
+	@echo "📦 Instalando dependencias en demo: symfony7"
+	@$(MAKE) -C symfony7 install
+
+install-symfony8:
+	@echo "📦 Instalando dependencias en demo: symfony8"
+	@$(MAKE) -C symfony8 install
+
 setup-symfony7:
 	@echo "🔧 Configurando demo: symfony7"
 	@$(MAKE) -C symfony7 setup
@@ -183,6 +216,12 @@ up-symfony8:
 down-symfony8:
 	@echo "🛑 Bajando demo: symfony8"
 	@$(MAKE) -C symfony8 down
+
+restart-symfony8:
+	@$(MAKE) -C symfony8 restart
+
+build-symfony8:
+	@$(MAKE) -C symfony8 build
 
 setup-symfony8:
 	@echo "🔧 Configurando demo: symfony8"

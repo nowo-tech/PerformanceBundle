@@ -47,14 +47,14 @@ help:
 build:
 	docker-compose build --no-cache
 
-# Build and start container
+# Build and start containers (php + mysql + postgres)
 up:
 	@echo "Building Docker image..."
 	docker-compose build
-	@echo "Starting container..."
+	@echo "Starting containers (PHP, MySQL, PostgreSQL)..."
 	docker-compose up -d
-	@echo "Waiting for container to be ready..."
-	@sleep 2
+	@echo "Waiting for databases to be ready..."
+	@sleep 10
 	@echo "Installing dependencies..."
 	docker-compose exec -T php sh -c "composer install --no-interaction || composer update --no-interaction"
 	@echo "✅ Container ready!"
@@ -73,7 +73,7 @@ ensure-up:
 	fi
 
 # Open shell in container
-shell:
+shell: ensure-up
 	docker-compose exec php sh
 
 # Install dependencies
@@ -144,18 +144,16 @@ release-check-demos:
 # No frontend assets in this bundle
 assets:
 	@echo "No frontend assets in this bundle."
-
-# Clean vendor and cache
-clean:
-	rm -rf vendor
-	rm -rf .phpunit.cache
-	rm -rf coverage
 	rm -f coverage.xml
 	rm -f .php-cs-fixer.cache
 
 # Validate YAML translation files (duplicate keys, syntax if ext-yaml available). Starts PHP container if needed.
 validate-translations: ensure-up
 	docker-compose exec -T php php scripts/validate-translations-yaml.php src/Resources/translations
+
+# No frontend assets in this bundle
+assets:
+	@echo "No frontend assets in this bundle."
 
 # Setup git hooks for pre-commit checks
 setup-hooks:
