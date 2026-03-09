@@ -12,8 +12,6 @@ use Stringable;
 
 use function sprintf;
 
-use function sprintf;
-
 /**
  * Route identity and metadata entity (normalized).
  *

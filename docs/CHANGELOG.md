@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.14] - 2026-03-09](#2014-2026-03-09)
+  - [Added](#added)
+  - [Changed](#changed)
+- [[2.0.13] - 2026-03-02](#2013-2026-03-02)
+  - [Added](#added)
+  - [Changed](#changed)
+  - [Removed](#removed)
 - [[2.0.12] - 2026-02-02](#2012-2026-02-02)
   - [Added](#added)
   - [Changed](#changed)
@@ -102,6 +109,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _Nothing yet._
+
+---
+
+## [2.0.14] - 2026-03-09
+
+### Added
+- **Tests** – Unit tests for `CreateTableCommand` and `CreateRecordsTableCommand` (execute with `--update` when table does not exist in schema manager; failure path shows Doctrine command suggestions). Unit tests for `TableStatusChecker` when registry returns non-Connection (`tableExists`, `getMissingColumns`). Integration test for `RouteDataRecordRepository::findOneByRequestId` when record exists.
+
+### Changed
+- **Coverage** – Removed exclusions of `CreateTableCommand` and `CreateRecordsTableCommand` from PHPUnit coverage; all `src/` code is now included in the report.
+- **CI** – GitHub Actions now enforces a minimum code coverage of 80% (statements and elements) via `scripts/check-coverage.php --min-percent=80` in both the test job (PHP 8.2) and the coverage job.
 
 ---
 

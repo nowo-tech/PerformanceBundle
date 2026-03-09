@@ -6,6 +6,8 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.14 (2026-03-09)](#upgrading-to-2014-2026-03-09)
+- [Upgrading to 2.0.13 (2026-03-02)](#upgrading-to-2013-2026-03-02)
 - [Upgrading to 2.0.12 (2026-02-02)](#upgrading-to-2012-2026-02-02)
 - [Upgrading to 2.0.11 (2026-02-12)](#upgrading-to-2011-2026-02-12)
 - [Upgrading to 2.0.10 (2026-02-03)](#upgrading-to-2010-2026-02-03)
@@ -71,6 +73,21 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 2.0.14 (2026-03-09)
+
+Test coverage and CI improvements. No schema or bundle configuration changes.
+
+**Changed:**
+- **CI** – GitHub Actions now fails if code coverage is below 80% (minimum enforced in test and coverage jobs). See [CHANGELOG](CHANGELOG.md#2014---2026-03-09).
+- **Coverage** – CreateTableCommand and CreateRecordsTableCommand are no longer excluded from coverage; additional tests were added to cover them.
+
+No upgrade steps required. Clear cache after updating:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 2.0.13 (2026-03-02)
 
