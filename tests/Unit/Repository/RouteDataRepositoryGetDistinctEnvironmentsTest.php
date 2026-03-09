@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryGetDistinctEnvironmentsTest extends TestCase
 {
-    private ManagerRegistry $registry;
+    private \PHPUnit\Framework\MockObject\MockObject $registry;
 
     protected function setUp(): void
     {

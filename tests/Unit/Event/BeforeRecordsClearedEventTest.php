@@ -20,7 +20,7 @@ final class BeforeRecordsClearedEventTest extends TestCase
 
     public function testGetEnvReturnsNullWhenNotProvided(): void
     {
-        $event = new BeforeRecordsClearedEvent(null);
+        $event = new BeforeRecordsClearedEvent();
 
         $this->assertNull($event->getEnv());
     }
@@ -38,7 +38,7 @@ final class BeforeRecordsClearedEventTest extends TestCase
 
     public function testPreventClearingCalledMultipleTimesRemainsPrevented(): void
     {
-        $event = new BeforeRecordsClearedEvent(null);
+        $event = new BeforeRecordsClearedEvent();
 
         $event->preventClearing();
         $event->preventClearing();

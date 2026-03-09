@@ -1,0 +1,15 @@
+# PHPStan configuration for Performance Bundle
+# Compatible with PHP 8.1+ and Symfony 6.x / 7.x / 8.x
+
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 8
+    paths:
+        - src
+    excludePaths:
+        - demo/*
+        - tests/stub_ux_icon.php
+    # Reduces noise when PHPDoc types disagree with inferred types (Doctrine, PHPUnit mocks)
+    treatPhpDocTypesAsCertain: false

@@ -16,6 +16,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  *
  * Contains hidden env field and submit button; CSRF protected.
  *
+ * @extends AbstractType<mixed>
+ *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
@@ -24,7 +26,7 @@ class ClearPerformanceDataType extends AbstractType
     /**
      * Builds the form with hidden env and submit button.
      *
-     * @param FormBuilderInterface $builder The form builder
+     * @param FormBuilderInterface<mixed> $builder The form builder
      * @param array<string, mixed> $options Form options
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -32,9 +34,9 @@ class ClearPerformanceDataType extends AbstractType
         $builder
             ->add('env', HiddenType::class)
             ->add('submit', SubmitType::class, [
-                'label' => 'dashboard.clear_all_records',
+                'label'              => 'dashboard.clear_all_records',
                 'translation_domain' => 'nowo_performance',
-                'attr' => ['class' => 'btn btn-danger'],
+                'attr'               => ['class' => 'btn btn-danger'],
             ]);
     }
 
@@ -46,11 +48,11 @@ class ClearPerformanceDataType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => ClearPerformanceDataRequest::class,
-            'method' => 'POST',
+            'data_class'      => ClearPerformanceDataRequest::class,
+            'method'          => 'POST',
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
-            'csrf_token_id' => 'clear_performance_data',
+            'csrf_token_id'   => 'clear_performance_data',
         ]);
     }
 

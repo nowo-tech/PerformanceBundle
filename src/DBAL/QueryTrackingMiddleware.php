@@ -11,6 +11,8 @@ use Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware;
 use Doctrine\DBAL\Driver\Middleware\AbstractStatementMiddleware;
 use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\Statement;
+use Exception;
+use PDO;
 
 /**
  * DBAL Middleware for tracking database queries.
@@ -46,7 +48,7 @@ class QueryTrackingMiddleware implements Middleware
             public function connect(array $params): Connection
             {
                 return new QueryTrackingConnection(
-                    parent::connect($params)
+                    parent::connect($params),
                 );
             }
         };
@@ -77,8 +79,8 @@ class QueryTrackingMiddleware implements Middleware
      */
     public static function reset(): void
     {
-        self::$queryCount = 0;
-        self::$totalQueryTime = 0.0;
+        self::$queryCount      = 0;
+        self::$totalQueryTime  = 0.0;
         self::$queryStartTimes = [];
     }
 
@@ -121,29 +123,26 @@ class QueryTrackingConnection implements Connection
 
     public function prepare(string $sql): Statement
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
+        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         $statement = $this->connection->prepare($sql);
 
         return new class($statement, $queryId) extends AbstractStatementMiddleware {
-            private string $queryId;
-
-            public function __construct(Statement $statement, string $queryId)
+            public function __construct(Statement $statement, private readonly string $queryId)
             {
                 parent::__construct($statement);
-                $this->queryId = $queryId;
             }
 
-            public function execute($params = null): Result
+            public function execute(mixed $params = null): Result
             {
-                $startTime = microtime(true);
+                microtime(true);
                 try {
-                    $result = parent::execute($params);
+                    $result = parent::execute();
                     QueryTrackingMiddleware::stopQuery($this->queryId);
 
                     return $result;
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     QueryTrackingMiddleware::stopQuery($this->queryId);
                     throw $e;
                 }
@@ -153,7 +152,7 @@ class QueryTrackingConnection implements Connection
 
     public function query(string $sql): Result
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
+        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
@@ -161,7 +160,7 @@ class QueryTrackingConnection implements Connection
             QueryTrackingMiddleware::stopQuery($queryId);
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             QueryTrackingMiddleware::stopQuery($queryId);
             throw $e;
         }
@@ -169,15 +168,15 @@ class QueryTrackingConnection implements Connection
 
     public function exec(string $sql): int
     {
-        $queryId = spl_object_hash($this).'_'.md5($sql).'_'.uniqid('', true);
+        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
             $result = $this->connection->exec($sql);
             QueryTrackingMiddleware::stopQuery($queryId);
 
-            return $result;
-        } catch (\Exception $e) {
+            return (int) $result;
+        } catch (Exception $e) {
             QueryTrackingMiddleware::stopQuery($queryId);
             throw $e;
         }
@@ -200,12 +199,12 @@ class QueryTrackingConnection implements Connection
 
     public function getServerVersion(): string
     {
-        return $this->connection->getServerVersion() ?? '';
+        return $this->connection->getServerVersion();
     }
 
-    public function quote(string $value, int $type = \PDO::PARAM_STR): string
+    public function quote(string $value, int $type = PDO::PARAM_STR): string
     {
-        return $this->connection->quote($value, $type);
+        return $this->connection->quote($value);
     }
 
     public function lastInsertId(): string|int

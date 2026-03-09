@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\DataCollector;
 
+use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
+use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
+use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Service\DependencyChecker;
+use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 final class PerformanceDataCollectorTest extends TestCase
 {
@@ -72,18 +80,108 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
         $this->assertSame('N/A', $collector->getFormattedRequestTime());
     }
 
+    public function testGetFormattedRequestTimeReturnsSecondsWhenTimeAboveOneSecond(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willReturn([
+            'exists' => false, 'complete' => false, 'table_name' => 'routes_data', 'missing_columns' => [],
+        ]);
+        $tableChecker->method('getRecordsTableStatus')->willReturn(null);
+        $tableChecker->method('isAccessRecordsEnabled')->willReturn(false);
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker);
+        $collector->setEnabled(true);
+        $collector->setStartTime(microtime(true) - 2.5);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $formatted = $collector->getFormattedRequestTime();
+        $this->assertStringContainsString('s', $formatted);
+        $this->assertStringNotContainsString('N/A', $formatted);
+    }
+
+    public function testGetFormattedQueryTimeReturnsSecondsWhenTimeAboveOneSecond(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $collector->setQueryMetrics(0, 1.5);
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $formatted = $collector->getFormattedQueryTime();
+        $this->assertStringContainsString('s', $formatted);
+    }
+
+    public function testGetFormattedRequestTimeReturnsMillisecondsWhenTimeBetween1And1000Ms(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willReturn([
+            'exists' => false, 'complete' => false, 'table_name' => 'routes_data', 'missing_columns' => [],
+        ]);
+        $tableChecker->method('getRecordsTableStatus')->willReturn(null);
+        $tableChecker->method('isAccessRecordsEnabled')->willReturn(false);
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker);
+        $collector->setEnabled(true);
+        $collector->setStartTime(microtime(true) - 0.1);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $formatted = $collector->getFormattedRequestTime();
+        $this->assertStringContainsString('ms', $formatted);
+        $this->assertStringEndsWith('ms', $formatted);
+    }
+
+    public function testGetFormattedRequestTimeReturnsSubMillisecondFormatWhenTimeBelowOneMs(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $ref      = new ReflectionClass($collector);
+        $dataProp = $ref->getProperty('data');
+        $dataProp->setAccessible(true);
+        $data                 = $dataProp->getValue($collector);
+        $data['request_time'] = 0.0005;
+        $dataProp->setValue($collector, $data);
+
+        $formatted = $collector->getFormattedRequestTime();
+        $this->assertSame('0.50 ms', $formatted);
+    }
+
+    public function testGetFormattedQueryTimeReturnsMillisecondsWhenTimeBetween1And1000Ms(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $collector->setQueryMetrics(0, 0.1);
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $formatted = $collector->getFormattedQueryTime();
+        $this->assertStringContainsString('ms', $formatted);
+        $this->assertStringEndsWith('ms', $formatted);
+    }
+
     public function testGetFormattedQueryTimeReturnsZeroMsWhenDisabled(): void
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -95,7 +193,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -107,7 +205,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -132,7 +230,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -149,7 +247,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setDisabledReason('Route ignored');
         $collector->setEnabled(false);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -162,7 +260,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -174,7 +272,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -188,7 +286,7 @@ final class PerformanceDataCollectorTest extends TestCase
     {
         $collector = new PerformanceDataCollector();
         $collector->setEnabled(false);
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -216,7 +314,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setStartTime(microtime(true) - 0.5);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -231,7 +329,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setQueryMetrics(7, 0.15);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -245,7 +343,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setAsync(true);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -268,7 +366,7 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setQueryCount(3);
         $collector->setQueryTime(0.12);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
@@ -282,10 +380,193 @@ final class PerformanceDataCollectorTest extends TestCase
         $collector->setEnabled(true);
         $collector->setRequestTime(0.5);
 
-        $request = new Request();
+        $request  = new Request();
         $response = new Response();
         $collector->collect($request, $response);
 
         $this->addToAssertionCount(1);
+    }
+
+    public function testCollectWithTableStatusCheckerAndDependencyCheckerEnabled(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willReturn([
+            'exists'          => true,
+            'complete'        => true,
+            'table_name'      => 'routes_data',
+            'missing_columns' => [],
+        ]);
+        $tableChecker->method('getRecordsTableStatus')->willReturn(null);
+        $tableChecker->method('isAccessRecordsEnabled')->willReturn(false);
+
+        $depChecker = $this->createMock(DependencyChecker::class);
+        $depChecker->method('getMissingDependencies')->willReturn([]);
+        $depChecker->method('getDependencyStatus')->willReturn([]);
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker, $depChecker, null, true);
+        $collector->setEnabled(true);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertTrue($collector->tableExists());
+        $this->assertTrue($collector->tableIsComplete());
+        $this->assertSame('routes_data', $collector->getTableName());
+        $this->assertSame([], $collector->getMissingColumns());
+        $this->assertSame([], $collector->getMissingDependencies());
+        $this->assertSame([], $collector->getDependencyStatus());
+    }
+
+    public function testCollectWithRecordsTableStatusWhenAccessRecordsEnabled(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willReturn([
+            'exists'          => true,
+            'complete'        => true,
+            'table_name'      => 'routes_data',
+            'missing_columns' => [],
+        ]);
+        $tableChecker->method('getRecordsTableStatus')->willReturn([
+            'exists'          => true,
+            'complete'        => true,
+            'table_name'      => 'routes_data_records',
+            'missing_columns' => [],
+        ]);
+        $tableChecker->method('isAccessRecordsEnabled')->willReturn(true);
+
+        $depChecker = $this->createMock(DependencyChecker::class);
+        $depChecker->method('getMissingDependencies')->willReturn([]);
+        $depChecker->method('getDependencyStatus')->willReturn([]);
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker, $depChecker, null, true);
+        $collector->setEnabled(true);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertTrue($collector->tableExists());
+        $this->assertSame('routes_data', $collector->getTableName());
+    }
+
+    public function testCollectWithRepositoryAndRecordRepositoryFetchesRankingAndAccessCount(): void
+    {
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+
+        $repository = $this->createMock(RouteDataRepository::class);
+        $repository->method('findByRouteAndEnv')->with('app_home', 'dev')->willReturn($route);
+        $repository->method('getRankingByRequestTime')->with($route)->willReturn(5);
+        $repository->method('getRankingByQueryCount')->with($route)->willReturn(3);
+        $repository->method('getTotalRoutesCount')->with('dev')->willReturn(10);
+
+        $recordRepository = $this->createMock(RouteDataRecordRepository::class);
+        $recordRepository->method('countByRouteData')->with($route)->willReturn(42);
+
+        $collector = new PerformanceDataCollector($repository, null, null, null, $recordRepository, false);
+        $collector->setEnabled(true);
+        $collector->setRouteName('app_home');
+
+        $request = new Request();
+        $request->attributes->set('_route', 'app_home');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame(42, $collector->getAccessCount());
+        $this->assertSame(5, $collector->getRankingByRequestTime());
+        $this->assertSame(3, $collector->getRankingByQueryCount());
+        $this->assertSame(10, $collector->getTotalRoutes());
+    }
+
+    public function testCollectWhenTableStatusCheckerThrowsStillCompletes(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willThrowException(new Exception('DB unavailable'));
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker, null, null, true);
+        $collector->setEnabled(true);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertFalse($collector->tableExists());
+        $this->assertFalse($collector->tableIsComplete());
+        $this->assertSame([], $collector->getMissingColumns());
+    }
+
+    public function testCollectWhenGetParameterThrowsUsesDefaultRankingEnabled(): void
+    {
+        $container = $this->createMock(\Symfony\Component\DependencyInjection\ContainerInterface::class);
+        $container->method('getParameter')->with('nowo_performance.dashboard.enable_ranking_queries')->willThrowException(new Exception('param missing'));
+
+        $kernel = $this->createMock(KernelInterface::class);
+        $kernel->method('getEnvironment')->willReturn('dev');
+        $kernel->method('getContainer')->willReturn($container);
+
+        $route = new RouteData();
+        $route->setName('r')->setEnv('dev');
+        $repository = $this->createMock(RouteDataRepository::class);
+        $repository->method('findByRouteAndEnv')->with('r', 'dev')->willReturn($route);
+        $repository->method('getRankingByRequestTime')->with($route)->willReturn(1);
+        $repository->method('getRankingByQueryCount')->with($route)->willReturn(2);
+        $repository->method('getTotalRoutesCount')->with('dev')->willReturn(5);
+
+        $recordRepo = $this->createMock(RouteDataRecordRepository::class);
+        $recordRepo->method('countByRouteData')->with($route)->willReturn(10);
+
+        $collector = new PerformanceDataCollector($repository, $kernel, null, null, $recordRepo, false);
+        $collector->setEnabled(true);
+        $collector->setRouteName('r');
+
+        $request = new Request();
+        $request->attributes->set('_route', 'r');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame(10, $collector->getAccessCount());
+        $this->assertSame(1, $collector->getRankingByRequestTime());
+        $this->assertSame(5, $collector->getTotalRoutes());
+    }
+
+    public function testCollectWhenRepositoryFindByRouteAndEnvThrowsStillCompletes(): void
+    {
+        $repository = $this->createMock(RouteDataRepository::class);
+        $repository->method('findByRouteAndEnv')->willThrowException(new Exception('DB error'));
+
+        $collector = new PerformanceDataCollector($repository, null, null, null, null, false);
+        $collector->setEnabled(true);
+        $collector->setRouteName('app_home');
+
+        $request = new Request();
+        $request->attributes->set('_route', 'app_home');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertNull($collector->getAccessCount());
+        $this->assertNull($collector->getRankingByRequestTime());
+        $this->assertNull($collector->getTotalRoutes());
+    }
+
+    public function testWasRecordNewAndWasRecordUpdatedUseDataFallbackWhenPropertiesNull(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $ref      = new ReflectionClass($collector);
+        $dataProp = $ref->getProperty('data');
+        $dataProp->setValue($collector, ['record_was_new' => true, 'record_was_updated' => false]);
+        $recordWasNewProp = $ref->getProperty('recordWasNew');
+        $recordWasNewProp->setValue($collector, null);
+        $recordWasUpdatedProp = $ref->getProperty('recordWasUpdated');
+        $recordWasUpdatedProp->setValue($collector, null);
+
+        $this->assertTrue($collector->wasRecordNew());
+        $this->assertFalse($collector->wasRecordUpdated());
+        $this->assertSame('New record created', $collector->getRecordOperationStatus());
     }
 }

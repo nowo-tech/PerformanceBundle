@@ -14,6 +14,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  *
  * Contains only a submit button; used per-row in the routes table.
  *
+ * @extends AbstractType<mixed>
+ *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
@@ -22,7 +24,7 @@ class DeleteRecordType extends AbstractType
     /**
      * Builds the form with a single submit button.
      *
-     * @param FormBuilderInterface $builder The form builder
+     * @param FormBuilderInterface<mixed> $builder The form builder
      * @param array<string, mixed> $options Options (submit_attr_class for button CSS)
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -43,10 +45,10 @@ class DeleteRecordType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'method' => 'POST',
-            'csrf_protection' => true,
-            'csrf_field_name' => '_token',
-            'csrf_token_id' => 'delete_performance_record',
+            'method'            => 'POST',
+            'csrf_protection'   => true,
+            'csrf_field_name'   => '_token',
+            'csrf_token_id'     => 'delete_performance_record',
             'submit_attr_class' => 'btn btn-danger btn-sm',
         ]);
         $resolver->setRequired('csrf_token_id');

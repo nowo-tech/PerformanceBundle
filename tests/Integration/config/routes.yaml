@@ -1,0 +1,2 @@
+nowo_performance:
+    resource: '@NowoPerformanceBundle/Resources/config/routes.yaml'

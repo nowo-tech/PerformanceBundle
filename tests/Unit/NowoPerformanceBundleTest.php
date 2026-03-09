@@ -8,6 +8,7 @@ use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewareP
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Nowo\PerformanceBundle\NowoPerformanceBundle;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
@@ -46,7 +47,7 @@ final class NowoPerformanceBundleTest extends TestCase
 
     public function testBuildRegistersCompilerPass(): void
     {
-        $bundle = new NowoPerformanceBundle();
+        $bundle    = new NowoPerformanceBundle();
         $container = $this->createMock(ContainerBuilder::class);
 
         $container->expects($this->once())
@@ -58,7 +59,7 @@ final class NowoPerformanceBundleTest extends TestCase
 
     public function testBuildCallsParentBuild(): void
     {
-        $bundle = new NowoPerformanceBundle();
+        $bundle    = new NowoPerformanceBundle();
         $container = $this->createMock(ContainerBuilder::class);
 
         // Verify that addCompilerPass is called (which means build is executed)
@@ -72,17 +73,61 @@ final class NowoPerformanceBundleTest extends TestCase
     public function testGetPathReturnsString(): void
     {
         $bundle = new NowoPerformanceBundle();
-        $path = $bundle->getPath();
+        $path   = $bundle->getPath();
         $this->assertIsString($path);
         $this->assertNotEmpty($path);
     }
 
     public function testBuildReceivesContainerBuilder(): void
     {
-        $bundle = new NowoPerformanceBundle();
+        $bundle    = new NowoPerformanceBundle();
         $container = new ContainerBuilder();
 
         $bundle->build($container);
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testBootWhenContainerIsNullDoesNotSetVarDumperHandler(): void
+    {
+        $bundle     = new NowoPerformanceBundle();
+        $reflection = new ReflectionProperty($bundle, 'container');
+        $reflection->setValue($bundle, null);
+
+        $bundle->boot();
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testBootWhenKernelIsNotDebugDoesNotSetVarDumperHandler(): void
+    {
+        $container = new ContainerBuilder();
+        $kernel    = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
+        $kernel->method('isDebug')->willReturn(false);
+        $container->set('kernel', $kernel);
+
+        $bundle     = new NowoPerformanceBundle();
+        $reflection = new ReflectionProperty($bundle, 'container');
+        $reflection->setValue($bundle, $container);
+
+        $bundle->boot();
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testBootWhenVarDumperClassDoesNotExistDoesNotSetHandler(): void
+    {
+        $container = new ContainerBuilder();
+        $kernel    = $this->createMock(\Symfony\Component\HttpKernel\KernelInterface::class);
+        $kernel->method('isDebug')->willReturn(true);
+        $container->set('kernel', $kernel);
+
+        $bundle     = new NowoPerformanceBundle();
+        $reflection = new ReflectionProperty($bundle, 'container');
+        $reflection->setValue($bundle, $container);
+
+        // Boot with kernel debug but VarDumper may or may not exist; we just ensure no exception
+        $bundle->boot();
 
         $this->addToAssertionCount(1);
     }

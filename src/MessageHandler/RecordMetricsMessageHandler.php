@@ -8,7 +8,7 @@ use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 
 // Load polyfill if Messenger is not available
-require_once __DIR__.'/AsMessageHandlerPolyfill.php';
+require_once __DIR__ . '/AsMessageHandlerPolyfill.php';
 
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -20,6 +20,8 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
+ *
+ * @phpstan-ignore attribute.notFound (optional symfony/messenger)
  */
 #[AsMessageHandler]
 final class RecordMetricsMessageHandler
@@ -56,7 +58,7 @@ final class RecordMetricsMessageHandler
             $message->getReferer(),
             $message->getUserIdentifier(),
             $message->getUserId(),
-            $message->getRoutePath()
+            $message->getRoutePath(),
         );
     }
 }

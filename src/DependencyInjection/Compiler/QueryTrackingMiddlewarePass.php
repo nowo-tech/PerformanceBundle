@@ -41,8 +41,8 @@ class QueryTrackingMiddlewarePass implements CompilerPassInterface
         }
 
         // Get the connection name from configuration
-        $connectionName = $container->getParameter('nowo_performance.connection');
-        $enabled = $container->getParameter('nowo_performance.enabled');
+        $container->getParameter('nowo_performance.connection');
+        $enabled      = $container->getParameter('nowo_performance.enabled');
         $trackQueries = $container->getParameter('nowo_performance.track_queries');
 
         // Only register middleware if tracking is enabled

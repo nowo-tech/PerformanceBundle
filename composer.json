@@ -54,12 +54,22 @@
         "doctrine/doctrine-bundle": "^2.8 || ^3.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0",
         "friendsofphp/php-cs-fixer": "^3.0",
-        "rector/rector": "^0.14.8|^0.15"
+        "phpstan/extension-installer": "^1.0",
+        "symfony/browser-kit": "^6.1 || ^7.0 || ^8.0",
+        "symfony/dom-crawler": "^6.1 || ^7.0 || ^8.0",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
+        "phpunit/phpunit": "^10.0",
+        "rector/rector": "^2.0",
+        "symfony/http-client": "^6.1 || ^7.0 || ^8.0",
+        "symfony/mailer": "^6.1 || ^7.0 || ^8.0",
+        "symfony/mime": "^6.1 || ^7.0 || ^8.0"
     },
     "suggest": {
-        "symfony/http-client": "For webhook notifications (Slack, Teams, custom webhooks)"
+        "symfony/http-client": "For webhook notifications (Slack, Teams, custom webhooks)",
+        "symfony/mailer": "For email notifications"
     },
     "autoload": {
         "psr-4": {
@@ -74,7 +84,8 @@
     "config": {
         "sort-packages": true,
         "allow-plugins": {
-            "composer/package-versions-deprecated": true
+            "composer/package-versions-deprecated": true,
+            "phpstan/extension-installer": true
         }
     },
     "minimum-stability": "stable",
@@ -82,10 +93,14 @@
     "scripts": {
         "test": "phpunit",
         "test-coverage": "phpunit --coverage-html coverage --coverage-clover coverage.xml",
+        "test-coverage-100": "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=100",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
-        "rector": "rector process src tests --dry-run",
-        "rector-fix": "rector process src tests",
+        "rector": "rector process",
+        "rector-dry": "rector process --dry-run --no-progress-bar",
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "update": "composer update --no-interaction",
+        "validate": "composer validate --strict",
         "validate-translations": "php scripts/validate-translations-yaml.php src/Resources/translations",
         "qa": [
             "@cs-check",
@@ -96,10 +111,14 @@
     "scripts-descriptions": {
         "test": "Run PHPUnit tests",
         "test-coverage": "Run PHPUnit tests with code coverage",
+        "test-coverage-100": "Run test-coverage and fail if coverage is below 100%",
         "cs-check": "Check code style with PHP-CS-Fixer",
         "cs-fix": "Fix code style with PHP-CS-Fixer",
-        "rector": "Check code with Rector (dry-run)",
-        "rector-fix": "Fix code with Rector",
+        "rector": "Apply Rector refactoring",
+        "rector-dry": "Run Rector in dry-run mode",
+        "phpstan": "Run PHPStan static analysis",
+        "update": "Update composer.lock (composer update)",
+        "validate": "Validate composer.json (composer validate --strict)",
         "validate-translations": "Validate translation YAML files (syntax and duplicate keys)",
         "qa": "Run all quality assurance checks"
     }

@@ -15,7 +15,7 @@ final class PerformanceAlertTest extends TestCase
             PerformanceAlert::TYPE_REQUEST_TIME,
             PerformanceAlert::SEVERITY_CRITICAL,
             'Test message',
-            ['value' => 1.5, 'threshold' => 1.0]
+            ['value' => 1.5, 'threshold' => 1.0],
         );
 
         $this->assertSame(PerformanceAlert::TYPE_REQUEST_TIME, $alert->getType());
@@ -29,13 +29,13 @@ final class PerformanceAlertTest extends TestCase
         $criticalAlert = new PerformanceAlert(
             PerformanceAlert::TYPE_REQUEST_TIME,
             PerformanceAlert::SEVERITY_CRITICAL,
-            'Critical alert'
+            'Critical alert',
         );
 
         $warningAlert = new PerformanceAlert(
             PerformanceAlert::TYPE_REQUEST_TIME,
             PerformanceAlert::SEVERITY_WARNING,
-            'Warning alert'
+            'Warning alert',
         );
 
         $this->assertTrue($criticalAlert->isCritical());
@@ -47,13 +47,13 @@ final class PerformanceAlertTest extends TestCase
         $criticalAlert = new PerformanceAlert(
             PerformanceAlert::TYPE_REQUEST_TIME,
             PerformanceAlert::SEVERITY_CRITICAL,
-            'Critical alert'
+            'Critical alert',
         );
 
         $warningAlert = new PerformanceAlert(
             PerformanceAlert::TYPE_REQUEST_TIME,
             PerformanceAlert::SEVERITY_WARNING,
-            'Warning alert'
+            'Warning alert',
         );
 
         $this->assertFalse($criticalAlert->isWarning());
@@ -66,7 +66,7 @@ final class PerformanceAlertTest extends TestCase
             PerformanceAlert::TYPE_REQUEST_TIME,
             PerformanceAlert::SEVERITY_WARNING,
             'Test',
-            ['key1' => 'value1', 'key2' => 123]
+            ['key1' => 'value1', 'key2' => 123],
         );
 
         $this->assertSame('value1', $alert->getContextValue('key1'));
@@ -80,7 +80,7 @@ final class PerformanceAlertTest extends TestCase
         $alert = new PerformanceAlert(
             PerformanceAlert::TYPE_QUERY_COUNT,
             PerformanceAlert::SEVERITY_WARNING,
-            'No context passed'
+            'No context passed',
         );
 
         $this->assertSame([], $alert->getContext());
@@ -110,7 +110,7 @@ final class PerformanceAlertTest extends TestCase
             PerformanceAlert::TYPE_QUERY_COUNT,
             PerformanceAlert::SEVERITY_WARNING,
             'Test',
-            ['count' => 0, 'label' => '']
+            ['count' => 0, 'label' => ''],
         );
 
         $this->assertSame(0, $alert->getContextValue('count'));
@@ -124,7 +124,7 @@ final class PerformanceAlertTest extends TestCase
             PerformanceAlert::TYPE_MEMORY_USAGE,
             PerformanceAlert::SEVERITY_WARNING,
             'Test',
-            ['nullable_field' => null]
+            ['nullable_field' => null],
         );
 
         $this->assertNull($alert->getContextValue('nullable_field'));
@@ -151,7 +151,7 @@ final class PerformanceAlertTest extends TestCase
         $alert = new PerformanceAlert(
             PerformanceAlert::TYPE_OUTLIER,
             PerformanceAlert::SEVERITY_WARNING,
-            ''
+            '',
         );
 
         $this->assertSame('', $alert->getMessage());
@@ -162,7 +162,7 @@ final class PerformanceAlertTest extends TestCase
         $alert = new PerformanceAlert(
             PerformanceAlert::TYPE_QUERY_TIME,
             PerformanceAlert::SEVERITY_CRITICAL,
-            'Critical query time'
+            'Critical query time',
         );
 
         $this->assertSame(PerformanceAlert::SEVERITY_CRITICAL, $alert->getSeverity());
@@ -171,15 +171,15 @@ final class PerformanceAlertTest extends TestCase
     public function testGetContextWithMultipleKeys(): void
     {
         $context = [
-            'value' => 1.5,
+            'value'     => 1.5,
             'threshold' => 1.0,
-            'route' => 'api_slow',
+            'route'     => 'api_slow',
         ];
         $alert = new PerformanceAlert(
             PerformanceAlert::TYPE_REQUEST_TIME,
             PerformanceAlert::SEVERITY_CRITICAL,
             'Critical',
-            $context
+            $context,
         );
 
         $this->assertSame($context, $alert->getContext());
@@ -194,7 +194,7 @@ final class PerformanceAlertTest extends TestCase
             PerformanceAlert::TYPE_OUTLIER,
             PerformanceAlert::SEVERITY_WARNING,
             'Outlier detected',
-            ['route' => 'api_slow', 'value' => 2.5]
+            ['route' => 'api_slow', 'value' => 2.5],
         );
 
         $this->assertSame(PerformanceAlert::TYPE_OUTLIER, $alert->getType());

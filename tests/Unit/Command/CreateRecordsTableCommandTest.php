@@ -10,25 +10,27 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Command\CreateRecordsTableCommand;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use stdClass;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class CreateRecordsTableCommandTest extends TestCase
 {
-    private ManagerRegistry|MockObject $registry;
-    private Connection|MockObject $connection;
-    private AbstractSchemaManager|MockObject $schemaManager;
-    private EntityManagerInterface|MockObject $entityManager;
-    private ClassMetadataFactory|MockObject $metadataFactory;
+    private MockObject $registry;
+    private MockObject $connection;
+    private MockObject $schemaManager;
+    private MockObject $entityManager;
+    private MockObject $metadataFactory;
     private CreateRecordsTableCommand $command;
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->connection = $this->createMock(Connection::class);
-        $this->schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->registry        = $this->createMock(ManagerRegistry::class);
+        $this->connection      = $this->createMock(Connection::class);
+        $this->schemaManager   = $this->createMock(AbstractSchemaManager::class);
+        $this->entityManager   = $this->createMock(EntityManagerInterface::class);
         $this->metadataFactory = $this->createMock(ClassMetadataFactory::class);
 
         $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
@@ -94,7 +96,7 @@ final class CreateRecordsTableCommandTest extends TestCase
 
         $this->metadataFactory
             ->method('getMetadataFor')
-            ->with('Nowo\PerformanceBundle\Entity\RouteDataRecord')
+            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
             ->willReturn($metadata);
         $this->schemaManager->method('tablesExist')->with(['routes_data_records'])->willReturn(true);
 
@@ -110,13 +112,63 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     public function testExecuteReturnsFailureOnException(): void
     {
-        $this->registry->method('getConnection')->willThrowException(new \RuntimeException('Connection failed'));
+        $this->registry->method('getConnection')->willThrowException(new RuntimeException('Connection failed'));
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('Failed to create table', $display);
+        $this->assertStringContainsString('Connection failed', $display);
+        $this->assertStringContainsString('doctrine:schema:update', $display);
+        $this->assertStringContainsString('doctrine:migrations:diff', $display);
+    }
+
+    public function testExecuteWhenRegistryReturnsNonConnectionReturnsFailure(): void
+    {
+        $this->registry->method('getConnection')->with('default')->willReturn(new stdClass());
 
         $tester = new CommandTester($this->command);
         $tester->execute([]);
 
         $this->assertSame(1, $tester->getStatusCode());
         $this->assertStringContainsString('Failed to create table', $tester->getDisplay());
-        $this->assertStringContainsString('Connection failed', $tester->getDisplay());
+    }
+
+    public function testExecuteWhenRegistryReturnsNonEntityManagerReturnsFailure(): void
+    {
+        $objectManager = $this->createMock(\Doctrine\Persistence\ObjectManager::class);
+        $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
+        $this->registry->method('getManager')->with('default')->willReturn($objectManager);
+        $this->schemaManager->method('tablesExist')->willReturn(false);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Failed to create table', $tester->getDisplay());
+    }
+
+    public function testExecuteWithUpdateWhenTableDoesNotExistInSchemaManager(): void
+    {
+        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata->method('getTableName')->willReturn('routes_data_records');
+        $metadata->table = ['name' => 'routes_data_records'];
+
+        $this->metadataFactory
+            ->method('getMetadataFor')
+            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->willReturn($metadata);
+        $this->entityManager->method('getConnection')->willReturn($this->connection);
+        $this->schemaManager->method('tablesExist')->with(['routes_data_records'])->willReturnOnConsecutiveCalls(true, false);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--update' => true]);
+
+        self::assertSame(0, $tester->getStatusCode());
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('does not exist', $display);
+        self::assertMatchesRegularExpression('/without\s+--update/', $display);
     }
 }

@@ -1,5 +1,52 @@
 # Commands
 
+
+## Table of contents
+
+- [nowo:performance:set-route](#nowoperformanceset-route)
+  - [Usage](#usage)
+  - [Arguments](#arguments)
+  - [Options](#options)
+  - [Description](#description)
+  - [Examples](#examples)
+  - [Output](#output)
+  - [Error Handling](#error-handling)
+- [nowo:performance:create-table](#nowoperformancecreate-table)
+  - [Usage](#usage)
+  - [Options](#options)
+  - [Description](#description)
+  - [Examples](#examples)
+  - [Features](#features)
+  - [Output](#output)
+  - [Common Issues](#common-issues)
+- [nowo:performance:create-records-table](#nowoperformancecreate-records-table)
+  - [Usage](#usage)
+  - [Options](#options)
+  - [Description](#description)
+- [nowo:performance:purge-records](#nowoperformancepurge-records)
+  - [Usage](#usage)
+  - [Options](#options)
+  - [Description](#description)
+- [nowo:performance:sync-schema](#nowoperformancesync-schema)
+  - [Usage](#usage)
+  - [Options](#options)
+  - [Description](#description)
+  - [Examples](#examples)
+- [nowo:performance:rebuild-aggregates](#nowoperformancerebuild-aggregates)
+  - [Usage](#usage)
+  - [Options](#options)
+  - [Description](#description)
+- [nowo:performance:diagnose](#nowoperformancediagnose)
+  - [Usage](#usage)
+  - [Description](#description)
+  - [Use Cases](#use-cases)
+  - [Example Output](#example-output)
+- [nowo:performance:check-dependencies](#nowoperformancecheck-dependencies)
+  - [Usage](#usage)
+  - [Description](#description)
+  - [Use Cases](#use-cases)
+  - [Example Output](#example-output)
+
 ## nowo:performance:set-route
 
 Set or update route performance metrics.

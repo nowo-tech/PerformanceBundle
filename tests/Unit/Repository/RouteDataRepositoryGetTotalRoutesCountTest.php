@@ -15,13 +15,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryGetTotalRoutesCountTest extends TestCase
 {
-    private ManagerRegistry $registry;
-    private RouteDataRepository $repository;
+    private \PHPUnit\Framework\MockObject\MockObject $registry;
 
     protected function setUp(): void
     {
         $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->repository = new RouteDataRepository($this->registry);
     }
 
     public function testGetTotalRoutesCountReturnsInteger(): void

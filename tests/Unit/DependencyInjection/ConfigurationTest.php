@@ -20,7 +20,7 @@ final class ConfigurationTest extends TestCase
     public function testDefaultConfiguration(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertTrue($config['enabled']);
         $this->assertSame(['prod', 'dev', 'test'], $config['environments']);
@@ -30,7 +30,7 @@ final class ConfigurationTest extends TestCase
         $this->assertTrue($config['track_request_time']);
         $this->assertTrue($config['check_table_status']);
         $this->assertSame(['_wdt', '_profiler', 'web_profiler*', '_error'], $config['ignore_routes']);
-        
+
         // Dashboard configuration defaults
         $this->assertTrue($config['dashboard']['enabled']);
         $this->assertSame('/performance', $config['dashboard']['path']);
@@ -42,19 +42,19 @@ final class ConfigurationTest extends TestCase
     public function testCustomConfiguration(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, [[
-            'enabled' => false,
-            'environments' => ['prod'],
-            'connection' => 'custom_connection',
-            'table_name' => 'custom_table',
-            'track_queries' => false,
+        $config        = $this->processor->processConfiguration($configuration, [[
+            'enabled'            => false,
+            'environments'       => ['prod'],
+            'connection'         => 'custom_connection',
+            'table_name'         => 'custom_table',
+            'track_queries'      => false,
             'track_request_time' => false,
-            'ignore_routes' => ['_custom'],
-            'dashboard' => [
+            'ignore_routes'      => ['_custom'],
+            'dashboard'          => [
                 'enabled' => false,
-                'path' => '/metrics',
-                'prefix' => '/admin',
-                'roles' => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
+                'path'    => '/metrics',
+                'prefix'  => '/admin',
+                'roles'   => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
             ],
         ]]);
 
@@ -65,7 +65,7 @@ final class ConfigurationTest extends TestCase
         $this->assertFalse($config['track_queries']);
         $this->assertFalse($config['track_request_time']);
         $this->assertSame(['_custom'], $config['ignore_routes']);
-        
+
         // Dashboard configuration
         $this->assertFalse($config['dashboard']['enabled']);
         $this->assertSame('/metrics', $config['dashboard']['path']);
@@ -76,14 +76,14 @@ final class ConfigurationTest extends TestCase
     public function testPartialConfiguration(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, [[
+        $config        = $this->processor->processConfiguration($configuration, [[
             'enabled' => false,
         ]]);
 
         $this->assertFalse($config['enabled']);
         $this->assertSame(['prod', 'dev', 'test'], $config['environments']); // Default
         $this->assertSame('default', $config['connection']); // Default
-        
+
         // Dashboard should have defaults even when not specified
         $this->assertTrue($config['dashboard']['enabled']);
         $this->assertSame('/performance', $config['dashboard']['path']);
@@ -94,7 +94,7 @@ final class ConfigurationTest extends TestCase
     public function testDashboardConfigurationWithRoles(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, [[
+        $config        = $this->processor->processConfiguration($configuration, [[
             'dashboard' => [
                 'roles' => ['ROLE_ADMIN'],
             ],
@@ -108,7 +108,7 @@ final class ConfigurationTest extends TestCase
     public function testTrackUserDefaultIsFalse(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['track_user']);
     }
@@ -116,7 +116,7 @@ final class ConfigurationTest extends TestCase
     public function testEnableAccessRecordsDefaultIsFalse(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['enable_access_records']);
     }
@@ -124,7 +124,7 @@ final class ConfigurationTest extends TestCase
     public function testTrackUserCanBeEnabled(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, [[
+        $config        = $this->processor->processConfiguration($configuration, [[
             'track_user' => true,
         ]]);
 
@@ -134,7 +134,7 @@ final class ConfigurationTest extends TestCase
     public function testTrackSubRequestsDefaultFalse(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['track_sub_requests']);
     }
@@ -142,7 +142,7 @@ final class ConfigurationTest extends TestCase
     public function testTrackStatusCodesDefault(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame([200, 404, 500, 503], $config['track_status_codes']);
     }
@@ -150,7 +150,7 @@ final class ConfigurationTest extends TestCase
     public function testAsyncDefaultFalse(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['async']);
     }
@@ -158,7 +158,7 @@ final class ConfigurationTest extends TestCase
     public function testSamplingRateDefault(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame(1.0, $config['sampling_rate']);
     }
@@ -166,7 +166,7 @@ final class ConfigurationTest extends TestCase
     public function testThresholdsDefaults(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame(0.5, $config['thresholds']['request_time']['warning']);
         $this->assertSame(1.0, $config['thresholds']['request_time']['critical']);
@@ -179,7 +179,7 @@ final class ConfigurationTest extends TestCase
     public function testNotificationsDefaults(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['notifications']['enabled']);
         $this->assertFalse($config['notifications']['email']['enabled']);
@@ -192,7 +192,7 @@ final class ConfigurationTest extends TestCase
     public function testDashboardTemplateDefault(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame('bootstrap', $config['dashboard']['template']);
     }
@@ -200,7 +200,7 @@ final class ConfigurationTest extends TestCase
     public function testDashboardEnableRecordManagementDefault(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['dashboard']['enable_record_management']);
     }
@@ -213,7 +213,7 @@ final class ConfigurationTest extends TestCase
     public function testEnableLoggingDefaultIsTrue(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertTrue($config['enable_logging']);
     }
@@ -221,7 +221,7 @@ final class ConfigurationTest extends TestCase
     public function testQueryTrackingThresholdDefaultIsZero(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame(0, $config['query_tracking_threshold']);
     }
@@ -229,7 +229,7 @@ final class ConfigurationTest extends TestCase
     public function testNotificationsWebhookDefaults(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['notifications']['webhook']['enabled']);
         $this->assertSame('', $config['notifications']['webhook']['url']);
@@ -240,7 +240,7 @@ final class ConfigurationTest extends TestCase
     public function testNotificationsTeamsDefaults(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['notifications']['teams']['enabled']);
         $this->assertSame('', $config['notifications']['teams']['webhook_url']);
@@ -249,7 +249,7 @@ final class ConfigurationTest extends TestCase
     public function testDashboardEnableReviewSystemDefaultIsFalse(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertFalse($config['dashboard']['enable_review_system']);
     }
@@ -257,7 +257,7 @@ final class ConfigurationTest extends TestCase
     public function testDashboardAutoRefreshIntervalDefaultIsZero(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame(0, $config['dashboard']['auto_refresh_interval']);
     }
@@ -265,7 +265,7 @@ final class ConfigurationTest extends TestCase
     public function testDashboardEnableRankingQueriesDefaultIsTrue(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertTrue($config['dashboard']['enable_ranking_queries']);
     }
@@ -273,7 +273,7 @@ final class ConfigurationTest extends TestCase
     public function testDashboardDateFormatsDefaults(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame('Y-m-d H:i:s', $config['dashboard']['date_formats']['datetime']);
         $this->assertSame('Y-m-d H:i', $config['dashboard']['date_formats']['date']);
@@ -282,7 +282,7 @@ final class ConfigurationTest extends TestCase
     public function testIgnoreRoutesDefaultContainsProfiler(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertContains('_profiler', $config['ignore_routes']);
         $this->assertContains('_wdt', $config['ignore_routes']);
@@ -291,7 +291,7 @@ final class ConfigurationTest extends TestCase
     public function testTableNameDefault(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, []);
+        $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame('routes_data', $config['table_name']);
     }
@@ -299,7 +299,7 @@ final class ConfigurationTest extends TestCase
     public function testEnvironmentsCanIncludeStage(): void
     {
         $configuration = new Configuration();
-        $config = $this->processor->processConfiguration($configuration, [[
+        $config        = $this->processor->processConfiguration($configuration, [[
             'environments' => ['dev', 'stage', 'prod'],
         ]]);
 

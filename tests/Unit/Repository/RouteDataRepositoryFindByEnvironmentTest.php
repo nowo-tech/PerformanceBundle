@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryFindByEnvironmentTest extends TestCase
 {
-    private ManagerRegistry $registry;
+    private \PHPUnit\Framework\MockObject\MockObject $registry;
 
     protected function setUp(): void
     {

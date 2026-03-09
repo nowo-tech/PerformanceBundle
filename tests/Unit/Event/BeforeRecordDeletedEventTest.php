@@ -26,7 +26,7 @@ final class BeforeRecordDeletedEventTest extends TestCase
     public function testPreventDeletion(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordDeletedEvent($routeData);
+        $event     = new BeforeRecordDeletedEvent($routeData);
 
         $this->assertFalse($event->isDeletionPrevented());
 
@@ -38,7 +38,7 @@ final class BeforeRecordDeletedEventTest extends TestCase
     public function testPreventDeletionCalledMultipleTimesRemainsPrevented(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordDeletedEvent($routeData);
+        $event     = new BeforeRecordDeletedEvent($routeData);
 
         $event->preventDeletion();
         $event->preventDeletion();
@@ -59,7 +59,7 @@ final class BeforeRecordDeletedEventTest extends TestCase
     public function testExtendsSymfonyEvent(): void
     {
         $routeData = new RouteData();
-        $event = new BeforeRecordDeletedEvent($routeData);
+        $event     = new BeforeRecordDeletedEvent($routeData);
 
         $this->assertInstanceOf(Event::class, $event);
     }

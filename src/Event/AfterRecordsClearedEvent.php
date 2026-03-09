@@ -19,8 +19,8 @@ final class AfterRecordsClearedEvent extends Event
     /**
      * Creates a new instance.
      *
-     * @param int         $deletedCount Number of records deleted
-     * @param string|null $env          Optional environment filter (null = all environments)
+     * @param int $deletedCount Number of records deleted
+     * @param string|null $env Optional environment filter (null = all environments)
      */
     public function __construct(
         private readonly int $deletedCount,

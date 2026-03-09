@@ -30,7 +30,7 @@ final class SyncSchemaCommand extends Command
     /**
      * Creates a new instance.
      *
-     * @param CreateTableCommand        $createTableCommand        Command to create/update the main table
+     * @param CreateTableCommand $createTableCommand Command to create/update the main table
      * @param CreateRecordsTableCommand $createRecordsTableCommand Command to create/update the records table
      */
     public function __construct(
@@ -42,7 +42,8 @@ final class SyncSchemaCommand extends Command
 
     protected function configure(): void
     {
-        $this->setHelp(<<<'HELP'
+        $this->setHelp(
+            <<<'HELP'
 The <info>%command.name%</info> command syncs the database schema with the entity metadata.
 
 It runs the same logic as <info>nowo:performance:create-table --update</info> and
@@ -78,7 +79,7 @@ HELP
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
+        $io           = new SymfonyStyle($input, $output);
         $dropObsolete = (bool) $input->getOption('drop-obsolete');
 
         $io->title('Nowo Performance Bundle - Sync Schema');
@@ -92,19 +93,19 @@ HELP
         ]);
 
         $createTableInput = new ArrayInput([
-            '--update' => true,
+            '--update'        => true,
             '--drop-obsolete' => $dropObsolete,
         ]);
         $createTableInput->setInteractive(false);
 
         $createRecordsInput = new ArrayInput([
-            '--update' => true,
+            '--update'        => true,
             '--drop-obsolete' => $dropObsolete,
         ]);
         $createRecordsInput->setInteractive(false);
 
         $exitMain = $this->createTableCommand->run($createTableInput, $output);
-        if (Command::SUCCESS !== $exitMain) {
+        if ($exitMain !== Command::SUCCESS) {
             $io->error('Sync failed while updating routes_data table.');
 
             return $exitMain;
@@ -113,7 +114,7 @@ HELP
         $io->newLine();
 
         $exitRecords = $this->createRecordsTableCommand->run($createRecordsInput, $output);
-        if (Command::SUCCESS !== $exitRecords) {
+        if ($exitRecords !== Command::SUCCESS) {
             $io->error('Sync failed while updating routes_data_records table.');
 
             return $exitRecords;

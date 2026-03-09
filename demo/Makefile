@@ -1,9 +1,9 @@
 # Makefile para gestionar todas las demos del Performance Bundle
 # Permite levantar cualquier demo individual o todas las demos
 
-.PHONY: help list up-all down-all setup-all clean-all logs-all
-.PHONY: up-symfony7 down-symfony7 setup-symfony7 clean-symfony7 logs-symfony7 shell-symfony7 performance-sync-symfony7
-.PHONY: up-symfony8 down-symfony8 setup-symfony8 clean-symfony8 logs-symfony8 shell-symfony8 performance-sync-symfony8
+.PHONY: help list build-all up-all down-all setup-all clean-all logs-all
+.PHONY: build-symfony7 up-symfony7 down-symfony7 setup-symfony7 clean-symfony7 logs-symfony7 shell-symfony7 update-bundle-symfony7 performance-sync-symfony7
+.PHONY: build-symfony8 up-symfony8 down-symfony8 setup-symfony8 clean-symfony8 logs-symfony8 shell-symfony8 update-bundle-symfony8 performance-sync-symfony8
 .PHONY: performance-sync-all
 
 # Detectar demos disponibles (carpetas que contienen un Makefile)
@@ -22,6 +22,7 @@ help:
 	@echo ""
 	@echo "Comandos generales:"
 	@echo "  list            Listar todas las demos disponibles"
+	@echo "  build-all       Construir imágenes Docker de todas las demos"
 	@echo "  up-all          Levantar todas las demos"
 	@echo "  down-all        Bajar todas las demos"
 	@echo "  setup-all       Configurar todas las demos (install + DB + fixtures)"
@@ -29,12 +30,14 @@ help:
 	@echo "  logs-all        Ver logs de todas las demos"
 	@echo ""
 	@echo "Comandos por demo (ejemplo con symfony7):"
+	@echo "  build-<demo>    Construir imágenes Docker de una demo"
 	@echo "  up-<demo>       Levantar una demo específica"
 	@echo "  down-<demo>     Bajar una demo específica"
 	@echo "  setup-<demo>    Configurar una demo específica"
 	@echo "  clean-<demo>    Limpiar una demo específica"
 	@echo "  logs-<demo>     Ver logs de una demo específica"
 	@echo "  shell-<demo>    Abrir shell en el contenedor PHP de una demo"
+	@echo "  update-bundle-<demo>  Actualizar bundle desde el repo (composer update + cache:clear)"
 	@echo ""
 	@echo "Performance Bundle (schema):"
 	@echo "  performance-sync-symfony7   Sync routes_data + routes_data_records en demo symfony7"
@@ -47,6 +50,19 @@ help:
 	@echo "  make up-all           # Levantar todas las demos"
 	@echo "  make down-symfony7    # Bajar solo symfony7"
 	@echo "  make setup-symfony7   # Configurar symfony7 completamente"
+
+# Construir imágenes de todas las demos
+build-all:
+	@echo "🔨 Construyendo imágenes de todas las demos..."
+	@for demo in $(DEMOS); do \
+		echo ""; \
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+		echo "🔨 Construyendo demo: $$demo"; \
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+		$(MAKE) -C $$demo build || echo "❌ Error al construir $$demo"; \
+	done
+	@echo ""
+	@echo "✅ Build completado!"
 
 # Listar demos disponibles
 list:
@@ -123,6 +139,10 @@ logs-all:
 # Estos targets se generan automáticamente para cada demo encontrada
 
 # Symfony 7
+build-symfony7:
+	@echo "🔨 Construyendo imágenes de demo: symfony7"
+	@$(MAKE) -C symfony7 build
+
 up-symfony7:
 	@echo "🚀 Levantando demo: symfony7"
 	@$(MAKE) -C symfony7 up
@@ -147,7 +167,15 @@ shell-symfony7:
 	@echo "🐚 Abriendo shell en demo: symfony7"
 	@$(MAKE) -C symfony7 shell
 
+update-bundle-symfony7:
+	@echo "🔄 Actualizando bundle en demo: symfony7"
+	@$(MAKE) -C symfony7 update-bundle
+
 # Symfony 8
+build-symfony8:
+	@echo "🔨 Construyendo imágenes de demo: symfony8"
+	@$(MAKE) -C symfony8 build
+
 up-symfony8:
 	@echo "🚀 Levantando demo: symfony8"
 	@$(MAKE) -C symfony8 up
@@ -171,6 +199,10 @@ logs-symfony8:
 shell-symfony8:
 	@echo "🐚 Abriendo shell en demo: symfony8"
 	@$(MAKE) -C symfony8 shell
+
+update-bundle-symfony8:
+	@echo "🔄 Actualizando bundle en demo: symfony8"
+	@$(MAKE) -C symfony8 update-bundle
 
 # Performance Bundle: sync schema en demos (routes_data + routes_data_records)
 performance-sync-symfony7:

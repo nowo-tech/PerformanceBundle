@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\DependencyInjection\Compiler;
 
 use App\Service\DynamicNotificationConfiguration;
+use Exception;
 use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
+use ReflectionClass;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+
+use function sprintf;
 
 /**
  * Compiler pass to register notification channels dynamically from the database.
@@ -47,16 +51,16 @@ class NotificationCompilerPass implements CompilerPassInterface
                 $container->get('doctrine.orm.entity_manager'),
                 $container->has('mailer.mailer') ? $container->get('mailer.mailer') : null,
                 $container->has('http_client') ? $container->get('http_client') : null,
-                $container->has('twig') ? $container->get('twig') : null
+                $container->has('twig') ? $container->get('twig') : null,
             );
 
-            $config = $this->getNotificationConfig($configService);
+            $config   = $this->getNotificationConfig($configService);
             $channels = $configService->createChannelsFromDatabase();
 
             // Register each channel as a service
             foreach ($channels as $index => $channel) {
                 $channelName = $channel->getName();
-                $serviceId = \sprintf('nowo_performance.notification.channel.dynamic.%s', $channelName);
+                $serviceId   = sprintf('nowo_performance.notification.channel.dynamic.%s', $channelName);
 
                 // Create service definition
                 $definition = new Definition($channel::class);
@@ -72,16 +76,16 @@ class NotificationCompilerPass implements CompilerPassInterface
                     ]);
                 } elseif ($channel instanceof WebhookNotificationChannel) {
                     $webhookConfig = match ($channelName) {
-                        'slack' => $config['slack'] ?? [],
-                        'teams' => $config['teams'] ?? [],
+                        'slack'   => $config['slack'] ?? [],
+                        'teams'   => $config['teams'] ?? [],
                         'webhook' => $config['webhook'] ?? [],
-                        default => [],
+                        default   => [],
                     };
 
                     $definition->setArguments([
                         new Reference('?http_client'),
                         $webhookConfig['webhook_url'] ?? $webhookConfig['url'] ?? '',
-                        $webhookConfig['format'] ?? ('slack' === $channelName ? 'slack' : ('teams' === $channelName ? 'teams' : 'json')),
+                        $webhookConfig['format'] ?? ($channelName === 'slack' ? 'slack' : ($channelName === 'teams' ? 'teams' : 'json')),
                         $webhookConfig['headers'] ?? [],
                         true,
                     ]);
@@ -99,11 +103,11 @@ class NotificationCompilerPass implements CompilerPassInterface
             if (isset($config['enabled'])) {
                 $container->setParameter('nowo_performance.notifications.enabled', $config['enabled']);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // On error, fall back to default YAML config so the app works even if DB is unavailable
-            error_log(\sprintf(
+            error_log(sprintf(
                 'Error loading notification config from database in CompilerPass: %s. Using YAML config instead.',
-                $e->getMessage()
+                $e->getMessage(),
             ));
         }
     }
@@ -118,8 +122,8 @@ class NotificationCompilerPass implements CompilerPassInterface
     private function getNotificationConfig(DynamicNotificationConfiguration $configService): array
     {
         // Use reflection to access the private method
-        $reflection = new \ReflectionClass($configService);
-        $method = $reflection->getMethod('getNotificationConfigFromDatabase');
+        $reflection = new ReflectionClass($configService);
+        $method     = $reflection->getMethod('getNotificationConfigFromDatabase');
         $method->setAccessible(true);
 
         return $method->invoke($configService);

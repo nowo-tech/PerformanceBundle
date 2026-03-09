@@ -2,6 +2,37 @@
 
 The bundle includes a full notification system for performance alerts, supporting multiple channels.
 
+
+## Table of contents
+
+- [Available Channels](#available-channels)
+  - [📧 Email](#email)
+  - [💬 Slack](#slack)
+  - [👥 Microsoft Teams](#microsoft-teams)
+  - [🔗 Generic Webhooks](#generic-webhooks)
+- [Full Configuration](#full-configuration)
+- [How It Works](#how-it-works)
+- [Creating Custom Channels](#creating-custom-channels)
+- [Email Template Customization](#email-template-customization)
+  - [Default Templates](#default-templates)
+  - [Customizing Templates](#customizing-templates)
+- [Alert Formats](#alert-formats)
+  - [Email](#email)
+  - [Slack](#slack)
+  - [Teams](#teams)
+  - [Webhook JSON](#webhook-json)
+- [Disabling Notifications](#disabling-notifications)
+- [Dynamic Configuration from Database](#dynamic-configuration-from-database)
+  - [Option 1: Using Compiler Pass (Recommended for static configuration)](#option-1-using-compiler-pass-recommended-for-static-configuration)
+  - [Option 2: Using Factory Service (Recommended for dynamic configuration)](#option-2-using-factory-service-recommended-for-dynamic-configuration)
+  - [Recommended Database Structure](#recommended-database-structure)
+  - [Full Examples](#full-examples)
+- [Troubleshooting](#troubleshooting)
+  - [Notifications are not sent](#notifications-are-not-sent)
+  - [Email does not work](#email-does-not-work)
+  - [Webhooks do not work](#webhooks-do-not-work)
+  - [Dynamic configuration does not work](#dynamic-configuration-does-not-work)
+
 ## Available Channels
 
 ### 📧 Email

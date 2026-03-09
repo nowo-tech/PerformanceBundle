@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Helper;
 
+use function constant;
+use function defined;
+use function function_exists;
+use function sprintf;
+
 /**
  * Helper class for logging in the Performance Bundle.
  *
@@ -29,31 +34,18 @@ final class LogHelper
     public static function isLoggingEnabled(?bool $enableLogging = null): bool
     {
         // If explicitly provided, use that value
-        if (null !== $enableLogging) {
+        if ($enableLogging !== null) {
             return $enableLogging;
         }
 
-        // Try to get from container parameter if available
-        // This is a fallback for cases where the container is not available
-        // In normal operation, the value should be passed explicitly
-        if (class_exists(\Symfony\Component\DependencyInjection\ContainerInterface::class)) {
-            try {
-                // This is a best-effort attempt, may not work in all contexts
-                return true; // Default to true for backward compatibility
-            } catch (\Exception $e) {
-                // If we can't determine, default to true
-                return true;
-            }
-        }
-
-        // Default to true for backward compatibility
+        // Default to true for backward compatibility when parameter is not passed
         return true;
     }
 
     /**
      * Log a message if logging is enabled.
      *
-     * @param string    $message       The message to log
+     * @param string $message The message to log
      * @param bool|null $enableLogging The logging configuration value (from container parameter)
      *
      * @return bool True if the message was logged, false otherwise
@@ -64,11 +56,12 @@ final class LogHelper
             return false;
         }
 
-        if (\defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
+        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') ? constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') : false;
+        if ($suppress) {
             return true;
         }
 
-        if (\function_exists('error_log')) {
+        if (function_exists('error_log')) {
             error_log($message);
 
             return true;
@@ -80,9 +73,9 @@ final class LogHelper
     /**
      * Log a formatted message if logging is enabled.
      *
-     * @param string    $format        The format string (sprintf format)
+     * @param string $format The format string (sprintf format)
      * @param bool|null $enableLogging The logging configuration value (from container parameter)
-     * @param mixed     ...$args       Arguments for the format string
+     * @param mixed ...$args Arguments for the format string
      *
      * @return bool True if the message was logged, false otherwise
      */
@@ -92,12 +85,13 @@ final class LogHelper
             return false;
         }
 
-        if (\defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS) {
+        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') ? constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') : false;
+        if ($suppress) {
             return true;
         }
 
-        if (\function_exists('error_log')) {
-            error_log(\sprintf($format, ...$args));
+        if (function_exists('error_log')) {
+            error_log(sprintf($format, ...$args));
 
             return true;
         }

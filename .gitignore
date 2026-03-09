@@ -1,6 +1,5 @@
 # Dependencies
 /vendor/
-composer.lock
 
 # PHPUnit
 /.phpunit.cache/

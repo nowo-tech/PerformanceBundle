@@ -16,13 +16,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryFindAllForStatisticsTest extends TestCase
 {
-    private ManagerRegistry $registry;
-    private RouteDataRepository $repository;
+    private \PHPUnit\Framework\MockObject\MockObject $registry;
 
     protected function setUp(): void
     {
         $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->repository = new RouteDataRepository($this->registry);
     }
 
     public function testFindAllForStatisticsReturnsArray(): void

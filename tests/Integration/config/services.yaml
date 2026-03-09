@@ -1,0 +1,4 @@
+services:
+    Nowo\PerformanceBundle\Tests\Integration\Twig\UxIconStubExtension:
+        tags:
+            - { name: twig.extension }

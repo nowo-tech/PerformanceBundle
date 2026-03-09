@@ -8,6 +8,7 @@ use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Verifies that built-in notification channels implement NotificationChannelInterface.
@@ -34,7 +35,7 @@ final class NotificationChannelInterfaceTest extends TestCase
 
     public function testInterfaceHasRequiredMethods(): void
     {
-        $ref = new \ReflectionClass(NotificationChannelInterface::class);
+        $ref = new ReflectionClass(NotificationChannelInterface::class);
         $this->assertTrue($ref->hasMethod('send'));
         $this->assertTrue($ref->hasMethod('isEnabled'));
         $this->assertTrue($ref->hasMethod('getName'));

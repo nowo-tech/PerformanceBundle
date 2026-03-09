@@ -29,7 +29,7 @@ final class StatisticsEnvFilterTest extends TestCase
 
     public function testEnvPropertyCanBeAssigned(): void
     {
-        $f = new StatisticsEnvFilter();
+        $f      = new StatisticsEnvFilter();
         $f->env = 'stage';
         $this->assertSame('stage', $f->env);
     }
@@ -52,14 +52,14 @@ final class StatisticsEnvFilterTest extends TestCase
 
     public function testEnvPropertyCanBeSetToStage(): void
     {
-        $f = new StatisticsEnvFilter();
+        $f      = new StatisticsEnvFilter();
         $f->env = 'stage';
         $this->assertSame('stage', $f->env);
     }
 
     public function testEnvPropertyCanBeSetToTest(): void
     {
-        $f = new StatisticsEnvFilter();
+        $f      = new StatisticsEnvFilter();
         $f->env = 'test';
         $this->assertSame('test', $f->env);
     }

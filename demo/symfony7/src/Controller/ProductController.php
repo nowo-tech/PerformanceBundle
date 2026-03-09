@@ -34,7 +34,7 @@ class ProductController extends AbstractController
     public function new(Request $request): Response
     {
         $product = new Product();
-        $form = $this->createForm(ProductType::class, $product);
+        $form    = $this->createForm(ProductType::class, $product);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -48,7 +48,7 @@ class ProductController extends AbstractController
 
         return $this->render('product/new.html.twig', [
             'product' => $product,
-            'form' => $form,
+            'form'    => $form,
         ]);
     }
 
@@ -88,7 +88,7 @@ class ProductController extends AbstractController
 
         return $this->render('product/edit.html.twig', [
             'product' => $product,
-            'form' => $form,
+            'form'    => $form,
         ]);
     }
 
@@ -101,7 +101,7 @@ class ProductController extends AbstractController
             throw $this->createNotFoundException('Product not found');
         }
 
-        if ($this->isCsrfTokenValid('delete'.$product->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $product->getId(), $request->request->get('_token'))) {
             $this->entityManager->remove($product);
             $this->entityManager->flush();
 

@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle Demo - Symfony 7
 # Simplifies Docker commands for the demo
 
-.PHONY: help up down shell install clean setup
+.PHONY: help build up down shell install clean setup ensure-up update-bundle
 
 # Default target
 help:
@@ -10,10 +10,12 @@ help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
+	@echo "  build         Build Docker images (without starting)"
 	@echo "  up            Start Docker containers (FrankenPHP, MySQL)"
 	@echo "  down          Stop Docker containers"
 	@echo "  shell         Open shell in PHP container"
 	@echo "  install       Install Composer dependencies"
+	@echo "  update-bundle Update nowo-tech/performance-bundle from path repo and clear cache"
 	@echo "  setup         Complete setup (install + DB + fixtures)"
 	@echo "  clean         Remove vendor, var, and cache"
 	@echo "  logs          Show container logs"
@@ -29,6 +31,12 @@ help:
 	@echo "  performance-sync       Sync routes_data + routes_data_records with entities (add/alter)"
 	@echo "  performance-sync-drop  Sync and drop columns no longer in entity (--drop-obsolete)"
 	@echo ""
+
+# Build Docker images (without starting)
+build:
+	@echo "🔨 Building demo images..."
+	docker-compose build
+	@echo "✅ Build complete!"
 
 # Build and start containers
 up:
@@ -69,6 +77,20 @@ down:
 shell:
 	docker-compose exec php sh
 
+# Ensure containers are running (start if not)
+ensure-up:
+	@if ! docker-compose exec -T php true 2>/dev/null; then \
+		echo "Containers not running. Run 'make up' first."; \
+		exit 1; \
+	fi
+
+# Update bundle from path repo and clear cache
+update-bundle: ensure-up
+	@echo "🔄 Updating nowo-tech/performance-bundle..."
+	docker-compose exec -T php composer update nowo-tech/performance-bundle --no-interaction
+	docker-compose exec -T php php bin/console cache:clear
+	@echo "✅ Bundle updated. Reload the page in the browser."
+
 # Install dependencies
 install:
 	@echo "📦 Installing dependencies..."
@@ -92,7 +114,7 @@ setup:
 	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Demo setup complete!"
 	@echo ""
-	@echo "Access the application at: https://localhost:8000 (HTTPS, self-signed cert – accept in browser)"
+	@echo "Access the application at: http://localhost:8000 (HTTP on port 80, §2.4)"
 
 # Database commands
 db-create:

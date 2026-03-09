@@ -2,6 +2,19 @@
 
 Version **2.0.0** of the Performance Bundle introduces **breaking** changes from 1.x: normalization of the data model (RouteData / RouteDataRecord). This document summarizes the breaking changes and the steps to migrate from 1.x to 2.0.0.
 
+
+## Table of contents
+
+- [Summary of breaking changes](#summary-of-breaking-changes)
+- [Requirements for 2.0.0](#requirements-for-200)
+- [Migration guide (1.x → 2.0.0)](#migration-guide-1x-200)
+  - [1. Before upgrading](#1-before-upgrading)
+  - [2. Upgrade the bundle](#2-upgrade-the-bundle)
+  - [3. Database schema](#3-database-schema)
+  - [4. Adapt application code](#4-adapt-application-code)
+  - [5. Verify after migration](#5-verify-after-migration)
+- [Expected timeline](#expected-timeline)
+- [Related documentation](#related-documentation)
 ---
 
 ## Summary of breaking changes

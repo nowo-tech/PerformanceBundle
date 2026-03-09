@@ -23,6 +23,10 @@ WORKDIR /app
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PATH="/app/vendor/bin:${PATH}"
+ENV SERVER_NAME=:80
+
+# Caddyfile: HTTP on port 80 (no HTTPS), worker mode (§2.4)
+COPY docker/frankenphp/Caddyfile /etc/frankenphp/Caddyfile
 
 # Entrypoint: ensure var dirs exist and are writable, then run FrankenPHP (keep process in foreground)
 RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \

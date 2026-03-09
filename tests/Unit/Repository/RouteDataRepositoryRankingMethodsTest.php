@@ -14,12 +14,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryRankingMethodsTest extends TestCase
 {
-    private ManagerRegistry $registry;
+    private \PHPUnit\Framework\MockObject\MockObject $registry;
     private RouteDataRepository $repository;
 
     protected function setUp(): void
     {
-        $this->registry = $this->createMock(ManagerRegistry::class);
+        $this->registry   = $this->createMock(ManagerRegistry::class);
         $this->repository = new RouteDataRepository($this->registry);
     }
 

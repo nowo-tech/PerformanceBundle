@@ -13,7 +13,7 @@ final class RoutesTableComponentTest extends TestCase
     public function testComponentHasDefaultValues(): void
     {
         $component = new RoutesTableComponent();
-        
+
         $this->assertSame([], $component->routes);
         $this->assertSame('bootstrap', $component->template);
         $this->assertSame('requestTime', $component->sortBy);
@@ -28,14 +28,14 @@ final class RoutesTableComponentTest extends TestCase
     public function testComponentCanSetProperties(): void
     {
         $component = new RoutesTableComponent();
-        $route = new RouteData();
-        
-        $component->routes = [$route];
-        $component->template = 'tailwind';
-        $component->thresholds = ['request_time' => ['warning' => 0.5]];
+        $route     = new RouteData();
+
+        $component->routes                 = [$route];
+        $component->template               = 'tailwind';
+        $component->thresholds             = ['request_time' => ['warning' => 0.5]];
         $component->enableRecordManagement = true;
-        $component->enableReviewSystem = true;
-        
+        $component->enableReviewSystem     = true;
+
         $this->assertCount(1, $component->routes);
         $this->assertSame('tailwind', $component->template);
         $this->assertArrayHasKey('request_time', $component->thresholds);
@@ -50,14 +50,14 @@ final class RoutesTableComponentTest extends TestCase
         $this->assertSame('DESC', $component->order);
 
         $component->sortBy = 'memoryUsage';
-        $component->order = 'ASC';
+        $component->order  = 'ASC';
         $this->assertSame('memoryUsage', $component->sortBy);
         $this->assertSame('ASC', $component->order);
     }
 
     public function testSortByWithAccessCount(): void
     {
-        $component = new RoutesTableComponent();
+        $component         = new RoutesTableComponent();
         $component->sortBy = 'accessCount';
 
         $this->assertSame('accessCount', $component->sortBy);
@@ -84,7 +84,7 @@ final class RoutesTableComponentTest extends TestCase
     public function testReviewFormsAndDeleteFormsCanBeAssigned(): void
     {
         $component = new RoutesTableComponent();
-        $formView = $this->createMock(\Symfony\Component\Form\FormView::class);
+        $formView  = $this->createMock(\Symfony\Component\Form\FormView::class);
 
         $component->reviewForms = [1 => $formView];
         $component->deleteForms = [2 => $formView];

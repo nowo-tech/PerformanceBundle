@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Query;
-use Doctrine\ORM\QueryBuilder;
 use Nowo\PerformanceBundle\Command\RebuildAggregatesCommand;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class RebuildAggregatesCommandTest extends TestCase
 {
-    private EntityManagerInterface|MockObject $entityManager;
-    private RouteDataRepository|MockObject $routeDataRepository;
-    private RouteDataRecordRepository|MockObject $recordRepository;
+    private MockObject $entityManager;
+    private MockObject $routeDataRepository;
+    private MockObject $recordRepository;
     private RebuildAggregatesCommand $command;
 
     protected function setUp(): void
     {
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->entityManager       = $this->createMock(EntityManagerInterface::class);
         $this->routeDataRepository = $this->createMock(RouteDataRepository::class);
-        $this->recordRepository = $this->createMock(RouteDataRecordRepository::class);
-        $this->command = new RebuildAggregatesCommand(
+        $this->recordRepository    = $this->createMock(RouteDataRecordRepository::class);
+        $this->command             = new RebuildAggregatesCommand(
             $this->entityManager,
             $this->routeDataRepository,
             $this->recordRepository,
@@ -96,8 +96,7 @@ final class RebuildAggregatesCommandTest extends TestCase
     {
         $route = new RouteData();
         $route->setName('app_home')->setEnv('dev');
-        $idRef = new \ReflectionProperty(RouteData::class, 'id');
-        $idRef->setAccessible(true);
+        $idRef = new ReflectionProperty(RouteData::class, 'id');
         $idRef->setValue($route, 1);
 
         $this->routeDataRepository
@@ -112,26 +111,20 @@ final class RebuildAggregatesCommandTest extends TestCase
 
         $record = new RouteDataRecord();
         $record->setRouteData($managed);
-        $record->setAccessedAt(new \DateTimeImmutable('2024-01-15 12:00:00'));
-
-        $query = $this->createMock(Query::class);
-        $query->method('getResult')->willReturn([$record]);
-
-        $qb = $this->createMock(QueryBuilder::class);
-        $qb->method('select')->willReturnSelf();
-        $qb->method('from')->willReturnSelf();
-        $qb->method('where')->willReturnSelf();
-        $qb->method('setParameter')->willReturnSelf();
-        $qb->method('orderBy')->willReturnSelf();
-        $qb->method('getQuery')->willReturn($query);
+        $record->setAccessedAt(new DateTimeImmutable('2024-01-15 12:00:00'));
 
         $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
         $repo->method('find')->with(1)->willReturn($managed);
 
+        $this->recordRepository
+            ->expects($this->once())
+            ->method('findBy')
+            ->with($this->identicalTo(['routeData' => $managed]), $this->identicalTo(['accessedAt' => 'ASC']))
+            ->willReturn([$record]);
+
         $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
-        $this->entityManager->method('createQueryBuilder')->willReturn($qb);
         $this->entityManager->expects($this->atLeastOnce())->method('flush');
         $this->entityManager->expects($this->atLeastOnce())->method('clear');
 
@@ -171,7 +164,7 @@ final class RebuildAggregatesCommandTest extends TestCase
     public function testCommandEnvOptionHasDefault(): void
     {
         $definition = $this->command->getDefinition();
-        $option = $definition->getOption('env');
+        $option     = $definition->getOption('env');
 
         $this->assertFalse($option->isValueRequired());
     }
@@ -179,7 +172,7 @@ final class RebuildAggregatesCommandTest extends TestCase
     public function testCommandBatchSizeOptionHasDefault(): void
     {
         $definition = $this->command->getDefinition();
-        $option = $definition->getOption('batch-size');
+        $option     = $definition->getOption('batch-size');
 
         $this->assertTrue($definition->hasOption('batch-size'));
         $this->assertSame('200', $option->getDefault());

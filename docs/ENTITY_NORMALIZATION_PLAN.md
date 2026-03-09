@@ -2,6 +2,24 @@
 
 > **v2.0.0 — Breaking changes.** This plan removes fields from the `RouteData` entity and changes the source of metrics (aggregates from `RouteDataRecord`). The 1.x branch remains stable; normalization is delivered in **2.0.0**. See [V2_MIGRATION.md](V2_MIGRATION.md) for breaking changes and migration guide.
 
+
+## Table of contents
+
+- [Objective](#objective)
+- [1. Current state](#1-current-state)
+  - [RouteData (routes_data)](#routedata-routes-data)
+  - [RouteDataRecord (routes_data_records)](#routedatarecord-routes-data-records)
+- [2. Target model](#2-target-model)
+  - [2.1 RouteData — route identity + usage + review only](#21-routedata-route-identity-usage-review-only)
+  - [2.2 RouteDataRecord — one record per access (the "rest")](#22-routedatarecord-one-record-per-access-the-rest)
+- [3. Concrete changes](#3-concrete-changes)
+  - [Phase 1 — Extend RouteDataRecord](#phase-1-extend-routedatarecord)
+  - [Phase 2 — Normalize RouteData](#phase-2-normalize-routedata)
+  - [Phase 3 — Aggregates and listings](#phase-3-aggregates-and-listings)
+  - [Phase 4 — "Route-specific data" views](#phase-4-route-specific-data-views)
+- [4. Recommended order](#4-recommended-order)
+- [5. Summary](#5-summary)
+
 ## Objective
 
 - **routes_data**: only information that **defines the route** (identity) + usage and review metadata.

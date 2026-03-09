@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Entity;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use PHPUnit\Framework\TestCase;
 
@@ -15,7 +16,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetEnvReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setEnv('dev');
+        $result    = $routeData->setEnv('dev');
 
         $this->assertSame($routeData, $result);
     }
@@ -23,7 +24,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetEnvWithEmptyStringReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setEnv('');
+        $result    = $routeData->setEnv('');
 
         $this->assertSame($routeData, $result);
         $this->assertSame('', $routeData->getEnv());
@@ -32,7 +33,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetEnvWithStageReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setEnv('stage');
+        $result    = $routeData->setEnv('stage');
 
         $this->assertSame($routeData, $result);
         $this->assertSame('stage', $routeData->getEnv());
@@ -41,7 +42,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetNameReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setName('app_home');
+        $result    = $routeData->setName('app_home');
 
         $this->assertSame($routeData, $result);
     }
@@ -49,7 +50,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetNameWithEmptyStringReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setName('');
+        $result    = $routeData->setName('');
 
         $this->assertSame($routeData, $result);
         $this->assertSame('', $routeData->getName());
@@ -58,7 +59,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetHttpMethodReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setHttpMethod('GET');
+        $result    = $routeData->setHttpMethod('GET');
 
         $this->assertSame($routeData, $result);
     }
@@ -66,7 +67,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetHttpMethodWithOPTIONSReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setHttpMethod('OPTIONS');
+        $result    = $routeData->setHttpMethod('OPTIONS');
 
         $this->assertSame($routeData, $result);
         $this->assertSame('OPTIONS', $routeData->getHttpMethod());
@@ -75,7 +76,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetHttpMethodWithPUTReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setHttpMethod('PUT');
+        $result    = $routeData->setHttpMethod('PUT');
 
         $this->assertSame($routeData, $result);
         $this->assertSame('PUT', $routeData->getHttpMethod());
@@ -84,7 +85,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetParamsReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setParams(['id' => 123]);
+        $result    = $routeData->setParams(['id' => 123]);
 
         $this->assertSame($routeData, $result);
     }
@@ -92,7 +93,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetParamsWithEmptyArrayReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setParams([]);
+        $result    = $routeData->setParams([]);
 
         $this->assertSame($routeData, $result);
         $this->assertSame([], $routeData->getParams());
@@ -101,8 +102,8 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetCreatedAtReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $date = new \DateTimeImmutable();
-        $result = $routeData->setCreatedAt($date);
+        $date      = new DateTimeImmutable();
+        $result    = $routeData->setCreatedAt($date);
 
         $this->assertSame($routeData, $result);
     }
@@ -110,8 +111,8 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetLastAccessedAtReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $date = new \DateTimeImmutable();
-        $result = $routeData->setLastAccessedAt($date);
+        $date      = new DateTimeImmutable();
+        $result    = $routeData->setLastAccessedAt($date);
 
         $this->assertSame($routeData, $result);
     }
@@ -119,7 +120,7 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testChainedSetters(): void
     {
         $routeData = new RouteData();
-        $date = new \DateTimeImmutable();
+        $date      = new DateTimeImmutable();
 
         $result = $routeData
             ->setEnv('prod')
@@ -143,43 +144,43 @@ final class RouteDataFluentInterfaceTest extends TestCase
     public function testSetSaveAccessRecordsReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setSaveAccessRecords(true);
+        $result    = $routeData->setSaveAccessRecords(true);
         $this->assertSame($routeData, $result);
     }
 
     public function testSetReviewedReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setReviewed(true);
+        $result    = $routeData->setReviewed(true);
         $this->assertSame($routeData, $result);
     }
 
     public function testSetReviewedAtReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $date = new \DateTimeImmutable();
-        $result = $routeData->setReviewedAt($date);
+        $date      = new DateTimeImmutable();
+        $result    = $routeData->setReviewedAt($date);
         $this->assertSame($routeData, $result);
     }
 
     public function testSetQueriesImprovedReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setQueriesImproved(true);
+        $result    = $routeData->setQueriesImproved(true);
         $this->assertSame($routeData, $result);
     }
 
     public function testSetTimeImprovedReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setTimeImproved(false);
+        $result    = $routeData->setTimeImproved(false);
         $this->assertSame($routeData, $result);
     }
 
     public function testSetReviewedByReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setReviewedBy('admin@example.com');
+        $result    = $routeData->setReviewedBy('admin@example.com');
         $this->assertSame($routeData, $result);
     }
 }

@@ -13,7 +13,7 @@ final class PerformanceCacheServiceTest extends TestCase
 {
     public function testConstructorWithNullPool(): void
     {
-        $service = new PerformanceCacheService(null);
+        $service = new PerformanceCacheService();
 
         $this->assertNull($service->getCachedStatistics('dev'));
         $this->assertNull($service->getCachedEnvironments());
@@ -109,7 +109,7 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testCacheEnvironmentsAndGetCachedEnvironments(): void
     {
-        $envs = ['dev', 'prod'];
+        $envs    = ['dev', 'prod'];
         $hitItem = $this->createMock(CacheItemInterface::class);
         $hitItem->method('isHit')->willReturn(true);
         $hitItem->method('get')->willReturn($envs);
@@ -260,28 +260,28 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testInvalidateValueReturnsFalseWhenPoolNull(): void
     {
-        $service = new PerformanceCacheService(null);
+        $service = new PerformanceCacheService();
 
         $this->assertFalse($service->invalidateValue('any_key'));
     }
 
     public function testGetCachedStatisticsReturnsNullForStageEnvWhenPoolNull(): void
     {
-        $service = new PerformanceCacheService(null);
+        $service = new PerformanceCacheService();
 
         $this->assertNull($service->getCachedStatistics('stage'));
     }
 
     public function testInvalidateStatisticsReturnsFalseWhenPoolNull(): void
     {
-        $service = new PerformanceCacheService(null);
+        $service = new PerformanceCacheService();
 
         $this->assertFalse($service->invalidateStatistics('dev'));
     }
 
     public function testCacheEnvironmentsReturnsFalseWhenPoolNull(): void
     {
-        $service = new PerformanceCacheService(null);
+        $service = new PerformanceCacheService();
 
         $this->assertFalse($service->cacheEnvironments(['dev', 'prod']));
     }

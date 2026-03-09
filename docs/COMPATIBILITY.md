@@ -2,6 +2,39 @@
 
 This document explains the Doctrine and DBAL versions supported by the bundle, the differences between versions that can break compatibility, and how the bundle handles these differences.
 
+
+## Table of contents
+
+- [Supported Versions](#supported-versions)
+  - [Compatibility Matrix](#compatibility-matrix)
+- [Important Changes Between Versions](#important-changes-between-versions)
+  - [1. DoctrineBundle: Middleware Registration](#1-doctrinebundle-middleware-registration)
+  - [2. DBAL: Schema Manager](#2-dbal-schema-manager)
+  - [3. DBAL: Type Registry](#3-dbal-type-registry)
+  - [4. DBAL: Type Methods](#4-dbal-type-methods)
+  - [5. ORM: Metadata - getTableName()](#5-orm-metadata-gettablename)
+  - [6. ORM: Metadata - getFieldMapping()](#6-orm-metadata-getfieldmapping)
+  - [7. ORM: Metadata - getAssociationMapping()](#7-orm-metadata-getassociationmapping)
+- [Bundle Compatibility Strategies](#bundle-compatibility-strategies)
+  - [1. Version Detection](#1-version-detection)
+  - [2. Method Verification (method_exists)](#2-method-verification-method-exists)
+  - [3. Fallbacks and Conversions](#3-fallbacks-and-conversions)
+  - [4. Reflection for Private Property Access](#4-reflection-for-private-property-access)
+- [Diagnostic Commands](#diagnostic-commands)
+  - [Common Issues](#common-issues)
+  - [4. Metrics and Temporal Records](#4-metrics-and-temporal-records)
+  - [Diagnostic Commands](#diagnostic-commands)
+- [Recommendations](#recommendations)
+  - [For Development](#for-development)
+  - [For Production](#for-production)
+- [Troubleshooting](#troubleshooting)
+  - [Problem: Middleware not applied](#problem-middleware-not-applied)
+  - [Problem: Error "Unable to get schema manager"](#problem-error-unable-to-get-schema-manager)
+  - [Problem: Error "Type::getType() not found"](#problem-error-typegettype-not-found)
+- [References](#references)
+- [Compatibility Changelog](#compatibility-changelog)
+  - [Version 0.0.1 (2026-01-27)](#version-001-2026-01-27)
+
 ## Supported Versions
 
 The bundle is compatible with the following versions:

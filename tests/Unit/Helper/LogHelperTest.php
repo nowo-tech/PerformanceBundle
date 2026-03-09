@@ -22,7 +22,7 @@ final class LogHelperTest extends TestCase
     public function testIsLoggingEnabledReturnsTrueWhenNull(): void
     {
         // Default behavior: true for backward compatibility
-        $this->assertTrue(LogHelper::isLoggingEnabled(null));
+        $this->assertTrue(LogHelper::isLoggingEnabled());
     }
 
     public function testLogReturnsFalseWhenLoggingDisabled(): void
@@ -41,7 +41,7 @@ final class LogHelperTest extends TestCase
     public function testLogReturnsTrueWhenLoggingNull(): void
     {
         // Default behavior: true for backward compatibility; suppress avoids error_log in tests
-        $result = LogHelper::log('Test message', null);
+        $result = LogHelper::log('Test message');
         $this->assertTrue($result);
     }
 
@@ -130,6 +130,6 @@ final class LogHelperTest extends TestCase
     public function testIsLoggingEnabledWithNullDefaultsToTrue(): void
     {
         // Backward compatibility: null should default to true
-        $this->assertTrue(LogHelper::isLoggingEnabled(null));
+        $this->assertTrue(LogHelper::isLoggingEnabled());
     }
 }

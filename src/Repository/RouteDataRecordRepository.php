@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Repository;
 
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+
+use function count;
+use function is_string;
+
+use const PHP_URL_PATH;
 
 /**
  * Repository for RouteDataRecord entities.
@@ -49,19 +55,21 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * which keeps it compatible with all supported database platforms
      * (MySQL, PostgreSQL, SQLite, etc.).
      *
-     * @param string                  $env        The environment (dev, test, prod)
-     * @param \DateTimeImmutable|null $startDate  Optional start date filter
-     * @param \DateTimeImmutable|null $endDate    Optional end date filter
-     * @param string|null             $routeName  Optional route name filter
-     * @param int|null                $statusCode Optional status code filter
+     * @param string $env The environment (dev, test, prod)
+     * @param DateTimeImmutable|null $startDate Optional start date filter
+     * @param DateTimeImmutable|null $endDate Optional end date filter
+     * @param string|null $routeName Optional route name filter
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code filter
      *
-     * @return array<int, array{hour: int, count: int, avg_response_time: float, status_codes: array<int, int>}> Statistics by hour
+     * @return list<array{hour: int, count: int, avg_response_time: float, status_codes: array<int, int>}> Statistics by hour
      */
     public function getStatisticsByHour(
         string $env,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
     ): array {
         $qb = $this->createQueryBuilder('r')
@@ -71,22 +79,28 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->setParameter('env', $env)
             ->orderBy('r.accessedAt', 'ASC');
 
-        if (null !== $startDate) {
+        if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if (null !== $endDate) {
+        if ($endDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
 
-        if (null !== $routeName) {
+        if ($routeName !== null) {
             $qb->andWhere('rd.name = :routeName')
                 ->setParameter('routeName', $routeName);
         }
 
-        if (null !== $statusCode) {
+        $pathNorm = $this->normalizePathForFilter($path);
+        if ($pathNorm !== null && $pathNorm !== '') {
+            $qb->andWhere('r.routePath LIKE :pathFilter')
+                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+        }
+
+        if ($statusCode !== null) {
             $qb->andWhere('r.statusCode = :statusCode')
                 ->setParameter('statusCode', $statusCode);
         }
@@ -98,11 +112,11 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         $statistics = [];
         for ($hour = 0; $hour < 24; ++$hour) {
             $statistics[$hour] = [
-                'hour' => $hour,
-                'count' => 0,
+                'hour'              => $hour,
+                'count'             => 0,
                 'sum_response_time' => 0.0,
                 'avg_response_time' => 0.0,
-                'status_codes' => [],
+                'status_codes'      => [],
             ];
         }
 
@@ -112,11 +126,11 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
             ++$statistics[$hour]['count'];
 
-            if (null !== $record->getResponseTime()) {
-                $statistics[$hour]['sum_response_time'] += $record->getResponseTime();
+            if ($record->getResponseTime() !== null) {
+                $statistics[$hour]['sum_response_time'] = ($statistics[$hour]['sum_response_time'] ?? 0.0) + $record->getResponseTime();
             }
 
-            if (null !== $record->getStatusCode()) {
+            if ($record->getStatusCode() !== null) {
                 $code = $record->getStatusCode();
                 if (!isset($statistics[$hour]['status_codes'][$code])) {
                     $statistics[$hour]['status_codes'][$code] = 0;
@@ -125,38 +139,40 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             }
         }
 
-        // Calculate averages and clean up structure
+        // Calculate averages and build result list (without sum_response_time)
+        $result = [];
         foreach ($statistics as $hour => $data) {
-            if ($data['count'] > 0) {
-                $statistics[$hour]['avg_response_time'] = $data['sum_response_time'] / $data['count'];
-            } else {
-                $statistics[$hour]['avg_response_time'] = 0.0;
-            }
-
-            unset($statistics[$hour]['sum_response_time']);
+            $sum      = (float) ($data['sum_response_time'] ?? 0.0);
+            $avg      = $data['count'] > 0 ? $sum / $data['count'] : 0.0;
+            $result[] = [
+                'hour'              => $data['hour'] ?? $hour,
+                'count'             => $data['count'],
+                'avg_response_time' => $avg,
+                'status_codes'      => $data['status_codes'] ?? [],
+            ];
         }
 
-        ksort($statistics);
-
-        return array_values($statistics);
+        return $result;
     }
 
     /**
      * Get total access count for a date range.
      *
-     * @param string                  $env        The environment
-     * @param \DateTimeImmutable|null $startDate  Optional start date
-     * @param \DateTimeImmutable|null $endDate    Optional end date
-     * @param string|null             $routeName  Optional route name filter
-     * @param int|null                $statusCode Optional status code filter
+     * @param string $env The environment
+     * @param DateTimeImmutable|null $startDate Optional start date
+     * @param DateTimeImmutable|null $endDate Optional end date
+     * @param string|null $routeName Optional route name filter
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code filter
      *
      * @return int Total access count
      */
     public function getTotalAccessCount(
         string $env,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
     ): int {
         $qb = $this->createQueryBuilder('r')
@@ -165,22 +181,28 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->where('rd.env = :env')
             ->setParameter('env', $env);
 
-        if (null !== $startDate) {
+        if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if (null !== $endDate) {
+        if ($endDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
 
-        if (null !== $routeName) {
+        if ($routeName !== null) {
             $qb->andWhere('rd.name = :routeName')
                 ->setParameter('routeName', $routeName);
         }
 
-        if (null !== $statusCode) {
+        $pathNorm = $this->normalizePathForFilter($path);
+        if ($pathNorm !== null && $pathNorm !== '') {
+            $qb->andWhere('r.routePath LIKE :pathFilter')
+                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+        }
+
+        if ($statusCode !== null) {
             $qb->andWhere('r.statusCode = :statusCode')
                 ->setParameter('statusCode', $statusCode);
         }
@@ -231,12 +253,12 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      */
     public function deleteAllRecords(?string $env = null): int
     {
-        if (null !== $env && '' !== $env) {
+        if ($env !== null && $env !== '') {
             return $this->deleteByEnvironment($env);
         }
 
         $totalDeleted = 0;
-        $batchSize = 1000;
+        $batchSize    = 1000;
 
         while (true) {
             $qb = $this->createQueryBuilder('r')
@@ -266,13 +288,13 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Delete access records older than the given date.
      *
-     * @param \DateTimeImmutable $before    Cutoff date (records with accessedAt < before are deleted)
-     * @param string|null        $env       Optional environment filter (null = all environments)
-     * @param int                $batchSize Max IDs per batch
+     * @param DateTimeImmutable $before Cutoff date (records with accessedAt < before are deleted)
+     * @param string|null $env Optional environment filter (null = all environments)
+     * @param int $batchSize Max IDs per batch
      *
      * @return int Number of deleted records
      */
-    public function deleteOlderThan(\DateTimeImmutable $before, ?string $env = null, int $batchSize = 1000): int
+    public function deleteOlderThan(DateTimeImmutable $before, ?string $env = null, int $batchSize = 1000): int
     {
         $totalDeleted = 0;
 
@@ -283,7 +305,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
                 ->setParameter('before', $before)
                 ->setMaxResults($batchSize);
 
-            if (null !== $env && '' !== $env) {
+            if ($env !== null && $env !== '') {
                 $qb->join('r.routeData', 'rd')
                     ->andWhere('rd.env = :env')
                     ->setParameter('env', $env);
@@ -333,24 +355,25 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * Uses a select-then-delete approach because DQL DELETE does not support JOIN.
      * Deletes in batches to avoid loading too many IDs into memory.
      *
-     * @param string                  $env            The environment (required)
-     * @param \DateTimeImmutable|null $startDate      Optional start date (records with accessedAt >= startDate)
-     * @param \DateTimeImmutable|null $endDate        Optional end date (records with accessedAt <= endDate)
-     * @param string|null             $routeName      Optional route name (records for this route only)
-     * @param int|null                $statusCode     Optional HTTP status code (records with this status only)
-     * @param float|null              $minQueryTime   Optional min query time (s)
-     * @param float|null              $maxQueryTime   Optional max query time (s)
-     * @param int|null                $minMemoryUsage Optional min memory (bytes)
-     * @param int|null                $maxMemoryUsage Optional max memory (bytes)
-     * @param int                     $batchSize      Max IDs per batch (default 1000)
+     * @param string $env The environment (required)
+     * @param DateTimeImmutable|null $startDate Optional start date (records with accessedAt >= startDate)
+     * @param DateTimeImmutable|null $endDate Optional end date (records with accessedAt <= endDate)
+     * @param string|null $routeName Optional route name (records for this route only)
+     * @param int|null $statusCode Optional HTTP status code (records with this status only)
+     * @param float|null $minQueryTime Optional min query time (s)
+     * @param float|null $maxQueryTime Optional max query time (s)
+     * @param int|null $minMemoryUsage Optional min memory (bytes)
+     * @param int|null $maxMemoryUsage Optional max memory (bytes)
+     * @param int $batchSize Max IDs per batch (default 1000)
      *
      * @return int Number of deleted records
      */
     public function deleteByFilter(
         string $env,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
         ?float $minQueryTime = null,
         ?float $maxQueryTime = null,
@@ -370,7 +393,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
                 ->setParameter('env', $env)
                 ->setMaxResults($batchSize);
 
-            $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
+            $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $path, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 
             /** @var array<int, int> $ids */
             $ids = $qb->getQuery()->getSingleColumnResult();
@@ -395,21 +418,23 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Apply common record filters to a query builder.
      *
-     * @param \Doctrine\ORM\QueryBuilder $qb             Query builder
-     * @param \DateTimeImmutable|null    $startDate      Optional start date
-     * @param \DateTimeImmutable|null    $endDate        Optional end date
-     * @param string|null                $routeName      Optional route name
-     * @param int|null                   $statusCode     Optional status code
-     * @param float|null                 $minQueryTime   Optional min query time (s)
-     * @param float|null                 $maxQueryTime   Optional max query time (s)
-     * @param int|null                   $minMemoryUsage Optional min memory (bytes)
-     * @param int|null                   $maxMemoryUsage Optional max memory (bytes)
+     * @param \Doctrine\ORM\QueryBuilder $qb Query builder
+     * @param DateTimeImmutable|null $startDate Optional start date
+     * @param DateTimeImmutable|null $endDate Optional end date
+     * @param string|null $routeName Optional route name
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code
+     * @param float|null $minQueryTime Optional min query time (s)
+     * @param float|null $maxQueryTime Optional max query time (s)
+     * @param int|null $minMemoryUsage Optional min memory (bytes)
+     * @param int|null $maxMemoryUsage Optional max memory (bytes)
      */
     private function applyRecordFilters(
         \Doctrine\ORM\QueryBuilder $qb,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
         ?float $minQueryTime = null,
         ?float $maxQueryTime = null,
@@ -418,53 +443,59 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         ?string $referer = null,
         ?string $user = null,
     ): void {
-        if (null !== $startDate) {
+        if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if (null !== $endDate) {
+        if ($endDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
 
-        if (null !== $routeName && '' !== $routeName) {
+        if ($routeName !== null && $routeName !== '') {
             $qb->andWhere('rd.name = :routeName')
                 ->setParameter('routeName', $routeName);
         }
 
-        if (null !== $statusCode) {
+        $pathNorm = $this->normalizePathForFilter($path);
+        if ($pathNorm !== null && $pathNorm !== '') {
+            $qb->andWhere('r.routePath LIKE :pathFilter')
+                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+        }
+
+        if ($statusCode !== null) {
             $qb->andWhere('r.statusCode = :statusCode')
                 ->setParameter('statusCode', $statusCode);
         }
 
-        if (null !== $minQueryTime) {
+        if ($minQueryTime !== null) {
             $qb->andWhere('r.queryTime >= :minQueryTime')
                 ->setParameter('minQueryTime', $minQueryTime);
         }
 
-        if (null !== $maxQueryTime) {
+        if ($maxQueryTime !== null) {
             $qb->andWhere('r.queryTime <= :maxQueryTime')
                 ->setParameter('maxQueryTime', $maxQueryTime);
         }
 
-        if (null !== $minMemoryUsage) {
+        if ($minMemoryUsage !== null) {
             $qb->andWhere('r.memoryUsage >= :minMemoryUsage')
                 ->setParameter('minMemoryUsage', $minMemoryUsage);
         }
 
-        if (null !== $maxMemoryUsage) {
+        if ($maxMemoryUsage !== null) {
             $qb->andWhere('r.memoryUsage <= :maxMemoryUsage')
                 ->setParameter('maxMemoryUsage', $maxMemoryUsage);
         }
 
-        if (null !== $referer && '' !== $referer) {
+        if ($referer !== null && $referer !== '') {
             $qb->andWhere('r.referer LIKE :referer')
-                ->setParameter('referer', '%'.addcslashes($referer, '%_').'%');
+                ->setParameter('referer', '%' . addcslashes($referer, '%_') . '%');
         }
 
-        if (null !== $user && '' !== $user) {
-            $userPattern = '%'.addcslashes($user, '%_').'%';
+        if ($user !== null && $user !== '') {
+            $userPattern = '%' . addcslashes($user, '%_') . '%';
             $qb->andWhere('r.userIdentifier LIKE :userFilter OR r.userId LIKE :userFilter')
                 ->setParameter('userFilter', $userPattern);
         }
@@ -475,19 +506,21 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      *
      * Grouping is done in PHP to remain database agnostic.
      *
-     * @param string                  $env        The environment
-     * @param \DateTimeImmutable|null $startDate  Optional start date filter
-     * @param \DateTimeImmutable|null $endDate    Optional end date filter
-     * @param string|null             $routeName  Optional route name filter
-     * @param int|null                $statusCode Optional status code filter
+     * @param string $env The environment
+     * @param DateTimeImmutable|null $startDate Optional start date filter
+     * @param DateTimeImmutable|null $endDate Optional end date filter
+     * @param string|null $routeName Optional route name filter
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code filter
      *
-     * @return array<int, array{day_of_week: int, day_name: string, count: int, avg_response_time: float, status_codes: array<int, int>}> Statistics by day of week
+     * @return list<array{day_of_week: int, day_name: string, count: int, avg_response_time: float, status_codes: array<int, int>}> Statistics by day of week
      */
     public function getStatisticsByDayOfWeek(
         string $env,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
     ): array {
         $qb = $this->createQueryBuilder('r')
@@ -497,22 +530,28 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->setParameter('env', $env)
             ->orderBy('r.accessedAt', 'ASC');
 
-        if (null !== $startDate) {
+        if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if (null !== $endDate) {
+        if ($endDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
 
-        if (null !== $routeName) {
+        if ($routeName !== null) {
             $qb->andWhere('rd.name = :routeName')
                 ->setParameter('routeName', $routeName);
         }
 
-        if (null !== $statusCode) {
+        $pathNorm = $this->normalizePathForFilter($path);
+        if ($pathNorm !== null && $pathNorm !== '') {
+            $qb->andWhere('r.routePath LIKE :pathFilter')
+                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+        }
+
+        if ($statusCode !== null) {
             $qb->andWhere('r.statusCode = :statusCode')
                 ->setParameter('statusCode', $statusCode);
         }
@@ -526,12 +565,12 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         $statistics = [];
         for ($day = 0; $day < 7; ++$day) {
             $statistics[$day] = [
-                'day_of_week' => $day,
-                'day_name' => $dayNames[$day],
-                'count' => 0,
+                'day_of_week'       => $day,
+                'day_name'          => $dayNames[$day],
+                'count'             => 0,
                 'sum_response_time' => 0.0,
                 'avg_response_time' => 0.0,
-                'status_codes' => [],
+                'status_codes'      => [],
             ];
         }
 
@@ -542,11 +581,11 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
             ++$statistics[$day]['count'];
 
-            if (null !== $record->getResponseTime()) {
-                $statistics[$day]['sum_response_time'] += $record->getResponseTime();
+            if ($record->getResponseTime() !== null) {
+                $statistics[$day]['sum_response_time'] = ($statistics[$day]['sum_response_time'] ?? 0.0) + $record->getResponseTime();
             }
 
-            if (null !== $record->getStatusCode()) {
+            if ($record->getStatusCode() !== null) {
                 $code = $record->getStatusCode();
                 if (!isset($statistics[$day]['status_codes'][$code])) {
                     $statistics[$day]['status_codes'][$code] = 0;
@@ -555,20 +594,21 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             }
         }
 
-        // Calculate averages and clean up structure
+        // Calculate averages and build result list (without sum_response_time)
+        $result = [];
         foreach ($statistics as $day => $data) {
-            if ($data['count'] > 0) {
-                $statistics[$day]['avg_response_time'] = $data['sum_response_time'] / $data['count'];
-            } else {
-                $statistics[$day]['avg_response_time'] = 0.0;
-            }
-
-            unset($statistics[$day]['sum_response_time']);
+            $sum      = (float) ($data['sum_response_time'] ?? 0.0);
+            $avg      = $data['count'] > 0 ? $sum / $data['count'] : 0.0;
+            $result[] = [
+                'day_of_week'       => $data['day_of_week'] ?? $day,
+                'day_name'          => $data['day_name'] ?? $dayNames[$day],
+                'count'             => $data['count'],
+                'avg_response_time' => $avg,
+                'status_codes'      => $data['status_codes'] ?? [],
+            ];
         }
 
-        ksort($statistics);
-
-        return array_values($statistics);
+        return $result;
     }
 
     /**
@@ -576,19 +616,21 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      *
      * Grouping is done in PHP to remain database agnostic.
      *
-     * @param string                  $env        The environment
-     * @param \DateTimeImmutable|null $startDate  Optional start date filter
-     * @param \DateTimeImmutable|null $endDate    Optional end date filter
-     * @param string|null             $routeName  Optional route name filter
-     * @param int|null                $statusCode Optional status code filter
+     * @param string $env The environment
+     * @param DateTimeImmutable|null $startDate Optional start date filter
+     * @param DateTimeImmutable|null $endDate Optional end date filter
+     * @param string|null $routeName Optional route name filter
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code filter
      *
-     * @return array<int, array{month: int, month_name: string, count: int, avg_response_time: float, status_codes: array<int, int>}> Statistics by month
+     * @return list<array{month: int, month_name: string, count: int, avg_response_time: float, status_codes: array<int, int>}> Statistics by month
      */
     public function getStatisticsByMonth(
         string $env,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
     ): array {
         $qb = $this->createQueryBuilder('r')
@@ -598,22 +640,28 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->setParameter('env', $env)
             ->orderBy('r.accessedAt', 'ASC');
 
-        if (null !== $startDate) {
+        if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if (null !== $endDate) {
+        if ($endDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
 
-        if (null !== $routeName) {
+        if ($routeName !== null) {
             $qb->andWhere('rd.name = :routeName')
                 ->setParameter('routeName', $routeName);
         }
 
-        if (null !== $statusCode) {
+        $pathNorm = $this->normalizePathForFilter($path);
+        if ($pathNorm !== null && $pathNorm !== '') {
+            $qb->andWhere('r.routePath LIKE :pathFilter')
+                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+        }
+
+        if ($statusCode !== null) {
             $qb->andWhere('r.statusCode = :statusCode')
                 ->setParameter('statusCode', $statusCode);
         }
@@ -631,12 +679,12 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         $statistics = [];
         for ($month = 1; $month <= 12; ++$month) {
             $statistics[$month] = [
-                'month' => $month,
-                'month_name' => $monthNames[$month],
-                'count' => 0,
+                'month'             => $month,
+                'month_name'        => $monthNames[$month],
+                'count'             => 0,
                 'sum_response_time' => 0.0,
                 'avg_response_time' => 0.0,
-                'status_codes' => [],
+                'status_codes'      => [],
             ];
         }
 
@@ -646,11 +694,11 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
             ++$statistics[$month]['count'];
 
-            if (null !== $record->getResponseTime()) {
-                $statistics[$month]['sum_response_time'] += $record->getResponseTime();
+            if ($record->getResponseTime() !== null) {
+                $statistics[$month]['sum_response_time'] = ($statistics[$month]['sum_response_time'] ?? 0.0) + $record->getResponseTime();
             }
 
-            if (null !== $record->getStatusCode()) {
+            if ($record->getStatusCode() !== null) {
                 $code = $record->getStatusCode();
                 if (!isset($statistics[$month]['status_codes'][$code])) {
                     $statistics[$month]['status_codes'][$code] = 0;
@@ -659,20 +707,21 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             }
         }
 
-        // Calculate averages and clean up structure
+        // Calculate averages and build result list (without sum_response_time)
+        $result = [];
         foreach ($statistics as $month => $data) {
-            if ($data['count'] > 0) {
-                $statistics[$month]['avg_response_time'] = $data['sum_response_time'] / $data['count'];
-            } else {
-                $statistics[$month]['avg_response_time'] = 0.0;
-            }
-
-            unset($statistics[$month]['sum_response_time']);
+            $sum      = (float) ($data['sum_response_time'] ?? 0.0);
+            $avg      = $data['count'] > 0 ? $sum / $data['count'] : 0.0;
+            $result[] = [
+                'month'             => $data['month'] ?? $month,
+                'month_name'        => $data['month_name'] ?? $monthNames[$month],
+                'count'             => $data['count'],
+                'avg_response_time' => $avg,
+                'status_codes'      => $data['status_codes'] ?? [],
+            ];
         }
 
-        ksort($statistics);
-
-        return array_values($statistics);
+        return $result;
     }
 
     /**
@@ -680,19 +729,21 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      *
      * Grouping is done in PHP to remain database agnostic.
      *
-     * @param string                  $env        The environment
-     * @param \DateTimeImmutable|null $startDate  Optional start date filter
-     * @param \DateTimeImmutable|null $endDate    Optional end date filter
-     * @param string|null             $routeName  Optional route name filter
-     * @param int|null                $statusCode Optional status code filter
+     * @param string $env The environment
+     * @param DateTimeImmutable|null $startDate Optional start date filter
+     * @param DateTimeImmutable|null $endDate Optional end date filter
+     * @param string|null $routeName Optional route name filter
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code filter
      *
      * @return array<int, array<int, int>> Heatmap data [day_of_week][hour] => count
      */
     public function getHeatmapData(
         string $env,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
     ): array {
         $qb = $this->createQueryBuilder('r')
@@ -702,22 +753,28 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->setParameter('env', $env)
             ->orderBy('r.accessedAt', 'ASC');
 
-        if (null !== $startDate) {
+        if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
                 ->setParameter('startDate', $startDate);
         }
 
-        if (null !== $endDate) {
+        if ($endDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt <= :endDate')
                 ->setParameter('endDate', $endDate);
         }
 
-        if (null !== $routeName) {
+        if ($routeName !== null) {
             $qb->andWhere('rd.name = :routeName')
                 ->setParameter('routeName', $routeName);
         }
 
-        if (null !== $statusCode) {
+        $pathNorm = $this->normalizePathForFilter($path);
+        if ($pathNorm !== null && $pathNorm !== '') {
+            $qb->andWhere('r.routePath LIKE :pathFilter')
+                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+        }
+
+        if ($statusCode !== null) {
             $qb->andWhere('r.statusCode = :statusCode')
                 ->setParameter('statusCode', $statusCode);
         }
@@ -736,7 +793,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         // Fill in actual data
         foreach ($records as $record) {
-            $day = (int) $record->getAccessedAt()->format('w'); // 0-6
+            $day  = (int) $record->getAccessedAt()->format('w'); // 0-6
             $hour = (int) $record->getAccessedAt()->format('G'); // 0-23
             ++$heatmap[$day][$hour];
         }
@@ -747,29 +804,31 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Get paginated access records.
      *
-     * @param string                  $env            The environment
-     * @param int                     $page           Page number (1-based)
-     * @param int                     $perPage        Records per page
-     * @param \DateTimeImmutable|null $startDate      Optional start date filter
-     * @param \DateTimeImmutable|null $endDate        Optional end date filter
-     * @param string|null             $routeName      Optional route name filter
-     * @param int|null                $statusCode     Optional status code filter
-     * @param float|null              $minQueryTime   Optional min query time (s)
-     * @param float|null              $maxQueryTime   Optional max query time (s)
-     * @param int|null                $minMemoryUsage Optional min memory (bytes)
-     * @param int|null                $maxMemoryUsage Optional max memory (bytes)
-     * @param string|null             $referer        Optional referer filter (partial match)
-     * @param string|null             $user           Optional user filter (partial match on user_identifier or user_id)
+     * @param string $env The environment
+     * @param int $page Page number (1-based)
+     * @param int $perPage Records per page
+     * @param DateTimeImmutable|null $startDate Optional start date filter
+     * @param DateTimeImmutable|null $endDate Optional end date filter
+     * @param string|null $routeName Optional route name filter
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code filter
+     * @param float|null $minQueryTime Optional min query time (s)
+     * @param float|null $maxQueryTime Optional max query time (s)
+     * @param int|null $minMemoryUsage Optional min memory (bytes)
+     * @param int|null $maxMemoryUsage Optional max memory (bytes)
+     * @param string|null $referer Optional referer filter (partial match)
+     * @param string|null $user Optional user filter (partial match on user_identifier or user_id)
      *
-     * @return array{records: array, total: int, page: int, per_page: int, total_pages: int}
+     * @return array{records: list<RouteDataRecord>, total: int, page: int, per_page: int, total_pages: int}
      */
     public function getPaginatedRecords(
         string $env,
         int $page = 1,
         int $perPage = 50,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
         ?float $minQueryTime = null,
         ?float $maxQueryTime = null,
@@ -781,17 +840,17 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         string $order = 'DESC',
     ): array {
         $sortFieldMap = [
-            'accessed_at' => 'r.accessedAt',
-            'route' => 'rd.name',
-            'path' => 'r.routePath',
-            'status_code' => 'r.statusCode',
+            'accessed_at'   => 'r.accessedAt',
+            'route'         => 'rd.name',
+            'path'          => 'r.routePath',
+            'status_code'   => 'r.statusCode',
             'response_time' => 'r.responseTime',
             'total_queries' => 'r.totalQueries',
-            'query_time' => 'r.queryTime',
-            'memory_usage' => 'r.memoryUsage',
+            'query_time'    => 'r.queryTime',
+            'memory_usage'  => 'r.memoryUsage',
         ];
         $sortField = $sortFieldMap[$sortBy ?? ''] ?? 'r.accessedAt';
-        $sortOrder = 'ASC' === strtoupper($order) ? 'ASC' : 'DESC';
+        $sortOrder = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
 
         $qb = $this->createQueryBuilder('r')
             ->join('r.routeData', 'rd')
@@ -800,16 +859,16 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->setParameter('env', $env)
             ->orderBy($sortField, $sortOrder);
 
-        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
+        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $path, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 
         // Get total count
         $totalQb = clone $qb;
-        $total = (int) $totalQb->select('COUNT(r.id)')
+        $total   = (int) $totalQb->select('COUNT(r.id)')
             ->getQuery()
             ->getSingleScalarResult();
 
         // Get paginated results
-        $offset = ($page - 1) * $perPage;
+        $offset  = ($page - 1) * $perPage;
         $records = $qb->setFirstResult($offset)
             ->setMaxResults($perPage)
             ->getQuery()
@@ -818,10 +877,10 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         $totalPages = (int) ceil($total / $perPage);
 
         return [
-            'records' => $records,
-            'total' => $total,
-            'page' => $page,
-            'per_page' => $perPage,
+            'records'     => $records,
+            'total'       => $total,
+            'page'        => $page,
+            'per_page'    => $perPage,
             'total_pages' => $totalPages,
         ];
     }
@@ -829,26 +888,28 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Get access records for export (same filters as getPaginatedRecords, optional limit).
      *
-     * @param string                  $env            The environment
-     * @param \DateTimeImmutable|null $startDate      Optional start date filter
-     * @param \DateTimeImmutable|null $endDate        Optional end date filter
-     * @param string|null             $routeName      Optional route name filter
-     * @param int|null                $statusCode     Optional status code filter
-     * @param float|null              $minQueryTime   Optional min query time (s)
-     * @param float|null              $maxQueryTime   Optional max query time (s)
-     * @param int|null                $minMemoryUsage Optional min memory (bytes)
-     * @param int|null                $maxMemoryUsage Optional max memory (bytes)
-     * @param string|null             $referer        Optional referer filter (partial match)
-     * @param string|null             $user           Optional user filter (partial match)
-     * @param int                     $limit          Maximum records to return (default 50_000)
+     * @param string $env The environment
+     * @param DateTimeImmutable|null $startDate Optional start date filter
+     * @param DateTimeImmutable|null $endDate Optional end date filter
+     * @param string|null $routeName Optional route name filter
+     * @param string|null $path Optional path/URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode Optional status code filter
+     * @param float|null $minQueryTime Optional min query time (s)
+     * @param float|null $maxQueryTime Optional max query time (s)
+     * @param int|null $minMemoryUsage Optional min memory (bytes)
+     * @param int|null $maxMemoryUsage Optional max memory (bytes)
+     * @param string|null $referer Optional referer filter (partial match)
+     * @param string|null $user Optional user filter (partial match)
+     * @param int $limit Maximum records to return (default 50_000)
      *
      * @return array{records: RouteDataRecord[], total: int}
      */
     public function getRecordsForExport(
         string $env,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null,
+        ?DateTimeImmutable $startDate = null,
+        ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,
+        ?string $path = null,
         ?int $statusCode = null,
         ?float $minQueryTime = null,
         ?float $maxQueryTime = null,
@@ -865,10 +926,10 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->setParameter('env', $env)
             ->orderBy('r.accessedAt', 'DESC');
 
-        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
+        $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $path, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 
         $countQb = clone $qb;
-        $total = (int) $countQb->select('COUNT(r.id)')->getQuery()->getSingleScalarResult();
+        $total   = (int) $countQb->select('COUNT(r.id)')->getQuery()->getSingleScalarResult();
 
         $qb->setMaxResults($limit);
         /** @var RouteDataRecord[] $records */
@@ -886,38 +947,38 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      */
     public function getAggregatesForRouteDataIds(array $routeDataIds): array
     {
-        if (empty($routeDataIds)) {
+        if ($routeDataIds === []) {
             return [];
         }
 
-        $conn = $this->getEntityManager()->getConnection();
-        $table = $this->getClassMetadata()->getTableName();
-        $platform = $conn->getDatabasePlatform();
-        $idsPlaceholder = implode(',', array_fill(0, \count($routeDataIds), '?'));
+        $conn           = $this->getEntityManager()->getConnection();
+        $table          = $this->getClassMetadata()->getTableName();
+        $platform       = $conn->getDatabasePlatform();
+        $idsPlaceholder = implode(',', array_fill(0, count($routeDataIds), '?'));
 
-        $sql = 'SELECT route_data_id, '.
-            'MAX(response_time) AS request_time, MAX(total_queries) AS total_queries, '.
-            'MAX(query_time) AS query_time, MAX(memory_usage) AS memory_usage, COUNT(*) AS access_count '.
+        $sql = 'SELECT route_data_id, ' .
+            'MAX(response_time) AS request_time, MAX(total_queries) AS total_queries, ' .
+            'MAX(query_time) AS query_time, MAX(memory_usage) AS memory_usage, COUNT(*) AS access_count ' .
             "FROM {$platform->quoteIdentifier($table)} WHERE route_data_id IN ({$idsPlaceholder}) GROUP BY route_data_id";
-        $result = $conn->executeQuery($sql, $routeDataIds, array_fill(0, \count($routeDataIds), ParameterType::INTEGER));
-        $rows = $result->fetchAllAssociative();
+        $result = $conn->executeQuery($sql, $routeDataIds, array_fill(0, count($routeDataIds), ParameterType::INTEGER));
+        $rows   = $result->fetchAllAssociative();
 
         $aggregates = [];
         foreach ($rows as $row) {
-            $id = (int) $row['route_data_id'];
+            $id              = (int) $row['route_data_id'];
             $aggregates[$id] = [
-                'request_time' => null !== $row['request_time'] ? (float) $row['request_time'] : null,
-                'total_queries' => null !== $row['total_queries'] ? (int) $row['total_queries'] : null,
-                'query_time' => null !== $row['query_time'] ? (float) $row['query_time'] : null,
-                'memory_usage' => null !== $row['memory_usage'] ? (int) $row['memory_usage'] : null,
-                'access_count' => (int) $row['access_count'],
-                'status_codes' => [],
+                'request_time'  => $row['request_time'] !== null ? (float) $row['request_time'] : null,
+                'total_queries' => $row['total_queries'] !== null ? (int) $row['total_queries'] : null,
+                'query_time'    => $row['query_time'] !== null ? (float) $row['query_time'] : null,
+                'memory_usage'  => $row['memory_usage'] !== null ? (int) $row['memory_usage'] : null,
+                'access_count'  => (int) $row['access_count'],
+                'status_codes'  => [],
             ];
         }
 
-        $sqlStatus = "SELECT route_data_id, status_code, COUNT(*) AS cnt FROM {$platform->quoteIdentifier($table)} ".
+        $sqlStatus = "SELECT route_data_id, status_code, COUNT(*) AS cnt FROM {$platform->quoteIdentifier($table)} " .
             "WHERE route_data_id IN ({$idsPlaceholder}) AND status_code IS NOT NULL GROUP BY route_data_id, status_code";
-        $resultStatus = $conn->executeQuery($sqlStatus, $routeDataIds, array_fill(0, \count($routeDataIds), ParameterType::INTEGER));
+        $resultStatus = $conn->executeQuery($sqlStatus, $routeDataIds, array_fill(0, count($routeDataIds), ParameterType::INTEGER));
         foreach ($resultStatus->fetchAllAssociative() as $row) {
             $id = (int) $row['route_data_id'];
             if (isset($aggregates[$id])) {
@@ -926,5 +987,39 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         }
 
         return $aggregates;
+    }
+
+    /**
+     * Normalise URL or path input to a path-only string for filtering by routePath.
+     *
+     * Accepts: https://example.com/foo/bar, http://example.com/foo, /foo/bar, example.com/foo/bar.
+     *
+     * @param string|null $input URL or path (with or without scheme/host)
+     *
+     * @return string|null Path starting with / or null if empty/invalid
+     */
+    private function normalizePathForFilter(?string $input): ?string
+    {
+        if ($input === null || $input === '') {
+            return null;
+        }
+        $s = trim($input);
+        if ($s === '') {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $s)) {
+            $path = parse_url($s, PHP_URL_PATH);
+
+            return is_string($path) && $path !== '' ? $path : null;
+        }
+        if (str_starts_with($s, '/')) {
+            return $s;
+        }
+        if (str_contains($s, '/')) {
+            return '/' . $s;
+        }
+        $path = parse_url('https://' . $s, PHP_URL_PATH);
+
+        return is_string($path) && $path !== '' ? $path : null;
     }
 }

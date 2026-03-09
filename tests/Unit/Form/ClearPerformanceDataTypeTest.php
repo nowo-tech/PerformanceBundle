@@ -33,18 +33,16 @@ final class ClearPerformanceDataTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function (array $defaults): bool {
-                return isset($defaults['data_class'])
-                    && $defaults['data_class'] === ClearPerformanceDataRequest::class
-                    && isset($defaults['method'])
-                    && $defaults['method'] === 'POST'
-                    && isset($defaults['csrf_protection'])
-                    && $defaults['csrf_protection'] === true
-                    && isset($defaults['csrf_field_name'])
-                    && $defaults['csrf_field_name'] === '_token'
-                    && isset($defaults['csrf_token_id'])
-                    && $defaults['csrf_token_id'] === 'clear_performance_data';
-            }));
+            ->with($this->callback(static fn (array $defaults): bool => isset($defaults['data_class'])
+                && $defaults['data_class'] === ClearPerformanceDataRequest::class
+                && isset($defaults['method'])
+                && $defaults['method'] === 'POST'
+                && isset($defaults['csrf_protection'])
+                && $defaults['csrf_protection'] === true
+                && isset($defaults['csrf_field_name'])
+                && $defaults['csrf_field_name'] === '_token'
+                && isset($defaults['csrf_token_id'])
+                && $defaults['csrf_token_id'] === 'clear_performance_data'));
 
         $this->formType->configureOptions($resolver);
     }

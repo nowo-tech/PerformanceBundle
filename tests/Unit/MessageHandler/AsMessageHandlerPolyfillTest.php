@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\MessageHandler;
 
 use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Ensures AsMessageHandler (polyfill or Symfony) exists and can be instantiated with default constructor.
@@ -30,11 +31,10 @@ final class AsMessageHandlerPolyfillTest extends TestCase
         $this->assertTrue(class_exists($class, true));
 
         $attr = new $class();
-        $r = new \ReflectionClass($class);
+        $r    = new ReflectionClass($class);
 
         foreach (['fromTransport', 'handles', 'priority', 'method'] as $name) {
             $p = $r->getProperty($name);
-            $p->setAccessible(true);
             $this->assertNull($p->getValue($attr), "{$name} should be null by default");
         }
     }
@@ -49,7 +49,7 @@ final class AsMessageHandlerPolyfillTest extends TestCase
         }
 
         $attr = new $class(fromTransport: 'async', handles: RecordMetricsMessage::class, priority: 10, method: 'handle');
-        $r = new \ReflectionClass($class);
+        $r    = new ReflectionClass($class);
 
         $this->assertSame('async', $r->getProperty('fromTransport')->getValue($attr));
         $this->assertSame(RecordMetricsMessage::class, $r->getProperty('handles')->getValue($attr));

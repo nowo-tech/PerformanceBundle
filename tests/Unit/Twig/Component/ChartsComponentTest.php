@@ -12,7 +12,7 @@ final class ChartsComponentTest extends TestCase
     public function testComponentHasDefaultValues(): void
     {
         $component = new ChartsComponent();
-        
+
         $this->assertSame('dev', $component->environment);
         $this->assertNull($component->currentRoute);
         $this->assertSame('bootstrap', $component->template);
@@ -21,12 +21,12 @@ final class ChartsComponentTest extends TestCase
     public function testComponentCanSetProperties(): void
     {
         $component = new ChartsComponent();
-        
-        $component->environment = 'prod';
+
+        $component->environment  = 'prod';
         $component->currentRoute = 'app_home';
         $component->chartDataUrl = '/api/chart-data';
-        $component->template = 'tailwind';
-        
+        $component->template     = 'tailwind';
+
         $this->assertSame('prod', $component->environment);
         $this->assertSame('app_home', $component->currentRoute);
         $this->assertSame('/api/chart-data', $component->chartDataUrl);
@@ -35,8 +35,8 @@ final class ChartsComponentTest extends TestCase
 
     public function testChartDataUrlCanBeSet(): void
     {
-        $component = new ChartsComponent();
-        $url = 'https://example.com/performance/api/chart-data';
+        $component               = new ChartsComponent();
+        $url                     = 'https://example.com/performance/api/chart-data';
         $component->chartDataUrl = $url;
         $this->assertSame($url, $component->chartDataUrl);
     }
@@ -53,8 +53,8 @@ final class ChartsComponentTest extends TestCase
 
     public function testEnvironmentWithStage(): void
     {
-        $component = new ChartsComponent();
-        $component->environment = 'stage';
+        $component               = new ChartsComponent();
+        $component->environment  = 'stage';
         $component->chartDataUrl = '/api/chart';
 
         $this->assertSame('stage', $component->environment);
@@ -63,7 +63,7 @@ final class ChartsComponentTest extends TestCase
 
     public function testEnvironmentWithTest(): void
     {
-        $component = new ChartsComponent();
+        $component              = new ChartsComponent();
         $component->environment = 'test';
 
         $this->assertSame('test', $component->environment);

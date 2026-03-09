@@ -19,17 +19,17 @@ final class BeforeMetricsRecordedEvent extends Event
     /**
      * Creates a new instance.
      *
-     * @param string     $routeName    The route name
-     * @param string     $env          The environment
-     * @param float|null $requestTime  Request execution time in seconds
-     * @param int|null   $totalQueries Total number of database queries
-     * @param float|null $queryTime    Total query execution time in seconds
-     * @param array|null $params       Route parameters
-     * @param int|null   $memoryUsage  Peak memory usage in bytes
+     * @param string $routeName The route name
+     * @param string $env The environment
+     * @param float|null $requestTime Request execution time in seconds
+     * @param int|null $totalQueries Total number of database queries
+     * @param float|null $queryTime Total query execution time in seconds
+     * @param array<string, mixed>|null $params Route parameters
+     * @param int|null $memoryUsage Peak memory usage in bytes
      */
     public function __construct(
-        private string $routeName,
-        private string $env,
+        private readonly string $routeName,
+        private readonly string $env,
         private ?float $requestTime = null,
         private ?int $totalQueries = null,
         private ?float $queryTime = null,
@@ -78,11 +78,17 @@ final class BeforeMetricsRecordedEvent extends Event
         $this->queryTime = $queryTime;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getParams(): ?array
     {
         return $this->params;
     }
 
+    /**
+     * @param array<string, mixed>|null $params
+     */
     public function setParams(?array $params): void
     {
         $this->params = $params;

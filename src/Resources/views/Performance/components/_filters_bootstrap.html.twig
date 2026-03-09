@@ -13,14 +13,19 @@
             <div class="card-body">
                 {{ form_start(form, {'action': path('nowo_performance.index'), 'attr': {'class': 'row g-3'}}) }}
                     {# Basic Filters #}
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         {% if not form.env.isRendered %}
                             {{ form_row(form.env, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-select'}}) }}
                         {% endif %}
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         {% if not form.route.isRendered %}
                             {{ form_row(form.route, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-control'}}) }}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {% if form.path is defined and not form.path.isRendered %}
+                            {{ form_row(form.path, {'label_attr': {'class': 'form-label'}, 'attr': {'class': 'form-control'}}) }}
                         {% endif %}
                     </div>
                     <div class="col-md-2">
@@ -183,7 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('input[name="min_query_count"]')?.value ||
             document.querySelector('input[name="max_query_count"]')?.value ||
             document.querySelector('input[name="date_from"]')?.value ||
-            document.querySelector('input[name="date_to"]')?.value;
+            document.querySelector('input[name="date_to"]')?.value ||
+            document.querySelector('input[name="path"]')?.value;
 
         if (hasAdvancedFilters) {
             // Auto-expand if filters are active

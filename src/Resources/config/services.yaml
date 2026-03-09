@@ -12,13 +12,17 @@ services:
     Nowo\PerformanceBundle\Repository\RouteDataRecordRepository:
         public: true
 
+    # Adapter for optional Symfony Messenger (implements bundle MessageBusInterface)
+    Nowo\PerformanceBundle\MessageBus\MessengerBusAdapter:
+        arguments: ['@?messenger.bus.default']
+
     # Services (uses Autowire attributes for parameters)
     Nowo\PerformanceBundle\Service\PerformanceMetricsService:
         public: true
         calls:
-            # Optional: message bus for async processing (only if Messenger is available)
+            # Optional: message bus for async processing (adapter wraps Messenger bus when available)
             - method: setMessageBus
-              arguments: ['@?messenger.bus.default']
+              arguments: ['@Nowo\PerformanceBundle\MessageBus\MessengerBusAdapter']
 
     # Cache Service - uses dedicated pool (configurable via nowo_performance.cache.pool)
     Nowo\PerformanceBundle\Service\PerformanceCacheService:

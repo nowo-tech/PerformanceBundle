@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Twig\Environment;
+
+use function sprintf;
 
 /**
  * Example service to configure notifications dynamically from the database.
@@ -36,10 +39,10 @@ class DynamicNotificationConfiguration
     /**
      * Creates a new instance.
      *
-     * @param EntityManagerInterface   $entityManager Entity manager to access the database
-     * @param MailerInterface|null     $mailer        Symfony Mailer (optional)
-     * @param HttpClientInterface|null $httpClient    Symfony HTTP Client (optional)
-     * @param Environment|null         $twig          Twig environment for rendering templates (optional)
+     * @param EntityManagerInterface $entityManager Entity manager to access the database
+     * @param MailerInterface|null $mailer Symfony Mailer (optional)
+     * @param HttpClientInterface|null $httpClient Symfony HTTP Client (optional)
+     * @param Environment|null $twig Twig environment for rendering templates (optional)
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -102,20 +105,20 @@ class DynamicNotificationConfiguration
             // $stmt->execute(['type' => 'performance']);
             // $config = $stmt->fetchAssociative();
             // return $config ? json_decode($config['value'], true) ?? [] : [];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log error and return default configuration
-            error_log(\sprintf(
+            error_log(sprintf(
                 'Error loading notification config from database: %s',
-                $e->getMessage()
+                $e->getMessage(),
             ));
         }
 
         // Default configuration when no data in DB
         return [
             'enabled' => false,
-            'email' => ['enabled' => false],
-            'slack' => ['enabled' => false],
-            'teams' => ['enabled' => false],
+            'email'   => ['enabled' => false],
+            'slack'   => ['enabled' => false],
+            'teams'   => ['enabled' => false],
             'webhook' => ['enabled' => false],
         ];
     }
@@ -129,7 +132,7 @@ class DynamicNotificationConfiguration
      */
     public function createChannelsFromDatabase(): array
     {
-        $config = $this->getNotificationConfigFromDatabase();
+        $config   = $this->getNotificationConfigFromDatabase();
         $channels = [];
 
         // Create Email channel if enabled
@@ -139,7 +142,7 @@ class DynamicNotificationConfiguration
                 $this->twig,
                 $config['email']['from'] ?? 'noreply@example.com',
                 $config['email']['to'] ?? [],
-                true
+                true,
             );
         }
 
@@ -150,7 +153,7 @@ class DynamicNotificationConfiguration
                 $config['slack']['webhook_url'],
                 'slack',
                 [],
-                true
+                true,
             );
         }
 
@@ -161,7 +164,7 @@ class DynamicNotificationConfiguration
                 $config['teams']['webhook_url'],
                 'teams',
                 [],
-                true
+                true,
             );
         }
 
@@ -172,7 +175,7 @@ class DynamicNotificationConfiguration
                 $config['webhook']['url'],
                 $config['webhook']['format'] ?? 'json',
                 $config['webhook']['headers'] ?? [],
-                true
+                true,
             );
         }
 

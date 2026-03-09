@@ -72,8 +72,6 @@ final class DeleteRecordsByFilterRequestTest extends TestCase
         $r = new DeleteRecordsByFilterRequest(
             env: 'dev',
             from: 'access_statistics',
-            startDate: null,
-            endDate: null,
         );
         $this->assertSame('access_statistics', $r->from);
         $this->assertSame('dev', $r->env);
@@ -110,7 +108,7 @@ final class DeleteRecordsByFilterRequestTest extends TestCase
 
     public function testFromPropertyCanBeAssignedBackToAccessRecords(): void
     {
-        $r = new DeleteRecordsByFilterRequest(env: 'prod', from: 'access_statistics');
+        $r       = new DeleteRecordsByFilterRequest(env: 'prod', from: 'access_statistics');
         $r->from = 'access_records';
 
         $this->assertSame('access_records', $r->from);
@@ -120,12 +118,12 @@ final class DeleteRecordsByFilterRequestTest extends TestCase
     {
         $r = new DeleteRecordsByFilterRequest();
 
-        $r->startDate = '2026-03-01';
-        $r->endDate = '2026-03-31';
-        $r->route = 'api_users';
-        $r->statusCode = '404';
-        $r->minQueryTime = '0.01';
-        $r->maxQueryTime = '1.5';
+        $r->startDate      = '2026-03-01';
+        $r->endDate        = '2026-03-31';
+        $r->route          = 'api_users';
+        $r->statusCode     = '404';
+        $r->minQueryTime   = '0.01';
+        $r->maxQueryTime   = '1.5';
         $r->minMemoryUsage = '524288';
         $r->maxMemoryUsage = '10485760';
 

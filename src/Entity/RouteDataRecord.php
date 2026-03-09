@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Entity;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
+
+use function strlen;
 
 /**
  * Route access record entity.
@@ -20,19 +23,20 @@ use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
  */
 #[ORM\Entity(repositoryClass: RouteDataRecordRepository::class)]
 #[ORM\Table(name: 'routes_data_records')]
-#[ORM\Index(columns: ['route_data_id'], name: 'idx_record_route_data_id')]
-#[ORM\Index(columns: ['accessed_at'], name: 'idx_record_accessed_at')]
-#[ORM\Index(columns: ['status_code'], name: 'idx_record_status_code')]
-#[ORM\Index(columns: ['route_data_id', 'accessed_at'], name: 'idx_record_route_accessed')]
+#[ORM\Index(name: 'idx_record_route_data_id', columns: ['route_data_id'])]
+#[ORM\Index(name: 'idx_record_accessed_at', columns: ['accessed_at'])]
+#[ORM\Index(name: 'idx_record_status_code', columns: ['status_code'])]
+#[ORM\Index(name: 'idx_record_route_accessed', columns: ['route_data_id', 'accessed_at'])]
 #[ORM\UniqueConstraint(name: 'uniq_record_request_id', columns: ['request_id'])]
 class RouteDataRecord
 {
     /**
-     * Primary key identifier.
+     * Primary key identifier (Doctrine assigns on persist).
      */
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]
+    /** @phpstan-ignore-next-line property.unusedType */
     private ?int $id = null;
 
     /**
@@ -46,7 +50,7 @@ class RouteDataRecord
      * Access timestamp.
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    private \DateTimeImmutable $accessedAt;
+    private DateTimeImmutable $accessedAt;
 
     /**
      * HTTP status code of the response.
@@ -82,7 +86,7 @@ class RouteDataRecord
      * Unique request identifier to avoid duplicate records for the same HTTP request
      * (e.g. when main request and sub-requests both fire TERMINATE).
      */
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true, unique: true)]
+    #[ORM\Column(type: Types::STRING, length: 64, unique: true, nullable: true)]
     private ?string $requestId = null;
 
     /**
@@ -105,6 +109,8 @@ class RouteDataRecord
 
     /**
      * Route parameters for this specific request (e.g. ['id' => 123] for /user/123).
+     *
+     * @var array<string, mixed>|null
      */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $routeParams = null;
@@ -120,7 +126,7 @@ class RouteDataRecord
      */
     public function __construct()
     {
-        $this->accessedAt = new \DateTimeImmutable();
+        $this->accessedAt = new DateTimeImmutable();
     }
 
     /**
@@ -158,9 +164,9 @@ class RouteDataRecord
     /**
      * Get the access timestamp.
      *
-     * @return \DateTimeImmutable The access timestamp
+     * @return DateTimeImmutable The access timestamp
      */
-    public function getAccessedAt(): \DateTimeImmutable
+    public function getAccessedAt(): DateTimeImmutable
     {
         return $this->accessedAt;
     }
@@ -168,9 +174,9 @@ class RouteDataRecord
     /**
      * Set the access timestamp.
      *
-     * @param \DateTimeImmutable $accessedAt The access timestamp
+     * @param DateTimeImmutable $accessedAt The access timestamp
      */
-    public function setAccessedAt(\DateTimeImmutable $accessedAt): self
+    public function setAccessedAt(DateTimeImmutable $accessedAt): self
     {
         $this->accessedAt = $accessedAt;
 
@@ -326,7 +332,7 @@ class RouteDataRecord
      */
     public function setReferer(?string $referer): self
     {
-        $this->referer = null !== $referer && \strlen($referer) > 2048 ? substr($referer, 0, 2048) : $referer;
+        $this->referer = $referer !== null && strlen($referer) > 2048 ? substr($referer, 0, 2048) : $referer;
 
         return $this;
     }
@@ -348,7 +354,7 @@ class RouteDataRecord
      */
     public function setUserIdentifier(?string $userIdentifier): self
     {
-        $this->userIdentifier = null !== $userIdentifier && \strlen($userIdentifier) > 255 ? substr($userIdentifier, 0, 255) : $userIdentifier;
+        $this->userIdentifier = $userIdentifier !== null && strlen($userIdentifier) > 255 ? substr($userIdentifier, 0, 255) : $userIdentifier;
 
         return $this;
     }
@@ -370,7 +376,7 @@ class RouteDataRecord
      */
     public function setUserId(?string $userId): self
     {
-        $this->userId = null !== $userId && \strlen($userId) > 64 ? substr($userId, 0, 64) : $userId;
+        $this->userId = $userId !== null && strlen($userId) > 64 ? substr($userId, 0, 64) : $userId;
 
         return $this;
     }
@@ -378,7 +384,7 @@ class RouteDataRecord
     /**
      * Get the route parameters for this request.
      *
-     * @return array|null Route params (e.g. ['id' => 123])
+     * @return array<string, mixed>|null Route params (e.g. ['id' => 123])
      */
     public function getRouteParams(): ?array
     {
@@ -388,7 +394,7 @@ class RouteDataRecord
     /**
      * Set the route parameters for this request.
      *
-     * @param array|null $routeParams Route params
+     * @param array<string, mixed>|null $routeParams Route params
      */
     public function setRouteParams(?array $routeParams): self
     {
@@ -414,7 +420,7 @@ class RouteDataRecord
      */
     public function setRoutePath(?string $routePath): self
     {
-        $this->routePath = null !== $routePath && \strlen($routePath) > 2048 ? substr($routePath, 0, 2048) : $routePath;
+        $this->routePath = $routePath !== null && strlen($routePath) > 2048 ? substr($routePath, 0, 2048) : $routePath;
 
         return $this;
     }

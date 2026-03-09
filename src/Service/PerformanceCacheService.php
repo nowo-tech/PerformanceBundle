@@ -42,11 +42,7 @@ class PerformanceCacheService
     ) {
         // Handle case where cache service might not be available (string passed instead of null)
         // or when the service is not configured
-        if ($cachePool instanceof CacheItemPoolInterface) {
-            $this->cachePool = $cachePool;
-        } else {
-            $this->cachePool = null;
-        }
+        $this->cachePool = $cachePool instanceof CacheItemPoolInterface ? $cachePool : null;
     }
 
     /**
@@ -58,11 +54,11 @@ class PerformanceCacheService
      */
     public function getCachedStatistics(string $env): ?array
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return null;
         }
 
-        $key = $this->getStatisticsKey($env);
+        $key  = $this->getStatisticsKey($env);
         $item = $this->cachePool->getItem($key);
 
         if ($item->isHit()) {
@@ -75,19 +71,19 @@ class PerformanceCacheService
     /**
      * Cache statistics for an environment.
      *
-     * @param string               $env        The environment
+     * @param string $env The environment
      * @param array<string, mixed> $statistics The statistics to cache
-     * @param int|null             $ttl        Time to live in seconds (default: 1 hour)
+     * @param int|null $ttl Time to live in seconds (default: 1 hour)
      *
      * @return bool True if cached successfully
      */
     public function cacheStatistics(string $env, array $statistics, ?int $ttl = null): bool
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return false;
         }
 
-        $key = $this->getStatisticsKey($env);
+        $key  = $this->getStatisticsKey($env);
         $item = $this->cachePool->getItem($key);
         $item->set($statistics);
         $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
@@ -102,11 +98,11 @@ class PerformanceCacheService
      */
     public function getCachedEnvironments(): ?array
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return null;
         }
 
-        $key = $this->getEnvironmentsKey();
+        $key  = $this->getEnvironmentsKey();
         $item = $this->cachePool->getItem($key);
 
         if ($item->isHit()) {
@@ -120,17 +116,17 @@ class PerformanceCacheService
      * Cache environment list.
      *
      * @param string[] $environments The environment list to cache
-     * @param int|null $ttl          Time to live in seconds (default: 1 hour)
+     * @param int|null $ttl Time to live in seconds (default: 1 hour)
      *
      * @return bool True if cached successfully
      */
     public function cacheEnvironments(array $environments, ?int $ttl = null): bool
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return false;
         }
 
-        $key = $this->getEnvironmentsKey();
+        $key  = $this->getEnvironmentsKey();
         $item = $this->cachePool->getItem($key);
         $item->set($environments);
         $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
@@ -147,7 +143,7 @@ class PerformanceCacheService
      */
     public function invalidateStatistics(string $env): bool
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return false;
         }
 
@@ -163,7 +159,7 @@ class PerformanceCacheService
      */
     public function invalidateEnvironments(): bool
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return false;
         }
 
@@ -179,7 +175,7 @@ class PerformanceCacheService
      */
     public function invalidateAll(): bool
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return false;
         }
 
@@ -222,7 +218,7 @@ class PerformanceCacheService
      */
     private function getStatisticsKey(string $env): string
     {
-        return self::CACHE_PREFIX.'stats_'.$env;
+        return self::CACHE_PREFIX . 'stats_' . $env;
     }
 
     /**
@@ -232,7 +228,7 @@ class PerformanceCacheService
      */
     private function getEnvironmentsKey(): string
     {
-        return self::CACHE_PREFIX.'environments';
+        return self::CACHE_PREFIX . 'environments';
     }
 
     /**
@@ -244,11 +240,11 @@ class PerformanceCacheService
      */
     public function getCachedValue(string $key): mixed
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return null;
         }
 
-        $item = $this->cachePool->getItem(self::CACHE_PREFIX.$key);
+        $item = $this->cachePool->getItem(self::CACHE_PREFIX . $key);
 
         if ($item->isHit()) {
             return $item->get();
@@ -260,19 +256,19 @@ class PerformanceCacheService
     /**
      * Cache a value by key.
      *
-     * @param string   $key   The cache key
-     * @param mixed    $value The value to cache
-     * @param int|null $ttl   Time to live in seconds (default: 1 hour)
+     * @param string $key The cache key
+     * @param mixed $value The value to cache
+     * @param int|null $ttl Time to live in seconds (default: 1 hour)
      *
      * @return bool True if cached successfully
      */
     public function cacheValue(string $key, mixed $value, ?int $ttl = null): bool
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return false;
         }
 
-        $item = $this->cachePool->getItem(self::CACHE_PREFIX.$key);
+        $item = $this->cachePool->getItem(self::CACHE_PREFIX . $key);
         $item->set($value);
         $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
 
@@ -288,10 +284,10 @@ class PerformanceCacheService
      */
     public function invalidateValue(string $key): bool
     {
-        if (null === $this->cachePool) {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
             return false;
         }
 
-        return $this->cachePool->deleteItem(self::CACHE_PREFIX.$key);
+        return $this->cachePool->deleteItem(self::CACHE_PREFIX . $key);
     }
 }

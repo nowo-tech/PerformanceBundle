@@ -12,7 +12,7 @@ final class QueryLoggerTest extends TestCase
     public function testInitialState(): void
     {
         $logger = new QueryLogger();
-        
+
         $this->assertSame(0, $logger->getQueryCount());
         $this->assertSame(0.0, $logger->getTotalQueryTime());
     }
@@ -20,11 +20,11 @@ final class QueryLoggerTest extends TestCase
     public function testStartAndStopQuery(): void
     {
         $logger = new QueryLogger();
-        
+
         $logger->startQuery('query1');
         usleep(10000); // Sleep 10ms
         $logger->stopQuery('query1');
-        
+
         $this->assertSame(1, $logger->getQueryCount());
         $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
     }
@@ -32,15 +32,15 @@ final class QueryLoggerTest extends TestCase
     public function testMultipleQueries(): void
     {
         $logger = new QueryLogger();
-        
+
         $logger->startQuery('query1');
         usleep(5000);
         $logger->stopQuery('query1');
-        
+
         $logger->startQuery('query2');
         usleep(5000);
         $logger->stopQuery('query2');
-        
+
         $this->assertSame(2, $logger->getQueryCount());
         $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
     }
@@ -48,10 +48,10 @@ final class QueryLoggerTest extends TestCase
     public function testStopQueryWithoutStart(): void
     {
         $logger = new QueryLogger();
-        
+
         // Stop query that was never started
         $logger->stopQuery('nonexistent');
-        
+
         $this->assertSame(0, $logger->getQueryCount());
         $this->assertSame(0.0, $logger->getTotalQueryTime());
     }
@@ -59,16 +59,16 @@ final class QueryLoggerTest extends TestCase
     public function testReset(): void
     {
         $logger = new QueryLogger();
-        
+
         $logger->startQuery('query1');
         usleep(5000);
         $logger->stopQuery('query1');
-        
+
         $this->assertSame(1, $logger->getQueryCount());
         $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
-        
+
         $logger->reset();
-        
+
         $this->assertSame(0, $logger->getQueryCount());
         $this->assertSame(0.0, $logger->getTotalQueryTime());
     }
@@ -76,15 +76,15 @@ final class QueryLoggerTest extends TestCase
     public function testConcurrentQueries(): void
     {
         $logger = new QueryLogger();
-        
+
         $logger->startQuery('query1');
         $logger->startQuery('query2');
-        
+
         usleep(5000);
-        
+
         $logger->stopQuery('query1');
         $logger->stopQuery('query2');
-        
+
         $this->assertSame(2, $logger->getQueryCount());
         $this->assertGreaterThan(0.0, $logger->getTotalQueryTime());
     }
@@ -96,7 +96,7 @@ final class QueryLoggerTest extends TestCase
         usleep(2000);
         $logger->stopQuery('q1');
         $countAfterFirst = $logger->getQueryCount();
-        $timeAfterFirst = $logger->getTotalQueryTime();
+        $timeAfterFirst  = $logger->getTotalQueryTime();
 
         $logger->stopQuery('q1');
 

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
+use Exception;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Tests for PerformanceController::getAvailableEnvironments() method.
@@ -19,15 +21,15 @@ use PHPUnit\Framework\MockObject\MockObject;
  */
 final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
 {
-    private PerformanceMetricsService|MockObject $metricsService;
-    private PerformanceCacheService|MockObject|null $cacheService;
-    private RouteDataRepository|MockObject $repository;
+    private MockObject $metricsService;
+    private ?MockObject $cacheService;
+    private MockObject $repository;
 
     protected function setUp(): void
     {
         $this->metricsService = $this->createMock(PerformanceMetricsService::class);
-        $this->repository = $this->createMock(RouteDataRepository::class);
-        $this->cacheService = null;
+        $this->repository     = $this->createMock(RouteDataRepository::class);
+        $this->cacheService   = null;
     }
 
     /**
@@ -40,7 +42,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
         ?string $kernelEnvironment = null,
         bool $getParameterThrows = false
     ): PerformanceController {
-        $allowed = $allowedEnvironments ?? ['dev', 'test'];
+        $allowed    = $allowedEnvironments ?? ['dev', 'test'];
         $controller = $this->getMockBuilder(PerformanceController::class)
             ->setConstructorArgs([
                 $this->metricsService,
@@ -85,7 +87,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
         if ($mockGetParameter) {
             $expectation = $controller->method('getParameter')->with('kernel.environment');
             if ($getParameterThrows) {
-                $expectation->willThrowException(new \Exception('Parameter not found'));
+                $expectation->willThrowException(new Exception('Parameter not found'));
             } else {
                 $expectation->willReturn($kernelEnvironment);
             }
@@ -99,9 +101,9 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
      */
     private function callGetAvailableEnvironments(PerformanceController $controller): array
     {
-        $reflection = new \ReflectionClass($controller);
-        $method = $reflection->getMethod('getAvailableEnvironments');
-        $method->setAccessible(true);
+        $reflection = new ReflectionClass($controller);
+        $method     = $reflection->getMethod('getAvailableEnvironments');
+
         return $method->invoke($controller);
     }
 
@@ -124,7 +126,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
     public function testGetAvailableEnvironmentsFromDatabase(): void
     {
         $databaseEnvironments = ['dev', 'test', 'stage', 'prod'];
-        $this->cacheService = $this->createMock(PerformanceCacheService::class);
+        $this->cacheService   = $this->createMock(PerformanceCacheService::class);
         $this->cacheService->method('getCachedEnvironments')
             ->willReturn(null); // No cache
         $this->cacheService->expects($this->once())
@@ -146,7 +148,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
     public function testGetAvailableEnvironmentsEmptyDatabaseUsesAllowedEnvironments(): void
     {
         $allowedEnvironments = ['prod', 'dev', 'test', 'stage'];
-        $this->cacheService = $this->createMock(PerformanceCacheService::class);
+        $this->cacheService  = $this->createMock(PerformanceCacheService::class);
         $this->cacheService->method('getCachedEnvironments')
             ->willReturn(null);
         $this->cacheService->expects($this->once())
@@ -167,7 +169,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
 
     public function testGetAvailableEnvironmentsEmptyDatabaseUsesCurrentEnvironment(): void
     {
-        $currentEnv = 'prod';
+        $currentEnv         = 'prod';
         $this->cacheService = $this->createMock(PerformanceCacheService::class);
         $this->cacheService->method('getCachedEnvironments')
             ->willReturn(null);
@@ -184,7 +186,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
             $this->cacheService,
             [], // no allowed → use current env as fallback
             true,
-            $currentEnv
+            $currentEnv,
         );
 
         $result = $this->callGetAvailableEnvironments($controller);
@@ -195,7 +197,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
     public function testGetAvailableEnvironmentsEmptyDatabaseUsesDefaultFallback(): void
     {
         $defaultEnvironments = ['dev', 'test', 'prod'];
-        $this->cacheService = $this->createMock(PerformanceCacheService::class);
+        $this->cacheService  = $this->createMock(PerformanceCacheService::class);
         $this->cacheService->method('getCachedEnvironments')
             ->willReturn(null);
         $this->cacheService->expects($this->once())
@@ -210,8 +212,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
         $controller = $this->createController(
             $this->cacheService,
             [], // No allowed environments
-            true, // Mock getParameter
-            null // No kernel environment
+            true, // No kernel environment
         );
 
         $result = $this->callGetAvailableEnvironments($controller);
@@ -222,7 +223,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
     public function testGetAvailableEnvironmentsDatabaseExceptionUsesAllowedEnvironments(): void
     {
         $allowedEnvironments = ['prod', 'dev'];
-        $this->cacheService = $this->createMock(PerformanceCacheService::class);
+        $this->cacheService  = $this->createMock(PerformanceCacheService::class);
         $this->cacheService->method('getCachedEnvironments')
             ->willReturn(null);
         $this->cacheService->expects($this->once())
@@ -230,7 +231,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
             ->with($allowedEnvironments);
 
         $this->metricsService->method('getRepository')
-            ->willThrowException(new \Exception('Database error'));
+            ->willThrowException(new Exception('Database error'));
 
         $controller = $this->createController($this->cacheService, $allowedEnvironments);
 
@@ -242,7 +243,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
     public function testGetAvailableEnvironmentsDatabaseExceptionUsesDefaultFallback(): void
     {
         $defaultEnvironments = ['dev', 'test', 'prod'];
-        $this->cacheService = $this->createMock(PerformanceCacheService::class);
+        $this->cacheService  = $this->createMock(PerformanceCacheService::class);
         $this->cacheService->method('getCachedEnvironments')
             ->willReturn(null);
         $this->cacheService->expects($this->once())
@@ -250,7 +251,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
             ->with($defaultEnvironments);
 
         $this->metricsService->method('getRepository')
-            ->willThrowException(new \Exception('Database error'));
+            ->willThrowException(new Exception('Database error'));
 
         $controller = $this->createController($this->cacheService, []);
 
@@ -267,7 +268,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
         $this->repository->method('getDistinctEnvironments')
             ->willReturn($databaseEnvironments);
 
-        $controller = $this->createController(null); // No cache service
+        $controller = $this->createController(); // No cache service
 
         $result = $this->callGetAvailableEnvironments($controller);
 
@@ -301,7 +302,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
             null,
             [], // No allowed environments
             true, // Mock getParameter
-            $currentEnv
+            $currentEnv,
         );
 
         $result = $this->callGetAvailableEnvironments($controller);
@@ -312,7 +313,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
     public function testGetAvailableEnvironmentsGetParameterException(): void
     {
         $defaultEnvironments = ['dev', 'test', 'prod'];
-        $this->cacheService = $this->createMock(PerformanceCacheService::class);
+        $this->cacheService  = $this->createMock(PerformanceCacheService::class);
         $this->cacheService->method('getCachedEnvironments')
             ->willReturn(null);
         $this->cacheService->expects($this->once())
@@ -329,12 +330,11 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
             [], // No allowed environments
             true, // mock getParameter
             null,
-            true  // getParameter throws
+            true,  // getParameter throws
         );
 
         $result = $this->callGetAvailableEnvironments($controller);
 
         $this->assertSame($defaultEnvironments, $result);
     }
-
 }

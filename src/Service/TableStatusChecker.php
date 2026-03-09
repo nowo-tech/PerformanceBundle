@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+
+use function is_array;
+use function is_string;
 
 /**
  * Service to check the status of the performance metrics database table.
@@ -28,10 +33,10 @@ class TableStatusChecker
     /**
      * Creates a new instance.
      *
-     * @param ManagerRegistry $registry            Doctrine registry
-     * @param string          $connectionName      The name of the Doctrine connection to use
-     * @param string          $tableName           The configured table name
-     * @param bool            $enableAccessRecords Whether access records (routes_data_records) are enabled
+     * @param ManagerRegistry $registry Doctrine registry
+     * @param string $connectionName The name of the Doctrine connection to use
+     * @param string $tableName The configured table name
+     * @param bool $enableAccessRecords Whether access records (routes_data_records) are enabled
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
@@ -59,23 +64,22 @@ class TableStatusChecker
      *
      * @param \Doctrine\DBAL\Connection $connection The database connection
      *
-     * @return \Doctrine\DBAL\Schema\AbstractSchemaManager The schema manager
+     * @return \Doctrine\DBAL\Schema\AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> The schema manager
      */
     private function getSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
     {
-        // DBAL 3.x uses createSchemaManager()
+        /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
         if (method_exists($connection, 'createSchemaManager')) {
             return $connection->createSchemaManager();
         }
         // DBAL 2.x uses getSchemaManager()
         if (method_exists($connection, 'getSchemaManager')) {
-            // @phpstan-ignore-next-line - getSchemaManager() exists in DBAL 2.x but not in type definitions for DBAL 3.x
             /** @var callable $getSchemaManager */
             $getSchemaManager = [$connection, 'getSchemaManager'];
 
             return $getSchemaManager();
         }
-        throw new \RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
+        throw new RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
     }
 
     /**
@@ -86,40 +90,39 @@ class TableStatusChecker
     public function tableExists(): bool
     {
         // Try to get from cache first
-        if (null !== $this->cacheService) {
-            $cacheKey = 'table_exists_'.$this->connectionName.'_'.$this->tableName;
-            $cached = $this->cacheService->getCachedValue($cacheKey);
-            if (null !== $cached) {
+        if ($this->cacheService instanceof PerformanceCacheService) {
+            $cacheKey = 'table_exists_' . $this->connectionName . '_' . $this->tableName;
+            $cached   = $this->cacheService->getCachedValue($cacheKey);
+            if ($cached !== null) {
                 return (bool) $cached;
             }
         }
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
+            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+                throw new RuntimeException('Registry did not return a DBAL Connection.');
+            }
             $schemaManager = $this->getSchemaManager($connection);
 
             // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
+            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteData::class);
             // Use method_exists check to avoid linter errors and ensure compatibility
             $hasGetTableName = method_exists($metadata, 'getTableName');
-            if ($hasGetTableName) {
-                $actualTableName = $metadata->getTableName();
-            } else {
-                $actualTableName = $metadata->table['name'] ?? $this->tableName;
-            }
+            $actualTableName = $hasGetTableName ? $metadata->getTableName() : $metadata->table['name'] ?? $this->tableName;
 
             $exists = $schemaManager->tablesExist([$actualTableName]);
 
             // Cache the result (table structure doesn't change frequently)
-            if (null !== $this->cacheService) {
-                $cacheKey = 'table_exists_'.$this->connectionName.'_'.$this->tableName;
+            if ($this->cacheService instanceof PerformanceCacheService) {
+                $cacheKey = 'table_exists_' . $this->connectionName . '_' . $this->tableName;
                 $this->cacheService->cacheValue($cacheKey, $exists, self::CACHE_TTL_SECONDS);
             }
 
             return $exists;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             // If there's any error (e.g., connection issue, metadata not loaded), assume table doesn't exist
             return false;
         }
@@ -132,15 +135,15 @@ class TableStatusChecker
      */
     public function getMainTableStatus(): array
     {
-        $tableName = $this->tableName;
-        $exists = $this->tableExists();
+        $tableName      = $this->tableName;
+        $exists         = $this->tableExists();
         $missingColumns = $exists ? $this->getMissingColumns() : [];
-        $complete = $exists && empty($missingColumns);
+        $complete       = $exists && $missingColumns === [];
 
         return [
-            'exists' => $exists,
-            'complete' => $complete,
-            'table_name' => $tableName,
+            'exists'          => $exists,
+            'complete'        => $complete,
+            'table_name'      => $tableName,
             'missing_columns' => $missingColumns,
         ];
     }
@@ -177,20 +180,20 @@ class TableStatusChecker
         }
 
         // Try to get from cache first
-        if (null !== $this->cacheService) {
-            $cacheKey = 'table_complete_'.$this->connectionName.'_'.$this->tableName;
-            $cached = $this->cacheService->getCachedValue($cacheKey);
-            if (null !== $cached) {
+        if ($this->cacheService instanceof PerformanceCacheService) {
+            $cacheKey = 'table_complete_' . $this->connectionName . '_' . $this->tableName;
+            $cached   = $this->cacheService->getCachedValue($cacheKey);
+            if ($cached !== null) {
                 return (bool) $cached;
             }
         }
 
         $missingColumns = $this->getMissingColumns();
-        $isComplete = empty($missingColumns);
+        $isComplete     = $missingColumns === [];
 
         // Cache the result (table structure doesn't change frequently)
-        if (null !== $this->cacheService) {
-            $cacheKey = 'table_complete_'.$this->connectionName.'_'.$this->tableName;
+        if ($this->cacheService instanceof PerformanceCacheService) {
+            $cacheKey = 'table_complete_' . $this->connectionName . '_' . $this->tableName;
             $this->cacheService->cacheValue($cacheKey, $isComplete, self::CACHE_TTL_SECONDS);
         }
 
@@ -206,36 +209,35 @@ class TableStatusChecker
      */
     public function getMissingColumns(): array
     {
-        $cacheKey = 'missing_columns_'.$this->connectionName.'_'.$this->tableName;
+        $cacheKey = 'missing_columns_' . $this->connectionName . '_' . $this->tableName;
 
-        if (null !== $this->cacheService) {
+        if ($this->cacheService instanceof PerformanceCacheService) {
             $cached = $this->cacheService->getCachedValue($cacheKey);
-            if (null !== $cached && \is_array($cached)) {
+            if ($cached !== null && is_array($cached)) {
                 return $cached;
             }
         }
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
+            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+                throw new RuntimeException('Registry did not return a DBAL Connection.');
+            }
             $schemaManager = $this->getSchemaManager($connection);
 
             // Get the actual table name from entity metadata
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteData');
+            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteData::class);
             // Use method_exists check to avoid linter errors and ensure compatibility
             $hasGetTableName = method_exists($metadata, 'getTableName');
-            if ($hasGetTableName) {
-                $actualTableName = $metadata->getTableName();
-            } else {
-                $actualTableName = $metadata->table['name'] ?? $this->tableName;
-            }
+            $actualTableName = $hasGetTableName ? $metadata->getTableName() : $metadata->table['name'] ?? $this->tableName;
 
             // Check if table exists
             if (!$schemaManager->tablesExist([$actualTableName])) {
                 // If table doesn't exist, all columns are missing
                 $missing = $this->getExpectedColumns($metadata);
-                if (null !== $this->cacheService) {
+                if ($this->cacheService instanceof PerformanceCacheService) {
                     $this->cacheService->cacheValue($cacheKey, $missing, self::CACHE_TTL_SECONDS);
                 }
 
@@ -243,22 +245,22 @@ class TableStatusChecker
             }
 
             // Get existing columns from database
-            $table = $schemaManager->introspectTable($actualTableName);
+            $table           = $schemaManager->introspectTable($actualTableName);
             $existingColumns = [];
             foreach ($table->getColumns() as $column) {
                 // Use getName() directly - getQuotedName() is deprecated in DBAL 3.x
                 // Column names from introspectTable() are already unquoted
                 $columnName = method_exists($column, 'getName') ? $column->getName() : '';
                 // Convert Name object to string if needed
-                $columnName = \is_string($columnName) ? $columnName : (string) $columnName;
+                $columnName = is_string($columnName) ? $columnName : (string) $columnName;
                 // Remove quotes if present (shouldn't be, but just in case)
-                $columnName = trim($columnName, '`"\'');
+                $columnName                               = trim($columnName, '`"\'');
                 $existingColumns[strtolower($columnName)] = true;
             }
 
             // Get expected columns from entity metadata
             $expectedColumns = $this->getExpectedColumns($metadata);
-            $missingColumns = [];
+            $missingColumns  = [];
 
             foreach ($expectedColumns as $columnName) {
                 if (!isset($existingColumns[strtolower($columnName)])) {
@@ -266,12 +268,12 @@ class TableStatusChecker
                 }
             }
 
-            if (null !== $this->cacheService) {
+            if ($this->cacheService instanceof PerformanceCacheService) {
                 $this->cacheService->cacheValue($cacheKey, $missingColumns, self::CACHE_TTL_SECONDS);
             }
 
             return $missingColumns;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             // If there's any error, return empty array (assume we can't check). Do not cache errors.
             return [];
         }
@@ -283,14 +285,16 @@ class TableStatusChecker
      * @param \Doctrine\ORM\Mapping\ClassMetadata $metadata Entity metadata
      *
      * @return array<string> List of expected column names
+     *
+     * @phpstan-ignore missingType.generics (ClassMetadata used without entity type)
      */
-    private function getExpectedColumns($metadata): array
+    private function getExpectedColumns(\Doctrine\ORM\Mapping\ClassMetadata $metadata): array
     {
         $expectedColumns = [];
 
         // Get all field names from entity metadata
         foreach ($metadata->getFieldNames() as $fieldName) {
-            $columnName = $metadata->getColumnName($fieldName);
+            $columnName        = $metadata->getColumnName($fieldName);
             $expectedColumns[] = $columnName;
         }
 
@@ -309,28 +313,31 @@ class TableStatusChecker
             return true; // N/A, consider "ok"
         }
 
-        if (null !== $this->cacheService) {
-            $cacheKey = 'records_table_exists_'.$this->connectionName;
-            $cached = $this->cacheService->getCachedValue($cacheKey);
-            if (null !== $cached) {
+        if ($this->cacheService instanceof PerformanceCacheService) {
+            $cacheKey = 'records_table_exists_' . $this->connectionName;
+            $cached   = $this->cacheService->getCachedValue($cacheKey);
+            if ($cached !== null) {
                 return (bool) $cached;
             }
         }
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
-            $schemaManager = $this->getSchemaManager($connection);
+            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+                throw new RuntimeException('Registry did not return a DBAL Connection.');
+            }
+            $schemaManager    = $this->getSchemaManager($connection);
             $recordsTableName = $this->getRecordsTableName();
 
             $exists = $schemaManager->tablesExist([$recordsTableName]);
 
-            if (null !== $this->cacheService) {
-                $cacheKey = 'records_table_exists_'.$this->connectionName;
+            if ($this->cacheService instanceof PerformanceCacheService) {
+                $cacheKey = 'records_table_exists_' . $this->connectionName;
                 $this->cacheService->cacheValue($cacheKey, $exists, self::CACHE_TTL_SECONDS);
             }
 
             return $exists;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -346,15 +353,15 @@ class TableStatusChecker
             return null;
         }
 
-        $tableName = $this->getRecordsTableName();
-        $exists = $this->recordsTableExists();
+        $tableName      = $this->getRecordsTableName();
+        $exists         = $this->recordsTableExists();
         $missingColumns = $exists ? $this->getRecordsMissingColumns() : [];
-        $complete = $exists && empty($missingColumns);
+        $complete       = $exists && $missingColumns === [];
 
         return [
-            'exists' => $exists,
-            'complete' => $complete,
-            'table_name' => $tableName,
+            'exists'          => $exists,
+            'complete'        => $complete,
+            'table_name'      => $tableName,
             'missing_columns' => $missingColumns,
         ];
     }
@@ -373,7 +380,7 @@ class TableStatusChecker
             return false;
         }
 
-        return empty($this->getRecordsMissingColumns());
+        return $this->getRecordsMissingColumns() === [];
     }
 
     /**
@@ -388,55 +395,58 @@ class TableStatusChecker
             return [];
         }
 
-        $cacheKey = 'records_missing_columns_'.$this->connectionName;
+        $cacheKey = 'records_missing_columns_' . $this->connectionName;
 
-        if (null !== $this->cacheService) {
+        if ($this->cacheService instanceof PerformanceCacheService) {
             $cached = $this->cacheService->getCachedValue($cacheKey);
-            if (null !== $cached && \is_array($cached)) {
+            if ($cached !== null && is_array($cached)) {
                 return $cached;
             }
         }
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
+            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+                throw new RuntimeException('Registry did not return a DBAL Connection.');
+            }
             $schemaManager = $this->getSchemaManager($connection);
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
+            $metadata         = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
             $recordsTableName = $this->getRecordsTableName();
 
             if (!$schemaManager->tablesExist([$recordsTableName])) {
                 $missing = $this->getExpectedColumns($metadata);
-                if (null !== $this->cacheService) {
+                if ($this->cacheService instanceof PerformanceCacheService) {
                     $this->cacheService->cacheValue($cacheKey, $missing, self::CACHE_TTL_SECONDS);
                 }
 
                 return $missing;
             }
 
-            $table = $schemaManager->introspectTable($recordsTableName);
+            $table           = $schemaManager->introspectTable($recordsTableName);
             $existingColumns = [];
             foreach ($table->getColumns() as $column) {
-                $columnName = method_exists($column, 'getName') ? $column->getName() : '';
-                $columnName = \is_string($columnName) ? $columnName : (string) $columnName;
-                $columnName = trim($columnName, '`"\'');
+                $columnName                               = method_exists($column, 'getName') ? $column->getName() : '';
+                $columnName                               = is_string($columnName) ? $columnName : (string) $columnName;
+                $columnName                               = trim($columnName, '`"\'');
                 $existingColumns[strtolower($columnName)] = true;
             }
 
             $expectedColumns = $this->getExpectedColumns($metadata);
-            $missingColumns = [];
+            $missingColumns  = [];
             foreach ($expectedColumns as $columnName) {
                 if (!isset($existingColumns[strtolower($columnName)])) {
                     $missingColumns[] = $columnName;
                 }
             }
 
-            if (null !== $this->cacheService) {
+            if ($this->cacheService instanceof PerformanceCacheService) {
                 $this->cacheService->cacheValue($cacheKey, $missingColumns, self::CACHE_TTL_SECONDS);
             }
 
             return $missingColumns;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return [];
         }
     }
@@ -449,31 +459,31 @@ class TableStatusChecker
      */
     public function getRecordsTableName(): string
     {
-        if (null !== $this->cacheService) {
-            $cacheKey = 'records_table_name_'.$this->connectionName;
-            $cached = $this->cacheService->getCachedValue($cacheKey);
-            if (null !== $cached && \is_string($cached)) {
+        if ($this->cacheService instanceof PerformanceCacheService) {
+            $cacheKey = 'records_table_name_' . $this->connectionName;
+            $cached   = $this->cacheService->getCachedValue($cacheKey);
+            if ($cached !== null && is_string($cached)) {
                 return $cached;
             }
         }
 
         try {
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor('Nowo\PerformanceBundle\Entity\RouteDataRecord');
+            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
 
             $name = method_exists($metadata, 'getTableName')
                 ? $metadata->getTableName()
-                : ($metadata->table['name'] ?? $this->tableName.'_records');
+                : ($metadata->table['name'] ?? $this->tableName . '_records');
 
-            if (null !== $this->cacheService) {
-                $cacheKey = 'records_table_name_'.$this->connectionName;
+            if ($this->cacheService instanceof PerformanceCacheService) {
+                $cacheKey = 'records_table_name_' . $this->connectionName;
                 $this->cacheService->cacheValue($cacheKey, $name, self::CACHE_TTL_SECONDS);
             }
 
             return $name;
-        } catch (\Exception $e) {
-            return $this->tableName.'_records';
+        } catch (Exception) {
+            return $this->tableName . '_records';
         }
     }
 }

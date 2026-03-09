@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Entity;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use PHPUnit\Framework\TestCase;
 
@@ -15,7 +16,7 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testSetReviewedReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setReviewed(true);
+        $result    = $routeData->setReviewed(true);
 
         $this->assertSame($routeData, $result);
     }
@@ -23,8 +24,8 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testSetReviewedAtReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $date = new \DateTimeImmutable();
-        $result = $routeData->setReviewedAt($date);
+        $date      = new DateTimeImmutable();
+        $result    = $routeData->setReviewedAt($date);
 
         $this->assertSame($routeData, $result);
     }
@@ -32,7 +33,7 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testSetQueriesImprovedReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setQueriesImproved(true);
+        $result    = $routeData->setQueriesImproved(true);
 
         $this->assertSame($routeData, $result);
     }
@@ -40,7 +41,7 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testSetTimeImprovedReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setTimeImproved(false);
+        $result    = $routeData->setTimeImproved(false);
 
         $this->assertSame($routeData, $result);
     }
@@ -48,7 +49,7 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testSetReviewedByReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setReviewedBy('admin');
+        $result    = $routeData->setReviewedBy('admin');
 
         $this->assertSame($routeData, $result);
     }
@@ -56,7 +57,7 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testMarkAsReviewedReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->markAsReviewed(true, false, 'user123');
+        $result    = $routeData->markAsReviewed(true, false, 'user123');
 
         $this->assertSame($routeData, $result);
     }
@@ -74,14 +75,14 @@ final class RouteDataReviewMethodsTest extends TestCase
         $routeData = new RouteData();
         $routeData->markAsReviewed();
 
-        $this->assertInstanceOf(\DateTimeImmutable::class, $routeData->getReviewedAt());
+        $this->assertInstanceOf(DateTimeImmutable::class, $routeData->getReviewedAt());
         $this->assertNotNull($routeData->getReviewedAt());
     }
 
     public function testMarkAsReviewedWithOnlyQueriesImproved(): void
     {
         $routeData = new RouteData();
-        $routeData->markAsReviewed(true, null, null);
+        $routeData->markAsReviewed(true);
 
         $this->assertTrue($routeData->isReviewed());
         $this->assertTrue($routeData->getQueriesImproved());
@@ -92,7 +93,7 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testMarkAsReviewedWithOnlyTimeImproved(): void
     {
         $routeData = new RouteData();
-        $routeData->markAsReviewed(null, true, null);
+        $routeData->markAsReviewed(null, true);
 
         $this->assertTrue($routeData->isReviewed());
         $this->assertNull($routeData->getQueriesImproved());
@@ -118,7 +119,7 @@ final class RouteDataReviewMethodsTest extends TestCase
         $routeData->setTimeImproved(false);
         $routeData->setReviewedBy('admin');
 
-        $routeData->markAsReviewed(null, null, null);
+        $routeData->markAsReviewed();
 
         $this->assertTrue($routeData->getQueriesImproved());
         $this->assertFalse($routeData->getTimeImproved());
@@ -158,7 +159,7 @@ final class RouteDataReviewMethodsTest extends TestCase
     public function testSetSaveAccessRecordsReturnsSelf(): void
     {
         $routeData = new RouteData();
-        $result = $routeData->setSaveAccessRecords(false);
+        $result    = $routeData->setSaveAccessRecords(false);
         $this->assertSame($routeData, $result);
     }
 

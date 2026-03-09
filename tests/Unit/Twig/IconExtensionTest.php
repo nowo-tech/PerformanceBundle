@@ -67,4 +67,38 @@ final class IconExtensionTest extends TestCase
 
         $this->assertSame('', $result);
     }
+
+    /**
+     * Covers the branch where ux_icon() is defined (e.g. when symfony/ux-icons is installed).
+     *
+     * @runInSeparateProcess
+     *
+     * @preserveGlobalState disabled
+     */
+    public function testRenderIconReturnsUxIconOutputWhenUxIconExists(): void
+    {
+        require_once __DIR__ . '/../../stub_ux_icon.php';
+
+        $extension = new IconExtension();
+        $result    = $extension->renderIcon('bi:gear', []);
+
+        $this->assertStringContainsString('<svg', $result);
+        $this->assertStringContainsString('data-icon="bi:gear"', $result);
+    }
+
+    /**
+     * @runInSeparateProcess
+     *
+     * @preserveGlobalState disabled
+     */
+    public function testRenderIconWithOptionsPassesOptionsToUxIcon(): void
+    {
+        require_once __DIR__ . '/../../stub_ux_icon.php';
+
+        $extension = new IconExtension();
+        $result    = $extension->renderIcon('heroicons:check', ['class' => 'icon-sm']);
+
+        $this->assertStringContainsString('class="icon-sm"', $result);
+        $this->assertStringContainsString('data-icon="heroicons:check"', $result);
+    }
 }

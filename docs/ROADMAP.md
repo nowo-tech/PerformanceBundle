@@ -2,6 +2,51 @@
 
 This document outlines the planned improvements, optimizations, and new features for the Performance Bundle.
 
+
+## Table of contents
+
+- [🎯 Vision](#vision)
+- [📅 Roadmap Timeline](#roadmap-timeline)
+  - [Phase 1: Foundation & Core Improvements (Q1 2026)](#phase-1-foundation-core-improvements-q1-2026)
+  - [Phase 2: Advanced Features (Q2 2026)](#phase-2-advanced-features-q2-2026)
+  - [Phase 3: Enterprise Features (Q3 2026)](#phase-3-enterprise-features-q3-2026)
+  - [Phase 4: Developer Experience (Q4 2026)](#phase-4-developer-experience-q4-2026)
+- [🔧 Technical Improvements](#technical-improvements)
+  - [Architecture](#architecture)
+  - [Scalability](#scalability)
+  - [Performance](#performance)
+- [🎨 UI/UX Improvements](#uiux-improvements)
+  - [Dashboard](#dashboard)
+  - [Visualization](#visualization)
+- [🔌 Integrations](#integrations)
+  - [Monitoring Platforms](#monitoring-platforms)
+  - [CI/CD](#cicd)
+- [📊 Metrics & Analytics](#metrics-analytics)
+  - [New Metrics](#new-metrics)
+  - [Advanced Analytics](#advanced-analytics)
+- [🛡️ Reliability & Stability](#reliability-stability)
+  - [Error Handling](#error-handling)
+  - [Testing](#testing)
+- [📈 Performance Benchmarks](#performance-benchmarks)
+  - [Current Performance](#current-performance)
+  - [Target Performance](#target-performance)
+- [🎓 Learning & Resources](#learning-resources)
+  - [Documentation](#documentation)
+- [🤝 Community & Contribution](#community-contribution)
+  - [Open Source](#open-source)
+  - [Support](#support)
+- [📝 Notes](#notes)
+  - [Priority Levels](#priority-levels)
+  - [Version Planning](#version-planning)
+- [🔄 Feedback & Contributions](#feedback-contributions)
+- [✅ Recently Completed Features (2026-01-26)](#recently-completed-features-2026-01-26)
+  - [Core Features](#core-features)
+  - [Dashboard Enhancements](#dashboard-enhancements)
+  - [Technical Improvements](#technical-improvements)
+  - [Web Profiler Integration](#web-profiler-integration)
+  - [Recent Improvements (2026-01-27)](#recent-improvements-2026-01-27)
+  - [Recent Improvements (2026-01-26)](#recent-improvements-2026-01-26)
+
 ## 🎯 Vision
 
 Transform the Performance Bundle into a comprehensive performance monitoring and analysis tool for Symfony applications, providing actionable insights to optimize application performance.

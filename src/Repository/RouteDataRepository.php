@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Repository;
 
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+
+use function in_array;
+use function is_array;
+use function is_string;
+
+use const PHP_URL_PATH;
 
 /**
  * Repository for RouteData entity.
@@ -34,7 +42,7 @@ class RouteDataRepository extends ServiceEntityRepository
      * Find route data by name and environment.
      *
      * @param string $routeName The route name
-     * @param string $env       The environment (dev, test, prod)
+     * @param string $env The environment (dev, test, prod)
      *
      * @return RouteData|null The route data or null if not found
      */
@@ -73,8 +81,8 @@ class RouteDataRepository extends ServiceEntityRepository
      *
      * Ordered by last accessed; for performance ranking use aggregates (RouteDataRecord).
      *
-     * @param string $env   The environment (dev, test, prod)
-     * @param int    $limit Maximum number of results to return (default: 10)
+     * @param string $env The environment (dev, test, prod)
+     * @param int $limit Maximum number of results to return (default: 10)
      *
      * @return RouteData[] Array of route data entities
      */
@@ -109,10 +117,11 @@ class RouteDataRepository extends ServiceEntityRepository
     /**
      * Find routes with advanced filtering options.
      *
-     * @param string               $env     The environment (dev, test, prod)
+     * @param string $env The environment (dev, test, prod)
      * @param array<string, mixed> $filters Filter options:
      *                                      - route_names: string[] - Array of route names to filter (OR condition)
      *                                      - route_name_pattern: string - Pattern to match route names (LIKE)
+     *                                      - route_path_pattern: string - Path or URL to match (LIKE on RouteDataRecord.routePath)
      *                                      - min_request_time: float - Minimum request time
      *                                      - max_request_time: float - Maximum request time
      *                                      - min_query_count: int - Minimum query count
@@ -121,9 +130,9 @@ class RouteDataRepository extends ServiceEntityRepository
      *                                      - max_query_time: float - Maximum query time
      *                                      - date_from: \DateTimeImmutable - Filter from date (createdAt)
      *                                      - date_to: \DateTimeImmutable - Filter to date (createdAt)
-     * @param string               $sortBy  Field to sort by (default: 'requestTime')
-     * @param string               $order   Sort order: 'ASC' or 'DESC' (default: 'DESC')
-     * @param int|null             $limit   Maximum number of results (null for no limit)
+     * @param string $sortBy Field to sort by (default: 'requestTime')
+     * @param string $order Sort order: 'ASC' or 'DESC' (default: 'DESC')
+     * @param int|null $limit Maximum number of results (null for no limit)
      *
      * @return RouteData[] Array of route data entities
      */
@@ -139,36 +148,45 @@ class RouteDataRepository extends ServiceEntityRepository
             ->setParameter('env', $env);
 
         // Filter by route names (multiple routes with OR)
-        if (!empty($filters['route_names']) && \is_array($filters['route_names'])) {
+        if (!empty($filters['route_names']) && is_array($filters['route_names'])) {
             $qb->andWhere('r.name IN (:route_names)')
                 ->setParameter('route_names', $filters['route_names']);
         }
 
         // Filter by route name pattern (LIKE)
-        if (!empty($filters['route_name_pattern']) && \is_string($filters['route_name_pattern'])) {
+        if (!empty($filters['route_name_pattern']) && is_string($filters['route_name_pattern'])) {
             $qb->andWhere('r.name LIKE :route_pattern')
-                ->setParameter('route_pattern', '%'.$filters['route_name_pattern'].'%');
+                ->setParameter('route_pattern', '%' . $filters['route_name_pattern'] . '%');
+        }
+
+        // Filter by path/URL (subquery on RouteDataRecord.routePath)
+        $pathNorm = $this->normalizePathForFilter(
+            isset($filters['route_path_pattern']) && is_string($filters['route_path_pattern']) ? $filters['route_path_pattern'] : null,
+        );
+        if ($pathNorm !== null) {
+            $qb->andWhere('r.id IN (SELECT IDENTITY(rec.routeData) FROM ' . RouteDataRecord::class . ' rec WHERE rec.routePath LIKE :path_pattern)')
+                ->setParameter('path_pattern', '%' . $pathNorm . '%');
         }
 
         // Metric filters (request_time, total_queries, query_time) are applied via aggregates in PHP; only entity fields here
         // Filter by date range
-        if (isset($filters['date_from']) && $filters['date_from'] instanceof \DateTimeImmutable) {
+        if (isset($filters['date_from']) && $filters['date_from'] instanceof DateTimeImmutable) {
             $qb->andWhere('r.createdAt >= :date_from')
                 ->setParameter('date_from', $filters['date_from']);
         }
-        if (isset($filters['date_to']) && $filters['date_to'] instanceof \DateTimeImmutable) {
+        if (isset($filters['date_to']) && $filters['date_to'] instanceof DateTimeImmutable) {
             $qb->andWhere('r.createdAt <= :date_to')
                 ->setParameter('date_to', $filters['date_to']);
         }
 
         // Sort only by entity fields (metrics come from aggregates; use getRoutesWithAggregates for metric sort)
         $allowedSortFields = ['name', 'createdAt', 'lastAccessedAt'];
-        $sortField = \in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'lastAccessedAt';
-        $sortOrder = 'ASC' === strtoupper($order) ? 'ASC' : 'DESC';
+        $sortField         = in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'lastAccessedAt';
+        $sortOrder         = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
 
-        $qb->orderBy('r.'.$sortField, $sortOrder);
+        $qb->orderBy('r.' . $sortField, $sortOrder);
 
-        if (null !== $limit && $limit > 0) {
+        if ($limit !== null && $limit > 0) {
             $qb->setMaxResults($limit);
         }
 
@@ -178,7 +196,7 @@ class RouteDataRepository extends ServiceEntityRepository
     /**
      * Count routes matching the same filters as findWithFilters (without sort/limit).
      *
-     * @param string               $env     The environment (dev, test, prod)
+     * @param string $env The environment (dev, test, prod)
      * @param array<string, mixed> $filters Same filter options as findWithFilters
      *
      * @return int Number of matching routes
@@ -190,24 +208,63 @@ class RouteDataRepository extends ServiceEntityRepository
             ->where('r.env = :env')
             ->setParameter('env', $env);
 
-        if (!empty($filters['route_names']) && \is_array($filters['route_names'])) {
+        if (!empty($filters['route_names']) && is_array($filters['route_names'])) {
             $qb->andWhere('r.name IN (:route_names)')
                 ->setParameter('route_names', $filters['route_names']);
         }
-        if (!empty($filters['route_name_pattern']) && \is_string($filters['route_name_pattern'])) {
+        if (!empty($filters['route_name_pattern']) && is_string($filters['route_name_pattern'])) {
             $qb->andWhere('r.name LIKE :route_pattern')
-                ->setParameter('route_pattern', '%'.$filters['route_name_pattern'].'%');
+                ->setParameter('route_pattern', '%' . $filters['route_name_pattern'] . '%');
         }
-        if (isset($filters['date_from']) && $filters['date_from'] instanceof \DateTimeImmutable) {
+        $pathNorm = $this->normalizePathForFilter(
+            isset($filters['route_path_pattern']) && is_string($filters['route_path_pattern']) ? $filters['route_path_pattern'] : null,
+        );
+        if ($pathNorm !== null) {
+            $qb->andWhere('r.id IN (SELECT IDENTITY(rec.routeData) FROM ' . RouteDataRecord::class . ' rec WHERE rec.routePath LIKE :path_pattern)')
+                ->setParameter('path_pattern', '%' . $pathNorm . '%');
+        }
+        if (isset($filters['date_from']) && $filters['date_from'] instanceof DateTimeImmutable) {
             $qb->andWhere('r.createdAt >= :date_from')
                 ->setParameter('date_from', $filters['date_from']);
         }
-        if (isset($filters['date_to']) && $filters['date_to'] instanceof \DateTimeImmutable) {
+        if (isset($filters['date_to']) && $filters['date_to'] instanceof DateTimeImmutable) {
             $qb->andWhere('r.createdAt <= :date_to')
                 ->setParameter('date_to', $filters['date_to']);
         }
 
         return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Normalise URL or path input to a path-only string for filtering by routePath.
+     *
+     * @param string|null $input URL or path (with or without scheme/host)
+     *
+     * @return string|null Path starting with / or null if empty/invalid
+     */
+    private function normalizePathForFilter(?string $input): ?string
+    {
+        if ($input === null || $input === '') {
+            return null;
+        }
+        $s = trim($input);
+        if ($s === '') {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $s)) {
+            $path = parse_url($s, PHP_URL_PATH);
+
+            return is_string($path) && $path !== '' ? $path : null;
+        }
+        if (str_starts_with($s, '/')) {
+            return $s;
+        }
+        if (str_contains($s, '/')) {
+            return '/' . $s;
+        }
+        $path = parse_url('https://' . $s, PHP_URL_PATH);
+
+        return is_string($path) && $path !== '' ? $path : null;
     }
 
     /**
@@ -224,7 +281,7 @@ class RouteDataRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('r')
             ->delete();
 
-        if (null !== $env) {
+        if ($env !== null) {
             $qb->where('r.env = :env')
                 ->setParameter('env', $env);
         }
@@ -242,7 +299,7 @@ class RouteDataRepository extends ServiceEntityRepository
     public function deleteById(int $id): bool
     {
         $routeData = $this->find($id);
-        if (null === $routeData) {
+        if ($routeData === null) {
             return false;
         }
 
@@ -313,17 +370,17 @@ class RouteDataRepository extends ServiceEntityRepository
     /**
      * Mark a route data record as reviewed.
      *
-     * @param int         $id              The record ID
-     * @param bool|null   $queriesImproved Whether queries improved
-     * @param bool|null   $timeImproved    Whether time improved
-     * @param string|null $reviewedBy      The reviewer username
+     * @param int $id The record ID
+     * @param bool|null $queriesImproved Whether queries improved
+     * @param bool|null $timeImproved Whether time improved
+     * @param string|null $reviewedBy The reviewer username
      *
      * @return bool True if updated, false if not found
      */
     public function markAsReviewed(int $id, ?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null): bool
     {
         $routeData = $this->find($id);
-        if (null === $routeData) {
+        if ($routeData === null) {
             return false;
         }
 

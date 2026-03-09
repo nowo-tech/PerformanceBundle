@@ -1,6 +1,6 @@
 # Performance Bundle
 
-[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle)  [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://poser.pugx.org/nowo-tech/performance-bundle/license)](https://packagist.org/packages/nowo-tech/performance-bundle) [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-6.1%20%7C%207%20%7C%208-000000?logo=symfony)](https://symfony.com)
+[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-6.1%20%7C%207%20%7C%208-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/performance-bundle.svg?style=social&label=Star)](https://github.com/nowo-tech/PerformanceBundle)
 
 > ⭐ **Found this project useful?** Give it a star on GitHub! It helps us maintain and improve the project.
 
@@ -48,6 +48,7 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ **Chart.js integration** - Interactive performance charts
 - ✅ **Symfony UX Twig Components** - Optional modern component system
 - ✅ Symfony 6.1+, 7.x, and 8.x compatible
+- ✅ **FrankenPHP** — Compatible with FrankenPHP (including worker mode); demos (Symfony 7 and 8) run with FrankenPHP and Caddy (see [demo/symfony7/README.md](demo/symfony7/README.md))
 
 ## Screenshots
 
@@ -283,18 +284,24 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 
 ## Documentation
 
-- [**Documentation index**](docs/README.md) – Index of all documentation with cross-references
-- [Installation Guide](docs/INSTALLATION.md) – Step-by-step installation (tables, sync-schema, verify)
-- [Configuration Guide](docs/CONFIGURATION.md) – All options and defaults (source of truth)
-- [Usage Guide](docs/USAGE.md) – Automatic tracking, manual commands, dashboard customization, events
-- [Commands](docs/COMMANDS.md) – All `nowo:performance:*` commands (create-table, create-records-table, sync-schema, diagnose, purge-records, etc.)
-- [Events & priorities](docs/EVENTS.md) – Custom events and listener flow (relevant for `ignore_routes`)
-- [Behaviour and notable changes](docs/BEHAVIOUR_AND_CHANGES.md) – Why certain behaviours exist; detailed notes on non-obvious changes (e.g. VarDumper in web vs CLI)
-- [Compatibility Guide](docs/COMPATIBILITY.md) – Doctrine and DBAL version compatibility
-- [Notifications](docs/NOTIFICATIONS.md) – Performance alert notifications (Email, Slack, Teams, Webhooks)
-- [CHANGELOG](docs/CHANGELOG.md) – Version history
-- [UPGRADING](docs/UPGRADING.md) – Upgrade instructions
-- [ROADMAP](docs/ROADMAP.md) – Future improvements and features
+- [Installation](docs/INSTALLATION.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Usage](docs/USAGE.md)
+- [Contributing](docs/CONTRIBUTING.md)
+- [Changelog](docs/CHANGELOG.md)
+- [Upgrading](docs/UPGRADING.md)
+- [Release](docs/RELEASE.md)
+- [Security](docs/SECURITY.md)
+- [Engram](docs/ENGRAM.md)
+- [Roadmap](docs/ROADMAP.md)
+
+### Additional documentation
+
+- [Commands](docs/COMMANDS.md)
+- [Events & priorities](docs/EVENTS.md)
+- [Behaviour and notable changes](docs/BEHAVIOUR_AND_CHANGES.md)
+- [Compatibility](docs/COMPATIBILITY.md)
+- [Notifications](docs/NOTIFICATIONS.md)
 
 ## Testing
 

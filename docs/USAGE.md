@@ -1,5 +1,44 @@
 # Usage Guide
 
+
+## Table of contents
+
+- [Automatic Tracking](#automatic-tracking)
+  - [How It Works](#how-it-works)
+  - [Example](#example)
+  - [Temporal Access Records (Seasonality)](#temporal-access-records-seasonality)
+- [Manual Metrics Management](#manual-metrics-management)
+  - [Setting Route Metrics](#setting-route-metrics)
+  - [Command Options](#command-options)
+- [Customizing the Dashboard View](#customizing-the-dashboard-view)
+  - [CSS Framework Selection](#css-framework-selection)
+  - [Component Structure](#component-structure)
+  - [Overriding Components](#overriding-components)
+  - [Overriding the Complete Template](#overriding-the-complete-template)
+  - [Available Variables](#available-variables)
+- [Dashboard Features](#dashboard-features)
+  - [Data Export](#data-export)
+  - [Record Management](#record-management)
+  - [Review System](#review-system)
+- [Programmatic Usage](#programmatic-usage)
+  - [Accessing Metrics Service](#accessing-metrics-service)
+  - [Getting Route Metrics](#getting-route-metrics)
+  - [Getting All Routes for Environment](#getting-all-routes-for-environment)
+  - [Getting Worst Performing Routes](#getting-worst-performing-routes)
+- [Direct Entity Access](#direct-entity-access)
+- [HTTP Status Code Tracking](#http-status-code-tracking)
+  - [Configuration](#configuration)
+  - [Accessing Status Code Data](#accessing-status-code-data)
+  - [Dashboard Display](#dashboard-display)
+- [Performance Notifications](#performance-notifications)
+  - [Configuration](#configuration)
+  - [How It Works](#how-it-works)
+- [Best Practices](#best-practices)
+- [Examples](#examples)
+  - [Example 1: Track API Endpoints](#example-1-track-api-endpoints)
+  - [Example 2: Production Monitoring](#example-2-production-monitoring)
+  - [Example 3: Custom Connection](#example-3-custom-connection)
+
 ## Automatic Tracking
 
 The bundle automatically tracks route performance metrics for all routes (except ignored ones) in configured environments.

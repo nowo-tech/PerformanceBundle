@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Model;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Stringable;
 
 /**
  * Route data with aggregates computed from RouteDataRecord.
@@ -14,7 +16,7 @@ use Nowo\PerformanceBundle\Entity\RouteData;
  *
  * @see docs/ENTITY_NORMALIZATION_PLAN.md
  */
-final class RouteDataWithAggregates
+final class RouteDataWithAggregates implements Stringable
 {
     /**
      * @param array{request_time: float|null, total_queries: int|null, query_time: float|null, memory_usage: int|null, access_count: int, status_codes: array<int, int>} $aggregates
@@ -51,17 +53,18 @@ final class RouteDataWithAggregates
         return $this->routeData->getHttpMethod();
     }
 
+    /** @return array<string, mixed>|null */
     public function getParams(): ?array
     {
         return $this->routeData->getParams();
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->routeData->getCreatedAt();
     }
 
-    public function getLastAccessedAt(): ?\DateTimeImmutable
+    public function getLastAccessedAt(): ?DateTimeImmutable
     {
         return $this->routeData->getLastAccessedAt();
     }
@@ -71,7 +74,7 @@ final class RouteDataWithAggregates
         return $this->routeData->isReviewed();
     }
 
-    public function getReviewedAt(): ?\DateTimeImmutable
+    public function getReviewedAt(): ?DateTimeImmutable
     {
         return $this->routeData->getReviewedAt();
     }
@@ -91,6 +94,9 @@ final class RouteDataWithAggregates
         return $this->routeData->getReviewedBy();
     }
 
+    /**
+     * @return \Doctrine\Common\Collections\Collection<int, \Nowo\PerformanceBundle\Entity\RouteDataRecord>
+     */
     public function getAccessRecords(): \Doctrine\Common\Collections\Collection
     {
         return $this->routeData->getAccessRecords();
@@ -127,6 +133,7 @@ final class RouteDataWithAggregates
     }
 
     /** From aggregates (counts per status code from records). */
+    /** @return array<int, int>|null */
     public function getStatusCodes(): ?array
     {
         $codes = $this->aggregates['status_codes'] ?? [];
@@ -148,7 +155,7 @@ final class RouteDataWithAggregates
             return 0.0;
         }
         $total = array_sum($codes);
-        if (0 === $total) {
+        if ($total === 0) {
             return 0.0;
         }
 
@@ -159,7 +166,7 @@ final class RouteDataWithAggregates
     {
         $codes = $this->aggregates['status_codes'] ?? [];
 
-        return empty($codes) ? 0 : (int) array_sum($codes);
+        return empty($codes) ? 0 : array_sum($codes);
     }
 
     public function __toString(): string

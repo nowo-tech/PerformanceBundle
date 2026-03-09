@@ -19,7 +19,7 @@ final class RecordMetricsMessageTest extends TestCase
             0.2,
             ['id' => 123],
             1048576,
-            'GET'
+            'GET',
         );
 
         $this->assertSame('app_home', $message->getRouteName());
@@ -37,7 +37,7 @@ final class RecordMetricsMessageTest extends TestCase
     {
         $message = new RecordMetricsMessage(
             'app_home',
-            'dev'
+            'dev',
         );
 
         $this->assertSame('app_home', $message->getRouteName());
@@ -62,7 +62,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             'GET',
-            'req-abc123'
+            'req-abc123',
         );
 
         $this->assertSame('req-abc123', $message->getRequestId());
@@ -87,7 +87,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             'GET',
             'req-abc',
-            'https://referer.example/page'
+            'https://referer.example/page',
         );
 
         $this->assertSame('https://referer.example/page', $message->getReferer());
@@ -112,7 +112,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             'GET',
             'req-1',
-            ''
+            '',
         );
 
         $this->assertSame('', $message->getReferer());
@@ -139,7 +139,6 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             2_097_152,
-            null
         );
 
         $this->assertSame(2_097_152, $message->getMemoryUsage());
@@ -161,7 +160,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             'john@example.com',
-            'uuid-42'
+            'uuid-42',
         );
 
         $this->assertSame('john@example.com', $message->getUserIdentifier());
@@ -199,20 +198,20 @@ final class RecordMetricsMessageTest extends TestCase
 
     public function testGetParamsWithEmptyArray(): void
     {
-        $m = new RecordMetricsMessage('r', 'dev', null, null, null, [], null);
+        $m = new RecordMetricsMessage('r', 'dev', null, null, null, []);
         $this->assertSame([], $m->getParams());
     }
 
     public function testGetParamsWithMultipleKeys(): void
     {
         $params = ['id' => 42, 'slug' => 'my-article'];
-        $m = new RecordMetricsMessage('article_show', 'dev', null, null, null, $params, null);
+        $m      = new RecordMetricsMessage('article_show', 'dev', null, null, null, $params);
         $this->assertSame($params, $m->getParams());
     }
 
     public function testGetMemoryUsageWithZero(): void
     {
-        $m = new RecordMetricsMessage('r', 'dev', null, null, null, null, 0, null);
+        $m = new RecordMetricsMessage('r', 'dev', null, null, null, null, 0);
         $this->assertSame(0, $m->getMemoryUsage());
     }
 
@@ -230,7 +229,7 @@ final class RecordMetricsMessageTest extends TestCase
             'req-xyz',
             'https://example.com/from',
             'admin@example.com',
-            '12345'
+            '12345',
         );
 
         $this->assertSame('admin@example.com', $message->getUserIdentifier());
@@ -241,21 +240,21 @@ final class RecordMetricsMessageTest extends TestCase
 
     public function testGetRequestTimeWithZero(): void
     {
-        $message = new RecordMetricsMessage('r', 'dev', 0.0, null, null, null, null, null);
+        $message = new RecordMetricsMessage('r', 'dev', 0.0);
 
         $this->assertSame(0.0, $message->getRequestTime());
     }
 
     public function testGetQueryTimeWithZero(): void
     {
-        $message = new RecordMetricsMessage('r', 'dev', null, null, 0.0, null, null, null);
+        $message = new RecordMetricsMessage('r', 'dev', null, null, 0.0);
 
         $this->assertSame(0.0, $message->getQueryTime());
     }
 
     public function testGetTotalQueriesWithZero(): void
     {
-        $message = new RecordMetricsMessage('r', 'dev', null, 0, null, null, null, null);
+        $message = new RecordMetricsMessage('r', 'dev', null, 0);
 
         $this->assertSame(0, $message->getTotalQueries());
     }
@@ -317,7 +316,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             null,
-            '/user/123'
+            '/user/123',
         );
 
         $this->assertSame('/user/123', $message->getRoutePath());

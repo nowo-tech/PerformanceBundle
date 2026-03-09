@@ -1,3 +1,5 @@
+# Single service "php" (FrankenPHP); no separate php CLI service (§2.4, pattern TwigInspector)
+name: performance-bundle-demo-symfony-7
 services:
   php:
     build:
@@ -6,7 +8,7 @@ services:
     container_name: performance-demo-symfony7-php
     working_dir: /app
     ports:
-      - "${PORT:-8000}:443"
+      - "${PORT:-8000}:80"
     volumes:
       - .:/app
       # Mount bundle root so the path repo symlink works and code changes are visible

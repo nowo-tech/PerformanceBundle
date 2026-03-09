@@ -1,0 +1,11 @@
+security:
+    password_hashers:
+        Symfony\Component\Security\Core\User\InMemoryUser: 'auto'
+    providers:
+        users_in_memory:
+            memory:
+                users: {}
+    firewalls:
+        main:
+            lazy: true
+            provider: users_in_memory

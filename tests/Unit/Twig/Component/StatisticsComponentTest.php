@@ -12,7 +12,7 @@ final class StatisticsComponentTest extends TestCase
     public function testComponentHasDefaultValues(): void
     {
         $component = new StatisticsComponent();
-        
+
         $this->assertSame([], $component->stats);
         $this->assertSame('bootstrap', $component->template);
     }
@@ -20,11 +20,11 @@ final class StatisticsComponentTest extends TestCase
     public function testComponentCanSetProperties(): void
     {
         $component = new StatisticsComponent();
-        $stats = ['request_time' => ['mean' => 0.5]];
-        
-        $component->stats = $stats;
+        $stats     = ['request_time' => ['mean' => 0.5]];
+
+        $component->stats    = $stats;
         $component->template = 'tailwind';
-        
+
         $this->assertSame($stats, $component->stats);
         $this->assertSame('tailwind', $component->template);
     }
@@ -39,9 +39,9 @@ final class StatisticsComponentTest extends TestCase
     public function testStatsWithMultipleKeys(): void
     {
         $component = new StatisticsComponent();
-        $stats = [
+        $stats     = [
             'request_time' => ['mean' => 0.5, 'p95' => 1.2],
-            'query_count' => ['mean' => 10, 'max' => 50],
+            'query_count'  => ['mean' => 10, 'max' => 50],
         ];
         $component->stats = $stats;
 
@@ -52,7 +52,7 @@ final class StatisticsComponentTest extends TestCase
 
     public function testStatsWithEmptyArray(): void
     {
-        $component = new StatisticsComponent();
+        $component        = new StatisticsComponent();
         $component->stats = [];
 
         $this->assertSame([], $component->stats);

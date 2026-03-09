@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\EventSubscriber;
 
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -26,26 +27,6 @@ use Symfony\Component\HttpKernel\KernelEvents;
 class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
 {
     /**
-     * Manager registry to get connections.
-     */
-    private readonly ManagerRegistry $registry;
-
-    /**
-     * Connection name to track.
-     */
-    private readonly string $connectionName;
-
-    /**
-     * Whether query tracking is enabled.
-     */
-    private readonly bool $trackQueries;
-
-    /**
-     * Whether the bundle is enabled.
-     */
-    private readonly bool $enabled;
-
-    /**
      * Tracked connections to avoid re-wrapping.
      *
      * @var array<string, bool>
@@ -55,24 +36,20 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
     /**
      * Creates a new instance.
      *
-     * @param ManagerRegistry $registry       The Doctrine registry
-     * @param bool            $enabled        Whether the bundle is enabled
-     * @param bool            $trackQueries   Whether query tracking is enabled
-     * @param string          $connectionName The connection name to track
+     * @param ManagerRegistry $registry The Doctrine registry
+     * @param bool $enabled Whether the bundle is enabled
+     * @param bool $trackQueries Whether query tracking is enabled
+     * @param string $connectionName The connection name to track
      */
     public function __construct(
-        ManagerRegistry $registry,
+        private readonly ManagerRegistry $registry,
         #[Autowire('%nowo_performance.enabled%')]
-        bool $enabled,
+        private readonly bool $enabled,
         #[Autowire('%nowo_performance.track_queries%')]
-        bool $trackQueries,
+        private readonly bool $trackQueries,
         #[Autowire('%nowo_performance.connection%')]
-        string $connectionName,
+        private readonly string $connectionName
     ) {
-        $this->registry = $registry;
-        $this->enabled = $enabled;
-        $this->trackQueries = $trackQueries;
-        $this->connectionName = $connectionName;
     }
 
     /**
@@ -81,7 +58,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
      * Note: Events are registered via #[AsEventListener] attributes on methods,
      * but this method is kept for compatibility with EventSubscriberInterface.
      *
-     * @return array<string, string|array{0: string, 1: int}|list<array{0: string, 1?: int}>>
+     * @return array<string, array{0: string, 1: int}|list<array{0: string, 1?: int}>|string>
      */
     public static function getSubscribedEvents(): array
     {
@@ -103,7 +80,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
         // Apply middleware to the connection FIRST
         // Try multiple times in case connection isn't ready yet
         $maxAttempts = 3;
-        $attempt = 0;
+        $attempt     = 0;
         while ($attempt < $maxAttempts && !isset($this->trackedConnections[$this->connectionName])) {
             $this->applyMiddlewareToConnection();
             ++$attempt;
@@ -141,7 +118,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
             $success = QueryTrackingMiddlewareRegistry::applyMiddleware(
                 $this->registry,
                 $this->connectionName,
-                $middleware
+                $middleware,
             );
 
             if ($success) {
@@ -151,7 +128,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
                 // This handles cases where the connection isn't ready yet
                 unset($this->trackedConnections[$connectionKey]);
             }
-        } catch (\Exception $e) {
+        } catch (Exception) {
             // Reset tracking flag on error to retry next request
             unset($this->trackedConnections[$connectionKey]);
         }

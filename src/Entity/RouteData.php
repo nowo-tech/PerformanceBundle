@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Entity;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Stringable;
+
+use function sprintf;
 
 /**
  * Route identity and metadata entity (normalized).
@@ -23,18 +27,19 @@ use Nowo\PerformanceBundle\Repository\RouteDataRepository;
  */
 #[ORM\Entity(repositoryClass: RouteDataRepository::class)]
 #[ORM\Table(name: 'routes_data')]
-#[ORM\Index(columns: ['name'], name: 'idx_route_name')]
-#[ORM\Index(columns: ['env'], name: 'idx_route_env')]
-#[ORM\Index(columns: ['env', 'name'], name: 'idx_route_env_name')]
-#[ORM\Index(columns: ['created_at'], name: 'idx_route_created_at')]
-class RouteData
+#[ORM\Index(name: 'idx_route_name', columns: ['name'])]
+#[ORM\Index(name: 'idx_route_env', columns: ['env'])]
+#[ORM\Index(name: 'idx_route_env_name', columns: ['env', 'name'])]
+#[ORM\Index(name: 'idx_route_created_at', columns: ['created_at'])]
+class RouteData implements Stringable
 {
     /**
-     * Primary key identifier.
+     * Primary key identifier (Doctrine assigns on persist).
      */
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'AUTO')]
     #[ORM\Column(type: Types::INTEGER)]
+    /** @phpstan-ignore-next-line property.unusedType */
     private ?int $id = null;
 
     /**
@@ -57,6 +62,8 @@ class RouteData
 
     /**
      * Route parameters as JSON array.
+     *
+     * @var array<string, mixed>|null
      */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $params = null;
@@ -65,13 +72,13 @@ class RouteData
      * Creation timestamp.
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?\DateTimeImmutable $createdAt = null;
+    private ?DateTimeImmutable $createdAt = null;
 
     /**
      * Last access timestamp (updated when a RouteDataRecord is inserted or via command).
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?\DateTimeImmutable $lastAccessedAt = null;
+    private ?DateTimeImmutable $lastAccessedAt = null;
 
     /**
      * Whether this route has been reviewed.
@@ -83,7 +90,7 @@ class RouteData
      * Review timestamp.
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?\DateTimeImmutable $reviewedAt = null;
+    private ?DateTimeImmutable $reviewedAt = null;
 
     /**
      * Whether queries improved after review.
@@ -115,9 +122,9 @@ class RouteData
      */
     public function __construct()
     {
-        $this->createdAt = new \DateTimeImmutable();
-        $this->lastAccessedAt = new \DateTimeImmutable();
-        $this->accessRecords = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->createdAt      = new DateTimeImmutable();
+        $this->lastAccessedAt = new DateTimeImmutable();
+        $this->accessRecords  = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     /**
@@ -199,7 +206,7 @@ class RouteData
     /**
      * Get the route parameters.
      *
-     * @return array|null The route parameters as array
+     * @return array<string, mixed>|null The route parameters as array
      */
     public function getParams(): ?array
     {
@@ -209,7 +216,7 @@ class RouteData
     /**
      * Set the route parameters.
      *
-     * @param array|null $params The route parameters
+     * @param array<string, mixed>|null $params The route parameters
      */
     public function setParams(?array $params): self
     {
@@ -221,9 +228,9 @@ class RouteData
     /**
      * Get the creation timestamp.
      *
-     * @return \DateTimeImmutable|null The creation date
+     * @return DateTimeImmutable|null The creation date
      */
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -231,9 +238,9 @@ class RouteData
     /**
      * Set the creation timestamp.
      *
-     * @param \DateTimeImmutable|null $createdAt The creation date
+     * @param DateTimeImmutable|null $createdAt The creation date
      */
-    public function setCreatedAt(?\DateTimeImmutable $createdAt): self
+    public function setCreatedAt(?DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
 
@@ -243,9 +250,9 @@ class RouteData
     /**
      * Get the last access timestamp.
      *
-     * @return \DateTimeImmutable|null The last access date or null if not available
+     * @return DateTimeImmutable|null The last access date or null if not available
      */
-    public function getLastAccessedAt(): ?\DateTimeImmutable
+    public function getLastAccessedAt(): ?DateTimeImmutable
     {
         return $this->lastAccessedAt;
     }
@@ -253,9 +260,9 @@ class RouteData
     /**
      * Set the last access timestamp.
      *
-     * @param \DateTimeImmutable|null $lastAccessedAt The last access date
+     * @param DateTimeImmutable|null $lastAccessedAt The last access date
      */
-    public function setLastAccessedAt(?\DateTimeImmutable $lastAccessedAt): self
+    public function setLastAccessedAt(?DateTimeImmutable $lastAccessedAt): self
     {
         $this->lastAccessedAt = $lastAccessedAt;
 
@@ -287,9 +294,9 @@ class RouteData
     /**
      * Get the review timestamp.
      *
-     * @return \DateTimeImmutable|null The review date
+     * @return DateTimeImmutable|null The review date
      */
-    public function getReviewedAt(): ?\DateTimeImmutable
+    public function getReviewedAt(): ?DateTimeImmutable
     {
         return $this->reviewedAt;
     }
@@ -297,9 +304,9 @@ class RouteData
     /**
      * Set the review timestamp.
      *
-     * @param \DateTimeImmutable|null $reviewedAt The review date
+     * @param DateTimeImmutable|null $reviewedAt The review date
      */
-    public function setReviewedAt(?\DateTimeImmutable $reviewedAt): self
+    public function setReviewedAt(?DateTimeImmutable $reviewedAt): self
     {
         $this->reviewedAt = $reviewedAt;
 
@@ -353,24 +360,24 @@ class RouteData
     /**
      * Mark this route as reviewed with optional improvement information.
      *
-     * @param bool|null   $queriesImproved Whether queries improved
-     * @param bool|null   $timeImproved    Whether time improved
-     * @param string|null $reviewedBy      The reviewer username
+     * @param bool|null $queriesImproved Whether queries improved
+     * @param bool|null $timeImproved Whether time improved
+     * @param string|null $reviewedBy The reviewer username
      */
     public function markAsReviewed(?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null): self
     {
-        $this->reviewed = true;
-        $this->reviewedAt = new \DateTimeImmutable();
+        $this->reviewed   = true;
+        $this->reviewedAt = new DateTimeImmutable();
 
-        if (null !== $queriesImproved) {
+        if ($queriesImproved !== null) {
             $this->queriesImproved = $queriesImproved;
         }
 
-        if (null !== $timeImproved) {
+        if ($timeImproved !== null) {
             $this->timeImproved = $timeImproved;
         }
 
-        if (null !== $reviewedBy) {
+        if ($reviewedBy !== null) {
             $this->reviewedBy = $reviewedBy;
         }
 
@@ -410,20 +417,20 @@ class RouteData
     {
         $parts = [];
 
-        if (null !== $this->httpMethod) {
+        if ($this->httpMethod !== null) {
             $parts[] = $this->httpMethod;
         }
 
-        if (null !== $this->name) {
+        if ($this->name !== null) {
             $parts[] = $this->name;
         }
 
-        if (null !== $this->env) {
-            $parts[] = \sprintf('(%s)', $this->env);
+        if ($this->env !== null) {
+            $parts[] = sprintf('(%s)', $this->env);
         }
 
         if (empty($parts)) {
-            return \sprintf('RouteData#%s', $this->id ?? 'new');
+            return sprintf('RouteData#%s', $this->id ?? 'new');
         }
 
         return implode(' ', $parts);
@@ -469,10 +476,8 @@ class RouteData
      */
     public function removeAccessRecord(RouteDataRecord $accessRecord): self
     {
-        if ($this->accessRecords->removeElement($accessRecord)) {
-            if ($accessRecord->getRouteData() === $this) {
-                $accessRecord->setRouteData(null);
-            }
+        if ($this->accessRecords->removeElement($accessRecord) && $accessRecord->getRouteData() === $this) {
+            $accessRecord->setRouteData(null);
         }
 
         return $this;

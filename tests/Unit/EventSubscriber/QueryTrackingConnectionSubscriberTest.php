@@ -6,15 +6,17 @@ namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\EventSubscriber\QueryTrackingConnectionSubscriber;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use stdClass;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 final class QueryTrackingConnectionSubscriberTest extends TestCase
 {
-    private ManagerRegistry|MockObject $registry;
+    private MockObject $registry;
 
     protected function setUp(): void
     {
@@ -32,7 +34,7 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
         $this->registry->expects($this->never())->method($this->anything());
 
         $subscriber = new QueryTrackingConnectionSubscriber($this->registry, false, true, 'default');
-        $event = new RequestEvent(
+        $event      = new RequestEvent(
             $this->createMock(HttpKernelInterface::class),
             new Request(),
             HttpKernelInterface::MAIN_REQUEST,
@@ -45,7 +47,7 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
         $this->registry->expects($this->never())->method($this->anything());
 
         $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, false, 'default');
-        $event = new RequestEvent(
+        $event      = new RequestEvent(
             $this->createMock(HttpKernelInterface::class),
             new Request(),
             HttpKernelInterface::MAIN_REQUEST,
@@ -65,5 +67,35 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
         $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, false, 'default');
 
         $this->assertSame([], $subscriber->getSubscribedEvents());
+    }
+
+    public function testOnKernelRequestWhenEnabledCallsRegistryAndResetsMiddleware(): void
+    {
+        $this->registry->method('getConnection')->with('default')->willReturn(new stdClass());
+
+        $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, true, 'default');
+        $event      = new RequestEvent(
+            $this->createMock(HttpKernelInterface::class),
+            new Request(),
+            HttpKernelInterface::MAIN_REQUEST,
+        );
+        $subscriber->onKernelRequest($event);
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testOnKernelRequestWhenEnabledAndRegistryThrowsRetriesAndResets(): void
+    {
+        $this->registry->method('getConnection')->willThrowException(new RuntimeException('connection not ready'));
+
+        $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, true, 'default');
+        $event      = new RequestEvent(
+            $this->createMock(HttpKernelInterface::class),
+            new Request(),
+            HttpKernelInterface::MAIN_REQUEST,
+        );
+        $subscriber->onKernelRequest($event);
+
+        $this->addToAssertionCount(1);
     }
 }

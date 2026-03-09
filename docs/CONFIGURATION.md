@@ -2,6 +2,40 @@
 
 > 📑 **Documentation index**: [docs/README.md](README.md). Default values documented here match `Configuration.php` (source of truth).
 
+
+## Table of contents
+
+- [Default Configuration](#default-configuration)
+- [Full Configuration Example](#full-configuration-example)
+- [Configuration Options](#configuration-options)
+  - [`enabled`](#enabled)
+  - [`environments`](#environments)
+  - [`connection`](#connection)
+  - [`cache`](#cache)
+  - [`table_name`](#table-name)
+  - [`track_queries`](#track-queries)
+  - [`track_request_time`](#track-request-time)
+  - [`track_sub_requests`](#track-sub-requests)
+  - [`enable_access_records`](#enable-access-records)
+  - [`access_records_retention_days`](#access-records-retention-days)
+  - [`track_user`](#track-user)
+  - [`enable_logging`](#enable-logging)
+  - [`check_table_status`](#check-table-status)
+  - [`ignore_routes`](#ignore-routes)
+  - [`dashboard`](#dashboard)
+  - [`track_status_codes`](#track-status-codes)
+  - [`sampling_rate`](#sampling-rate)
+  - [`query_tracking_threshold`](#query-tracking-threshold)
+  - [`thresholds`](#thresholds)
+  - [`notifications`](#notifications)
+- [Environment-Specific Configuration](#environment-specific-configuration)
+- [Multiple Connections](#multiple-connections)
+- [Dashboard Access Control](#dashboard-access-control)
+  - [Restricting Dashboard Access](#restricting-dashboard-access)
+  - [Security Considerations](#security-considerations)
+  - [Example: Admin-Only Dashboard](#example-admin-only-dashboard)
+  - [Example: Multiple Roles](#example-multiple-roles)
+
 ## Default Configuration
 
 The bundle works with sensible defaults. You only need to configure it if you want to change the default behavior.

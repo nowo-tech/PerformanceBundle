@@ -49,6 +49,7 @@
                     <div class="col-md-3">{{ form_row(filterForm.end_date) }}</div>
                     <div class="col-md-2">{{ form_row(filterForm.env) }}</div>
                     <div class="col-md-2">{{ form_row(filterForm.route) }}</div>
+                    <div class="col-md-2">{{ form_row(filterForm.path) }}</div>
                     <div class="col-md-2">{{ form_row(filterForm.status_code) }}</div>
                     <div class="col-md-2">{{ form_row(filterForm.min_query_time) }}</div>
                     <div class="col-md-2">{{ form_row(filterForm.max_query_time) }}</div>
@@ -77,6 +78,7 @@
             <div class="card-body">
                 <p class="text-muted small">{{ 'access_statistics.purge_records_help'|trans({}, 'nowo_performance') }}</p>
                 {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                    {{ form_widget(purgeForm._token) }}
                     <div class="col-md-2">{{ form_row(purgeForm.purgeType) }}</div>
                     <div class="col-md-2 purge-days-field">{{ form_row(purgeForm.days) }}</div>
                     <div class="col-md-2">{{ form_row(purgeForm.env) }}</div>
@@ -341,7 +343,8 @@
         <h3 class="text-lg font-medium text-amber-900 mb-2">{{ 'access_statistics.purge_records_title'|trans({}, 'nowo_performance') }}</h3>
         <p class="text-sm text-amber-800 mb-3">{{ 'access_statistics.purge_records_help'|trans({}, 'nowo_performance') }}</p>
         {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
-            <div class="flex-1 min-w-[140px]">{{ form_row(purgeForm.purge_type, {'attr': {'class': 'form-select'}}) }}</div>
+            {{ form_widget(purgeForm._token) }}
+            <div class="flex-1 min-w-[140px]">{{ form_row(purgeForm.purgeType, {'attr': {'class': 'form-select'}}) }}</div>
             <div class="flex-1 min-w-[100px] purge-days-field">{{ form_row(purgeForm.days) }}</div>
             <div class="flex-1 min-w-[120px]">{{ form_row(purgeForm.env) }}</div>
             <div>{{ form_row(purgeForm.submit, {'attr': {'class': 'px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700'}}) }}</div>

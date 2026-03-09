@@ -4,34 +4,30 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Repository;
 
-use Doctrine\ORM\EntityManagerInterface;
+use DateTimeImmutable;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 final class RouteDataRecordRepositoryTest extends TestCase
 {
     private RouteDataRecordRepository $repository;
-    private ManagerRegistry|MockObject $registry;
-    private EntityManagerInterface|MockObject $entityManager;
-    private QueryBuilder|MockObject $queryBuilder;
+    private MockObject $registry;
 
     protected function setUp(): void
     {
         $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->queryBuilder = $this->createMock(QueryBuilder::class);
 
         $this->repository = new RouteDataRecordRepository($this->registry);
     }
 
     public function testGetStatisticsByHourAggregatesInPhpAndFillsAllHours(): void
     {
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['createQueryBuilder'])
@@ -41,19 +37,19 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $record1 = new RouteDataRecord();
         $record1->setRouteData($routeData);
-        $record1->setAccessedAt(new \DateTimeImmutable('2024-01-01 10:15:00'));
+        $record1->setAccessedAt(new DateTimeImmutable('2024-01-01 10:15:00'));
         $record1->setResponseTime(0.5);
         $record1->setStatusCode(200);
 
         $record2 = new RouteDataRecord();
         $record2->setRouteData($routeData);
-        $record2->setAccessedAt(new \DateTimeImmutable('2024-01-01 10:45:00'));
+        $record2->setAccessedAt(new DateTimeImmutable('2024-01-01 10:45:00'));
         $record2->setResponseTime(0.7);
         $record2->setStatusCode(404);
 
         $record3 = new RouteDataRecord();
         $record3->setRouteData($routeData);
-        $record3->setAccessedAt(new \DateTimeImmutable('2024-01-01 14:00:00'));
+        $record3->setAccessedAt(new DateTimeImmutable('2024-01-01 14:00:00'));
         $record3->setResponseTime(1.0);
         $record3->setStatusCode(500);
 
@@ -79,20 +75,24 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->with('r')
             ->willReturn($qb);
 
-        $startDate = new \DateTimeImmutable('2024-01-01 00:00:00');
-        $endDate = new \DateTimeImmutable('2024-01-02 00:00:00');
+        $startDate = new DateTimeImmutable('2024-01-01 00:00:00');
+        $endDate   = new DateTimeImmutable('2024-01-02 00:00:00');
 
         $result = $repository->getStatisticsByHour('dev', $startDate, $endDate);
 
         $this->assertIsArray($result);
         $this->assertCount(24, $result); // 0-23
 
-        $hour10 = array_values(array_filter($result, static fn ($stat) => $stat['hour'] === 10))[0];
+        $byHour10 = array_values(array_filter($result, static fn (array $stat): bool => $stat['hour'] === 10));
+        $this->assertCount(1, $byHour10);
+        $hour10 = $byHour10[0];
         $this->assertSame(2, $hour10['count']);
         $this->assertEqualsWithDelta((0.5 + 0.7) / 2, $hour10['avg_response_time'], 0.0001);
         $this->assertEquals([200 => 1, 404 => 1], $hour10['status_codes']);
 
-        $hour14 = array_values(array_filter($result, static fn ($stat) => $stat['hour'] === 14))[0];
+        $byHour14 = array_values(array_filter($result, static fn (array $stat): bool => $stat['hour'] === 14));
+        $this->assertCount(1, $byHour14);
+        $hour14 = $byHour14[0];
         $this->assertSame(1, $hour14['count']);
         $this->assertSame(1.0, $hour14['avg_response_time']);
         $this->assertEquals([500 => 1], $hour14['status_codes']);
@@ -100,7 +100,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
     public function testGetStatisticsByHourWithRouteNameAndStatusCodeFilters(): void
     {
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['createQueryBuilder'])
@@ -111,7 +111,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $record = new RouteDataRecord();
         $record->setRouteData($routeData);
-        $record->setAccessedAt(new \DateTimeImmutable('2024-01-01 09:30:00'));
+        $record->setAccessedAt(new DateTimeImmutable('2024-01-01 09:30:00'));
         $record->setResponseTime(0.3);
         $record->setStatusCode(200);
 
@@ -129,9 +129,9 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $repository->method('createQueryBuilder')->willReturn($qb);
 
-        $startDate = new \DateTimeImmutable('2024-01-01');
-        $endDate = new \DateTimeImmutable('2024-01-02');
-        $result = $repository->getStatisticsByHour('dev', $startDate, $endDate, 'api_foo', 200);
+        $startDate = new DateTimeImmutable('2024-01-01');
+        $endDate   = new DateTimeImmutable('2024-01-02');
+        $result    = $repository->getStatisticsByHour('dev', $startDate, $endDate, 'api_foo', null, 200);
 
         $this->assertIsArray($result);
         $this->assertCount(24, $result);
@@ -139,7 +139,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
     public function testGetStatisticsByHourWithoutDataStillReturnsAllHours(): void
     {
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['createQueryBuilder'])
@@ -172,7 +172,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
     public function testGetStatisticsByDayOfWeekAggregatesCorrectly(): void
     {
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['createQueryBuilder'])
@@ -183,14 +183,14 @@ final class RouteDataRecordRepositoryTest extends TestCase
         // Monday
         $record1 = new RouteDataRecord();
         $record1->setRouteData($routeData);
-        $record1->setAccessedAt(new \DateTimeImmutable('2024-01-01 10:00:00')); // Monday
+        $record1->setAccessedAt(new DateTimeImmutable('2024-01-01 10:00:00')); // Monday
         $record1->setResponseTime(0.5);
         $record1->setStatusCode(200);
 
         // Wednesday
         $record2 = new RouteDataRecord();
         $record2->setRouteData($routeData);
-        $record2->setAccessedAt(new \DateTimeImmutable('2024-01-03 12:00:00')); // Wednesday
+        $record2->setAccessedAt(new DateTimeImmutable('2024-01-03 12:00:00')); // Wednesday
         $record2->setResponseTime(1.0);
         $record2->setStatusCode(500);
 
@@ -225,7 +225,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
     public function testGetStatisticsByMonthAggregatesCorrectly(): void
     {
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['createQueryBuilder'])
@@ -235,13 +235,13 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $record1 = new RouteDataRecord();
         $record1->setRouteData($routeData);
-        $record1->setAccessedAt(new \DateTimeImmutable('2024-01-10 10:00:00')); // January
+        $record1->setAccessedAt(new DateTimeImmutable('2024-01-10 10:00:00')); // January
         $record1->setResponseTime(0.5);
         $record1->setStatusCode(200);
 
         $record2 = new RouteDataRecord();
         $record2->setRouteData($routeData);
-        $record2->setAccessedAt(new \DateTimeImmutable('2024-02-10 10:00:00')); // February
+        $record2->setAccessedAt(new DateTimeImmutable('2024-02-10 10:00:00')); // February
         $record2->setResponseTime(1.0);
         $record2->setStatusCode(500);
 
@@ -270,7 +270,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
     public function testGetHeatmapDataAggregatesCorrectly(): void
     {
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['createQueryBuilder'])
@@ -280,15 +280,15 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $record1 = new RouteDataRecord();
         $record1->setRouteData($routeData);
-        $record1->setAccessedAt(new \DateTimeImmutable('2024-01-01 10:00:00')); // Monday 10:00
+        $record1->setAccessedAt(new DateTimeImmutable('2024-01-01 10:00:00')); // Monday 10:00
 
         $record2 = new RouteDataRecord();
         $record2->setRouteData($routeData);
-        $record2->setAccessedAt(new \DateTimeImmutable('2024-01-01 10:30:00')); // Monday 10:xx
+        $record2->setAccessedAt(new DateTimeImmutable('2024-01-01 10:30:00')); // Monday 10:xx
 
         $record3 = new RouteDataRecord();
         $record3->setRouteData($routeData);
-        $record3->setAccessedAt(new \DateTimeImmutable('2024-01-03 14:00:00')); // Wednesday 14:00
+        $record3->setAccessedAt(new DateTimeImmutable('2024-01-03 14:00:00')); // Wednesday 14:00
 
         $query = $this->createMock(\Doctrine\ORM\Query::class);
         $query->method('getResult')->willReturn([$record1, $record2, $record3]);
@@ -385,8 +385,8 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $repository->method('createQueryBuilder')->willReturn($queryBuilder);
 
-        $startDate = new \DateTimeImmutable('2024-01-01');
-        $endDate = new \DateTimeImmutable('2024-01-02');
+        $startDate = new DateTimeImmutable('2024-01-01');
+        $endDate   = new DateTimeImmutable('2024-01-02');
 
         $result = $repository->getTotalAccessCount('dev', $startDate, $endDate);
 
@@ -437,7 +437,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $existingRecord = new RouteDataRecord();
         $existingRecord->setRequestId('req-xyz');
 
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['findOneBy'])
@@ -456,7 +456,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
     public function testFindOneByRequestIdReturnsNullWhenNoRecord(): void
     {
-        /** @var RouteDataRecordRepository&MockObject $repository */
+        /** @var MockObject&RouteDataRecordRepository $repository */
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
             ->setConstructorArgs([$this->registry])
             ->onlyMethods(['findOneBy'])
@@ -588,7 +588,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $repository->expects($this->once())->method('createQueryBuilder')->willReturn($qb);
 
-        $result = $repository->deleteByFilter('dev', null, null, null, null, null, null, null, null, null, null, 1000);
+        $result = $repository->deleteByFilter('dev', null, null, null, null, null, null, null, null, null, null, null, 1000);
 
         $this->assertSame(0, $result);
     }
@@ -616,9 +616,10 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $qb->method('setFirstResult')->willReturnSelf();
         $qb->method('setMaxResults')->willReturnSelf();
         $getQueryCallCount = 0;
-        $qb->method('getQuery')->willReturnCallback(function () use (&$getQueryCallCount, $countQuery, $recordsQuery) {
+        $qb->method('getQuery')->willReturnCallback(static function () use (&$getQueryCallCount, $countQuery, $recordsQuery): MockObject {
             ++$getQueryCallCount;
-            return 1 === $getQueryCallCount ? $countQuery : $recordsQuery;
+
+            return $getQueryCallCount === 1 ? $countQuery : $recordsQuery;
         });
 
         $repository->method('createQueryBuilder')->willReturn($qb);
@@ -670,5 +671,12 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $this->assertArrayHasKey('total', $result);
         $this->assertSame([], $result['records']);
         $this->assertSame(0, $result['total']);
+    }
+
+    public function testGetAggregatesForRouteDataIdsReturnsEmptyWhenNoIds(): void
+    {
+        $result = $this->repository->getAggregatesForRouteDataIds([]);
+
+        $this->assertSame([], $result);
     }
 }

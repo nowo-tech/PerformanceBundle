@@ -2,6 +2,24 @@
 
 The Performance Bundle dispatches custom events that allow you to extend its functionality by listening to these events in your application.
 
+
+## Table of contents
+
+- [Internal event flow and priorities](#internal-event-flow-and-priorities)
+  - [Kernel events used](#kernel-events-used)
+  - [Why `PerformanceMetricsSubscriber` uses priority 31](#why-performancemetricssubscriber-uses-priority-31)
+  - [Summary](#summary)
+- [Available Events](#available-events)
+  - [Metrics Recording Events](#metrics-recording-events)
+  - [Record Management Events](#record-management-events)
+  - [Review System Events](#review-system-events)
+- [Event Listener Registration](#event-listener-registration)
+  - [Using Attributes (Recommended)](#using-attributes-recommended)
+  - [Using services.yaml](#using-servicesyaml)
+- [Event Priority](#event-priority)
+- [Best Practices](#best-practices)
+- [Example: Complete Integration](#example-complete-integration)
+
 ## Internal event flow and priorities
 
 The bundle subscribes to **Symfony kernel events** to collect metrics. The order of execution is determined by **priority**: higher priority runs first. Documenting this helps avoid regressions if priorities are changed (e.g. for compatibility with other bundles).

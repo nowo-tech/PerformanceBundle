@@ -10,7 +10,7 @@
         </div>
         {{ form_start(form, {'action': path('nowo_performance.index'), 'attr': {'class': 'space-y-4'}}) }}
             {# Basic Filters #}
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
                 <div>
                     {% if not form.env.isRendered %}
                         {{ form_label(form.env, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
@@ -27,6 +27,15 @@
                             {{ form_widget(form.route, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                         </div>
                         {{ form_errors(form.route) }}
+                    {% endif %}
+                </div>
+                <div>
+                    {% if form.path is defined and not form.path.isRendered %}
+                        {{ form_label(form.path, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
+                        <div class="mt-1">
+                            {{ form_widget(form.path, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                        </div>
+                        {{ form_errors(form.path) }}
                     {% endif %}
                 </div>
                 <div>
@@ -205,7 +214,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('input[name="min_query_count"]')?.value ||
         document.querySelector('input[name="max_query_count"]')?.value ||
         document.querySelector('input[name="date_from"]')?.value ||
-        document.querySelector('input[name="date_to"]')?.value;
+        document.querySelector('input[name="date_to"]')?.value ||
+        document.querySelector('input[name="path"]')?.value;
 
     if (hasAdvancedFilters) {
         toggleAdvancedFilters();

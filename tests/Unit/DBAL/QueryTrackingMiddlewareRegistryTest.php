@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\DBAL;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use stdClass;
+
+use function is_string;
 
 final class QueryTrackingMiddlewareRegistryTest extends TestCase
 {
@@ -24,7 +29,7 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
     public function testDetectDoctrineBundleVersionReturnsNullOrString(): void
     {
         $version = QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
-        $this->assertTrue($version === null || \is_string($version));
+        $this->assertTrue($version === null || is_string($version));
         if ($version !== null) {
             $this->assertNotEmpty($version);
         }
@@ -33,7 +38,7 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
     public function testApplyMiddlewareReturnsFalseWhenRegistryReturnsNonConnection(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->with('default')->willReturn(new \stdClass());
+        $registry->method('getConnection')->with('default')->willReturn(new stdClass());
 
         $middleware = $this->createMock(QueryTrackingMiddleware::class);
 
@@ -43,7 +48,7 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
     public function testApplyMiddlewareReturnsFalseWhenRegistryThrows(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->willThrowException(new \RuntimeException('no connection'));
+        $registry->method('getConnection')->willThrowException(new RuntimeException('no connection'));
 
         $middleware = $this->createMock(QueryTrackingMiddleware::class);
 
@@ -56,10 +61,31 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
         $registry->expects($this->atLeastOnce())
             ->method('getConnection')
             ->with('custom_conn')
-            ->willReturn(new \stdClass());
+            ->willReturn(new stdClass());
 
         $middleware = $this->createMock(QueryTrackingMiddleware::class);
 
         $this->assertFalse(QueryTrackingMiddlewareRegistry::applyMiddleware($registry, 'custom_conn', $middleware));
+    }
+
+    /**
+     * Covers applyMiddlewareViaConnectionWrapper: when reflection path returns false,
+     * the wrapper path is used; for a normal Connection (not QueryTrackingConnection) it returns false.
+     */
+    public function testApplyMiddlewareViaConnectionWrapperWhenConnectionIsNotWrapped(): void
+    {
+        $connectionMock = $this->createMock(Connection::class);
+        $registry       = $this->createMock(ManagerRegistry::class);
+        $registry->expects(self::exactly(2))
+            ->method('getConnection')
+            ->with('default')
+            ->willReturnOnConsecutiveCalls(
+                new stdClass(), // first call: applyMiddlewareViaReflection gets non-Connection -> false
+                $connectionMock, // second call: applyMiddlewareViaConnectionWrapper gets Connection
+            );
+
+        $middleware = $this->createMock(QueryTrackingMiddleware::class);
+
+        self::assertFalse(QueryTrackingMiddlewareRegistry::applyMiddleware($registry, 'default', $middleware));
     }
 }

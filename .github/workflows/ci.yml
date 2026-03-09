@@ -71,36 +71,8 @@ jobs:
             exit 1
           fi
 
-          echo "✅ All tests passed, validating coverage..."
-
-          # Validate that coverage exists
-          php -r "
-          if (!file_exists('coverage.xml')) {
-              echo 'ERROR: coverage.xml file was not generated\n';
-              exit(1);
-          }
-
-          \$coverage = simplexml_load_file('coverage.xml');
-          if (\$coverage === false) {
-              echo 'ERROR: Could not read coverage.xml\n';
-              exit(1);
-          }
-
-          \$metrics = \$coverage->project->metrics;
-          \$elements = (float)\$metrics['elements'];
-          \$coveredElements = (float)\$metrics['coveredelements'];
-
-          if (\$elements == 0) {
-              echo 'No elements to cover\n';
-              exit(0);
-          }
-
-          \$percentage = (\$coveredElements / \$elements) * 100;
-
-          echo \"Coverage: \$coveredElements/\$elements (\$percentage%)\n\";
-
-          echo \"✅ Coverage report generated successfully\n\";
-          "
+          echo "✅ All tests passed, validating coverage (minimum 80%)..."
+          php scripts/check-coverage.php coverage.xml --min-percent=80
 
   code-style:
     name: Code Style
@@ -199,38 +171,10 @@ jobs:
           fi
           echo "✅ All tests passed successfully"
 
-      - name: Validate coverage
+      - name: Validate coverage (minimum 80%)
         run: |
-          echo "📊 Validating coverage..."
-
-          # Validate that coverage exists
-          php -r "
-          if (!file_exists('coverage.xml')) {
-              echo 'ERROR: coverage.xml file was not generated\n';
-              exit(1);
-          }
-
-          \$coverage = simplexml_load_file('coverage.xml');
-          if (\$coverage === false) {
-              echo 'ERROR: Could not read coverage.xml\n';
-              exit(1);
-          }
-
-          \$metrics = \$coverage->project->metrics;
-          \$elements = (float)\$metrics['elements'];
-          \$coveredElements = (float)\$metrics['coveredelements'];
-
-          if (\$elements == 0) {
-              echo 'No elements to cover\n';
-              exit(0);
-          }
-
-          \$percentage = (\$coveredElements / \$elements) * 100;
-
-          echo \"Coverage: \$coveredElements/\$elements (\$percentage%)\n\";
-
-          echo \"✅ Coverage report generated successfully\n\";
-          "
+          echo "📊 Validating coverage (minimum 80%)..."
+          php scripts/check-coverage.php coverage.xml --min-percent=80
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

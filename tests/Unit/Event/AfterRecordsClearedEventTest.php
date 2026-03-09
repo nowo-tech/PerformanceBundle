@@ -20,7 +20,7 @@ final class AfterRecordsClearedEventTest extends TestCase
 
     public function testGetEnvReturnsNullWhenNotProvided(): void
     {
-        $event = new AfterRecordsClearedEvent(10, null);
+        $event = new AfterRecordsClearedEvent(10);
 
         $this->assertSame(10, $event->getDeletedCount());
         $this->assertNull($event->getEnv());

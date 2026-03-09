@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
+use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Helper\LogHelper;
@@ -24,7 +25,7 @@ class NotificationService
      * Creates a new instance.
      *
      * @param iterable<NotificationChannelInterface> $channels Notification channels
-     * @param bool                                   $enabled  Whether notifications are enabled
+     * @param bool $enabled Whether notifications are enabled
      */
     public function __construct(
         private readonly iterable $channels = [],
@@ -35,8 +36,8 @@ class NotificationService
     /**
      * Send a performance alert to all enabled channels.
      *
-     * @param PerformanceAlert                    $alert   The alert to send
-     * @param RouteData|AfterMetricsRecordedEvent $context The route data or event (event carries just-recorded metrics)
+     * @param PerformanceAlert $alert The alert to send
+     * @param AfterMetricsRecordedEvent|RouteData $context The route data or event (event carries just-recorded metrics)
      *
      * @return array<string, bool> Results for each channel (channel name => success)
      */
@@ -52,13 +53,13 @@ class NotificationService
             if ($channel->isEnabled()) {
                 try {
                     $results[$channel->getName()] = $channel->send($alert, $context);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Log error but don't throw (logging enabled by default for backward compatibility)
                     LogHelper::logf(
                         'Failed to send notification via channel %s: %s',
                         null,
                         $channel->getName(),
-                        $e->getMessage()
+                        $e->getMessage(),
                     );
                     $results[$channel->getName()] = false;
                 }

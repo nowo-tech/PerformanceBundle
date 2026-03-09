@@ -19,9 +19,9 @@ final class AfterRecordDeletedEvent extends Event
     /**
      * Creates a new instance.
      *
-     * @param int    $recordId  The ID of the deleted record
+     * @param int $recordId The ID of the deleted record
      * @param string $routeName The route name of the deleted record
-     * @param string $env       The environment of the deleted record
+     * @param string $env The environment of the deleted record
      */
     public function __construct(
         private readonly int $recordId,

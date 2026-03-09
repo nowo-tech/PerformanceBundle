@@ -2,6 +2,28 @@
 
 The bundle supports asynchronous storage of performance metrics using Symfony Messenger. This allows metrics to be stored in the background without blocking the HTTP response.
 
+
+## Table of contents
+
+- [Requirements](#requirements)
+- [Configuration](#configuration)
+  - [1. Enable asynchronous mode](#1-enable-asynchronous-mode)
+  - [2. Configure Messenger](#2-configure-messenger)
+  - [3. Process messages (if using asynchronous transport)](#3-process-messages-if-using-asynchronous-transport)
+- [How It Works](#how-it-works)
+  - [Synchronous mode (default)](#synchronous-mode-default)
+  - [Asynchronous mode](#asynchronous-mode)
+- [Benefits of Asynchronous Mode](#benefits-of-asynchronous-mode)
+- [Full Configuration Example](#full-configuration-example)
+  - [Development (synchronous for debugging)](#development-synchronous-for-debugging)
+  - [Production (asynchronous)](#production-asynchronous)
+- [Verification](#verification)
+- [Automatic Fallback](#automatic-fallback)
+- [Troubleshooting](#troubleshooting)
+  - [Metrics are not stored](#metrics-are-not-stored)
+  - [Metrics are stored with delay](#metrics-are-stored-with-delay)
+  - [I want immediate processing but without blocking](#i-want-immediate-processing-but-without-blocking)
+
 ## Requirements
 
 To use asynchronous mode, you need to install Symfony Messenger:

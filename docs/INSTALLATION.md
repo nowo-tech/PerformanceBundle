@@ -2,6 +2,21 @@
 
 > 📑 **Documentation index**: [docs/README.md](README.md)
 
+
+## Table of contents
+
+- [Requirements](#requirements)
+- [Step 1: Install the Bundle](#step-1-install-the-bundle)
+- [Step 2: Register the Bundle](#step-2-register-the-bundle)
+- [Step 3: Configure the Bundle (Optional)](#step-3-configure-the-bundle-optional)
+- [Step 4: Create the Database Table](#step-4-create-the-database-table)
+  - [Option A: Using the Bundle Command (Recommended)](#option-a-using-the-bundle-command-recommended)
+  - [Option B: Using Doctrine Schema Update](#option-b-using-doctrine-schema-update)
+  - [Option C: Using Migrations (Recommended for Production)](#option-c-using-migrations-recommended-for-production)
+- [Step 5: Verify Installation](#step-5-verify-installation)
+- [That's It!](#thats-it)
+- [Next Steps](#next-steps)
+
 ## Requirements
 
 - PHP >= 8.1, < 8.6

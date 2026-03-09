@@ -13,25 +13,25 @@ final class FiltersComponentTest extends TestCase
     public function testComponentHasDefaultValues(): void
     {
         $component = new FiltersComponent();
-        
+
         $this->assertSame('bootstrap', $component->template);
     }
 
     public function testComponentCanSetProperties(): void
     {
         $component = new FiltersComponent();
-        $formView = $this->createMock(FormView::class);
-        
-        $component->form = $formView;
+        $formView  = $this->createMock(FormView::class);
+
+        $component->form     = $formView;
         $component->template = 'tailwind';
-        
+
         $this->assertSame($formView, $component->form);
         $this->assertSame('tailwind', $component->template);
     }
 
     public function testTemplateDefaultIsBootstrap(): void
     {
-        $component = new FiltersComponent();
+        $component       = new FiltersComponent();
         $component->form = $this->createMock(FormView::class);
 
         $this->assertSame('bootstrap', $component->template);
@@ -39,8 +39,8 @@ final class FiltersComponentTest extends TestCase
 
     public function testFormPropertyAcceptsMockFormView(): void
     {
-        $component = new FiltersComponent();
-        $formView = $this->createMock(FormView::class);
+        $component       = new FiltersComponent();
+        $formView        = $this->createMock(FormView::class);
         $component->form = $formView;
 
         $this->assertSame($formView, $component->form);

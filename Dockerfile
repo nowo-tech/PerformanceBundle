@@ -17,11 +17,11 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /app
 
-# Copy composer files
+# Copy composer files (lock optional so build works when lock is out of date)
 COPY composer.json composer.lock* ./
 
-# Install dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+# Install dependencies; if lock is invalid, update to resolve
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader || composer update --no-interaction --prefer-dist --optimize-autoloader
 
 # Copy application files
 COPY . .

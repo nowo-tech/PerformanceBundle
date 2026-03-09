@@ -6,7 +6,6 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\Form\Test\TypeTestCase;
 
 final class DeleteRecordsByFilterTypeTest extends TypeTestCase
@@ -43,16 +42,14 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
         $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
-            ->with($this->callback(function (array $defaults): bool {
-                return isset($defaults['data_class'])
-                    && $defaults['data_class'] === DeleteRecordsByFilterRequest::class
-                    && isset($defaults['method'])
-                    && $defaults['method'] === 'POST'
-                    && isset($defaults['csrf_protection'])
-                    && $defaults['csrf_protection'] === true
-                    && isset($defaults['from_value'])
-                    && $defaults['from_value'] === 'access_records';
-            }));
+            ->with($this->callback(static fn (array $defaults): bool => isset($defaults['data_class'])
+                && $defaults['data_class'] === DeleteRecordsByFilterRequest::class
+                && isset($defaults['method'])
+                && $defaults['method'] === 'POST'
+                && isset($defaults['csrf_protection'])
+                && $defaults['csrf_protection'] === true
+                && isset($defaults['from_value'])
+                && $defaults['from_value'] === 'access_records'));
 
         $this->formType->configureOptions($resolver);
     }
@@ -65,19 +62,19 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormSubmissionBindsToDeleteRecordsByFilterRequest(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_records',
+            'from_value'      => 'access_records',
             'csrf_protection' => false,
         ]);
 
         $form->submit([
-            '_from' => 'access_records',
-            'env' => 'prod',
-            'start_date' => '2026-01-01',
-            'end_date' => '2026-01-31',
-            'route' => 'app_user',
-            'status_code' => '404',
-            'min_query_time' => '0.1',
-            'max_query_time' => '3',
+            '_from'            => 'access_records',
+            'env'              => 'prod',
+            'start_date'       => '2026-01-01',
+            'end_date'         => '2026-01-31',
+            'route'            => 'app_user',
+            'status_code'      => '404',
+            'min_query_time'   => '0.1',
+            'max_query_time'   => '3',
             'min_memory_usage' => '2097152',
             'max_memory_usage' => '104857600',
         ]);
@@ -100,7 +97,7 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormBuildsWithFromValueAccessStatistics(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_statistics',
+            'from_value'      => 'access_statistics',
             'csrf_protection' => false,
         ]);
 
@@ -111,13 +108,13 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormSubmissionWithPartialData(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_records',
+            'from_value'      => 'access_records',
             'csrf_protection' => false,
         ]);
 
         $form->submit([
             '_from' => 'access_records',
-            'env' => 'dev',
+            'env'   => 'dev',
             'route' => 'app_home',
         ]);
 
@@ -132,19 +129,19 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormSubmissionWithEmptyOptionalFields(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_records',
+            'from_value'      => 'access_records',
             'csrf_protection' => false,
         ]);
 
         $form->submit([
-            '_from' => 'access_statistics',
-            'env' => 'prod',
-            'start_date' => '',
-            'end_date' => '',
-            'route' => '',
-            'status_code' => '',
-            'min_query_time' => '',
-            'max_query_time' => '',
+            '_from'            => 'access_statistics',
+            'env'              => 'prod',
+            'start_date'       => '',
+            'end_date'         => '',
+            'route'            => '',
+            'status_code'      => '',
+            'min_query_time'   => '',
+            'max_query_time'   => '',
             'min_memory_usage' => '',
             'max_memory_usage' => '',
         ]);
@@ -158,13 +155,13 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormSubmissionWithTestEnvironment(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_records',
+            'from_value'      => 'access_records',
             'csrf_protection' => false,
         ]);
 
         $form->submit([
             '_from' => 'access_records',
-            'env' => 'test',
+            'env'   => 'test',
             'route' => 'app_home',
         ]);
 
@@ -177,13 +174,13 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormSubmissionWithStageEnvironment(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_records',
+            'from_value'      => 'access_records',
             'csrf_protection' => false,
         ]);
 
         $form->submit([
             '_from' => 'access_records',
-            'env' => 'stage',
+            'env'   => 'stage',
             'route' => 'api_dashboard',
         ]);
 
@@ -196,7 +193,7 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormMethodIsPost(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_records',
+            'from_value'      => 'access_records',
             'csrf_protection' => false,
         ]);
 
@@ -206,7 +203,7 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
     public function testFormBuildsWithFromValueAccessRecords(): void
     {
         $form = $this->factory->create(DeleteRecordsByFilterType::class, null, [
-            'from_value' => 'access_records',
+            'from_value'      => 'access_records',
             'csrf_protection' => false,
         ]);
 

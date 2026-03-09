@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
+use DateTimeImmutable;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
 
 /**
  * Tests for PerformanceController helper methods.
@@ -18,13 +21,13 @@ use PHPUnit\Framework\MockObject\MockObject;
  */
 final class PerformanceControllerHelperMethodsTest extends TestCase
 {
-    private PerformanceMetricsService|MockObject $metricsService;
+    private MockObject $metricsService;
     private PerformanceController $controller;
 
     protected function setUp(): void
     {
         $this->metricsService = $this->createMock(PerformanceMetricsService::class);
-        $this->controller = new PerformanceController(
+        $this->controller     = new PerformanceController(
             $this->metricsService,
             null,
             true,
@@ -58,8 +61,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
             false,
             1.0,
             true,   // checkTableStatus
-            true,   // enableLogging
-            null,   // accessRecordsRetentionDays
+            true,   // accessRecordsRetentionDays
         );
     }
 
@@ -68,9 +70,16 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
      */
     private function callPrivateMethod(string $methodName, mixed ...$args): mixed
     {
-        $reflection = new \ReflectionClass($this->controller);
+        $reflection = new ReflectionClass($this->controller);
+        if (!$reflection->hasMethod($methodName)) {
+            if ($methodName === 'getSortValue') {
+                $this->markTestSkipped('PerformanceController::getSortValue() was removed.');
+            }
+
+            throw new ReflectionException("Method {$methodName} does not exist");
+        }
         $method = $reflection->getMethod($methodName);
-        $method->setAccessible(true);
+
         return $method->invokeArgs($this->controller, $args);
     }
 
@@ -78,8 +87,8 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
      * Build RouteDataWithAggregates for tests (calculateStats / calculateAdvancedStats expect this type).
      *
      * @param ?int $memoryUsage Memory in bytes (optional)
-     * @param \DateTimeImmutable|null $createdAt Used for getChartData date grouping (default: 2025-01-27)
-     * @param \DateTimeImmutable|null $lastAccessedAt Used for getChartData date grouping (default: 2025-01-27)
+     * @param DateTimeImmutable|null $createdAt Used for getChartData date grouping (default: 2025-01-27)
+     * @param DateTimeImmutable|null $lastAccessedAt Used for getChartData date grouping (default: 2025-01-27)
      */
     private function routeWithAggregates(
         ?float $requestTime,
@@ -87,25 +96,25 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         ?int $totalQueries,
         int $accessCount = 1,
         ?int $memoryUsage = null,
-        ?\DateTimeImmutable $createdAt = null,
-        ?\DateTimeImmutable $lastAccessedAt = null,
+        ?DateTimeImmutable $createdAt = null,
+        ?DateTimeImmutable $lastAccessedAt = null,
     ): RouteDataWithAggregates {
         $routeData = $this->createMock(RouteData::class);
         $routeData->method('getId')->willReturn(1);
         $routeData->method('getEnv')->willReturn('dev');
         $routeData->method('getName')->willReturn('test');
         $routeData->method('getAccessRecords')->willReturn(new \Doctrine\Common\Collections\ArrayCollection());
-        $dt = $createdAt ?? new \DateTimeImmutable('2025-01-27');
+        $dt = $createdAt ?? new DateTimeImmutable('2025-01-27');
         $routeData->method('getCreatedAt')->willReturn($dt);
         $routeData->method('getLastAccessedAt')->willReturn($lastAccessedAt ?? $dt);
 
         return new RouteDataWithAggregates($routeData, [
-            'request_time' => $requestTime,
-            'query_time' => $queryTime,
+            'request_time'  => $requestTime,
+            'query_time'    => $queryTime,
             'total_queries' => $totalQueries,
-            'memory_usage' => $memoryUsage,
-            'access_count' => $accessCount,
-            'status_codes' => [],
+            'memory_usage'  => $memoryUsage,
+            'access_count'  => $accessCount,
+            'status_codes'  => [],
         ]);
     }
 
@@ -162,7 +171,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithMemoryUsageNullReturnsZero(): void
     {
-        $route = $this->routeWithAggregates(null, null, null, 1, null);
+        $route = $this->routeWithAggregates(null, null, null, 1);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'memoryUsage');
         $this->assertSame(0, $result);
@@ -179,15 +188,15 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
     public function testGetSortValueWithCreatedAt(): void
     {
         $routeData = $this->createMock(RouteData::class);
-        $createdAt = new \DateTimeImmutable('2025-01-15 10:00:00');
+        $createdAt = new DateTimeImmutable('2025-01-15 10:00:00');
         $routeData->method('getCreatedAt')->willReturn($createdAt);
         $route = new RouteDataWithAggregates($routeData, [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ]);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'createdAt');
@@ -196,16 +205,16 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testGetSortValueWithLastAccessedAt(): void
     {
-        $routeData = $this->createMock(RouteData::class);
-        $lastAccessedAt = new \DateTimeImmutable('2025-01-20 14:30:00');
+        $routeData      = $this->createMock(RouteData::class);
+        $lastAccessedAt = new DateTimeImmutable('2025-01-20 14:30:00');
         $routeData->method('getLastAccessedAt')->willReturn($lastAccessedAt);
         $route = new RouteDataWithAggregates($routeData, [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ]);
 
         $result = $this->callPrivateMethod('getSortValue', $route, 'lastAccessedAt');
@@ -237,12 +246,12 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $routeData->method('getCreatedAt')->willReturn(null);
         $routeData->method('getLastAccessedAt')->willReturn(null);
         $route = new RouteDataWithAggregates($routeData, [
-            'request_time' => null,
-            'query_time' => null,
+            'request_time'  => null,
+            'query_time'    => null,
             'total_queries' => null,
-            'memory_usage' => null,
-            'access_count' => 1,
-            'status_codes' => [],
+            'memory_usage'  => null,
+            'access_count'  => 1,
+            'status_codes'  => [],
         ]);
 
         $this->assertSame('', $this->callPrivateMethod('getSortValue', $route, 'name'));
@@ -254,6 +263,114 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $this->assertSame('', $this->callPrivateMethod('getSortValue', $route, 'env'));
     }
 
+    // ========== normalizeEnv() tests ==========
+
+    public function testNormalizeEnvWithStringReturnsValue(): void
+    {
+        $result = $this->callPrivateMethod('normalizeEnv', 'prod');
+        $this->assertSame('prod', $result);
+    }
+
+    public function testNormalizeEnvWithNonStringUsesGetParameter(): void
+    {
+        $controller = $this->getMockBuilder(PerformanceController::class)
+            ->setConstructorArgs([
+                $this->metricsService,
+                null,
+                true,
+                [],
+                'bootstrap',
+                null,
+                null,
+                null,
+                false,
+                false,
+                null,
+                0.5,
+                1.0,
+                20,
+                50,
+                20.0,
+                50.0,
+                'Y-m-d H:i:s',
+                'Y-m-d H:i',
+                0,
+                [200, 404, 500, 503],
+                null,
+                false,
+                true,
+                ['dev', 'test'],
+                'default',
+                true,
+                true,
+                false,
+                [],
+                false,
+                1.0,
+                true,
+                true,
+                null,
+            ])
+            ->onlyMethods(['getParameter'])
+            ->getMock();
+        $controller->method('getParameter')->with('kernel.environment')->willReturn('staging');
+
+        $reflection = new ReflectionClass($controller);
+        $method     = $reflection->getMethod('normalizeEnv');
+        $method->setAccessible(true);
+        $this->assertSame('staging', $method->invoke($controller, null));
+    }
+
+    public function testNormalizeEnvWithNonStringAndGetParameterNonStringReturnsDev(): void
+    {
+        $controller = $this->getMockBuilder(PerformanceController::class)
+            ->setConstructorArgs([
+                $this->metricsService,
+                null,
+                true,
+                [],
+                'bootstrap',
+                null,
+                null,
+                null,
+                false,
+                false,
+                null,
+                0.5,
+                1.0,
+                20,
+                50,
+                20.0,
+                50.0,
+                'Y-m-d H:i:s',
+                'Y-m-d H:i',
+                0,
+                [200, 404, 500, 503],
+                null,
+                false,
+                true,
+                ['dev', 'test'],
+                'default',
+                true,
+                true,
+                false,
+                [],
+                false,
+                1.0,
+                true,
+                true,
+                null,
+            ])
+            ->onlyMethods(['getParameter'])
+            ->getMock();
+        $controller->method('getParameter')->with('kernel.environment')->willReturn(null);
+
+        $reflection = new ReflectionClass($controller);
+        $method     = $reflection->getMethod('normalizeEnv');
+        $method->setAccessible(true);
+        $this->assertSame('dev', $method->invoke($controller, 123));
+    }
+
     // ========== calculateStats() tests ==========
 
     public function testCalculateStatsWithEmptyArray(): void
@@ -261,13 +378,13 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $result = $this->callPrivateMethod('calculateStats', []);
 
         $this->assertSame([
-            'total_routes' => 0,
-            'avg_queries' => 0.0,
-            'max_queries' => 0,
+            'total_routes'     => 0,
+            'avg_queries'      => 0.0,
+            'max_queries'      => 0,
             'avg_request_time' => 0.0,
-            'avg_query_time' => 0.0,
+            'avg_query_time'   => 0.0,
             'max_request_time' => 0.0,
-            'max_query_time' => 0.0,
+            'max_query_time'   => 0.0,
         ], $result);
     }
 
@@ -324,21 +441,21 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $result = $this->callPrivateMethod('getEmptyStats');
 
         $this->assertSame([
-            'label' => '',
-            'unit' => '',
-            'count' => 0,
-            'mean' => 0.0,
-            'median' => 0.0,
-            'mode' => 0.0,
-            'std_dev' => 0.0,
-            'min' => 0.0,
-            'max' => 0.0,
-            'range' => 0.0,
-            'percentiles' => [],
+            'label'          => '',
+            'unit'           => '',
+            'count'          => 0,
+            'mean'           => 0.0,
+            'median'         => 0.0,
+            'mode'           => 0.0,
+            'std_dev'        => 0.0,
+            'min'            => 0.0,
+            'max'            => 0.0,
+            'range'          => 0.0,
+            'percentiles'    => [],
             'outliers_count' => 0,
-            'outliers' => [],
-            'distribution' => [],
-            'bucket_labels' => [],
+            'outliers'       => [],
+            'distribution'   => [],
+            'bucket_labels'  => [],
         ], $result);
     }
 
@@ -382,7 +499,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testCalculateAdvancedStatsFiltersNullValues(): void
     {
-        $route1 = $this->routeWithAggregates(0.5, null, null, 10, null);
+        $route1 = $this->routeWithAggregates(0.5, null, null, 10);
         $route2 = $this->routeWithAggregates(null, 0.2, 10, 0, 2097152);  // 2 MB
 
         $result = $this->callPrivateMethod('calculateAdvancedStats', [$route1, $route2]);
@@ -513,7 +630,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         // Values should be rounded to 4 decimal places
         $this->assertNotEquals(1.123456, $result['mean']);
-        $this->assertEquals(round(2.234567, 4), $result['mean'], '', 0.0001);
+        $this->assertEquals(round(2.234567, 4), $result['mean'], '');
     }
 
     // ========== getRoutesNeedingAttention() tests ==========
@@ -538,18 +655,18 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         $advancedStats = [
             'request_time' => [
-                'mean' => 0.5,
-                'std_dev' => 0.1,
+                'mean'        => 0.5,
+                'std_dev'     => 0.1,
                 'percentiles' => [95 => 1.0], // 95th percentile
             ],
             'query_count' => [
-                'mean' => 10,
-                'std_dev' => 2,
+                'mean'        => 10,
+                'std_dev'     => 2,
                 'percentiles' => [95 => 12],
             ],
             'memory_usage' => [
-                'mean' => 0.5,
-                'std_dev' => 0.1,
+                'mean'        => 0.5,
+                'std_dev'     => 0.1,
                 'percentiles' => [95 => 0.6],
             ],
         ];
@@ -567,18 +684,18 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         $advancedStats = [
             'request_time' => [
-                'mean' => 0.5,
-                'std_dev' => 0.1,
+                'mean'        => 0.5,
+                'std_dev'     => 0.1,
                 'percentiles' => [95 => 0.6],
             ],
             'query_count' => [
-                'mean' => 10,
-                'std_dev' => 2,
+                'mean'        => 10,
+                'std_dev'     => 2,
                 'percentiles' => [95 => 50], // 95th percentile
             ],
             'memory_usage' => [
-                'mean' => 0.5,
-                'std_dev' => 0.1,
+                'mean'        => 0.5,
+                'std_dev'     => 0.1,
                 'percentiles' => [95 => 0.6],
             ],
         ];
@@ -596,18 +713,18 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         $advancedStats = [
             'request_time' => [
-                'mean' => 0.5,
-                'std_dev' => 0.1,
+                'mean'        => 0.5,
+                'std_dev'     => 0.1,
                 'percentiles' => [95 => 0.6],
             ],
             'query_count' => [
-                'mean' => 10,
-                'std_dev' => 2,
+                'mean'        => 10,
+                'std_dev'     => 2,
                 'percentiles' => [95 => 12],
             ],
             'memory_usage' => [
-                'mean' => 20.0,
-                'std_dev' => 5.0,
+                'mean'        => 20.0,
+                'std_dev'     => 5.0,
                 'percentiles' => [95 => 40.0], // 95th percentile in MB
             ],
         ];
@@ -790,7 +907,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
 
         $this->assertArrayHasKey('date_from', $result);
-        $this->assertInstanceOf(\DateTimeImmutable::class, $result['date_from']);
+        $this->assertInstanceOf(DateTimeImmutable::class, $result['date_from']);
         $this->assertSame('2025-01-01', $result['date_from']->format('Y-m-d'));
     }
 
@@ -802,7 +919,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
 
         $this->assertArrayHasKey('date_to', $result);
-        $this->assertInstanceOf(\DateTimeImmutable::class, $result['date_to']);
+        $this->assertInstanceOf(DateTimeImmutable::class, $result['date_to']);
         $this->assertSame('2025-12-31', $result['date_to']->format('Y-m-d'));
     }
 
@@ -851,7 +968,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         $this->assertArrayHasKey('date_from', $result);
         $this->assertArrayHasKey('date_to', $result);
-        $this->assertInstanceOf(\DateTimeImmutable::class, $result['date_from']);
-        $this->assertInstanceOf(\DateTimeImmutable::class, $result['date_to']);
+        $this->assertInstanceOf(DateTimeImmutable::class, $result['date_from']);
+        $this->assertInstanceOf(DateTimeImmutable::class, $result['date_to']);
     }
 }

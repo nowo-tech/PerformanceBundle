@@ -4,44 +4,49 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Model;
 
+use DateTimeImmutable;
+
 /**
  * DTO for record/access statistics filter form (GET).
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  *
- * @property \DateTimeImmutable|null $startDate      Filter start date (inclusive).
- * @property \DateTimeImmutable|null $endDate        Filter end date (inclusive).
- * @property string|null             $env            Environment (e.g. dev, prod).
- * @property string|null             $route          Route name filter (empty = all routes).
- * @property int|null                $statusCode     HTTP status code filter (e.g. 200, 404).
- * @property float|null              $minQueryTime   Minimum query time in seconds (records with query_time >= this).
- * @property float|null              $maxQueryTime   Maximum query time in seconds (records with query_time <= this).
- * @property int|null                $minMemoryUsage Minimum memory usage in bytes (records with memory_usage >= this).
- * @property int|null                $maxMemoryUsage Maximum memory usage in bytes (records with memory_usage <= this).
- * @property string|null             $referer        Referer filter (partial match, LIKE %value%).
- * @property string|null             $user           User filter (partial match on user_identifier or user_id, LIKE %value%).
+ * @property DateTimeImmutable|null $startDate Filter start date (inclusive).
+ * @property DateTimeImmutable|null $endDate Filter end date (inclusive).
+ * @property string|null $env Environment (e.g. dev, prod).
+ * @property string|null $route Route name filter (empty = all routes).
+ * @property string|null $path Path or URL filter (e.g. /foo/bar or https://example.com/foo/bar); normalised to path for matching routePath.
+ * @property int|null $statusCode HTTP status code filter (e.g. 200, 404).
+ * @property float|null $minQueryTime Minimum query time in seconds (records with query_time >= this).
+ * @property float|null $maxQueryTime Maximum query time in seconds (records with query_time <= this).
+ * @property int|null $minMemoryUsage Minimum memory usage in bytes (records with memory_usage >= this).
+ * @property int|null $maxMemoryUsage Maximum memory usage in bytes (records with memory_usage <= this).
+ * @property string|null $referer Referer filter (partial match, LIKE %value%).
+ * @property string|null $user User filter (partial match on user_identifier or user_id, LIKE %value%).
  */
 final class RecordFilters
 {
     /**
-     * @param \DateTimeImmutable|null $startDate      filter start date (inclusive)
-     * @param \DateTimeImmutable|null $endDate        filter end date (inclusive)
-     * @param string|null             $env            Environment (e.g. dev, prod).
-     * @param string|null             $route          route name filter (empty = all routes)
-     * @param int|null                $statusCode     HTTP status code filter (e.g. 200, 404).
-     * @param float|null              $minQueryTime   minimum query time in seconds (filter records with query_time >= this)
-     * @param float|null              $maxQueryTime   maximum query time in seconds (filter records with query_time <= this)
-     * @param int|null                $minMemoryUsage minimum memory usage in bytes (filter records with memory_usage >= this)
-     * @param int|null                $maxMemoryUsage maximum memory usage in bytes (filter records with memory_usage <= this)
-     * @param string|null             $referer        referer filter (partial match)
-     * @param string|null             $user           user filter (partial match on user_identifier or user_id)
+     * @param DateTimeImmutable|null $startDate filter start date (inclusive)
+     * @param DateTimeImmutable|null $endDate filter end date (inclusive)
+     * @param string|null $env Environment (e.g. dev, prod).
+     * @param string|null $route route name filter (empty = all routes)
+     * @param string|null $path path or URL filter (normalised to path for matching routePath)
+     * @param int|null $statusCode HTTP status code filter (e.g. 200, 404).
+     * @param float|null $minQueryTime minimum query time in seconds (filter records with query_time >= this)
+     * @param float|null $maxQueryTime maximum query time in seconds (filter records with query_time <= this)
+     * @param int|null $minMemoryUsage minimum memory usage in bytes (filter records with memory_usage >= this)
+     * @param int|null $maxMemoryUsage maximum memory usage in bytes (filter records with memory_usage <= this)
+     * @param string|null $referer referer filter (partial match)
+     * @param string|null $user user filter (partial match on user_identifier or user_id)
      */
     public function __construct(
-        public ?\DateTimeImmutable $startDate = null,
-        public ?\DateTimeImmutable $endDate = null,
+        public ?DateTimeImmutable $startDate = null,
+        public ?DateTimeImmutable $endDate = null,
         public ?string $env = null,
         public ?string $route = null,
+        public ?string $path = null,
         public ?int $statusCode = null,
         public ?float $minQueryTime = null,
         public ?float $maxQueryTime = null,

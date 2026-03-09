@@ -16,6 +16,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  *
  * Uses hidden fields to carry current filter state (env, dates, route, status code, query time, memory).
  *
+ * @extends AbstractType<mixed>
+ *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
@@ -24,7 +26,7 @@ class DeleteRecordsByFilterType extends AbstractType
     /**
      * Builds the form with hidden fields for filter state and a submit button.
      *
-     * @param FormBuilderInterface $builder The form builder
+     * @param FormBuilderInterface<mixed> $builder The form builder
      * @param array<string, mixed> $options Options (from_value: origin page identifier)
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -32,12 +34,13 @@ class DeleteRecordsByFilterType extends AbstractType
         $builder
             ->add('_from', HiddenType::class, [
                 'property_path' => 'from',
-                'data' => $options['from_value'],
+                'data'          => $options['from_value'],
             ])
             ->add('env', HiddenType::class)
             ->add('start_date', HiddenType::class, ['property_path' => 'startDate'])
             ->add('end_date', HiddenType::class, ['property_path' => 'endDate'])
             ->add('route', HiddenType::class)
+            ->add('path', HiddenType::class)
             ->add('status_code', HiddenType::class, ['property_path' => 'statusCode'])
             ->add('min_query_time', HiddenType::class, ['property_path' => 'minQueryTime'])
             ->add('max_query_time', HiddenType::class, ['property_path' => 'maxQueryTime'])
@@ -46,9 +49,9 @@ class DeleteRecordsByFilterType extends AbstractType
             ->add('referer', HiddenType::class)
             ->add('user', HiddenType::class)
             ->add('submit', SubmitType::class, [
-                'label' => 'access_statistics.delete_records_matching_filter',
+                'label'              => 'access_statistics.delete_records_matching_filter',
                 'translation_domain' => 'nowo_performance',
-                'attr' => ['class' => 'btn btn-danger'],
+                'attr'               => ['class' => 'btn btn-danger'],
             ]);
     }
 
@@ -60,12 +63,12 @@ class DeleteRecordsByFilterType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => DeleteRecordsByFilterRequest::class,
-            'method' => 'POST',
+            'data_class'      => DeleteRecordsByFilterRequest::class,
+            'method'          => 'POST',
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
-            'csrf_token_id' => 'delete_records_by_filter',
-            'from_value' => 'access_records',
+            'csrf_token_id'   => 'delete_records_by_filter',
+            'from_value'      => 'access_records',
         ]);
     }
 
