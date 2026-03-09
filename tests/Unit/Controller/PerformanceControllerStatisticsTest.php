@@ -218,7 +218,7 @@ final class PerformanceControllerStatisticsTest extends TestCase
 
         $envForm = $this->createMock(FormInterface::class);
         $envForm->method('handleRequest');
-        $data = new \stdClass();
+        $data      = new stdClass();
         $data->env = 'test';
         $envForm->method('getData')->willReturn($data);
         $envForm->method('createView')->willReturn(new FormView());

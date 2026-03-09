@@ -13,6 +13,7 @@ use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use stdClass;
 
 final class TableStatusCheckerTest extends TestCase
 {
@@ -476,7 +477,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testTableExistsReturnsFalseWhenRegistryReturnsNonConnection(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->with('default')->willReturn(new \stdClass());
+        $registry->method('getConnection')->with('default')->willReturn(new stdClass());
 
         $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
 
@@ -486,7 +487,7 @@ final class TableStatusCheckerTest extends TestCase
     public function testGetMissingColumnsReturnsEmptyWhenRegistryReturnsNonConnection(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getConnection')->with('default')->willReturn(new \stdClass());
+        $registry->method('getConnection')->with('default')->willReturn(new stdClass());
 
         $checker = new TableStatusChecker($registry, 'default', 'routes_data', false);
 

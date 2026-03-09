@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
+use Exception;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
@@ -32,7 +33,7 @@ final class PerformanceControllerExportCsvTest extends TestCase
     {
         $this->metricsService
             ->method('getRoutesWithAggregatesFiltered')
-            ->willThrowException(new \Exception('DB error'));
+            ->willThrowException(new Exception('DB error'));
 
         $controller = $this->getMockBuilder(PerformanceController::class)
             ->setConstructorArgs([
