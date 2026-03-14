@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 final class PurgeAccessRecordsCommandTest extends TestCase
 {
-    private ParameterBagInterface $parameterBag;
+    private \PHPUnit\Framework\MockObject\MockObject $parameterBag;
 
     protected function setUp(): void
     {

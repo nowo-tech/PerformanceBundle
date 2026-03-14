@@ -17,8 +17,8 @@ final class PerformanceMetricsSubscriberIntegrationTest extends TestCase
         $kernel = new TestKernel('test', true);
         $kernel->boot();
 
-        $request  = Request::create('/performance', Request::METHOD_GET);
-        $response = $kernel->handle($request, HttpKernelInterface::SUB_REQUEST, false);
+        $request = Request::create('/performance', Request::METHOD_GET);
+        $kernel->handle($request, HttpKernelInterface::SUB_REQUEST, false);
 
         self::assertTrue(true, 'Sub-request completes without error (subscriber skips tracking)');
         $kernel->shutdown();

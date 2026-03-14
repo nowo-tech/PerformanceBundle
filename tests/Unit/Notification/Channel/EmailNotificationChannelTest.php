@@ -13,8 +13,8 @@ use RuntimeException;
 
 final class EmailNotificationChannelTest extends TestCase
 {
-    private const MAILER_INTERFACE = 'Symfony\Component\Mailer\MailerInterface';
-    private const EMAIL_CLASS      = 'Symfony\Component\Mime\Email';
+    private const MAILER_INTERFACE = \Symfony\Component\Mailer\MailerInterface::class;
+    private const EMAIL_CLASS      = \Symfony\Component\Mime\Email::class;
 
     protected function setUp(): void
     {

@@ -88,6 +88,13 @@ up-all:
 	@echo ""
 	@echo "✅ Proceso completado!"
 
+# test-coverage-all and release-check
+test-coverage-all:
+	@for demo in $(DEMOS); do $(MAKE) -C $$demo test-coverage || exit 1; done
+	@echo "test-coverage-all done."
+release-check: test-coverage-all release-verify
+	@echo "✅ All demos passed release-check."
+
 # Release verify: for each demo, up → sleep → healthcheck (HTTP 200) → down
 release-verify:
 	@for demo in $(DEMOS); do \

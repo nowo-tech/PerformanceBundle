@@ -152,9 +152,8 @@ final class PerformanceDataCollectorTest extends TestCase
         $response = new Response();
         $collector->collect($request, $response);
 
-        $ref      = new ReflectionClass($collector);
-        $dataProp = $ref->getProperty('data');
-        $dataProp->setAccessible(true);
+        $ref                  = new ReflectionClass($collector);
+        $dataProp             = $ref->getProperty('data');
         $data                 = $dataProp->getValue($collector);
         $data['request_time'] = 0.0005;
         $dataProp->setValue($collector, $data);

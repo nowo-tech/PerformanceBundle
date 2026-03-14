@@ -17,7 +17,7 @@ final class NotificationChannelInterfaceTest extends TestCase
 {
     public function testEmailNotificationChannelImplementsInterface(): void
     {
-        if (!interface_exists('Symfony\Component\Mailer\MailerInterface')) {
+        if (!interface_exists(\Symfony\Component\Mailer\MailerInterface::class)) {
             $this->markTestSkipped('symfony/mailer is not installed.');
         }
         $channel = new EmailNotificationChannel(null, 'from@example.com', [], false);
@@ -26,7 +26,7 @@ final class NotificationChannelInterfaceTest extends TestCase
 
     public function testWebhookNotificationChannelImplementsInterface(): void
     {
-        if (!interface_exists('Symfony\Contracts\HttpClient\HttpClientInterface')) {
+        if (!interface_exists(\Symfony\Contracts\HttpClient\HttpClientInterface::class)) {
             $this->markTestSkipped('symfony/http-client is not installed.');
         }
         $channel = new WebhookNotificationChannel(null, '', 'json', [], false);

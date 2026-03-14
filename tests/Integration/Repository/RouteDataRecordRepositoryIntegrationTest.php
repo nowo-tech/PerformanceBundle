@@ -154,17 +154,6 @@ final class RouteDataRecordRepositoryIntegrationTest extends TestCase
 
         $result = $repo->getRecordsForExport(
             'test',
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
         );
 
         self::assertIsArray($result);
@@ -362,7 +351,7 @@ final class RouteDataRecordRepositoryIntegrationTest extends TestCase
         $this->createTablesAndRecordMetrics();
         $repo = $this->getRepository();
 
-        $deleted = $repo->deleteAllRecords(null);
+        $deleted = $repo->deleteAllRecords();
         self::assertIsInt($deleted);
         self::assertGreaterThanOrEqual(1, $deleted);
     }

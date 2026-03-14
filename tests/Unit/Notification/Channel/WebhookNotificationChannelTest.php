@@ -13,8 +13,8 @@ use RuntimeException;
 
 final class WebhookNotificationChannelTest extends TestCase
 {
-    private const HTTP_CLIENT_INTERFACE = 'Symfony\Contracts\HttpClient\HttpClientInterface';
-    private const RESPONSE_INTERFACE    = 'Symfony\Contracts\HttpClient\ResponseInterface';
+    private const HTTP_CLIENT_INTERFACE = \Symfony\Contracts\HttpClient\HttpClientInterface::class;
+    private const RESPONSE_INTERFACE    = \Symfony\Contracts\HttpClient\ResponseInterface::class;
 
     protected function setUp(): void
     {
@@ -155,9 +155,7 @@ final class WebhookNotificationChannelTest extends TestCase
         $client   = $this->createMock(self::HTTP_CLIENT_INTERFACE);
         $client->expects($this->once())
             ->method('request')
-            ->with('POST', $this->anything(), $this->callback(static function (array $opts): bool {
-                return isset($opts['json']) && (isset($opts['json']['@type']) || isset($opts['json']['text']));
-            }))
+            ->with('POST', $this->anything(), $this->callback(static fn (array $opts): bool => isset($opts['json']) && (isset($opts['json']['@type']) || isset($opts['json']['text']))))
             ->willReturn($response);
 
         $channel = new WebhookNotificationChannel($client, 'https://outlook.office.com/webhook/x', 'teams', [], true);

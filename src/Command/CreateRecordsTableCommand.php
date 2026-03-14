@@ -155,7 +155,7 @@ HELP
             // Get table name from metadata (compatible with different Doctrine versions)
             if (method_exists($metadata, 'getTableName')) {
                 /** @var callable $getTableName */
-                $getTableName    = [$metadata, 'getTableName'];
+                $getTableName    = $metadata->getTableName(...);
                 $actualTableName = $getTableName();
             } else {
                 $actualTableName = $metadata->table['name'] ?? $this->mainTableName . '_records';

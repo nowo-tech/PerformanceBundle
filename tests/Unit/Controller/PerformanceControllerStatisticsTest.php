@@ -43,13 +43,10 @@ final class PerformanceControllerStatisticsTest extends TestCase
         $routeData = new RouteData();
         $ref       = new ReflectionClass($routeData);
         $id        = $ref->getProperty('id');
-        $id->setAccessible(true);
         $id->setValue($routeData, 1);
         $env = $ref->getProperty('env');
-        $env->setAccessible(true);
         $env->setValue($routeData, 'test');
         $name = $ref->getProperty('name');
-        $name->setAccessible(true);
         $name->setValue($routeData, 'app_home');
 
         return new RouteDataWithAggregates($routeData, [
@@ -130,9 +127,7 @@ final class PerformanceControllerStatisticsTest extends TestCase
         )->willReturn($envForm);
         $controller->method('render')->with(
             '@NowoPerformanceBundle/Performance/statistics.html.twig',
-            self::callback(static function (array $vars): bool {
-                return isset($vars['correlations'], $vars['efficiency'], $vars['recommendations'], $vars['traffic_distribution']);
-            }),
+            self::callback(static fn (array $vars): bool => isset($vars['correlations'], $vars['efficiency'], $vars['recommendations'], $vars['traffic_distribution'])),
         )->willReturn(new Response('', 200));
 
         $request  = Request::create('/performance/statistics', 'GET', ['env' => 'test']);

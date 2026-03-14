@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
+use ArrayAccess;
 use Exception;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
@@ -109,7 +110,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
             ->getMock();
 
         $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
-        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm) {
+        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm): MockObject {
             if ($type === PerformanceFiltersType::class) {
                 return $filtersForm;
             }
@@ -198,7 +199,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
             ->getMock();
 
         $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
-        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm) {
+        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm): MockObject {
             if ($type === ClearPerformanceDataType::class) {
                 return $clearForm;
             }
@@ -258,9 +259,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
             ->getMock();
 
         $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
-        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm) {
-            return $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm;
-        });
+        $controller->method('createForm')->willReturnCallback(static fn ($type): MockObject => $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm);
         $controller->method('render')->willReturn(new Response('', 200));
 
         $request  = Request::create('/performance', 'GET');
@@ -303,9 +302,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
             ->getMock();
 
         $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
-        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm) {
-            return $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm;
-        });
+        $controller->method('createForm')->willReturnCallback(static fn ($type): MockObject => $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm);
         $controller->method('render')->willReturn(new Response('', 200));
 
         $request  = Request::create('/performance', 'GET');
@@ -351,7 +348,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
             ->getMock();
 
         $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
-        $controller->method('createForm')->willReturnCallback(static function ($type, $data = null, $options = []) use ($filtersForm, $clearForm, $deleteForm, $reviewForm) {
+        $controller->method('createForm')->willReturnCallback(static function ($type, $data = null, array|ArrayAccess $options = []) use ($filtersForm, $clearForm, $deleteForm, $reviewForm): MockObject {
             if ($type === ClearPerformanceDataType::class) {
                 return $clearForm;
             }
@@ -383,13 +380,10 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
         $routeData = new RouteData();
         $ref       = new ReflectionClass($routeData);
         $id        = $ref->getProperty('id');
-        $id->setAccessible(true);
         $id->setValue($routeData, 1);
         $env = $ref->getProperty('env');
-        $env->setAccessible(true);
         $env->setValue($routeData, 'test');
         $name = $ref->getProperty('name');
-        $name->setAccessible(true);
         $name->setValue($routeData, 'app_home');
 
         return new RouteDataWithAggregates($routeData, [

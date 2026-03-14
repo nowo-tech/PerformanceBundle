@@ -142,7 +142,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         // Calculate averages and build result list (without sum_response_time)
         $result = [];
         foreach ($statistics as $hour => $data) {
-            $sum      = (float) ($data['sum_response_time'] ?? 0.0);
+            $sum      = $data['sum_response_time'] ?? 0.0;
             $avg      = $data['count'] > 0 ? $sum / $data['count'] : 0.0;
             $result[] = [
                 'hour'              => $data['hour'] ?? $hour,
@@ -597,7 +597,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         // Calculate averages and build result list (without sum_response_time)
         $result = [];
         foreach ($statistics as $day => $data) {
-            $sum      = (float) ($data['sum_response_time'] ?? 0.0);
+            $sum      = $data['sum_response_time'] ?? 0.0;
             $avg      = $data['count'] > 0 ? $sum / $data['count'] : 0.0;
             $result[] = [
                 'day_of_week'       => $data['day_of_week'] ?? $day,
@@ -710,7 +710,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         // Calculate averages and build result list (without sum_response_time)
         $result = [];
         foreach ($statistics as $month => $data) {
-            $sum      = (float) ($data['sum_response_time'] ?? 0.0);
+            $sum      = $data['sum_response_time'] ?? 0.0;
             $avg      = $data['count'] > 0 ? $sum / $data['count'] : 0.0;
             $result[] = [
                 'month'             => $data['month'] ?? $month,

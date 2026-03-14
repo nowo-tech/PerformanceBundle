@@ -515,7 +515,7 @@ class PerformanceController extends AbstractController
 
             return [
                 'name'         => $r->getName() ?? 'N/A',
-                'request_time' => $time !== null ? (float) $time : 0.0,
+                'request_time' => $time ?? 0.0,
             ];
         }, $withTime), 0, $limit);
     }
@@ -649,7 +649,7 @@ class PerformanceController extends AbstractController
             'range'          => round($range, 4),
             'percentiles'    => array_map(static fn ($v): float => round($v, 4), $percentiles),
             'outliers_count' => count($outliers),
-            'outliers'       => array_map(static fn ($v): float => round($v, 4), array_values($outliers)),
+            'outliers'       => array_map(static fn (float|int $v): float => round($v, 4), array_values($outliers)),
             'distribution'   => $distribution,
             'bucket_labels'  => $bucketLabels,
         ];
@@ -885,7 +885,7 @@ class PerformanceController extends AbstractController
 
                 // Normalize to array<string> (getDistinctEnvironments returns array but values may be inferred mixed)
                 /** @phpstan-ignore function.alreadyNarrowedType (filter narrows to string) */
-                $environments = array_values(array_filter($raw, static fn (mixed $e): bool => is_string($e)));
+                $environments = array_values(array_filter($raw, is_string(...)));
             } catch (Exception) {
                 // Fallback to default environments if repository query fails
                 $environments = ['dev', 'test', 'prod'];
@@ -1802,7 +1802,7 @@ class PerformanceController extends AbstractController
                 ? sprintf('La ruta "%s" está en la lista de ignoradas', is_string($routeTracking['current_route'] ?? null) ? $routeTracking['current_route'] : 'null')
                 : sprintf('La ruta "%s" no está en la lista de ignoradas', is_string($routeTracking['current_route'] ?? null) ? $routeTracking['current_route'] : 'null'),
         ];
-        $mainTableChecked     = (bool) $tableStatus['main_table_checked'];
+        $mainTableChecked     = $tableStatus['main_table_checked'];
         $trackingConditions[] = [
             'condition' => 'Tabla principal existe',
             'status'    => $mainTableChecked ? $tableStatus['main_table_exists'] : true,
@@ -1820,7 +1820,7 @@ class PerformanceController extends AbstractController
                 : 'Comprobación desactivada (check_table_status: false)',
         ];
         if ($this->enableAccessRecords) {
-            $recordsTableChecked  = (bool) $tableStatus['records_table_checked'];
+            $recordsTableChecked  = $tableStatus['records_table_checked'];
             $trackingConditions[] = [
                 'condition' => 'Tabla de registros existe',
                 'status'    => $recordsTableChecked ? $tableStatus['records_table_exists'] : true,
@@ -2044,14 +2044,14 @@ class PerformanceController extends AbstractController
 
             // Invalidate cache
             if ($this->cacheService instanceof PerformanceCacheService) {
-                if ($env) {
+                if ($env !== '' && $env !== '0') {
                     $this->cacheService->clearStatistics($env);
                 } else {
                     $this->cacheService->clearEnvironments();
                 }
             }
 
-            $message = $env
+            $message = $env !== '' && $env !== '0'
                 ? sprintf('Successfully deleted %d performance record(s) for environment "%s".', $deletedCount, $env)
                 : sprintf('Successfully deleted %d performance record(s) from all environments.', $deletedCount);
 
@@ -2165,7 +2165,7 @@ class PerformanceController extends AbstractController
 
                 // Invalidate cache
                 if ($this->cacheService instanceof PerformanceCacheService) {
-                    if ($env) {
+                    if ($env !== '' && $env !== '0') {
                         $this->cacheService->clearStatistics($env);
                     }
                     $this->cacheService->clearEnvironments();
@@ -2320,7 +2320,7 @@ class PerformanceController extends AbstractController
 
                 // Invalidate cache
                 if ($this->cacheService instanceof PerformanceCacheService) {
-                    if ($env) {
+                    if ($env !== '' && $env !== '0') {
                         $this->cacheService->clearStatistics($env);
                     }
                     $this->cacheService->clearEnvironments();

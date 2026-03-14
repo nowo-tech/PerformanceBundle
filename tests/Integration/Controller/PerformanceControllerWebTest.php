@@ -24,7 +24,7 @@ final class PerformanceControllerWebTest extends WebTestCase
 
     public function testClearPostWithValidCsrfViaFormSubmit(): void
     {
-        $client = static::createClient();
+        $client = self::createClient();
         $this->createTablesAndRecordMetric($client);
 
         $crawler = $client->request('GET', '/performance?env=test');
@@ -45,7 +45,7 @@ final class PerformanceControllerWebTest extends WebTestCase
 
     public function testDashboardFormContainsClearForm(): void
     {
-        $client = static::createClient();
+        $client = self::createClient();
         $this->createTablesAndRecordMetric($client);
 
         $crawler = $client->request('GET', '/performance');

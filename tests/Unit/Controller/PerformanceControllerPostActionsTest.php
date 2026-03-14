@@ -91,7 +91,6 @@ final class PerformanceControllerPostActionsTest extends TestCase
             1.0,
             true,
             true,
-            null,
         );
     }
 
@@ -1090,7 +1089,6 @@ final class PerformanceControllerPostActionsTest extends TestCase
             1.0,
             true,
             true,
-            null,
         );
 
         $this->expectException(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class);
@@ -1134,7 +1132,6 @@ final class PerformanceControllerPostActionsTest extends TestCase
             1.0,
             true,
             true,
-            null,
         );
 
         $this->expectException(\Symfony\Component\Security\Core\Exception\AccessDeniedException::class);

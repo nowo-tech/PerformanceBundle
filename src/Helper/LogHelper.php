@@ -56,7 +56,7 @@ final class LogHelper
             return false;
         }
 
-        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') ? constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') : false;
+        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS');
         if ($suppress) {
             return true;
         }
@@ -85,7 +85,7 @@ final class LogHelper
             return false;
         }
 
-        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') ? constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') : false;
+        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS');
         if ($suppress) {
             return true;
         }

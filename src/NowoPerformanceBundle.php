@@ -46,7 +46,7 @@ class NowoPerformanceBundle extends Bundle
     {
         parent::boot();
 
-        if ($this->container === null) {
+        if (!$this->container instanceof \Symfony\Component\DependencyInjection\ContainerInterface) {
             return;
         }
 

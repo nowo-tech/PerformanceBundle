@@ -41,6 +41,6 @@ class IconExtension extends AbstractExtension
             return '';
         }
 
-        return (string) ux_icon($name, $options);
+        return ux_icon($name, $options);
     }
 }

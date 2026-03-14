@@ -227,7 +227,7 @@ class PerformanceMetricsService
         }
 
         // If async mode is enabled and message bus is available, dispatch message
-        if ($this->async && $this->messageBus !== null) {
+        if ($this->async && $this->messageBus instanceof MessageBusInterface) {
             LogHelper::log('[PerformanceBundle] recordMetrics: Dispatching async message', $this->enableLogging);
             $message = new RecordMetricsMessage(
                 $routeName,

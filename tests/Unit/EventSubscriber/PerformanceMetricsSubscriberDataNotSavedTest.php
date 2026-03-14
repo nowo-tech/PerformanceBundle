@@ -743,11 +743,7 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
             1.0,
             [200, 404, 500, 503],
             true,
-            false,
-            null,
-            null,
-            null,
-            null, // kernel = null so env comes from request server
+            false, // kernel = null so env comes from request server
         );
 
         $request = Request::create('/');

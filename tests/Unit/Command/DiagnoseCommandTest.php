@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 final class DiagnoseCommandTest extends TestCase
 {
-    private ParameterBagInterface $parameterBag;
+    private \PHPUnit\Framework\MockObject\MockObject $parameterBag;
     private DiagnoseCommand $command;
 
     protected function setUp(): void

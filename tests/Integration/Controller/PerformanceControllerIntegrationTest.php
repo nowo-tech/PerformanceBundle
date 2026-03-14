@@ -539,11 +539,9 @@ final class PerformanceControllerIntegrationTest extends TestCase
         if ($token === null || $token === '') {
             self::markTestSkipped('Clear form CSRF token not found in dashboard HTML');
         }
-        $cookies      = $getResponse->headers->get('Set-Cookie', null, false);
-        $cookieHeader = is_array($cookies) ? implode('; ', array_map(static function (string $c): string {
-            return explode(';', $c)[0];
-        }, $cookies)) : '';
-        $response = $this->requestPost('/performance/clear', [
+        $cookies      = $getResponse->headers->get('Set-Cookie');
+        $cookieHeader = is_array($cookies) ? implode('; ', array_map(static fn (string $c): string => explode(';', $c)[0], $cookies)) : '';
+        $response     = $this->requestPost('/performance/clear', [
             'clear_performance_data' => [
                 'env'    => 'test',
                 '_token' => $token,

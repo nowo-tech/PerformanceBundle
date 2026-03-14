@@ -284,6 +284,7 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 
 ## Documentation
 
+- [Demo with FrankenPHP (development and production)](docs/DEMO-FRANKENPHP.md)
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Usage](docs/USAGE.md)

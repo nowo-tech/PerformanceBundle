@@ -56,11 +56,9 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
         $bus     = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
             ->method('dispatch')
-            ->with($this->callback(static function ($msg): bool {
-                return $msg instanceof \Nowo\PerformanceBundle\Message\RecordMetricsMessage
-                    && $msg->getRouteName() === 'async_route'
-                    && $msg->getEnv() === 'test';
-            }))
+            ->with($this->callback(static fn ($msg): bool => $msg instanceof \Nowo\PerformanceBundle\Message\RecordMetricsMessage
+                && $msg->getRouteName() === 'async_route'
+                && $msg->getEnv() === 'test'))
             ->willReturn(null);
         $service->setMessageBus($bus);
 
@@ -247,11 +245,9 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
     {
         $this->repository->method('findByRouteAndEnv')->with('new_route', 'dev')->willReturn(null);
         $this->entityManager->method('isOpen')->willReturn(true);
-        $this->entityManager->expects($this->once())->method('persist')->with($this->callback(static function ($entity): bool {
-            return $entity instanceof RouteData
-                && $entity->getName() === 'new_route'
-                && $entity->getEnv() === 'dev';
-        }));
+        $this->entityManager->expects($this->once())->method('persist')->with($this->callback(static fn ($entity): bool => $entity instanceof RouteData
+            && $entity->getName() === 'new_route'
+            && $entity->getEnv() === 'dev'));
         $this->entityManager->expects($this->once())->method('flush');
 
         $result = $this->service->recordMetrics('new_route', 'dev', 0.5, 10, 0.1, null, null, 'GET', 200);

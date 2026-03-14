@@ -37,6 +37,9 @@
     "nowo-tech/performance-bundle": {
         "version": "dev-main"
     },
+    "nowo-tech/twig-inspector-bundle": {
+        "version": "v1.0.3"
+    },
     "symfony/console": {
         "version": "7.0",
         "recipe": {

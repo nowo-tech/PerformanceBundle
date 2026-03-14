@@ -82,7 +82,7 @@
         }
     },
     "archive": {
-        "exclude": ["/demo"]
+        "exclude": ["/demo", "/.cursor"]
     },
     "config": {
         "sort-packages": true,

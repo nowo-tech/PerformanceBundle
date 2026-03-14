@@ -269,7 +269,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $mainRequest = $this->requestStack->getMainRequest();
             }
             // Request does not have getMainRequest(); only RequestStack does. Use current request if we have no stack.
-            if ($mainRequest === null) {
+            if (!$mainRequest instanceof \Symfony\Component\HttpFoundation\Request) {
                 $mainRequest = $request;
             }
             $this->requestId = $mainRequest->attributes->get('_performance_request_id');

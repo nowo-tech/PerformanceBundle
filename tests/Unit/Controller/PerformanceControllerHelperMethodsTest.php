@@ -317,7 +317,6 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         $reflection = new ReflectionClass($controller);
         $method     = $reflection->getMethod('normalizeEnv');
-        $method->setAccessible(true);
         $this->assertSame('staging', $method->invoke($controller, null));
     }
 
@@ -367,7 +366,6 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
         $reflection = new ReflectionClass($controller);
         $method     = $reflection->getMethod('normalizeEnv');
-        $method->setAccessible(true);
         $this->assertSame('dev', $method->invoke($controller, 123));
     }
 

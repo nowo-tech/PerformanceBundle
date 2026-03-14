@@ -14,8 +14,8 @@ final class MessengerBusAdapterTest extends TestCase
 {
     public function testDispatchWhenBusIsNullReturnsNull(): void
     {
-        $adapter = new MessengerBusAdapter(null);
-        $message = new RecordMetricsMessage('route', 'dev', null, null, null, null, null, null, null, null, null, null, null);
+        $adapter = new MessengerBusAdapter();
+        $message = new RecordMetricsMessage('route', 'dev');
 
         $result = $adapter->dispatch($message);
 
@@ -26,7 +26,7 @@ final class MessengerBusAdapterTest extends TestCase
     {
         $bus     = new stdClass();
         $adapter = new MessengerBusAdapter($bus);
-        $message = new RecordMetricsMessage('route', 'dev', null, null, null, null, null, null, null, null, null, null, null);
+        $message = new RecordMetricsMessage('route', 'dev');
 
         $result = $adapter->dispatch($message);
 
@@ -35,7 +35,7 @@ final class MessengerBusAdapterTest extends TestCase
 
     public function testDispatchWhenBusHasDispatchMethodCallsIt(): void
     {
-        $message = new RecordMetricsMessage('route', 'dev', null, null, null, null, null, null, null, null, null, null, null);
+        $message = new RecordMetricsMessage('route', 'dev');
         $bus     = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
             ->method('dispatch')

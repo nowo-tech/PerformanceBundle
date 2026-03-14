@@ -257,7 +257,7 @@ final class PerformanceAnalysisServiceTest extends TestCase
         $this->assertNotEmpty($result);
         $found = false;
         foreach ($result as $r) {
-            if (($r['type'] ?? '') === 'performance' && isset($r['description']) && str_contains((string) $r['description'], '2.5')) {
+            if (($r['type'] ?? '') === 'performance' && isset($r['description']) && str_contains($r['description'], '2.5')) {
                 $found = true;
                 break;
             }

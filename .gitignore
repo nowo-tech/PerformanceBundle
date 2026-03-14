@@ -1,37 +1,24 @@
 # Dependencies
-/vendor/
+/vendor
 
-# PHPUnit
-/.phpunit.cache/
-.phpunit.result.cache
-/phpunit.xml
-/coverage/
-/coverage.xml
-
-# Code style
-.php_cs.cache
-.php-cs-fixer.cache
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Environment files
+# Environment and secrets
 .env
 .env.local
 .env.*.local
 
-# Demo data and cache
-demo/**/.data/
-demo/**/var/cache/
-demo/**/var/log/
-demo/**/var/sessions/
+# Test coverage
+/coverage
+/coverage.xml
 
-# Temporary files
-*.tmp
-*.bak
-*.cache
+# PHP tool caches
+/.php-cs-fixer.cache
+/.phpunit.cache
+/.phpunit.result.cache
+
+# Archives / compressed
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
