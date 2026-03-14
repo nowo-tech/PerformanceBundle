@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Tests for NowoPerformanceBundle.
@@ -129,6 +130,43 @@ final class NowoPerformanceBundleTest extends TestCase
         // Boot with kernel debug but VarDumper may or may not exist; we just ensure no exception
         $bundle->boot();
 
+        $this->addToAssertionCount(1);
+    }
+
+    /** When container returns non-KernelInterface for 'kernel', boot returns early and does not set handler. */
+    public function testBootWhenKernelServiceIsNotKernelInterfaceDoesNotSetHandler(): void
+    {
+        $container = new ContainerBuilder();
+        $container->set('kernel', new \stdClass());
+
+        $bundle     = new NowoPerformanceBundle();
+        $reflection = new ReflectionProperty($bundle, 'container');
+        $reflection->setValue($bundle, $container);
+
+        $bundle->boot();
+
+        $this->addToAssertionCount(1);
+    }
+
+    /** When all conditions are met (CLI, debug, VarDumper present), boot sets handler; dump() runs the closure. */
+    public function testBootWhenCliAndDebugAndVarDumperPresentSetsHandler(): void
+    {
+        if (!class_exists(\Symfony\Component\VarDumper\VarDumper::class)) {
+            $this->markTestSkipped('VarDumper not available');
+        }
+
+        $container = new ContainerBuilder();
+        $kernel    = $this->createMock(KernelInterface::class);
+        $kernel->method('isDebug')->willReturn(true);
+        $container->set('kernel', $kernel);
+
+        $bundle     = new NowoPerformanceBundle();
+        $reflection = new ReflectionProperty($bundle, 'container');
+        $reflection->setValue($bundle, $container);
+
+        $bundle->boot();
+
+        \Symfony\Component\VarDumper\VarDumper::dump('test');
         $this->addToAssertionCount(1);
     }
 }

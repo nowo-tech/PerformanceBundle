@@ -13,6 +13,7 @@ use Nowo\PerformanceBundle\Form\DeleteRecordType;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
+use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
@@ -126,6 +127,51 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
         $response = $controller->index($request);
 
         self::assertInstanceOf(Response::class, $response);
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    /** When stats block throws (e.g. getRoutesWithAggregates), index uses empty stats and default total_records. */
+    public function testIndexWhenStatsCalculationThrowsUsesEmptyStats(): void
+    {
+        $this->repository->method('countWithFilters')->willReturn(0);
+        $this->repository->method('getDistinctEnvironments')->willReturn(['test']);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([]);
+        $this->metricsService->method('getRoutesWithAggregates')->willThrowException(new Exception('DB error'));
+
+        $filtersForm = $this->createMock(FormInterface::class);
+        $filtersForm->method('handleRequest');
+        $filtersForm->method('getData')->willReturn([
+            'env'              => 'test', 'route' => null, 'path' => null, 'sort' => 'requestTime', 'order' => 'DESC', 'limit' => 100,
+            'min_request_time' => null, 'max_request_time' => null, 'min_query_count' => null, 'max_query_count' => null,
+            'date_from'        => null, 'date_to' => null,
+        ]);
+        $filtersForm->method('createView')->willReturn(new FormView());
+        $clearForm = $this->createMock(FormInterface::class);
+        $clearForm->method('createView')->willReturn(new FormView());
+
+        $controller = $this->getMockBuilder(PerformanceController::class)
+            ->setConstructorArgs([
+                $this->metricsService, null, true, [], 'bootstrap', null, null, null, false, false, null,
+                0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
+                ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
+            ])
+            ->onlyMethods(['createForm', 'getParameter', 'render'])
+            ->getMock();
+
+        $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
+        $controller->method('createForm')->willReturnCallback(static fn ($type): MockObject => $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm);
+        $controller->method('render')->willReturnCallback(static function (string $tpl, array $vars): Response {
+            self::assertArrayHasKey('stats', $vars);
+            self::assertSame(0, $vars['stats']['total_records']);
+            self::assertSame([], $vars['stats']['top_used_routes']);
+            self::assertSame([], $vars['stats']['top_consumed_routes']);
+
+            return new Response('', 200);
+        });
+
+        $request  = Request::create('/performance', 'GET');
+        $response = $controller->index($request);
+
         self::assertSame(200, $response->getStatusCode());
     }
 
@@ -368,6 +414,59 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
             return $filtersForm;
         });
         $controller->method('render')->willReturn(new Response('', 200));
+
+        $request  = Request::create('/performance', 'GET');
+        $response = $controller->index($request);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    /** Index with enableAccessRecords and recordRepository fills stats total_records and top_used/top_consumed. */
+    public function testIndexWithRecordRepositoryAndAccessRecordsFillsStats(): void
+    {
+        $routeWithAggregates = $this->createRouteWithAggregates();
+        $this->repository->method('countWithFilters')->willReturn(1);
+        $this->repository->method('getDistinctEnvironments')->willReturn(['test']);
+        $this->metricsService->method('getRoutesWithAggregatesFiltered')->willReturn([$routeWithAggregates]);
+        $this->metricsService->method('getRoutesWithAggregates')->willReturn([$routeWithAggregates]);
+
+        $recordRepository = $this->createMock(RouteDataRecordRepository::class);
+        $recordRepository->method('getTotalAccessCount')->with('test')->willReturn(100);
+        $recordRepository->method('getAggregatesForRouteDataIds')->willReturn([]);
+
+        $filtersForm = $this->createMock(FormInterface::class);
+        $filtersForm->method('handleRequest');
+        $filtersForm->method('getData')->willReturn([
+            'env'              => 'test', 'route' => null, 'path' => null, 'sort' => 'requestTime', 'order' => 'DESC', 'limit' => 100,
+            'min_request_time' => null, 'max_request_time' => null, 'min_query_count' => null, 'max_query_count' => null,
+            'date_from'        => null, 'date_to' => null,
+        ]);
+        $filtersForm->method('createView')->willReturn(new FormView());
+        $clearForm = $this->createMock(FormInterface::class);
+        $clearForm->method('createView')->willReturn(new FormView());
+
+        $controller = $this->getMockBuilder(PerformanceController::class)
+            ->setConstructorArgs([
+                $this->metricsService, null, true, [], 'bootstrap', null, null, null, false, false, null,
+                0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503],
+                $recordRepository, true, true, ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
+            ])
+            ->onlyMethods(['createForm', 'getParameter', 'render'])
+            ->getMock();
+
+        $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
+        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm): FormInterface|MockObject {
+            return $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm;
+        });
+        $controller->method('render')->willReturnCallback(static function (string $tpl, array $vars): Response {
+            self::assertArrayHasKey('stats', $vars);
+            self::assertArrayHasKey('total_records', $vars['stats']);
+            self::assertArrayHasKey('top_used_routes', $vars['stats']);
+            self::assertArrayHasKey('top_consumed_routes', $vars['stats']);
+            self::assertSame(100, $vars['stats']['total_records']);
+
+            return new Response('', 200);
+        });
 
         $request  = Request::create('/performance', 'GET');
         $response = $controller->index($request);

@@ -207,4 +207,136 @@ final class RebuildAggregatesCommandTest extends TestCase
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('test', $tester->getDisplay());
     }
+
+    /** Multiple routes with batch-size 2 triggers batch flush and "Processed batch" message. */
+    public function testExecuteWithMultipleRoutesAndBatchSizeShowsBatchMessage(): void
+    {
+        $route1 = new RouteData();
+        $route1->setName('r1')->setEnv('dev');
+        $idRef = new ReflectionProperty(RouteData::class, 'id');
+        $idRef->setValue($route1, 1);
+
+        $route2 = new RouteData();
+        $route2->setName('r2')->setEnv('dev');
+        $idRef->setValue($route2, 2);
+
+        $route3 = new RouteData();
+        $route3->setName('r3')->setEnv('dev');
+        $idRef->setValue($route3, 3);
+
+        $this->routeDataRepository
+            ->expects($this->once())
+            ->method('findBy')
+            ->with([], ['env' => 'ASC', 'name' => 'ASC'])
+            ->willReturn([$route1, $route2, $route3]);
+
+        $managed1 = new RouteData();
+        $managed1->setName('r1')->setEnv('dev');
+        $idRef->setValue($managed1, 1);
+        $managed2 = new RouteData();
+        $managed2->setName('r2')->setEnv('dev');
+        $idRef->setValue($managed2, 2);
+        $managed3 = new RouteData();
+        $managed3->setName('r3')->setEnv('dev');
+        $idRef->setValue($managed3, 3);
+
+        $record1 = new RouteDataRecord();
+        $record1->setRouteData($managed1);
+        $record1->setAccessedAt(new DateTimeImmutable('2024-01-01 10:00:00'));
+        $record2 = new RouteDataRecord();
+        $record2->setRouteData($managed2);
+        $record2->setAccessedAt(new DateTimeImmutable('2024-01-01 11:00:00'));
+        $record3 = new RouteDataRecord();
+        $record3->setRouteData($managed3);
+        $record3->setAccessedAt(new DateTimeImmutable('2024-01-01 12:00:00'));
+
+        $repo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $repo->method('find')
+            ->willReturnCallback(static fn (int $id): ?RouteData => match ($id) {
+                1 => $managed1,
+                2 => $managed2,
+                3 => $managed3,
+                default => null,
+            });
+
+        $this->recordRepository
+            ->method('findBy')
+            ->willReturnOnConsecutiveCalls(
+                [$record1],
+                [$record2],
+                [$record3],
+            );
+
+        $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
+        $this->entityManager->expects($this->atLeastOnce())->method('flush');
+        $this->entityManager->expects($this->atLeastOnce())->method('clear');
+
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--batch-size' => '2']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Found 3 RouteData records', $tester->getDisplay());
+        $this->assertStringContainsString('Processed batch 1 (2 records)', $tester->getDisplay());
+        $this->assertStringContainsString('Rebuilt aggregates for 3 RouteData records', $tester->getDisplay());
+    }
+
+    /** When managed route is not found (find returns null), route is skipped. */
+    public function testExecuteWhenManagedNotFoundSkipsRoute(): void
+    {
+        $route = new RouteData();
+        $route->setName('orphan')->setEnv('dev');
+        $idRef = new ReflectionProperty(RouteData::class, 'id');
+        $idRef->setValue($route, 99);
+
+        $this->routeDataRepository
+            ->expects($this->once())
+            ->method('findBy')
+            ->willReturn([$route]);
+
+        $repo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $repo->method('find')->with(99)->willReturn(null);
+
+        $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
+        $this->recordRepository->expects($this->never())->method('findBy');
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Found 1 RouteData records', $tester->getDisplay());
+    }
+
+    /** When route has no records, rebuildAggregatesForRoute skips setLastAccessedAt (empty records path). */
+    public function testExecuteWhenNoRecordsForRouteCompletesWithoutError(): void
+    {
+        $route = new RouteData();
+        $route->setName('empty')->setEnv('dev');
+        $idRef = new ReflectionProperty(RouteData::class, 'id');
+        $idRef->setValue($route, 1);
+
+        $this->routeDataRepository->method('findBy')->willReturn([$route]);
+
+        $managed = new RouteData();
+        $managed->setName('empty')->setEnv('dev');
+        $idRef->setValue($managed, 1);
+
+        $repo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $repo->method('find')->with(1)->willReturn($managed);
+
+        $this->recordRepository
+            ->expects($this->once())
+            ->method('findBy')
+            ->with(['routeData' => $managed], ['accessedAt' => 'ASC'])
+            ->willReturn([]);
+
+        $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
+        $this->entityManager->expects($this->atLeastOnce())->method('flush');
+        $this->entityManager->expects($this->atLeastOnce())->method('clear');
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Found 1 RouteData records', $tester->getDisplay());
+    }
 }

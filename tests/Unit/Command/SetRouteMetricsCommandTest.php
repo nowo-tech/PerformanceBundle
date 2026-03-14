@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 use Exception;
 use Nowo\PerformanceBundle\Command\SetRouteMetricsCommand;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -318,5 +319,56 @@ final class SetRouteMetricsCommandTest extends TestCase
 
         $this->assertSame(0, $commandTester->getStatusCode());
         $this->assertStringContainsString('stage', $commandTester->getDisplay());
+    }
+
+    /** When getRoutesWithAggregates returns matching route, table shows formatted Request Time, Query Time, Memory. */
+    public function testExecuteShowsTableWithFormattedMetricsWhenAggregatePresent(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('app_home');
+        $routeData->setEnv('dev');
+        $routeData->setLastAccessedAt(new \DateTimeImmutable('2024-06-01 10:00:00'));
+
+        $withAggregates = new RouteDataWithAggregates($routeData, [
+            'request_time'  => 0.75,
+            'total_queries' => 12,
+            'query_time'    => 0.15,
+            'memory_usage'  => 2 * 1024 * 1024,
+            'access_count'  => 5,
+            'status_codes'  => [200 => 10],
+        ]);
+
+        $this->metricsService
+            ->expects($this->exactly(2))
+            ->method('getRouteData')
+            ->with('app_home', 'dev')
+            ->willReturn($routeData, $routeData);
+
+        $this->metricsService
+            ->expects($this->once())
+            ->method('recordMetrics')
+            ->with('app_home', 'dev', 0.75, 12, 0.15, null, null);
+
+        $this->metricsService
+            ->expects($this->once())
+            ->method('getRoutesWithAggregates')
+            ->with('dev')
+            ->willReturn([$withAggregates]);
+
+        $commandTester = new CommandTester($this->command);
+        $commandTester->execute([
+            'route'          => 'app_home',
+            '--request-time' => '0.75',
+            '--queries'      => '12',
+            '--query-time'   => '0.15',
+        ]);
+
+        $this->assertSame(0, $commandTester->getStatusCode());
+        $display = $commandTester->getDisplay();
+        $this->assertStringContainsString('Route metrics saved successfully', $display);
+        $this->assertStringContainsString('0.7500 s', $display);
+        $this->assertStringContainsString('0.1500 s', $display);
+        $this->assertStringContainsString('2.00 MB', $display);
+        $this->assertStringContainsString('2024-06-01 10:00:00', $display);
     }
 }

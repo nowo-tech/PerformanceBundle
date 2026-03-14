@@ -190,4 +190,123 @@ final class DiagnoseCommandTest extends TestCase
         $this->assertNotEmpty($description);
         $this->assertStringContainsString('Diagnose', $description);
     }
+
+    public function testExecuteWhenCheckTableStatusFalseShowsDisabledNote(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
+            'nowo_performance.enabled'              => true,
+            'nowo_performance.track_queries'        => true,
+            'nowo_performance.track_request_time'   => true,
+            'nowo_performance.connection'           => 'default',
+            'nowo_performance.environments'         => ['dev'],
+            'nowo_performance.check_table_status'   => false,
+            default                                 => null,
+        });
+
+        $checker = $this->createMock(TableStatusChecker::class);
+        $checker->expects($this->never())->method('getMainTableStatus');
+        $checker->expects($this->never())->method('getRecordsTableStatus');
+
+        $command = new DiagnoseCommand($this->parameterBag, $checker);
+        $tester  = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Database Tables', $output);
+        $this->assertStringContainsString('check_table_status', $output);
+    }
+
+    public function testExecuteWhenMainTableNotExistsShowsCreateTableNote(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
+            'nowo_performance.enabled'            => true,
+            'nowo_performance.track_queries'      => true,
+            'nowo_performance.track_request_time' => true,
+            'nowo_performance.connection'         => 'default',
+            'nowo_performance.environments'       => ['dev'],
+            default                               => null,
+        });
+
+        $checker = $this->createMock(TableStatusChecker::class);
+        $checker->method('getMainTableStatus')->willReturn([
+            'exists'          => false,
+            'complete'        => false,
+            'table_name'      => 'routes_data',
+            'missing_columns' => [],
+        ]);
+        $checker->method('getRecordsTableStatus')->willReturn(null);
+
+        $command = new DiagnoseCommand($this->parameterBag, $checker);
+        $tester  = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('create-table', $output);
+    }
+
+    public function testExecuteWhenMainTableHasMissingColumnsShowsUpdateNote(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
+            'nowo_performance.enabled'            => true,
+            'nowo_performance.track_queries'      => true,
+            'nowo_performance.track_request_time' => true,
+            'nowo_performance.connection'         => 'default',
+            'nowo_performance.environments'       => ['dev'],
+            default                               => null,
+        });
+
+        $checker = $this->createMock(TableStatusChecker::class);
+        $checker->method('getMainTableStatus')->willReturn([
+            'exists'          => true,
+            'complete'        => false,
+            'table_name'      => 'routes_data',
+            'missing_columns' => ['last_accessed_at'],
+        ]);
+        $checker->method('getRecordsTableStatus')->willReturn(null);
+
+        $command = new DiagnoseCommand($this->parameterBag, $checker);
+        $tester  = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('--update', $output);
+        $this->assertStringContainsString('last_accessed_at', $output);
+    }
+
+    public function testExecuteWhenRecordsTableNotExistsShowsCreateRecordsTableNote(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
+            'nowo_performance.enabled'            => true,
+            'nowo_performance.track_queries'      => true,
+            'nowo_performance.track_request_time' => true,
+            'nowo_performance.connection'         => 'default',
+            'nowo_performance.environments'       => ['dev'],
+            default                               => null,
+        });
+
+        $checker = $this->createMock(TableStatusChecker::class);
+        $checker->method('getMainTableStatus')->willReturn([
+            'exists'          => true,
+            'complete'        => true,
+            'table_name'      => 'routes_data',
+            'missing_columns' => [],
+        ]);
+        $checker->method('getRecordsTableStatus')->willReturn([
+            'exists'          => false,
+            'complete'        => false,
+            'table_name'      => 'routes_data_records',
+            'missing_columns' => [],
+        ]);
+
+        $command = new DiagnoseCommand($this->parameterBag, $checker);
+        $tester  = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Records table: php bin/console nowo:performance:create-records-table', $output);
+    }
 }

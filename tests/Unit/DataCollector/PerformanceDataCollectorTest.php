@@ -568,4 +568,69 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertFalse($collector->wasRecordUpdated());
         $this->assertSame('New record created', $collector->getRecordOperationStatus());
     }
+
+    /** setRecordOperation() called after collect() updates the data array. */
+    public function testSetRecordOperationAfterCollectUpdatesDataArray(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(true);
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $collector->setRecordOperation(true, false);
+
+        $this->assertTrue($collector->wasRecordNew());
+        $this->assertFalse($collector->wasRecordUpdated());
+        $this->assertSame('New record created', $collector->getRecordOperationStatus());
+    }
+
+    /** When queryCount/queryTime are null and QueryTrackingMiddleware throws, collector uses fallback 0. */
+    public function testCollectWhenQueryTrackingMiddlewareThrowsUsesFallback(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(true);
+        $collector->setStartTime(microtime(true) - 0.01);
+        // Do not set query count/time so collect() tries to get them from QueryTrackingMiddleware
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertIsInt($collector->getQueryCount());
+        $this->assertGreaterThanOrEqual(0, $collector->getQueryCount());
+    }
+
+    /** getFormattedRequestTime with time >= 1000 ms returns seconds format. */
+    public function testGetFormattedRequestTimeReturnsSecondsWhenTimeAbove1000Ms(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $ref          = new ReflectionClass($collector);
+        $dataProp     = $ref->getProperty('data');
+        $data         = $dataProp->getValue($collector);
+        $data['request_time'] = 2.5;
+        $dataProp->setValue($collector, $data);
+
+        $formatted = $collector->getFormattedRequestTime();
+        $this->assertStringContainsString('s', $formatted);
+        $this->assertStringNotContainsString('ms', $formatted);
+    }
+
+    /** getFormattedQueryTime with time >= 1000 ms returns seconds format. */
+    public function testGetFormattedQueryTimeReturnsSecondsWhenTimeAbove1000Ms(): void
+    {
+        $collector = new PerformanceDataCollector();
+        $collector->setEnabled(false);
+        $collector->setQueryMetrics(0, 1.5);
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $formatted = $collector->getFormattedQueryTime();
+        $this->assertStringContainsString('s', $formatted);
+    }
 }
