@@ -12,6 +12,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 
@@ -54,18 +55,18 @@ final class PerformanceMetricsServiceRecordMetricsSyncClosedEmTest extends TestC
         $registry->expects(self::once())->method('resetManager')->with('default');
         $registry->method('getManager')->with('default')->willReturn($freshEm);
 
-        $service = (new \ReflectionClass(PerformanceMetricsService::class))->newInstanceWithoutConstructor();
+        $service = (new ReflectionClass(PerformanceMetricsService::class))->newInstanceWithoutConstructor();
 
         foreach (
             [
-                'registry'           => $registry,
-                'connectionName'     => 'default',
-                'async'              => false,
+                'registry'            => $registry,
+                'connectionName'      => 'default',
+                'async'               => false,
                 'enableAccessRecords' => false,
-                'enableLogging'      => false,
-                'entityManager'      => $closedEm,
-                'repository'         => $routeRepo,
-                'recordRepository'     => $recordRepo,
+                'enableLogging'       => false,
+                'entityManager'       => $closedEm,
+                'repository'          => $routeRepo,
+                'recordRepository'    => $recordRepo,
             ] as $prop => $value
         ) {
             $rp = new ReflectionProperty(PerformanceMetricsService::class, $prop);

@@ -213,7 +213,7 @@ final class PerformanceDataCollectorTest extends TestCase
      */
     public function testCollectWhenQueryMetricsProviderReturnsInvalidArrayUsesFallbackZero(): void
     {
-        $provider = (static fn(): array => []);
+        $provider  = (static fn (): array => []);
         $collector = new PerformanceDataCollector(null, null, null, null, null, true, $provider);
         $collector->setEnabled(true);
         $request = new Request();

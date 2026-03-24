@@ -120,7 +120,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
         try {
             $middleware = new QueryTrackingMiddleware();
 
-            if (self::$testApplyMiddlewareThrowable instanceof \Throwable) {
+            if (self::$testApplyMiddlewareThrowable instanceof Throwable) {
                 throw self::$testApplyMiddlewareThrowable;
             }
 

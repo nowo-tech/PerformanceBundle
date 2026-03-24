@@ -87,7 +87,7 @@ final class LogHelper
             return true;
         }
 
-        $override = self::$testFunctionErrorLogExistsOverride;
+        $override       = self::$testFunctionErrorLogExistsOverride;
         $errorLogExists = $override ?? function_exists('error_log');
         if (!$errorLogExists) {
             return false;
@@ -124,7 +124,7 @@ final class LogHelper
             return true;
         }
 
-        $override = self::$testFunctionErrorLogExistsOverride;
+        $override       = self::$testFunctionErrorLogExistsOverride;
         $errorLogExists = $override ?? function_exists('error_log');
         if (!$errorLogExists) {
             return false;

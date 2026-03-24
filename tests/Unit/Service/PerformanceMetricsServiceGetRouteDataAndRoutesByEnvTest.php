@@ -538,7 +538,7 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
         $em->method('getConnection')->willReturn($connection);
         $em->method('isOpen')->willReturn(true);
         $em->expects($this->exactly(2))->method('flush');
-        $em->expects($this->once())->method('persist')->with($this->callback(static fn($entity): bool => $entity instanceof RouteDataRecord
+        $em->expects($this->once())->method('persist')->with($this->callback(static fn ($entity): bool => $entity instanceof RouteDataRecord
             && $entity->getRequestId() === 'req-123'
             && $entity->getReferer() === 'https://example.com'
             && $entity->getUserIdentifier() === 'user@test.com'
@@ -699,7 +699,7 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
         $wrongRepo = $this->createMock(EntityRepository::class);
         $emOpen->method('getRepository')
-            ->willReturnCallback(static fn (string $class): \PHPUnit\Framework\MockObject\MockObject => $class === RouteData::class ? $wrongRepo : $recordRepo);
+            ->willReturnCallback(static fn (string $class): MockObject => $class === RouteData::class ? $wrongRepo : $recordRepo);
         $emOpen->method('getConnection')->willReturn($connection);
         $emOpen->method('isOpen')->willReturn(true);
         $emOpen->expects($this->never())->method('flush');
@@ -740,7 +740,7 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
         $wrongRecordRepo = $this->createMock(EntityRepository::class);
         $emOpen->method('getRepository')
-            ->willReturnCallback(static fn (string $class): \PHPUnit\Framework\MockObject\MockObject => $class === RouteData::class ? $repo : $wrongRecordRepo);
+            ->willReturnCallback(static fn (string $class): MockObject => $class === RouteData::class ? $repo : $wrongRecordRepo);
         $emOpen->method('getConnection')->willReturn($connection);
         $emOpen->method('isOpen')->willReturn(true);
         $emOpen->expects($this->never())->method('flush');
