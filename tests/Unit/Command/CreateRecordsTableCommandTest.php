@@ -171,4 +171,64 @@ final class CreateRecordsTableCommandTest extends TestCase
         self::assertStringContainsString('does not exist', $display);
         self::assertMatchesRegularExpression('/without\s+--update/', $display);
     }
+
+    public function testExecuteWhenGetMetadataForThrowsReturnsFailure(): void
+    {
+        $this->metadataFactory->method('getMetadataFor')
+            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->willThrowException(new RuntimeException('Record metadata error'));
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Failed to create table', $tester->getDisplay());
+        self::assertStringContainsString('Record metadata error', $tester->getDisplay());
+    }
+
+    public function testExecuteWhenSchemaToolFindsNoRouteDataRecordMetadataReturnsFailure(): void
+    {
+        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata->method('getTableName')->willReturn('routes_data_records');
+        $metadata->table = ['name' => 'routes_data_records'];
+
+        $this->metadataFactory
+            ->method('getMetadataFor')
+            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->willReturn($metadata);
+        $this->metadataFactory->method('getAllMetadata')->willReturn([]);
+        $this->schemaManager->method('tablesExist')->with(['routes_data_records'])->willReturn(false);
+        $this->entityManager->method('getConnection')->willReturn($this->connection);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Failed to create table', $tester->getDisplay());
+        self::assertStringContainsString('RouteDataRecord entity metadata not found', $tester->getDisplay());
+    }
+
+    public function testExecuteWhenTableExistsWithForceDropsTableThenFailsCreateWithoutMetadata(): void
+    {
+        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata->method('getTableName')->willReturn('routes_data_records');
+        $metadata->table = ['name' => 'routes_data_records'];
+
+        $this->metadataFactory
+            ->method('getMetadataFor')
+            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->willReturn($metadata);
+        $this->metadataFactory->method('getAllMetadata')->willReturn([]);
+        $this->entityManager->method('getConnection')->willReturn($this->connection);
+        $this->schemaManager->method('tablesExist')->with(['routes_data_records'])->willReturn(true);
+        $this->schemaManager->expects(self::once())->method('dropTable')->with('routes_data_records');
+
+        $tester   = new CommandTester($this->command);
+        $exitCode = $tester->execute(['--force' => true]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Failed to create table', $tester->getDisplay());
+        self::assertStringContainsString('RouteDataRecord entity metadata not found', $tester->getDisplay());
+    }
+
 }

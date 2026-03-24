@@ -88,4 +88,29 @@ final class QueryTrackingMiddlewareRegistryTest extends TestCase
 
         self::assertFalse(QueryTrackingMiddlewareRegistry::applyMiddleware($registry, 'default', $middleware));
     }
+
+    /**
+     * Covers applyMiddlewareViaConnectionWrapper when connection class contains 'QueryTrackingConnection'
+     * (already wrapped). Reflection path throws so returns false, then wrapper path gets connection and returns true.
+     */
+    public function testApplyMiddlewareViaConnectionWrapperWhenConnectionAlreadyWrappedReturnsTrue(): void
+    {
+        $connectionMock = $this->getMockBuilder(Connection::class)
+            ->setMockClassName('Proxy_QueryTrackingConnection_Test')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->expects(self::exactly(2))
+            ->method('getConnection')
+            ->with('default')
+            ->willReturnOnConsecutiveCalls(
+                $this->throwException(new RuntimeException('connection not ready')), // reflection path throws -> false
+                $connectionMock, // wrapper path: class name contains QueryTrackingConnection -> true
+            );
+
+        $middleware = $this->createMock(QueryTrackingMiddleware::class);
+
+        self::assertTrue(QueryTrackingMiddlewareRegistry::applyMiddleware($registry, 'default', $middleware));
+    }
 }

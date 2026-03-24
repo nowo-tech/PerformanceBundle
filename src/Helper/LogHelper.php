@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Helper;
 use function constant;
 use function defined;
 use function function_exists;
+use function is_callable;
 use function sprintf;
 
 /**
@@ -20,6 +21,25 @@ use function sprintf;
  */
 final class LogHelper
 {
+    /**
+     * Test-only: when set to false, act as if NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS is not set.
+     * Leave null in production.
+     */
+    public static ?bool $testSuppressOverride = null;
+
+    /**
+     * Test-only: when set, log/logf call this instead of error_log (avoids stderr in PHPUnit).
+     * Leave null in production.
+     *
+     * @var callable(string): void|null
+     */
+    public static $testLogWriter;
+
+    /**
+     * Test-only: when set to false, log/logf behave as if error_log() was not defined (return false). Leave null in production.
+     */
+    public static ?bool $testFunctionErrorLogExistsOverride = null;
+
     /**
      * Check if logging is enabled.
      *
@@ -56,18 +76,25 @@ final class LogHelper
             return false;
         }
 
-        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS');
+        $suppress = self::$testSuppressOverride ?? defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS');
         if ($suppress) {
             return true;
         }
 
-        if (function_exists('error_log')) {
-            error_log($message);
+        if (self::$testLogWriter !== null && is_callable(self::$testLogWriter)) {
+            (self::$testLogWriter)($message);
 
             return true;
         }
 
-        return false;
+        $override = self::$testFunctionErrorLogExistsOverride;
+        $errorLogExists = $override ?? function_exists('error_log');
+        if (!$errorLogExists) {
+            return false;
+        }
+        error_log($message);
+
+        return true;
     }
 
     /**
@@ -85,17 +112,25 @@ final class LogHelper
             return false;
         }
 
-        $suppress = defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS');
+        $suppress = self::$testSuppressOverride ?? defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS');
         if ($suppress) {
             return true;
         }
 
-        if (function_exists('error_log')) {
-            error_log(sprintf($format, ...$args));
+        $message = sprintf($format, ...$args);
+        if (self::$testLogWriter !== null && is_callable(self::$testLogWriter)) {
+            (self::$testLogWriter)($message);
 
             return true;
         }
 
-        return false;
+        $override = self::$testFunctionErrorLogExistsOverride;
+        $errorLogExists = $override ?? function_exists('error_log');
+        if (!$errorLogExists) {
+            return false;
+        }
+        error_log($message);
+
+        return true;
     }
 }

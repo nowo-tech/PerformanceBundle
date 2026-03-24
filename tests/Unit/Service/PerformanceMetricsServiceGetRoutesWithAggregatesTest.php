@@ -227,6 +227,75 @@ final class PerformanceMetricsServiceGetRoutesWithAggregatesTest extends TestCas
         self::assertSame([], $result);
     }
 
+    /**
+     * When all routes have getId() === null, $ids is empty and method returns [] (line 568).
+     *
+     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::getRoutesWithAggregatesFiltered
+     */
+    public function testGetRoutesWithAggregatesFilteredReturnsEmptyWhenAllRouteIdsNull(): void
+    {
+        $r1 = new RouteData();
+        $r1->setName('a')->setEnv('dev');
+        $r2 = new RouteData();
+        $r2->setName('b')->setEnv('dev');
+        // neither has id set, so $ids = [] and we return [] at line 568
+
+        $this->repository
+            ->method('findWithFilters')
+            ->with('dev', [], 'lastAccessedAt', 'DESC', null)
+            ->willReturn([$r1, $r2]);
+
+        $this->recordRepository->expects(self::never())->method('getAggregatesForRouteDataIds');
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'requestTime', 'DESC');
+
+        self::assertSame([], $result);
+    }
+
+    /**
+     * When sortBy is not in entitySortFields and not a metric name, match uses default => 0 (lines 575, 593).
+     *
+     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::getRoutesWithAggregatesFiltered
+     */
+    public function testGetRoutesWithAggregatesFilteredSortByUnknownUsesDefaultInMatch(): void
+    {
+        $route1 = new RouteData();
+        $route1->setName('r1');
+        $route1->setEnv('dev');
+        $ref1 = new ReflectionProperty(RouteData::class, 'id');
+        $ref1->setValue($route1, 1);
+
+        $route2 = new RouteData();
+        $route2->setName('r2');
+        $route2->setEnv('dev');
+        $ref2 = new ReflectionProperty(RouteData::class, 'id');
+        $ref2->setValue($route2, 2);
+
+        $this->repository->method('findWithFilters')->willReturn([$route1, $route2]);
+        $this->recordRepository->method('getAggregatesForRouteDataIds')->willReturn([
+            1 => [
+                'request_time'  => null,
+                'total_queries' => null,
+                'query_time'    => null,
+                'memory_usage'  => null,
+                'access_count'  => 0,
+                'status_codes'  => [],
+            ],
+            2 => [
+                'request_time'  => null,
+                'total_queries' => null,
+                'query_time'    => null,
+                'memory_usage'  => null,
+                'access_count'  => 0,
+                'status_codes'  => [],
+            ],
+        ]);
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'unknownSortField', 'DESC');
+
+        self::assertCount(2, $result);
+    }
+
     public function testGetWorstPerformingRoutesDelegatesToRepository(): void
     {
         $r1 = new RouteData();
@@ -398,5 +467,77 @@ final class PerformanceMetricsServiceGetRoutesWithAggregatesTest extends TestCas
         self::assertCount(2, $result);
         self::assertSame(50, $result[0]->getTotalQueries());
         self::assertSame(5, $result[1]->getTotalQueries());
+    }
+
+    /**
+     * Sorting by queryTime exercises match arms for queryTime (lines 593–594, 601–602).
+     */
+    public function testGetRoutesWithAggregatesFilteredSortByQueryTimeDesc(): void
+    {
+        $route1 = new RouteData();
+        $route1->setName('r1');
+        $route1->setEnv('dev');
+        (new ReflectionProperty(RouteData::class, 'id'))->setValue($route1, 1);
+
+        $route2 = new RouteData();
+        $route2->setName('r2');
+        $route2->setEnv('dev');
+        (new ReflectionProperty(RouteData::class, 'id'))->setValue($route2, 2);
+
+        $this->repository->method('findWithFilters')->willReturn([$route1, $route2]);
+        $this->recordRepository->method('getAggregatesForRouteDataIds')->willReturn([
+            1 => [
+                'request_time'  => null,
+                'query_time'    => 0.9,
+                'total_queries' => 1,
+                'memory_usage'  => null,
+                'access_count'  => 1,
+                'status_codes'  => [],
+            ],
+            2 => [
+                'request_time'  => null,
+                'query_time'    => 0.1,
+                'total_queries' => 1,
+                'memory_usage'  => null,
+                'access_count'  => 1,
+                'status_codes'  => [],
+            ],
+        ]);
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'queryTime', 'DESC');
+
+        self::assertCount(2, $result);
+        self::assertEqualsWithDelta(0.9, $result[0]->getQueryTime() ?? 0.0, 0.001);
+        self::assertEqualsWithDelta(0.1, $result[1]->getQueryTime() ?? 0.0, 0.001);
+    }
+
+    /** Covers foreach branch when a route has null id (continue at line 575). */
+    public function testGetRoutesWithAggregatesFilteredSkipsRoutesWithNullId(): void
+    {
+        $noId = new RouteData();
+        $noId->setName('no_id');
+        $noId->setEnv('dev');
+
+        $withId = new RouteData();
+        $withId->setName('with_id');
+        $withId->setEnv('dev');
+        (new ReflectionProperty(RouteData::class, 'id'))->setValue($withId, 10);
+
+        $this->repository->method('findWithFilters')->willReturn([$noId, $withId]);
+        $this->recordRepository->method('getAggregatesForRouteDataIds')->willReturn([
+            10 => [
+                'request_time'  => 0.2,
+                'query_time'    => null,
+                'total_queries' => 2,
+                'memory_usage'  => null,
+                'access_count'  => 1,
+                'status_codes'  => [],
+            ],
+        ]);
+
+        $result = $this->service->getRoutesWithAggregatesFiltered('dev', [], 'requestTime', 'DESC');
+
+        self::assertCount(1, $result);
+        self::assertSame('with_id', $result[0]->getName());
     }
 }

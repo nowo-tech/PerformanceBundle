@@ -64,6 +64,7 @@ down:
 	docker-compose down
 
 # Ensure root container is running (start if not). Used by cs-fix, cs-check, qa, install, test, test-coverage, validate-translations.
+# Also sets git safe.directory /app inside the container so Composer can read the repo (avoids "dubious ownership" when bind-mounting).
 ensure-up:
 	@if ! docker-compose exec -T php true 2>/dev/null; then \
 		echo "Starting container (root docker-compose)..."; \
@@ -71,6 +72,7 @@ ensure-up:
 		sleep 3; \
 		docker-compose exec -T php sh -c "composer install --no-interaction || composer update --no-interaction"; \
 	fi
+	@docker-compose exec -T php git config --global --add safe.directory /app 2>/dev/null || true
 
 # Open shell in container
 shell: ensure-up
@@ -85,8 +87,9 @@ install: ensure-up
 test: ensure-up
 	docker-compose exec php composer test
 
-# Run tests with code coverage (HTML in coverage/, Clover in coverage.xml). Starts PHP container if needed.
-# Run tests with coverage (no -T so coverage is shown in console with colors)
+# Run tests with code coverage (no -T so coverage is shown in console with colors).
+# --process-isolation: evita que la salida se corte; hay tests con @runInSeparateProcess y con muchos
+# tests la comunicación por pipes sin TTY puede hacer que PHPUnit termine antes de mostrar el reporte (ver PHPUnit #5993).
 test-coverage: ensure-up
 	docker-compose exec php composer test-coverage
 
@@ -130,30 +133,24 @@ composer-sync: ensure-up
 
 # Update composer.lock
 update: ensure-up
-	docker-compose exec -T php composer update --no-interaction
+	docker-compose exec -T php composer deps-update
 
 # Validate composer.json
 validate: ensure-up
-	docker-compose exec -T php composer validate --strict
+	docker-compose exec -T php composer deps-validate
 
 release-check: ensure-up composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
 
 release-check-demos:
 	@$(MAKE) -C demo release-check
 
-# No frontend assets in this bundle
+# No frontend assets in this bundle (single recipe to avoid Make warning)
 assets:
 	@echo "No frontend assets in this bundle."
-	rm -f coverage.xml
-	rm -f .php-cs-fixer.cache
 
 # Validate YAML translation files (duplicate keys, syntax if ext-yaml available). Starts PHP container if needed.
 validate-translations: ensure-up
 	docker-compose exec -T php php scripts/validate-translations-yaml.php src/Resources/translations
-
-# No frontend assets in this bundle
-assets:
-	@echo "No frontend assets in this bundle."
 
 # Setup git hooks for pre-commit checks
 setup-hooks:

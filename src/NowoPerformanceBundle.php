@@ -39,6 +39,33 @@ use const STDOUT;
 class NowoPerformanceBundle extends Bundle
 {
     /**
+     * Optional stream for VarDumper handler (used in tests to avoid output). When null, php://stderr is used.
+     *
+     * @var resource|null
+     */
+    public static $varDumperStreamOverride;
+
+    /**
+     * Test-only: when set to false, boot() acts as if VarDumper class does not exist (early return). Leave null in production.
+     */
+    public static ?bool $testVarDumperExistsOverride = null;
+
+    /**
+     * Test-only: when set to false, boot() treats VarDumper as unavailable (covers the same exit as !class_exists). Leave null in production.
+     */
+    public static ?bool $testVarDumperClassExistsOverride = null;
+
+    /**
+     * Test-only: when set, boot() uses this instead of PHP_SAPI for CLI check. Leave null in production.
+     */
+    public static ?string $testSapiOverride = null;
+
+    /**
+     * Test-only: when true, boot() forces stream to null to cover the $stream === null path. Leave false in production.
+     */
+    public static bool $testStreamForceNull = false;
+
+    /**
      * In CLI, sets a VarDumper fallback handler (stderr) when the default stream is invalid (e.g. FrankenPHP).
      * In web context we do not replace the handler so Symfony's DumpDataCollector is used and dumps appear in the Web Debug Toolbar.
      */
@@ -55,17 +82,26 @@ class NowoPerformanceBundle extends Bundle
             return;
         }
 
-        if (!class_exists(\Symfony\Component\VarDumper\VarDumper::class)) {
+        if (self::$testVarDumperExistsOverride === false) {
             return;
         }
 
-        if ('cli' !== PHP_SAPI) {
+        $varDumperAvailable = self::$testVarDumperClassExistsOverride ?? class_exists(\Symfony\Component\VarDumper\VarDumper::class);
+        if (!$varDumperAvailable) {
+            return;
+        }
+
+        $sapi = self::$testSapiOverride ?? PHP_SAPI;
+        if ($sapi !== 'cli') {
             return;
         }
 
         \Symfony\Component\VarDumper\VarDumper::setHandler(static function ($var, ...$moreVars): void {
             $cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
-            $stream = @fopen('php://stderr', 'w') ?: (defined('STDOUT') && is_resource(STDOUT) ? STDOUT : null);
+            $stream = self::$varDumperStreamOverride ?? @fopen('php://stderr', 'w') ?: (defined('STDOUT') && is_resource(STDOUT) ? STDOUT : null);
+            if (self::$testStreamForceNull) {
+                $stream = null;
+            }
             if ($stream === null) {
                 return;
             }

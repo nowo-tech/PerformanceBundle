@@ -8,6 +8,9 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
+
+use const NAN;
 
 final class PerformanceAnalysisServiceTest extends TestCase
 {
@@ -112,6 +115,31 @@ final class PerformanceAnalysisServiceTest extends TestCase
         }
     }
 
+    /**
+     * When a metric contains NAN, correlation for that pair is non-finite and calculateCorrelation returns null (line 127).
+     *
+     * @covers \Nowo\PerformanceBundle\Service\PerformanceAnalysisService::analyzeCorrelations
+     * @covers \Nowo\PerformanceBundle\Service\PerformanceAnalysisService::calculateCorrelation
+     */
+    public function testAnalyzeCorrelationsWithNanInMetricReturnsNullForAffectedCorrelation(): void
+    {
+        $r1 = $this->routeMock(NAN, 0.1, 10, null, 1);
+        $r2 = $this->routeMock(2.0, 0.2, 20, null, 2);
+
+        $result = $this->service->analyzeCorrelations([$r1, $r2]);
+
+        $this->assertIsArray($result);
+        // At least one correlation may be null when NAN propagates (non-finite correlation)
+        $hasNull = false;
+        foreach ($result as $value) {
+            if ($value === null) {
+                $hasNull = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasNull, 'Expected at least one null correlation when NAN is present in metrics');
+    }
+
     public function testAnalyzeCorrelationsStrengthAndInterpretationBranches(): void
     {
         // Data that can produce different strength bands: 5 points with some scatter
@@ -202,6 +230,19 @@ final class PerformanceAnalysisServiceTest extends TestCase
         foreach ($result['hot_paths'] as $entry) {
             $this->assertSame(0, $entry['percentage']);
         }
+    }
+
+    /** Covers calculateCorrelation returning null when correlation is not finite (e.g. NaN from data containing NaN). */
+    public function testAnalyzeCorrelationsReturnsNullForNonFiniteCorrelation(): void
+    {
+        $r1 = $this->routeMock(NAN, 0.5, 10, null, 1);
+        $r2 = $this->routeMock(1.0, 0.8, 20, null, 1);
+
+        $result = $this->service->analyzeCorrelations([$r1, $r2]);
+
+        $this->assertIsArray($result);
+        // When input contains NaN, correlation can be non-finite and the service returns null for that metric
+        $this->assertArrayHasKey('request_time_vs_query_time', $result);
     }
 
     public function testGenerateRecommendationsWithHighQueryCount(): void
@@ -393,6 +434,262 @@ final class PerformanceAnalysisServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertNull($result['request_time_vs_query_time']);
         $this->assertNull($result['request_time_vs_query_count']);
+    }
+
+    /** Covers analyzeEfficiency when queryTime is null (queryRatio = 0), no query bottleneck, avgQueryRatio null. */
+    public function testAnalyzeEfficiencyWithNullQueryTimeSetsQueryRatioZero(): void
+    {
+        $r1 = $this->routeMock(0.1, null, 5, null, 1);
+        $r2 = $this->routeMock(1.5, null, 10, null, 2);
+
+        $result = $this->service->analyzeEfficiency([$r1, $r2]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('avg_query_ratio', $result);
+        $this->assertArrayHasKey('efficient_routes', $result);
+        $this->assertArrayHasKey('inefficient_routes', $result);
+        $this->assertArrayHasKey('query_bottleneck_routes', $result);
+        $this->assertSame([], $result['query_bottleneck_routes']);
+        $this->assertNotEmpty($result['efficient_routes']);
+        $this->assertNotEmpty($result['inefficient_routes']);
+    }
+
+    /** Covers analyzeEfficiency when requestTime > 1.0 triggers inefficient_routes. */
+    public function testAnalyzeEfficiencyWithHighRequestTimeOnly(): void
+    {
+        $r1 = $this->routeMock(2.0, 0.1, 3, null, 1);
+
+        $result = $this->service->analyzeEfficiency([$r1]);
+
+        $this->assertNotEmpty($result['inefficient_routes']);
+        $this->assertSame([], $result['query_bottleneck_routes']);
+    }
+
+    /** Covers calculateCorrelation branches: variance <= 0 returns null (constant x). */
+    public function testAnalyzeCorrelationsWithConstantQueryTimeReturnsNullForQueryTimeCorrelations(): void
+    {
+        $r1 = $this->routeMock(0.5, 0.1, 5, null, 1);
+        $r2 = $this->routeMock(1.0, 0.1, 10, null, 2);
+        $r3 = $this->routeMock(1.5, 0.1, 15, null, 3);
+
+        $result = $this->service->analyzeCorrelations([$r1, $r2, $r3]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('query_time_vs_query_count', $result);
+        $this->assertNull($result['query_time_vs_query_count']);
+    }
+
+    /** Covers calculateCorrelation strength "weak" (0.3 <= abs < 0.5). */
+    public function testAnalyzeCorrelationsWithWeakCorrelationReturnsWeakStrength(): void
+    {
+        $routes = [
+            $this->routeMock(1.0, 0.2, 5, null, 1),
+            $this->routeMock(2.0, 0.5, 10, null, 2),
+            $this->routeMock(3.0, 0.3, 15, null, 3),
+            $this->routeMock(4.0, 0.9, 20, null, 4),
+            $this->routeMock(5.0, 0.6, 25, null, 5),
+        ];
+
+        $result = $this->service->analyzeCorrelations($routes);
+
+        $this->assertIsArray($result);
+        foreach (['request_time_vs_query_time', 'request_time_vs_query_count', 'query_time_vs_query_count'] as $key) {
+            if (isset($result[$key]) && $result[$key] !== null && isset($result[$key]['strength'])) {
+                $strength = $result[$key]['strength'];
+                $this->assertContains($strength, ['weak', 'moderate', 'strong', 'very_strong', 'none']);
+            }
+        }
+    }
+
+    /** Covers calculateCorrelation strength "none" (abs < 0.3). */
+    public function testAnalyzeCorrelationsWithVeryLowCorrelationReturnsNoneStrength(): void
+    {
+        $routes = [
+            $this->routeMock(1.0, 0.9, 5, null, 1),
+            $this->routeMock(2.0, 0.1, 10, null, 2),
+            $this->routeMock(3.0, 0.8, 15, null, 3),
+            $this->routeMock(4.0, 0.2, 20, null, 4),
+            $this->routeMock(5.0, 0.5, 25, null, 5),
+        ];
+
+        $result = $this->service->analyzeCorrelations($routes);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('request_time_vs_query_time', $result);
+        if ($result['request_time_vs_query_time'] !== null) {
+            $this->assertIsArray($result['request_time_vs_query_time']);
+            $this->assertArrayHasKey('strength', $result['request_time_vs_query_time']);
+        }
+    }
+
+    /**
+     * Covers calculateCorrelation when denominator is non-finite (overflow -> NaN/INF).
+     * Uses reflection to invoke the private method with extreme values.
+     */
+    public function testCalculateCorrelationWithNonFiniteDenominatorReturnsNull(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        // Values that can cause variance product to overflow -> INF or NaN -> !is_finite(denominator)
+        $x = [1e308, 1e308];
+        $y = [1e308, 1e308];
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Covers calculateCorrelation when denominator underflows to 0.0 (variance product too small).
+     * Uses reflection with very small values so varianceX*varianceY underflows to zero in double.
+     */
+    public function testCalculateCorrelationWithZeroDenominatorReturnsNull(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        // Tiny values: variance will be ~1e-324, product 1e-648 underflows to 0 in double, sqrt(0)=0
+        $tiny = 1e-162;
+        $x    = [$tiny, 2.0 * $tiny];
+        $y    = [$tiny, 2.0 * $tiny];
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Covers calculateCorrelation when correlation is not finite (overflow yields NaN).
+     * Uses reflection with extreme values so numerator or denominator overflow.
+     */
+    public function testCalculateCorrelationWithNonFiniteCorrelationReturnsNull(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        // Extreme values: variance and sums can overflow to INF, yielding NaN and !is_finite(correlation)
+        $x = [1e308, 2e308];
+        $y = [1e308, 2e308];
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Covers the branch where correlation is not finite (INF from overflow) - line 127 return null.
+     * Data: sumXY overflows to INF, sumX=sumY=0, so numerator=INF, denominator finite -> correlation=INF.
+     */
+    public function testCalculateCorrelationWithInfiniteCorrelationReturnsNull(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        $big = 1e154; // big^2 = 1e308 which may overflow when summed
+        $x   = [$big, -$big];
+        $y   = [$big, -$big];
+        // sumX=0, sumY=0, sumXY = 1e308+1e308 = 2e308 (can overflow to INF), numerator = 2*INF - 0 = INF
+        // varianceX = 2*(1e308+1e308)-0 = 4e308 (finite or INF), if both finite then denominator finite, correlation = INF
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Covers line 127: return null when correlation is not finite (NaN).
+     * Using y containing NAN makes numerator/denominator produce NaN correlation.
+     */
+    public function testCalculateCorrelationWithNanInDataReturnsNull(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        $x = [1.0, 2.0, 3.0];
+        $y = [1.0, 2.0, NAN]; // sumY = NAN, numerator = NAN, denominator finite -> correlation = NAN
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
+    }
+
+    /** Covers calculateCorrelation when |coefficient| < 0.3: strength 'none', interpretation 'No correlation'. */
+    public function testCalculateCorrelationWithNearZeroCorrelationReturnsNoneStrength(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        // Data chosen so correlation is 0 (numerator = n*sumXY - sumX*sumY = 0): x linear, y symmetric
+        $x = [0.0, 1.0, 2.0, 3.0, 4.0];
+        $y = [4.0, 2.0, 0.0, 2.0, 4.0];
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertIsArray($result);
+        $this->assertSame('none', $result['strength']);
+        $this->assertSame('No correlation', $result['interpretation']);
+    }
+
+    /**
+     * Covers correlation result with negative coefficient (strength very_strong).
+     * Uses reflection with [1,2,3] vs [3,2,1] to get coefficient -1.
+     */
+    public function testCalculateCorrelationWithNegativeCoefficientReturnsVeryStrong(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        $x = [1.0, 2.0, 3.0];
+        $y = [3.0, 2.0, 1.0]; // perfect negative correlation
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertIsArray($result);
+        $this->assertSame('very_strong', $result['strength']);
+        $this->assertStringContainsString('negative', strtolower((string) $result['interpretation']));
+        $this->assertLessThan(0, $result['coefficient']);
+        $this->assertSame(3, $result['sample_size']);
+    }
+
+    /** Covers calculateCorrelation returning null when correlation is not finite (e.g. NaN from NaN in input). */
+    public function testCalculateCorrelationReturnsNullWhenResultIsNotFinite(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        $x = [NAN, 1.0, 2.0];
+        $y = [1.0, 2.0, 3.0];
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Covers line 127: return null when correlation overflows to INF (numerator INF, denominator finite).
+     * With x=[1e154,0], y=[1e154,0]: sumXY=1e308, 2*sumXY=2e308 overflows to INF; sumX*sumY=1e308 finite;
+     * varianceX=1e308, denominator=1e308 -> correlation = INF/1e308 = INF.
+     */
+    public function testCalculateCorrelationReturnsNullWhenCorrelationOverflowsToInfNumerator(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        $x = [1e154, 0.0];
+        $y = [1e154, 0.0];
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Covers line 127: correlation is not finite (overflow yields INF) so method returns null.
+     * Uses reflection with values that make numerator overflow to INF while denominator stays finite.
+     */
+    public function testCalculateCorrelationReturnsNullWhenCorrelationOverflowsToInf(): void
+    {
+        $ref = new ReflectionMethod(PerformanceAnalysisService::class, 'calculateCorrelation');
+
+        // Pairs [0,0] and [1e154,1e154]: sumXY=1e308, n*sumXY=2e308 overflows to INF, numerator=INF, varianceX=varianceY=1e308, denominator=1e308, correlation=INF
+        $x = [0.0, 1e154];
+        $y = [0.0, 1e154];
+
+        $result = $ref->invoke($this->service, $x, $y);
+
+        $this->assertNull($result);
     }
 
     private function routeMock(

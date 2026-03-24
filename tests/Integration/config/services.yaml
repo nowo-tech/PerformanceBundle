@@ -1,4 +1,9 @@
 services:
+    # Suppress exception logging in integration tests so expected 404s (e.g. testUnknownPerformancePathReturns404)
+    # do not print "[error] Uncaught PHP Exception ... NotFoundHttpException" to the console.
+    logger:
+        class: Nowo\PerformanceBundle\Tests\Integration\NullLogger
+
     Nowo\PerformanceBundle\Tests\Integration\Twig\UxIconStubExtension:
         tags:
             - { name: twig.extension }

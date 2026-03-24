@@ -192,4 +192,53 @@ final class CreateTableCommandTest extends TestCase
         self::assertStringContainsString('does not exist', $display);
         self::assertMatchesRegularExpression('/without\s+--update/', $display);
     }
+
+    public function testExecuteWhenGetMetadataForThrowsReturnsFailure(): void
+    {
+        $this->metadataFactory->method('getMetadataFor')
+            ->with(\Nowo\PerformanceBundle\Entity\RouteData::class)
+            ->willThrowException(new RuntimeException('Metadata mapping error'));
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Failed to create table', $tester->getDisplay());
+        self::assertStringContainsString('Metadata mapping error', $tester->getDisplay());
+    }
+
+    public function testExecuteWhenSchemaToolFindsNoRouteDataMetadataReturnsFailure(): void
+    {
+        $metadata        = $this->createMock(ClassMetadata::class);
+        $metadata->table = ['name' => 'routes_data'];
+
+        $this->metadataFactory->method('getMetadataFor')->with(\Nowo\PerformanceBundle\Entity\RouteData::class)->willReturn($metadata);
+        $this->metadataFactory->method('getAllMetadata')->willReturn([]);
+        $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturn(false);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Failed to create table', $tester->getDisplay());
+        self::assertStringContainsString('RouteData entity metadata not found', $tester->getDisplay());
+    }
+
+    public function testExecuteUsesConfiguredTableNameWhenMetadataTableNameMissing(): void
+    {
+        $metadata = $this->createMock(ClassMetadata::class);
+        // Simulates metadata without a usable table name (command falls back via ?? configured table_name).
+        // @phpstan-ignore assign.propertyType
+        $metadata->table = [];
+
+        $this->metadataFactory->method('getMetadataFor')->with(\Nowo\PerformanceBundle\Entity\RouteData::class)->willReturn($metadata);
+        $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturn(true);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('routes_data', $tester->getDisplay());
+        self::assertStringContainsString('already exists', $tester->getDisplay());
+    }
 }

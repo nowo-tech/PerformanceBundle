@@ -57,8 +57,7 @@ This is useful for:
 
 <info>php %command.full_name% app_home --request-time=0.5 --queries=10</info>
 
-The command will create a new record if the route doesn't exist, or update the existing record
-if the new metrics indicate worse performance (higher request time or more queries).
+The command records metrics via PerformanceMetricsService (creates or updates **RouteData** and may append **RouteDataRecord** when access records are enabled), same as automatic tracking — there is no “only update if worse than before” rule.
 
 Options:
   - <info>--env</info>: Environment name (default: dev)

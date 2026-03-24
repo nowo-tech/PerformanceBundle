@@ -86,6 +86,7 @@
     },
     "config": {
         "sort-packages": true,
+        "process-timeout": 600,
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
             "phpstan/extension-installer": true
@@ -95,15 +96,16 @@
     "prefer-stable": true,
     "scripts": {
         "test": "phpunit",
-        "test-coverage": "phpunit --coverage-html coverage --coverage-clover coverage.xml",
+        "test-coverage": "phpunit --process-isolation --coverage-text --coverage-html coverage --coverage-clover coverage.xml",
+        "test-coverage-90": "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=90",
         "test-coverage-100": "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=100",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
         "rector": "rector process",
         "rector-dry": "rector process --dry-run --no-progress-bar",
         "phpstan": "phpstan analyse --memory-limit=512M",
-        "update": "composer update --no-interaction",
-        "validate": "composer validate --strict",
+        "deps-update": "composer update --no-interaction",
+        "deps-validate": "composer validate --strict",
         "validate-translations": "php scripts/validate-translations-yaml.php src/Resources/translations",
         "qa": [
             "@cs-check",
@@ -114,14 +116,15 @@
     "scripts-descriptions": {
         "test": "Run PHPUnit tests",
         "test-coverage": "Run PHPUnit tests with code coverage",
+        "test-coverage-90": "Run test-coverage and fail if coverage is below 90%",
         "test-coverage-100": "Run test-coverage and fail if coverage is below 100%",
         "cs-check": "Check code style with PHP-CS-Fixer",
         "cs-fix": "Fix code style with PHP-CS-Fixer",
         "rector": "Apply Rector refactoring",
         "rector-dry": "Run Rector in dry-run mode",
         "phpstan": "Run PHPStan static analysis",
-        "update": "Update composer.lock (composer update)",
-        "validate": "Validate composer.json (composer validate --strict)",
+        "deps-update": "Update composer.lock (composer update)",
+        "deps-validate": "Validate composer.json (composer validate --strict)",
         "validate-translations": "Validate translation YAML files (syntax and duplicate keys)",
         "qa": "Run all quality assurance checks"
     }

@@ -188,6 +188,44 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertSame(0, $collector->getQueryCount());
     }
 
+    /**
+     * Covers the catch block in collect() when query metrics provider throws (fallback to 0 and 0.0).
+     */
+    public function testCollectWhenQueryMetricsProviderThrowsUsesFallbackZero(): void
+    {
+        $provider = static function (): array {
+            throw new Exception('query metrics unavailable');
+        };
+        $collector = new PerformanceDataCollector(null, null, null, null, null, true, $provider);
+        $collector->setEnabled(true);
+        $request = new Request();
+        $request->attributes->set('_route', 'app_test');
+        $response = new Response();
+
+        $collector->collect($request, $response);
+
+        $this->assertSame(0, $collector->getQueryCount());
+        $this->assertSame(0.0, $collector->getQueryTime());
+    }
+
+    /**
+     * Covers the provider path when return value is not a valid array (missing keys 0/1); uses fallback 0 and 0.0.
+     */
+    public function testCollectWhenQueryMetricsProviderReturnsInvalidArrayUsesFallbackZero(): void
+    {
+        $provider = (static fn(): array => []);
+        $collector = new PerformanceDataCollector(null, null, null, null, null, true, $provider);
+        $collector->setEnabled(true);
+        $request = new Request();
+        $request->attributes->set('_route', 'app_test');
+        $response = new Response();
+
+        $collector->collect($request, $response);
+
+        $this->assertSame(0, $collector->getQueryCount());
+        $this->assertSame(0.0, $collector->getQueryTime());
+    }
+
     public function testGetProcessingModeReturnsSyncWhenDisabled(): void
     {
         $collector = new PerformanceDataCollector();
@@ -386,6 +424,60 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
+    /** Covers setRecordOperation() when called after collect(): updates $this->data so wasRecordNew/wasRecordUpdated reflect it. */
+    public function testSetRecordOperationAfterCollectUpdatesData(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willReturn([
+            'exists' => true, 'complete' => true, 'table_name' => 'routes_data', 'missing_columns' => [],
+        ]);
+        $tableChecker->method('getRecordsTableStatus')->willReturn(null);
+        $tableChecker->method('isAccessRecordsEnabled')->willReturn(false);
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker);
+        $collector->setEnabled(true);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertNull($collector->wasRecordNew());
+        $this->assertNull($collector->wasRecordUpdated());
+
+        $collector->setRecordOperation(true, false);
+
+        $this->assertTrue($collector->wasRecordNew());
+        $this->assertFalse($collector->wasRecordUpdated());
+
+        $collector->setRecordOperation(false, true);
+        $this->assertFalse($collector->wasRecordNew());
+        $this->assertTrue($collector->wasRecordUpdated());
+    }
+
+    /**
+     * When TableStatusChecker::getMainTableStatus() throws, collect() catches and continues (silent fail).
+     *
+     * @covers \Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector::collect
+     */
+    public function testCollectSwallowsExceptionWhenTableStatusCheckerThrows(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willThrowException(new Exception('DB unavailable'));
+        $tableChecker->method('getRecordsTableStatus')->willReturn(null);
+        $tableChecker->method('isAccessRecordsEnabled')->willReturn(false);
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker, null, null, true);
+        $collector->setEnabled(true);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertFalse($collector->tableExists());
+        $this->assertFalse($collector->tableIsComplete());
+        $this->assertSame([], $collector->getMissingColumns());
+    }
+
     public function testCollectWithTableStatusCheckerAndDependencyCheckerEnabled(): void
     {
         $tableChecker = $this->createMock(TableStatusChecker::class);
@@ -449,6 +541,62 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertSame('routes_data', $collector->getTableName());
     }
 
+    /**
+     * When repository throws (e.g. table missing), collect() catches and continues (silent fail).
+     *
+     * @covers \Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector::collect
+     */
+    public function testCollectSwallowsExceptionWhenRepositoryThrows(): void
+    {
+        $repository = $this->createMock(RouteDataRepository::class);
+        $repository->method('findByRouteAndEnv')->willThrowException(new Exception('Connection failed'));
+
+        $collector = new PerformanceDataCollector($repository, null, null, null, null, false);
+        $collector->setEnabled(true);
+        $collector->setRouteName('app_home');
+        $collector->setCurrentEnvironment('dev');
+
+        $request = new Request();
+        $request->attributes->set('_route', 'app_home');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame('app_home', $collector->getRouteName());
+        $this->assertNull($collector->getAccessCount());
+        $this->assertNull($collector->getRankingByRequestTime());
+    }
+
+    /**
+     * When repository returns RouteData but recordRepository is null, accessCount is null (ternary else branch).
+     *
+     * @covers \Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector::collect
+     */
+    public function testCollectWithRepositoryWithoutRecordRepositorySetsAccessCountNull(): void
+    {
+        $route = new RouteData();
+        $route->setName('api_foo')->setEnv('dev');
+
+        $repository = $this->createMock(RouteDataRepository::class);
+        $repository->method('findByRouteAndEnv')->with('api_foo', 'dev')->willReturn($route);
+        $repository->method('getRankingByRequestTime')->with($route)->willReturn(1);
+        $repository->method('getRankingByQueryCount')->with($route)->willReturn(2);
+        $repository->method('getTotalRoutesCount')->with('dev')->willReturn(5);
+
+        $collector = new PerformanceDataCollector($repository, null, null, null, null, false);
+        $collector->setEnabled(true);
+        $collector->setRouteName('api_foo');
+
+        $request = new Request();
+        $request->attributes->set('_route', 'api_foo');
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertNull($collector->getAccessCount());
+        $this->assertSame(1, $collector->getRankingByRequestTime());
+        $this->assertSame(2, $collector->getRankingByQueryCount());
+        $this->assertSame(5, $collector->getTotalRoutes());
+    }
+
     public function testCollectWithRepositoryAndRecordRepositoryFetchesRankingAndAccessCount(): void
     {
         $route = new RouteData();
@@ -495,6 +643,29 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertSame([], $collector->getMissingColumns());
     }
 
+    /** Covers the catch block when getRecordsTableStatus() throws after getMainTableStatus() succeeded. */
+    public function testCollectWhenGetRecordsTableStatusThrowsStillCompletes(): void
+    {
+        $tableChecker = $this->createMock(TableStatusChecker::class);
+        $tableChecker->method('getMainTableStatus')->willReturn([
+            'exists'          => true,
+            'complete'        => true,
+            'table_name'      => 'routes_data',
+            'missing_columns' => [],
+        ]);
+        $tableChecker->method('getRecordsTableStatus')->willThrowException(new Exception('records table check failed'));
+
+        $collector = new PerformanceDataCollector(null, null, $tableChecker, null, null, true);
+        $collector->setEnabled(true);
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertTrue($collector->tableExists());
+        $this->assertTrue($collector->tableIsComplete());
+    }
+
     public function testCollectWhenGetParameterThrowsUsesDefaultRankingEnabled(): void
     {
         $container = $this->createMock(\Symfony\Component\DependencyInjection\ContainerInterface::class);
@@ -527,6 +698,40 @@ final class PerformanceDataCollectorTest extends TestCase
         $this->assertSame(10, $collector->getAccessCount());
         $this->assertSame(1, $collector->getRankingByRequestTime());
         $this->assertSame(5, $collector->getTotalRoutes());
+    }
+
+    public function testCollectWhenEnableRankingQueriesFalseSkipsRankingQueries(): void
+    {
+        $container = $this->createMock(\Symfony\Component\DependencyInjection\ContainerInterface::class);
+        $container->method('getParameter')->with('nowo_performance.dashboard.enable_ranking_queries')->willReturn(false);
+
+        $kernel = $this->createMock(KernelInterface::class);
+        $kernel->method('getEnvironment')->willReturn('dev');
+        $kernel->method('getContainer')->willReturn($container);
+
+        $route = new RouteData();
+        $route->setName('home')->setEnv('dev');
+        $repository = $this->createMock(RouteDataRepository::class);
+        $repository->method('findByRouteAndEnv')->with('home', 'dev')->willReturn($route);
+        $repository->expects($this->never())->method('getRankingByRequestTime');
+        $repository->expects($this->never())->method('getRankingByQueryCount');
+        $repository->expects($this->never())->method('getTotalRoutesCount');
+
+        $recordRepo = $this->createMock(RouteDataRecordRepository::class);
+        $recordRepo->method('countByRouteData')->with($route)->willReturn(7);
+
+        $collector = new PerformanceDataCollector($repository, $kernel, null, null, $recordRepo, false);
+        $collector->setEnabled(true);
+        $collector->setRouteName('home');
+
+        $request  = new Request();
+        $response = new Response();
+        $collector->collect($request, $response);
+
+        $this->assertSame(7, $collector->getAccessCount());
+        $this->assertNull($collector->getRankingByRequestTime());
+        $this->assertNull($collector->getRankingByQueryCount());
+        $this->assertNull($collector->getTotalRoutes());
     }
 
     public function testCollectWhenRepositoryFindByRouteAndEnvThrowsStillCompletes(): void
@@ -609,9 +814,9 @@ final class PerformanceDataCollectorTest extends TestCase
         $response = new Response();
         $collector->collect($request, $response);
 
-        $ref          = new ReflectionClass($collector);
-        $dataProp     = $ref->getProperty('data');
-        $data         = $dataProp->getValue($collector);
+        $ref                  = new ReflectionClass($collector);
+        $dataProp             = $ref->getProperty('data');
+        $data                 = $dataProp->getValue($collector);
         $data['request_time'] = 2.5;
         $dataProp->setValue($collector, $data);
 

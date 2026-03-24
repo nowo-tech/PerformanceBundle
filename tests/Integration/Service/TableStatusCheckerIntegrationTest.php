@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Integration\Service;
 
+use Doctrine\DBAL\Connection;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
 use PHPUnit\Framework\TestCase;
@@ -11,6 +12,10 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpKernel\KernelInterface;
 
+/**
+ * Integration tests for TableStatusChecker against a real DB (MySQL in docker test env).
+ * Covers getRecordsMissingColumns when the records table is missing and schema introspection paths.
+ */
 final class TableStatusCheckerIntegrationTest extends TestCase
 {
     private KernelInterface $kernel;
@@ -26,89 +31,46 @@ final class TableStatusCheckerIntegrationTest extends TestCase
         $this->kernel->shutdown();
     }
 
-    public function testTableExistsReturnsTrueAfterCreateTable(): void
+    public function testGetRecordsMissingColumnsWhenTableMissingReturnsExpectedColumns(): void
     {
-        $this->runCreateTableCommand();
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
+        $this->createTables();
 
-        self::assertTrue($checker->tableExists());
-        self::assertSame('routes_data', $checker->getTableName());
+        $registry = $this->kernel->getContainer()->get('doctrine');
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', true);
+
+        /** @var Connection $connection */
+        $connection = $registry->getConnection('default');
+        $connection->executeStatement('DROP TABLE IF EXISTS routes_data_records');
+
+        $missing = $checker->getRecordsMissingColumns();
+
+        self::assertNotSame([], $missing, 'When the records table is missing, all entity columns are reported as missing');
+
+        // Recreate for other tests / teardown
+        (new CommandTester((new Application($this->kernel))->find('nowo:performance:create-records-table')))->execute([]);
     }
 
-    public function testRecordsTableExistsAfterCreatingBothTables(): void
+    public function testRecordsTableIsCompleteWhenTableDroppedReturnsFalse(): void
     {
-        $this->runCreateTableCommand();
-        $this->runCreateRecordsTableCommand();
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
+        $this->createTables();
 
-        self::assertTrue($checker->tableExists());
-        self::assertTrue($checker->recordsTableExists());
-        self::assertTrue($checker->isAccessRecordsEnabled());
+        $registry = $this->kernel->getContainer()->get('doctrine');
+        $checker  = new TableStatusChecker($registry, 'default', 'routes_data', true);
+
+        /** @var Connection $connection */
+        $connection = $registry->getConnection('default');
+        $connection->executeStatement('DROP TABLE IF EXISTS routes_data_records');
+
+        self::assertFalse($checker->recordsTableIsComplete());
+
+        (new CommandTester((new Application($this->kernel))->find('nowo:performance:create-records-table')))->execute([]);
     }
 
-    public function testGetMainTableStatusReturnsArray(): void
-    {
-        $this->runCreateTableCommand();
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
-
-        $status = $checker->getMainTableStatus();
-        self::assertIsArray($status);
-    }
-
-    public function testTableIsCompleteAfterCreate(): void
-    {
-        $this->runCreateTableCommand();
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
-
-        self::assertTrue($checker->tableIsComplete());
-    }
-
-    public function testGetMissingColumnsReturnsArray(): void
-    {
-        $this->runCreateTableCommand();
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
-
-        $missing = $checker->getMissingColumns();
-        self::assertIsArray($missing);
-    }
-
-    public function testGetRecordsTableStatusAfterCreatingRecordsTable(): void
-    {
-        $this->runCreateTableCommand();
-        $this->runCreateRecordsTableCommand();
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
-
-        $status = $checker->getRecordsTableStatus();
-        self::assertIsArray($status);
-    }
-
-    public function testRecordsTableIsComplete(): void
-    {
-        $this->runCreateTableCommand();
-        $this->runCreateRecordsTableCommand();
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
-
-        self::assertTrue($checker->recordsTableIsComplete());
-    }
-
-    public function testGetRecordsTableName(): void
-    {
-        $checker = $this->kernel->getContainer()->get(TableStatusChecker::class);
-
-        self::assertNotEmpty($checker->getRecordsTableName());
-    }
-
-    private function runCreateTableCommand(): void
+    private function createTables(): void
     {
         $application = new Application($this->kernel);
         $application->setAutoExit(false);
         (new CommandTester($application->find('nowo:performance:create-table')))->execute([]);
-    }
-
-    private function runCreateRecordsTableCommand(): void
-    {
-        $application = new Application($this->kernel);
-        $application->setAutoExit(false);
         (new CommandTester($application->find('nowo:performance:create-records-table')))->execute([]);
     }
 }

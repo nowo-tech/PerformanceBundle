@@ -253,9 +253,9 @@ final class RebuildAggregatesCommandTest extends TestCase
         $repo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
         $repo->method('find')
             ->willReturnCallback(static fn (int $id): ?RouteData => match ($id) {
-                1 => $managed1,
-                2 => $managed2,
-                3 => $managed3,
+                1       => $managed1,
+                2       => $managed2,
+                3       => $managed3,
                 default => null,
             });
 

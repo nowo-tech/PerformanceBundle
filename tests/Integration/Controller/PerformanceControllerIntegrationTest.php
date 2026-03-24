@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Integration\Controller;
 
 use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
+use Nowo\PerformanceBundle\Form\DeleteRecordType;
+use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
@@ -101,6 +103,22 @@ final class PerformanceControllerIntegrationTest extends TestCase
             str_contains(strtolower($content), 'diagnose') || str_contains(strtolower($content), 'performance') || str_contains(strtolower($content), 'configuration'),
             'Diagnose page content expected',
         );
+    }
+
+    public function testChartDataApiReturnsJsonForEachMetric(): void
+    {
+        $this->createTablesAndRecordMetric();
+        foreach (['requestTime', 'queryTime', 'totalQueries', 'memoryUsage'] as $metric) {
+            $response = $this->requestGet(
+                '/performance/api/chart-data?env=test&route=integration_test_route&days=3&metric=' . $metric,
+            );
+            self::assertSame(200, $response->getStatusCode());
+            self::assertStringContainsString('application/json', $response->headers->get('Content-Type') ?? '');
+            $decoded = json_decode($response->getContent() ?: '{}', true);
+            self::assertIsArray($decoded);
+            self::assertArrayHasKey('labels', $decoded);
+            self::assertArrayHasKey('datasets', $decoded);
+        }
     }
 
     public function testAccessStatisticsPageRespondsSuccessfully(): void
@@ -923,6 +941,112 @@ final class PerformanceControllerIntegrationTest extends TestCase
         $location = $response->headers->get('Location');
         self::assertNotNull($location);
         self::assertStringContainsString('performance', $location);
+    }
+
+    /** DELETE with valid CSRF for non-existent id: error flash and redirect (find === null branch). */
+    public function testDeletePostValidCsrfNonExistentIdRedirectsWithError(): void
+    {
+        $this->createTablesAndRecordMetric();
+        $container = $this->kernel->getContainer();
+        if (!$container->has('form.factory')) {
+            self::markTestSkipped('form.factory not available');
+        }
+        $formFactory = $container->get('form.factory');
+        $form        = $formFactory->create(DeleteRecordType::class, null, [
+            'csrf_token_id'     => 'delete_performance_record_999999',
+            'submit_attr_class' => 'btn btn-danger btn-sm',
+        ]);
+        $view  = $form->createView();
+        $token = $view['_token']->vars['value'] ?? null;
+        self::assertNotNull($token);
+        $response = $this->requestPost('/performance/999999/delete', [
+            'delete_record' => [
+                '_token' => $token,
+                'submit' => '',
+            ],
+        ]);
+        self::assertTrue($response->isRedirection());
+        self::assertSame(302, $response->getStatusCode());
+    }
+
+    /** DELETE with valid CSRF deletes the record (deleted branch + success flash). */
+    public function testDeletePostValidCsrfDeletesExistingRecord(): void
+    {
+        $this->createTablesAndRecordMetric();
+        $routeId = $this->getFirstRouteDataId();
+        self::assertNotNull($routeId);
+        $container = $this->kernel->getContainer();
+        if (!$container->has('form.factory')) {
+            self::markTestSkipped('form.factory not available');
+        }
+        $formFactory = $container->get('form.factory');
+        $form        = $formFactory->create(DeleteRecordType::class, null, [
+            'csrf_token_id'     => 'delete_performance_record_' . $routeId,
+            'submit_attr_class' => 'btn btn-danger btn-sm',
+        ]);
+        $view  = $form->createView();
+        $token = $view['_token']->vars['value'] ?? null;
+        self::assertNotNull($token);
+        $response = $this->requestPost('/performance/' . $routeId . '/delete', [
+            'delete_record' => [
+                '_token' => $token,
+                'submit' => '',
+            ],
+        ]);
+        self::assertTrue($response->isRedirection());
+        self::assertSame(302, $response->getStatusCode());
+    }
+
+    /** REVIEW: non-existent id redirects before the form (record not found path). */
+    public function testReviewPostNonExistentRecordIdRedirects(): void
+    {
+        $this->createTablesAndRecordMetric();
+        $response = $this->requestPost('/performance/999999/review', [
+            'review_route_data' => [
+                'queries_improved' => '1',
+                'time_improved'    => '1',
+                '_token'           => 'invalid',
+                'submit'           => '',
+            ],
+        ]);
+        self::assertTrue($response->isRedirection());
+    }
+
+    /** REVIEW with valid CSRF and data (markAsReviewed branch + redirect). */
+    public function testReviewPostValidCsrfUpdatesExistingRecord(): void
+    {
+        $this->createTablesAndRecordMetric();
+        $routeId = $this->getFirstRouteDataId();
+        self::assertNotNull($routeId);
+        $container = $this->kernel->getContainer();
+        if (!$container->has('form.factory')) {
+            self::markTestSkipped('form.factory not available');
+        }
+        $metrics   = $container->get(PerformanceMetricsService::class);
+        $routeData = $metrics->getRepository()->find($routeId);
+        self::assertNotNull($routeData);
+
+        $formFactory = $container->get('form.factory');
+        $form        = $formFactory->create(ReviewRouteDataType::class, null, [
+            'csrf_token_id'         => 'review_performance_record_' . $routeId,
+            'route_data'            => $routeData,
+            'enable_access_records' => true,
+        ]);
+        $view  = $form->createView();
+        $token = $view['_token']->vars['value'] ?? null;
+        self::assertNotNull($token);
+
+        $response = $this->requestPost('/performance/' . $routeId . '/review', [
+            'review_route_data' => [
+                'queries_improved'    => '1',
+                'time_improved'       => '1',
+                'save_access_records' => '1',
+                '_token'              => $token,
+                'submit'              => '',
+            ],
+        ]);
+        self::assertTrue($response->isRedirection());
+        self::assertSame(302, $response->getStatusCode());
     }
 
     private function getClearFormCsrfToken(): ?string

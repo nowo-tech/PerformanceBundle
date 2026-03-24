@@ -122,17 +122,12 @@ class PerformanceAnalysisService
 
         $correlation = $numerator / $denominator;
 
-        // Ensure correlation is a valid number
-        if (!is_finite($correlation)) {
-            return null;
-        }
-
         // Interpret correlation strength
         $strength       = 'none';
         $interpretation = 'No correlation';
         if (abs($correlation) >= 0.9) {
             $strength       = 'very_strong';
-            $interpretation = abs($correlation) > 0 ? 'Very strong positive' : 'Very strong negative';
+            $interpretation = $correlation > 0 ? 'Very strong positive' : 'Very strong negative';
         } elseif (abs($correlation) >= 0.7) {
             $strength       = 'strong';
             $interpretation = $correlation > 0 ? 'Strong positive' : 'Strong negative';

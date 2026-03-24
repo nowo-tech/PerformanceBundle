@@ -19,7 +19,7 @@
     order: order|default('DESC')
 } %}
 {% set _base_params = export_params|merge({per_page: paginated_data.per_page|default(50)}) %}
-{% if template == 'bootstrap' %}
+{% if ui_template == 'bootstrap' %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}</h1>

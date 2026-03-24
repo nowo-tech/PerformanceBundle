@@ -72,7 +72,7 @@ php bin/console nowo:performance:set-route <route> [options]
 
 ### Description
 
-This command sets or updates route performance metrics. If a route doesn't exist, it will be created. If it exists, it will be updated only if the new metrics are worse (higher request time or more queries).
+This command records metrics through `PerformanceMetricsService` (same path as automatic tracking). It creates **`RouteData`** if needed, updates **`lastAccessedAt`**, and — when **`enable_access_records`** is enabled — may create a **`RouteDataRecord`** for this manual hit (unless deduplication or per-route settings skip it). It does **not** apply a “only if worse than before” rule; that was removed with the v2 data model.
 
 ### Examples
 
@@ -97,19 +97,15 @@ php bin/console nowo:performance:set-route app_user_show \
     --params='{"id":123}'
 ```
 
-#### Update with Worse Metrics
+#### Repeat manual injection
 
 ```bash
-# Update if metrics are worse
 php bin/console nowo:performance:set-route app_home \
     --request-time=0.8 \
     --queries=15
 ```
 
-The command will only update if:
-- Request time is higher than existing
-- Query count is higher than existing
-- No existing data exists
+Each run records the given values again; dashboard rankings and aggregates reflect data derived from **`RouteDataRecord`** (and related logic), not a single “current worst” row on `RouteData`.
 
 ### Output
 

@@ -223,6 +223,33 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $this->assertEquals([500 => 1], $wednesday['status_codes']);
     }
 
+    /** Covers getStatisticsByDayOfWeek with path and statusCode filters (pathNorm and statusCode branches). */
+    public function testGetStatisticsByDayOfWeekWithPathAndStatusCodeFilters(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->exactly(2))->method('andWhere')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getStatisticsByDayOfWeek('dev', null, null, null, '/api/foo', 404);
+
+        $this->assertCount(7, $result);
+    }
+
     public function testGetStatisticsByMonthAggregatesCorrectly(): void
     {
         /** @var MockObject&RouteDataRecordRepository $repository */
@@ -268,6 +295,33 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $this->assertSame(1, $result[1]['count']);
     }
 
+    /** Covers getStatisticsByMonth with path and statusCode filters (lines 665-666, 664-666). */
+    public function testGetStatisticsByMonthWithPathAndStatusCodeFilters(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->exactly(2))->method('andWhere')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getStatisticsByMonth('dev', null, null, null, '/api/foo', 404);
+
+        $this->assertCount(12, $result);
+    }
+
     public function testGetHeatmapDataAggregatesCorrectly(): void
     {
         /** @var MockObject&RouteDataRecordRepository $repository */
@@ -308,11 +362,36 @@ final class RouteDataRecordRepositoryTest extends TestCase
 
         $this->assertCount(7, $heatmap);
         $this->assertCount(24, $heatmap[0]); // Sunday row
+        $this->assertSame(2, $heatmap[1][10]); // Monday 10:00 -> 2 records
+        $this->assertSame(1, $heatmap[3][14]); // Wednesday 14:00 -> 1 record
+    }
 
-        // Monday is 1
-        $this->assertSame(2, $heatmap[1][10]); // two hits at Monday 10h
-        // Wednesday is 3
-        $this->assertSame(1, $heatmap[3][14]);
+    /** Covers getHeatmapData with path and statusCode filters (lines 773-774, 776-779). */
+    public function testGetHeatmapDataWithPathAndStatusCodeFilters(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->exactly(2))->method('andWhere')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $heatmap = $repository->getHeatmapData('dev', null, null, null, '/api/foo', 404);
+
+        $this->assertCount(7, $heatmap);
+        $this->assertCount(24, $heatmap[0]);
     }
 
     public function testGetTotalAccessCountReturnsCount(): void
@@ -391,6 +470,194 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $result = $repository->getTotalAccessCount('dev', $startDate, $endDate);
 
         $this->assertSame(15, $result);
+    }
+
+    /** Covers getTotalAccessCount with path filter (pathNorm !== null && pathNorm !== ''). */
+    public function testGetTotalAccessCountWithPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())->method('getSingleScalarResult')->willReturn('7');
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->expects($this->atLeastOnce())->method('setParameter')->willReturnSelf();
+        $qb->expects($this->once())
+            ->method('andWhere')
+            ->with('r.routePath LIKE :pathFilter')
+            ->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getTotalAccessCount('dev', null, null, null, '/api/foo');
+
+        $this->assertSame(7, $result);
+    }
+
+    /** Covers getTotalAccessCount with statusCode filter. */
+    public function testGetTotalAccessCountWithStatusCodeFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())->method('getSingleScalarResult')->willReturn('3');
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->expects($this->atLeastOnce())->method('setParameter')->willReturnSelf();
+        $qb->expects($this->once())
+            ->method('andWhere')
+            ->with('r.statusCode = :statusCode')
+            ->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getTotalAccessCount('dev', null, null, null, null, 404);
+
+        $this->assertSame(3, $result);
+    }
+
+    /** Covers normalizePathForFilter: full URL with path (preg_match https?, parse_url, return path). */
+    public function testGetTotalAccessCountWithFullUrlPathNormalizesToPath(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())->method('getSingleScalarResult')->willReturn('1');
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->expects($this->once())->method('andWhere')->with('r.routePath LIKE :pathFilter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getTotalAccessCount('dev', null, null, null, 'https://example.com/api/foo');
+
+        $this->assertSame(1, $result);
+    }
+
+    /** Covers normalizePathForFilter: full URL without path returns null (no path filter applied). */
+    public function testGetTotalAccessCountWithFullUrlNoPathUsesNoPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())->method('getSingleScalarResult')->willReturn('0');
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->expects($this->never())->method('andWhere');
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getTotalAccessCount('dev', null, null, null, 'http://example.com');
+
+        $this->assertSame(0, $result);
+    }
+
+    /** Covers normalizePathForFilter: relative path without leading slash (str_contains '/', return '/' . $s). */
+    public function testGetTotalAccessCountWithRelativePathPrefixesSlash(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())->method('getSingleScalarResult')->willReturn('2');
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->expects($this->once())->method('andWhere')->with('r.routePath LIKE :pathFilter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getTotalAccessCount('dev', null, null, null, 'api/bar');
+
+        $this->assertSame(2, $result);
+    }
+
+    /** Covers normalizePathForFilter: host-only string (no /) yields null from parse_url. */
+    public function testGetTotalAccessCountWithHostOnlyPathUsesNoPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())->method('getSingleScalarResult')->willReturn('0');
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->expects($this->never())->method('andWhere');
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getTotalAccessCount('dev', null, null, null, 'example.com');
+
+        $this->assertSame(0, $result);
+    }
+
+    /** Covers normalizePathForFilter: whitespace-only input returns null (line 1008). */
+    public function testGetTotalAccessCountWithWhitespaceOnlyPathUsesNoPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query->expects($this->once())->method('getSingleScalarResult')->willReturn('0');
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('select')->willReturnSelf();
+        $qb->method('join')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->expects($this->never())->method('andWhere');
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->getTotalAccessCount('dev', null, null, null, "   \t  ");
+
+        $this->assertSame(0, $result);
     }
 
     public function testDeleteByRouteDataReturnsDeletedCount(): void
@@ -593,6 +860,56 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $this->assertSame(0, $result);
     }
 
+    /** Covers deleteByFilter when one batch is deleted (lines 405-412: loop body with ids, delete, totalDeleted). */
+    public function testDeleteByFilterDeletesOneBatchThenStops(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $selectQuery1 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery1->expects($this->once())->method('getSingleColumnResult')->willReturn([1, 2, 3]);
+        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery->expects($this->once())->method('execute')->willReturn(3);
+        $selectQuery2 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery2->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
+
+        $callCount = 0;
+        $repository->method('createQueryBuilder')->with('r')->willReturnCallback(function () use (&$callCount, $selectQuery1, $deleteQuery, $selectQuery2): MockObject {
+            ++$callCount;
+            $qb = $this->createMock(QueryBuilder::class);
+            if ($callCount === 1) {
+                $qb->method('select')->with('r.id')->willReturnSelf();
+                $qb->method('join')->willReturnSelf();
+                $qb->method('where')->willReturnSelf();
+                $qb->method('setParameter')->willReturnSelf();
+                $qb->method('setMaxResults')->with(1000)->willReturnSelf();
+                $qb->method('andWhere')->willReturnSelf();
+                $qb->method('getQuery')->willReturn($selectQuery1);
+            } elseif ($callCount === 2) {
+                $qb->method('delete')->willReturnSelf();
+                $qb->method('where')->with('r.id IN (:ids)')->willReturnSelf();
+                $qb->method('setParameter')->with('ids', [1, 2, 3])->willReturnSelf();
+                $qb->method('getQuery')->willReturn($deleteQuery);
+            } else {
+                $qb->method('select')->with('r.id')->willReturnSelf();
+                $qb->method('join')->willReturnSelf();
+                $qb->method('where')->willReturnSelf();
+                $qb->method('setParameter')->willReturnSelf();
+                $qb->method('setMaxResults')->with(1000)->willReturnSelf();
+                $qb->method('andWhere')->willReturnSelf();
+                $qb->method('getQuery')->willReturn($selectQuery2);
+            }
+
+            return $qb;
+        });
+
+        $result = $repository->deleteByFilter('dev', null, null, null, null, null, null, null, null, null, null, null, 1000);
+
+        $this->assertSame(3, $result);
+    }
+
     public function testGetPaginatedRecordsReturnsStructure(): void
     {
         $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
@@ -678,5 +995,214 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $result = $this->repository->getAggregatesForRouteDataIds([]);
 
         $this->assertSame([], $result);
+    }
+
+    /** Covers deleteAllRecords(null): batch loop when no records (empty ids -> break, return 0). */
+    public function testDeleteAllRecordsWithNullEnvWhenNoRecordsReturnsZero(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $selectQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery->expects($this->once())
+            ->method('getSingleColumnResult')
+            ->willReturn([]);
+
+        $selectQb = $this->createMock(QueryBuilder::class);
+        $selectQb->expects($this->once())->method('select')->with('r.id')->willReturnSelf();
+        $selectQb->expects($this->once())->method('setMaxResults')->with(1000)->willReturnSelf();
+        $selectQb->expects($this->once())->method('getQuery')->willReturn($selectQuery);
+
+        $repository->expects($this->once())
+            ->method('createQueryBuilder')
+            ->with('r')
+            ->willReturn($selectQb);
+
+        $result = $repository->deleteAllRecords(null);
+
+        $this->assertSame(0, $result);
+    }
+
+    /** Covers deleteAllRecords(null): one batch with ids then empty (totalDeleted > 0). */
+    public function testDeleteAllRecordsWithNullEnvWhenOneBatchDeletesAndThenEmpty(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $selectQuery1 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery1->expects($this->once())->method('getSingleColumnResult')->willReturn([1, 2, 3]);
+        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery->expects($this->once())->method('execute')->willReturn(3);
+        $selectQuery2 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery2->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
+
+        $callCount = 0;
+        $repository->method('createQueryBuilder')->with('r')->willReturnCallback(function () use (&$callCount, $selectQuery1, $deleteQuery, $selectQuery2): MockObject {
+            ++$callCount;
+            $qb = $this->createMock(QueryBuilder::class);
+            if ($callCount === 1) {
+                $qb->method('select')->with('r.id')->willReturnSelf();
+                $qb->method('setMaxResults')->with(1000)->willReturnSelf();
+                $qb->method('getQuery')->willReturn($selectQuery1);
+            } elseif ($callCount === 2) {
+                $qb->method('delete')->willReturnSelf();
+                $qb->method('where')->with('r.id IN (:ids)')->willReturnSelf();
+                $qb->method('setParameter')->with('ids', [1, 2, 3])->willReturnSelf();
+                $qb->method('getQuery')->willReturn($deleteQuery);
+            } else {
+                $qb->method('select')->with('r.id')->willReturnSelf();
+                $qb->method('setMaxResults')->with(1000)->willReturnSelf();
+                $qb->method('getQuery')->willReturn($selectQuery2);
+            }
+
+            return $qb;
+        });
+
+        $result = $repository->deleteAllRecords(null);
+
+        $this->assertSame(3, $result);
+    }
+
+    /** Covers deleteAllRecords($env) when env is not null: delegates to deleteByEnvironment. */
+    public function testDeleteAllRecordsWithEnvCallsDeleteByEnvironment(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery->expects($this->once())->method('execute')->willReturn(7);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->expects($this->once())->method('delete')->willReturnSelf();
+        $qb->expects($this->once())->method('join')->with('r.routeData', 'rd')->willReturnSelf();
+        $qb->expects($this->once())->method('where')->with('rd.env = :env')->willReturnSelf();
+        $qb->expects($this->once())->method('setParameter')->with('env', 'prod')->willReturnSelf();
+        $qb->expects($this->once())->method('getQuery')->willReturn($deleteQuery);
+
+        $repository->expects($this->once())
+            ->method('createQueryBuilder')
+            ->with('r')
+            ->willReturn($qb);
+
+        $result = $repository->deleteAllRecords('prod');
+
+        $this->assertSame(7, $result);
+    }
+
+    /** Covers deleteOlderThan($before, $env) with env set: join and filter by env, one batch then empty. */
+    public function testDeleteOlderThanWithEnvDeletesInBatches(): void
+    {
+        $before     = new DateTimeImmutable('-30 days');
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $selectQuery1 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery1->expects($this->once())->method('getSingleColumnResult')->willReturn([10, 20]);
+        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery->expects($this->once())->method('execute')->willReturn(2);
+        $selectQuery2 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery2->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
+
+        $callCount = 0;
+        $repository->method('createQueryBuilder')->with('r')->willReturnCallback(function () use (&$callCount, $selectQuery1, $deleteQuery, $selectQuery2): MockObject {
+            ++$callCount;
+            $qb = $this->createMock(QueryBuilder::class);
+            if ($callCount === 1) {
+                $qb->method('select')->with('r.id')->willReturnSelf();
+                $qb->method('where')->with('r.accessedAt < :before')->willReturnSelf();
+                $qb->method('setParameter')->willReturnSelf();
+                $qb->method('join')->with('r.routeData', 'rd')->willReturnSelf();
+                $qb->method('andWhere')->with('rd.env = :env')->willReturnSelf();
+                $qb->method('setMaxResults')->with(1000)->willReturnSelf();
+                $qb->method('getQuery')->willReturn($selectQuery1);
+            } elseif ($callCount === 2) {
+                $qb->method('delete')->willReturnSelf();
+                $qb->method('where')->with('r.id IN (:ids)')->willReturnSelf();
+                $qb->method('setParameter')->with('ids', [10, 20])->willReturnSelf();
+                $qb->method('getQuery')->willReturn($deleteQuery);
+            } else {
+                $qb->method('select')->with('r.id')->willReturnSelf();
+                $qb->method('where')->with('r.accessedAt < :before')->willReturnSelf();
+                $qb->method('setParameter')->willReturnSelf();
+                $qb->method('join')->with('r.routeData', 'rd')->willReturnSelf();
+                $qb->method('andWhere')->with('rd.env = :env')->willReturnSelf();
+                $qb->method('setMaxResults')->with(1000)->willReturnSelf();
+                $qb->method('getQuery')->willReturn($selectQuery2);
+            }
+
+            return $qb;
+        });
+
+        $result = $repository->deleteOlderThan($before, 'dev', 1000);
+
+        $this->assertSame(2, $result);
+    }
+
+    /** Covers deleteByFilter with path filter: applyRecordFilters adds path LIKE. */
+    public function testDeleteByFilterWithPathFilterCallsApplyRecordFilters(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $selectQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
+
+        $selectQb = $this->createMock(QueryBuilder::class);
+        $selectQb->method('select')->with('r.id')->willReturnSelf();
+        $selectQb->method('join')->with('r.routeData', 'rd')->willReturnSelf();
+        $selectQb->method('where')->with('rd.env = :env')->willReturnSelf();
+        $selectQb->method('setParameter')->willReturnSelf();
+        $selectQb->method('setMaxResults')->with(1000)->willReturnSelf();
+        $selectQb->method('andWhere')->willReturnSelf();
+        $selectQb->expects($this->once())->method('getQuery')->willReturn($selectQuery);
+
+        $repository->expects($this->once())
+            ->method('createQueryBuilder')
+            ->with('r')
+            ->willReturn($selectQb);
+
+        $result = $repository->deleteByFilter('dev', null, null, null, '/api/foo');
+
+        $this->assertSame(0, $result);
+    }
+
+    /** Covers deleteByFilter with referer and user filters: applyRecordFilters adds LIKE for referer and user. */
+    public function testDeleteByFilterWithRefererAndUserCallsApplyRecordFilters(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRecordRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $selectQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
+
+        $selectQb = $this->createMock(QueryBuilder::class);
+        $selectQb->method('select')->with('r.id')->willReturnSelf();
+        $selectQb->method('join')->with('r.routeData', 'rd')->willReturnSelf();
+        $selectQb->method('where')->willReturnSelf();
+        $selectQb->method('setParameter')->willReturnSelf();
+        $selectQb->method('setMaxResults')->with(1000)->willReturnSelf();
+        $selectQb->method('andWhere')->willReturnSelf();
+        $selectQb->expects($this->once())->method('getQuery')->willReturn($selectQuery);
+
+        $repository->expects($this->once())
+            ->method('createQueryBuilder')
+            ->with('r')
+            ->willReturn($selectQb);
+
+        $result = $repository->deleteByFilter('prod', null, null, null, null, null, null, null, null, null, 'https://example.com', 'admin@test.com');
+
+        $this->assertSame(0, $result);
     }
 }

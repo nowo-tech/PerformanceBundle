@@ -153,6 +153,30 @@ final class PerformanceMetricsServiceIntegrationTest extends TestCase
         self::assertIsArray($routes);
     }
 
+    public function testGetRoutesWithAggregatesFilteredSortByQueryTime(): void
+    {
+        $this->createTablesFirst();
+        $service = $this->kernel->getContainer()->get(PerformanceMetricsService::class);
+        $service->recordMetrics('qt_route_a', 'test', 0.2, 3, 0.01);
+        $service->recordMetrics('qt_route_b', 'test', 0.4, 6, 0.02);
+
+        $routes = $service->getRoutesWithAggregatesFiltered('test', [], 'queryTime', 'DESC', 20);
+
+        self::assertIsArray($routes);
+    }
+
+    public function testGetRoutesWithAggregatesFilteredSortByMemoryUsage(): void
+    {
+        $this->createTablesFirst();
+        $service = $this->kernel->getContainer()->get(PerformanceMetricsService::class);
+        $service->recordMetrics('mem_route_a', 'test', 0.1, 1, null, null, 100000);
+        $service->recordMetrics('mem_route_b', 'test', 0.1, 1, null, null, 900000);
+
+        $routes = $service->getRoutesWithAggregatesFiltered('test', [], 'memoryUsage', 'DESC', 20);
+
+        self::assertIsArray($routes);
+    }
+
     public function testCountWithFiltersViaRepository(): void
     {
         $this->createTablesFirst();
@@ -206,6 +230,56 @@ final class PerformanceMetricsServiceIntegrationTest extends TestCase
         $routeData = $service->getRouteData('existing_route', 'test');
         self::assertNotNull($routeData);
         self::assertSame('existing_route', $routeData->getName());
+    }
+
+    public function testRecordMetricsWithNonEmptyParamsSetsRouteParamsOnAccessRecord(): void
+    {
+        $this->createTablesFirst();
+        $service = $this->kernel->getContainer()->get(PerformanceMetricsService::class);
+
+        $service->recordMetrics(
+            'params_access_route',
+            'test',
+            0.12,
+            2,
+            0.01,
+            ['slug' => 'hello'],
+            512000,
+            'GET',
+            200,
+            [],
+            'req-params-ar',
+        );
+
+        self::assertNotNull($service->getRouteData('params_access_route', 'test'));
+    }
+
+    public function testRecordMetricsDuplicateRequestIdSkipsSecondAccessRecord(): void
+    {
+        $this->createTablesFirst();
+        $service = $this->kernel->getContainer()->get(PerformanceMetricsService::class);
+        $rid     = 'shared-request-id-001';
+
+        $service->recordMetrics('dup_req_route', 'test', 0.1, 1, null, null, 100000, 'GET', 200, [], $rid);
+        $service->recordMetrics('dup_req_route', 'test', 0.2, 2, null, null, 100000, 'GET', 200, [], $rid);
+
+        self::assertNotNull($service->getRouteData('dup_req_route', 'test'));
+    }
+
+    public function testRecordMetricsSkipsAccessRecordWhenSaveAccessRecordsDisabledOnRoute(): void
+    {
+        $this->createTablesFirst();
+        $service = $this->kernel->getContainer()->get(PerformanceMetricsService::class);
+
+        $service->recordMetrics('no_save_ar', 'test', 0.1, 1, null, null, 100000, 'GET', 200, [], 'rid-ns-1');
+        $routeData = $service->getRouteData('no_save_ar', 'test');
+        self::assertNotNull($routeData);
+        $routeData->setSaveAccessRecords(false);
+        $service->getEntityManager()->flush();
+
+        $service->recordMetrics('no_save_ar', 'test', 0.2, 2, null, null, 100000, 'GET', 200, [], 'rid-ns-2');
+
+        self::assertFalse($routeData->getSaveAccessRecords());
     }
 
     private function createTablesFirst(): void

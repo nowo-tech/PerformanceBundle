@@ -103,6 +103,31 @@ final class DiagnoseCommandTest extends TestCase
         $this->assertStringContainsString('How Query Tracking Works', $output);
     }
 
+    /**
+     * When initial middleware status has existing data (count > 0 or time > 0), command shows warning (line 185).
+     */
+    public function testExecuteShowsWarningWhenMiddlewareHasExistingData(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
+            'nowo_performance.enabled'            => true,
+            'nowo_performance.track_queries'      => true,
+            'nowo_performance.track_request_time' => true,
+            'nowo_performance.connection'         => 'default',
+            'nowo_performance.environments'       => ['dev'],
+            default                               => null,
+        });
+
+        $middlewareStatusProvider = static fn (): array => [1, 0.0];
+        $command                  = new DiagnoseCommand($this->parameterBag, null, $middlewareStatusProvider);
+        $tester                   = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('QueryTrackingMiddleware has existing data', $output);
+        $this->assertStringContainsString('not being reset between requests', $output);
+    }
+
     public function testExecuteShowsDatabaseTablesSectionWhenTableStatusCheckerInjected(): void
     {
         $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
@@ -194,13 +219,13 @@ final class DiagnoseCommandTest extends TestCase
     public function testExecuteWhenCheckTableStatusFalseShowsDisabledNote(): void
     {
         $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
-            'nowo_performance.enabled'              => true,
-            'nowo_performance.track_queries'        => true,
-            'nowo_performance.track_request_time'   => true,
-            'nowo_performance.connection'           => 'default',
-            'nowo_performance.environments'         => ['dev'],
-            'nowo_performance.check_table_status'   => false,
-            default                                 => null,
+            'nowo_performance.enabled'            => true,
+            'nowo_performance.track_queries'      => true,
+            'nowo_performance.track_request_time' => true,
+            'nowo_performance.connection'         => 'default',
+            'nowo_performance.environments'       => ['dev'],
+            'nowo_performance.check_table_status' => false,
+            default                               => null,
         });
 
         $checker = $this->createMock(TableStatusChecker::class);
@@ -308,5 +333,22 @@ final class DiagnoseCommandTest extends TestCase
         $this->assertSame(0, $tester->getStatusCode());
         $output = $tester->getDisplay();
         $this->assertStringContainsString('Records table: php bin/console nowo:performance:create-records-table', $output);
+    }
+
+    /** Ensures configure() sets help to include create-table and doctrine:migrations. Asserts on getHelp() to avoid Application::run() exit() in process-isolation. */
+    public function testConfigureSetsHelpWithCreateTableAndMigrations(): void
+    {
+        $this->parameterBag->method('get')->willReturnCallback(static fn ($key): array|bool|string|null => match ($key) {
+            'nowo_performance.enabled'            => true,
+            'nowo_performance.track_queries'      => true,
+            'nowo_performance.track_request_time' => true,
+            'nowo_performance.connection'         => 'default',
+            'nowo_performance.environments'       => ['dev'],
+            default                               => null,
+        });
+
+        $help = $this->command->getHelp();
+        $this->assertStringContainsString('create-table', $help);
+        $this->assertStringContainsString('doctrine:migrations', $help);
     }
 }

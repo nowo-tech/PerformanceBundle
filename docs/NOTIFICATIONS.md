@@ -256,7 +256,7 @@ templates/
   - `alert.type` — Alert type (request_time, query_count, etc.)
   - `alert.severity` — Severity (warning, critical)
   - `alert.context` — Array with additional context
-- `routeData` — `RouteData` entity with all properties
+- `routeData` — `RouteData` entity (identity and review metadata in v2; aggregate metrics are not stored as scalar fields on the entity)
 - `severityColor` — HTML color for severity (#dc3545 for critical, #ffc107 for warning)
 - `severityLabel` — Severity label (Critical, Warning)
 
@@ -602,8 +602,9 @@ class PerformanceAlertListener
         // Create NotificationService with up-to-date config from DB
         $notificationService = $this->notificationFactory->createNotificationService();
         
-        // Use the service as usual
-        if ($event->getRouteData()->getRequestTime() > 1.0) {
+        // Use the service as usual (metrics are on the event in v2, not on RouteData)
+        $requestTime = $event->getRequestTime();
+        if ($requestTime !== null && $requestTime > 1.0) {
             $alert = new PerformanceAlert(/* ... */);
             $notificationService->sendAlert($alert, $event->getRouteData());
         }

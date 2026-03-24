@@ -249,4 +249,59 @@ final class DependencyCheckerTest extends TestCase
             $this->assertNotEmpty($info['feature']);
         }
     }
+
+    /**
+     * Covers getMissingDependencies when all optional deps are missing via stub.
+     * Ensures every branch that adds an entry to $missing is executed.
+     */
+    public function testGetMissingDependenciesWhenAllMissingReturnsAllEntries(): void
+    {
+        $stub = new class extends DependencyChecker {
+            public function isTwigComponentAvailable(): bool
+            {
+                return false;
+            }
+
+            public function isIconsAvailable(): bool
+            {
+                return false;
+            }
+
+            public function isMessengerAvailable(): bool
+            {
+                return false;
+            }
+
+            public function isMailerAvailable(): bool
+            {
+                return false;
+            }
+
+            public function isHttpClientAvailable(): bool
+            {
+                return false;
+            }
+        };
+
+        $missing = $stub->getMissingDependencies();
+
+        $this->assertArrayHasKey('twig_component', $missing);
+        $this->assertArrayHasKey('icons', $missing);
+        $this->assertArrayHasKey('messenger', $missing);
+        $this->assertArrayHasKey('mailer', $missing);
+        $this->assertArrayHasKey('http_client', $missing);
+        $this->assertFalse($missing['twig_component']['required']);
+        $this->assertTrue($missing['icons']['required']);
+        $this->assertSame('symfony/ux-twig-component', $missing['twig_component']['package']);
+        $this->assertSame('symfony/ux-icons', $missing['icons']['package']);
+        $this->assertSame('symfony/messenger', $missing['messenger']['package']);
+        $this->assertSame('symfony/mailer', $missing['mailer']['package']);
+        $this->assertSame('symfony/http-client', $missing['http_client']['package']);
+    }
+
+    /** Covers isFeatureAvailable('default') branch. */
+    public function testIsFeatureAvailableDefaultReturnsTrue(): void
+    {
+        $this->assertTrue($this->checker->isFeatureAvailable('default'));
+    }
 }

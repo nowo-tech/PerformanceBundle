@@ -29,16 +29,27 @@ use function sprintf;
 final class DiagnoseCommand extends Command
 {
     /**
+     * Optional provider for initial middleware status (testing).
+     * When set, returns [queryCount, totalQueryTime] instead of calling reset + get.
+     *
+     * @var (callable(): array{0: int, 1: float})|null
+     */
+    private $middlewareStatusProvider;
+
+    /**
      * Creates a new instance.
      *
      * @param ParameterBagInterface $parameterBag Parameter bag to check configuration
      * @param TableStatusChecker|null $tableStatusChecker Table status checker (optional)
+     * @param (callable(): array{0: int, 1: float})|null $middlewareStatusProvider Optional provider for initial middleware count/time (testing)
      */
     public function __construct(
         private readonly ParameterBagInterface $parameterBag,
         private readonly ?TableStatusChecker $tableStatusChecker = null,
+        ?callable $middlewareStatusProvider = null,
     ) {
         parent::__construct();
+        $this->middlewareStatusProvider = $middlewareStatusProvider;
     }
 
     protected function configure(): void
@@ -70,6 +81,10 @@ The command will show detailed information about:
   - Which DoctrineBundle version is detected
   - How middleware is registered (YAML config vs reflection)
   - Database connection and table status
+
+Related commands:
+  <info>php bin/console nowo:performance:create-table</info> - Create or update the main metrics table
+  <info>php bin/console doctrine:migrations:status</info> - Check migration status
 HELP
         );
     }
@@ -156,21 +171,18 @@ HELP
         }
 
         // Test middleware
-        QueryTrackingMiddleware::reset();
-        $initialCount = QueryTrackingMiddleware::getQueryCount();
-        $initialTime  = QueryTrackingMiddleware::getTotalQueryTime();
+        if ($this->middlewareStatusProvider !== null) {
+            [$initialCount, $initialTime] = ($this->middlewareStatusProvider)();
+        } else {
+            QueryTrackingMiddleware::reset();
+            $initialCount = QueryTrackingMiddleware::getQueryCount();
+            $initialTime  = QueryTrackingMiddleware::getTotalQueryTime();
+        }
 
         $io->text(sprintf('Initial query count: %d', $initialCount));
         $io->text(sprintf('Initial query time: %.4f seconds', $initialTime));
 
-        // Check if middleware class exists
-        if (class_exists(QueryTrackingMiddleware::class)) {
-            $io->success('QueryTrackingMiddleware class is available');
-        } else {
-            $io->error('QueryTrackingMiddleware class not found!');
-
-            return Command::FAILURE;
-        }
+        $io->success('QueryTrackingMiddleware class is available');
 
         // Instructions
         $io->section('Query Tracking Status');

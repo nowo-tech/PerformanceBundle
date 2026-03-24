@@ -57,9 +57,7 @@ class TableNameSubscriber implements EventSubscriber
 
         // Always override the table name with the configured value
         // This ensures the table name matches the configuration, even if it's hardcoded in the entity
-        $currentTableName = method_exists($classMetadata, 'getTableName')
-            ? $classMetadata->getTableName()
-            : ($classMetadata->table['name'] ?? 'route_data');
+        $currentTableName = $classMetadata->getTableName();
 
         if ($currentTableName !== $this->tableName) {
             // Get existing table configuration to preserve indexes

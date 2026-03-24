@@ -410,6 +410,7 @@ class PerformanceController extends AbstractController
             'order'                  => $order,
             'limit'                  => $limit,
             'environments'           => $environments,
+            'ui_template'            => $this->template,
             'template'               => $this->template,
             'form'                   => $formView,
             'reviewForms'            => $reviewForms,
@@ -763,6 +764,7 @@ class PerformanceController extends AbstractController
             'traffic_distribution'     => $trafficDistribution,
             'environment'              => $env,
             'environments'             => $environments,
+            'ui_template'              => $this->template,
             'template'                 => $this->template,
             'total_routes'             => count($routes),
             'envForm'                  => $envForm->createView(),
@@ -1958,8 +1960,9 @@ class PerformanceController extends AbstractController
         $diagnostic['suggestions'] = $suggestions;
 
         return $this->render('@NowoPerformanceBundle/Performance/diagnose.html.twig', [
-            'diagnostic' => $diagnostic,
-            'template'   => $this->template,
+            'diagnostic'  => $diagnostic,
+            'ui_template' => $this->template,
+            'template'    => $this->template,
         ]);
     }
 
@@ -2583,6 +2586,7 @@ class PerformanceController extends AbstractController
             'selected_status_code'      => $statusCode,
             'start_date'                => $startDate,
             'end_date'                  => $endDate,
+            'ui_template'               => $this->template,
             'template'                  => $this->template,
             'dateTimeFormat'            => $this->dateTimeFormat,
             'dateFormat'                => $this->dateFormat,
@@ -2767,6 +2771,7 @@ class PerformanceController extends AbstractController
             'end_date'                 => $endDate,
             'sort_by'                  => $sortBy,
             'order'                    => $order,
+            'ui_template'              => $this->template,
             'template'                 => $this->template,
             'dateTimeFormat'           => $this->dateTimeFormat,
             'dateFormat'               => $this->dateFormat,

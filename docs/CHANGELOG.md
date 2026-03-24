@@ -108,7 +108,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Documentation
+
+- **README**: Entity section updated for **v2** (`RouteData` vs `RouteDataRecord`); removed obsolete list of metric columns on `RouteData`. “How it works” and FrankenPHP bullet aligned with current tracking and demo setup (dev `Caddyfile.dev` vs prod worker). Manual metrics section clarifies the recording pipeline.
+- **COMMANDS.md** (`nowo:performance:set-route`): Removed incorrect “only update if worse” behaviour; documented v2 recording path.
+- **DEMO-FRANKENPHP.md**: `bundles.php` example expanded to match the Symfony 8 demo (Doctrine, Web Profiler, UX Twig Component, UX Icons, Twig Inspector).
+- **NOTIFICATIONS.md**: Example listener uses `AfterMetricsRecordedEvent::getRequestTime()` (v2) instead of removed `RouteData::getRequestTime()`.
+
+### Changed
+
+- **SetRouteMetricsCommand** inline help: describes actual behaviour (no “worse than before” gate).
 
 ---
 

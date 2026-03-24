@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DataCollector;
 
+use Closure;
 use Exception;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
@@ -16,6 +17,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Throwable;
 
 use function is_array;
+use function is_callable;
 use function sprintf;
 
 /**
@@ -93,8 +95,9 @@ class PerformanceDataCollector extends DataCollector
      * @param DependencyChecker|null $dependencyChecker The dependency checker (optional)
      * @param RouteDataRecordRepository|null $recordRepository The route data record repository (optional)
      * @param bool $checkTableStatus Whether to check table existence/completeness (default true). Set false to save queries.
+     * @param callable|null $queryMetricsProvider Optional callable returning [int count, float time]. When null, QueryTrackingMiddleware is used. Used in tests to cover the fallback catch.
      */
-    public function __construct(private readonly ?RouteDataRepository $repository = null, private readonly ?KernelInterface $kernel = null, private readonly ?TableStatusChecker $tableStatusChecker = null, private readonly ?DependencyChecker $dependencyChecker = null, private readonly ?RouteDataRecordRepository $recordRepository = null, private readonly bool $checkTableStatus = true)
+    public function __construct(private readonly ?RouteDataRepository $repository = null, private readonly ?KernelInterface $kernel = null, private readonly ?TableStatusChecker $tableStatusChecker = null, private readonly ?DependencyChecker $dependencyChecker = null, private readonly ?RouteDataRecordRepository $recordRepository = null, private readonly bool $checkTableStatus = true, private readonly ?Closure $queryMetricsProvider = null)
     {
     }
 
@@ -281,8 +284,14 @@ class PerformanceDataCollector extends DataCollector
 
         if ($queryCount === null || $queryTime === null) {
             try {
-                $queryCount = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getQueryCount();
-                $queryTime  = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getTotalQueryTime();
+                if ($this->queryMetricsProvider instanceof \Closure && is_callable($this->queryMetricsProvider)) {
+                    $metrics    = ($this->queryMetricsProvider)();
+                    $queryCount = is_array($metrics) && isset($metrics[0]) ? (int) $metrics[0] : 0;
+                    $queryTime  = is_array($metrics) && isset($metrics[1]) ? (float) $metrics[1] : 0.0;
+                } else {
+                    $queryCount = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getQueryCount();
+                    $queryTime  = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getTotalQueryTime();
+                }
             } catch (Exception) {
                 // Fallback to stored values or 0
                 $queryCount ??= 0;

@@ -455,9 +455,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
             ->getMock();
 
         $controller->method('getParameter')->with('kernel.environment')->willReturn('test');
-        $controller->method('createForm')->willReturnCallback(static function ($type) use ($filtersForm, $clearForm): FormInterface|MockObject {
-            return $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm;
-        });
+        $controller->method('createForm')->willReturnCallback(static fn ($type): FormInterface|MockObject => $type === ClearPerformanceDataType::class ? $clearForm : $filtersForm);
         $controller->method('render')->willReturnCallback(static function (string $tpl, array $vars): Response {
             self::assertArrayHasKey('stats', $vars);
             self::assertArrayHasKey('total_records', $vars['stats']);

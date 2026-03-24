@@ -13,6 +13,7 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Throwable;
 
 /**
  * Event subscriber that applies QueryTrackingMiddleware to Doctrine connections.
@@ -32,6 +33,11 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
      * @var array<string, bool>
      */
     private array $trackedConnections = [];
+
+    /**
+     * Test-only: when set, applyMiddlewareToConnection throws after creating middleware (covers catch block). Leave null in production.
+     */
+    public static ?Throwable $testApplyMiddlewareThrowable = null;
 
     /**
      * Creates a new instance.
@@ -113,6 +119,10 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
 
         try {
             $middleware = new QueryTrackingMiddleware();
+
+            if (self::$testApplyMiddlewareThrowable instanceof \Throwable) {
+                throw self::$testApplyMiddlewareThrowable;
+            }
 
             // Use the registry to apply middleware with version detection
             $success = QueryTrackingMiddlewareRegistry::applyMiddleware(

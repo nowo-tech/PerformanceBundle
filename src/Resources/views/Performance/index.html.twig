@@ -4,7 +4,7 @@
 
 {% block content %}
     {# Header Section #}
-    {% if template == 'bootstrap' %}
+    {% if ui_template == 'bootstrap' %}
         <div class="container mt-4">
             <div class="row mb-4">
                 <div class="col-12">
@@ -83,7 +83,7 @@
 
     {# Show missing dependencies warning #}
     {% if missingDependencies is not empty %}
-        {% if template == 'bootstrap' %}
+        {% if ui_template == 'bootstrap' %}
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -128,26 +128,26 @@
         {% endif %}
     {% endif %}
 
-    {# Components Section - Shared for both templates #}
+    {# Components Section - Shared for both bootstrap and tailwind #}
     {% if useComponents and component is defined %}
         {# Statistics Component - Using Symfony UX Twig Component #}
-        {{ component('nowo_performance.Statistics', { stats: stats, template: template, enableAccessRecords: enableAccessRecords|default(false), environment: environment }) }}
+        {{ component('nowo_performance.Statistics', { stats: stats, ui_template: ui_template, enableAccessRecords: enableAccessRecords|default(false), environment: environment }) }}
 
         {# Filters Component - Using Symfony UX Twig Component #}
-        {{ component('nowo_performance.Filters', { form: form, template: template }) }}
+        {{ component('nowo_performance.Filters', { form: form, ui_template: ui_template }) }}
 
         {# Charts Component - Using Symfony UX Twig Component #}
         {{ component('nowo_performance.Charts', { 
             environment: environment, 
             currentRoute: currentRoute, 
             chartDataUrl: path('nowo_performance.api.chart_data'),
-            template: template 
+            ui_template: ui_template 
         }) }}
 
         {# Routes Table Component - Using Symfony UX Twig Component #}
         {{ component('nowo_performance.RoutesTable', { 
             routes: routes, 
-            template: template,
+            ui_template: ui_template,
             sortBy: sortBy|default('requestTime'),
             order: order|default('DESC'),
             thresholds: thresholds|default({}),
@@ -157,17 +157,17 @@
             deleteForms: deleteForms|default({})
         }) }}
         {% if paginator is defined and paginator.total_pages > 1 %}
-            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, template: template } %}
+            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, ui_template: ui_template } %}
         {% endif %}
     {% else %}
         {# Fallback to includes if components are not available #}
-        {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ template ~ '.html.twig' %}
+        {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ ui_template ~ '.html.twig' %}
 
-        {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ template ~ '.html.twig' %}
+        {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ ui_template ~ '.html.twig' %}
 
-        {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ template ~ '.html.twig' %}
+        {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ ui_template ~ '.html.twig' %}
 
-        {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ template ~ '.html.twig' with {
+        {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ ui_template ~ '.html.twig' with {
             thresholds: thresholds|default({}),
             enableRecordManagement: enableRecordManagement,
             enableReviewSystem: enableReviewSystem,
@@ -175,12 +175,12 @@
             deleteForms: deleteForms|default({})
         } %}
         {% if paginator is defined and paginator.total_pages > 1 %}
-            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, template: template } %}
+            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, ui_template: ui_template } %}
         {% endif %}
     {% endif %}
     
     {# Include dependency modal #}
-    {% include '@NowoPerformanceBundle/Performance/components/_dependency_modal.html.twig' with {template: template} %}
+    {% include '@NowoPerformanceBundle/Performance/components/_dependency_modal.html.twig' with {ui_template: ui_template} %}
 {% endblock %}
 
 {% block scripts_extra %}

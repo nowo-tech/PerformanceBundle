@@ -364,4 +364,187 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
         $this->assertIsArray($result);
         $this->assertCount(0, $result);
     }
+
+    /** Covers normalizePathForFilter with full URL: path extracted via parse_url. */
+    public function testFindWithFiltersWithRoutePathPatternFullUrlAddsPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->once())
+            ->method('andWhere')
+            ->with($this->stringContains('rec.routePath LIKE :path_pattern'))
+            ->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $repository->findWithFilters('dev', ['route_path_pattern' => 'https://example.com/api/foo']);
+    }
+
+    /** Covers normalizePathForFilter with path starting with /. */
+    public function testFindWithFiltersWithRoutePathPatternPathWithLeadingSlash(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->once())
+            ->method('andWhere')
+            ->with($this->stringContains('path_pattern'));
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $repository->findWithFilters('dev', ['route_path_pattern' => '/dashboard']);
+    }
+
+    /** Covers normalizePathForFilter: path with / but no leading slash -> prefixed with /. */
+    public function testFindWithFiltersWithRoutePathPatternPathWithoutLeadingSlash(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->once())
+            ->method('andWhere')
+            ->with($this->stringContains('path_pattern'));
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $repository->findWithFilters('dev', ['route_path_pattern' => 'api/bar']);
+    }
+
+    /** Covers normalizePathForFilter: whitespace-only string -> trim yields '', returns null. */
+    public function testFindWithFiltersWithRoutePathPatternWhitespaceOnlyDoesNotAddPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->never())
+            ->method('andWhere');
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findWithFilters('dev', ['route_path_pattern' => '   ']);
+
+        $this->assertIsArray($result);
+    }
+
+    /** Covers normalizePathForFilter: empty string -> returns null, path filter not added. */
+    public function testFindWithFiltersWithRoutePathPatternEmptyStringDoesNotAddPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->never())
+            ->method('andWhere');
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findWithFilters('dev', ['route_path_pattern' => '']);
+
+        $this->assertIsArray($result);
+    }
+
+    /** Covers normalizePathForFilter: URL with no path (parse_url returns null) -> path filter not added. */
+    public function testFindWithFiltersWithRoutePathPatternUrlWithNoPathDoesNotAddPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->never())
+            ->method('andWhere');
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findWithFilters('dev', ['route_path_pattern' => 'https://example.com']);
+
+        $this->assertIsArray($result);
+    }
+
+    /** Covers normalizePathForFilter: host-only string (no slash) parse_url returns null -> no path filter. */
+    public function testFindWithFiltersWithRoutePathPatternHostOnlyNoSlashDoesNotAddPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getResult')->willReturn([]);
+
+        $qb = $this->createMock(QueryBuilder::class);
+        $qb->method('where')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('orderBy')->willReturnSelf();
+        $qb->expects($this->never())
+            ->method('andWhere');
+        $qb->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $result = $repository->findWithFilters('dev', ['route_path_pattern' => 'example.com']);
+
+        $this->assertIsArray($result);
+    }
 }

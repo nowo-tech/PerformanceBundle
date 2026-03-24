@@ -1,7 +1,7 @@
-{# Paginator for index routes table. Expects: paginator (current_page, total_pages, total_count, per_page, from, to), template (bootstrap|tailwind) #}
+{# Paginator for index routes table. Expects: paginator (current_page, total_pages, total_count, per_page, from, to), ui_template (bootstrap|tailwind) #}
 {% set queryParams = app.request.query.all|default({}) %}
 {% set _anchor = '#routes-table' %}
-{% if template == 'bootstrap' %}
+{% if ui_template == 'bootstrap' %}
 <div class="row mt-3">
     <div class="col-12">
         <nav aria-label="{{ 'paginator.page'|trans({'%current%': paginator.current_page, '%total%': paginator.total_pages}, 'nowo_performance') }}">

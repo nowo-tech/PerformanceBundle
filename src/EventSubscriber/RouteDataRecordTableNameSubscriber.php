@@ -62,9 +62,7 @@ class RouteDataRecordTableNameSubscriber implements EventSubscriber
         $recordsTableName = $this->mainTableName . '_records';
 
         // Get existing table configuration to preserve indexes
-        $currentTableName = method_exists($classMetadata, 'getTableName')
-            ? $classMetadata->getTableName()
-            : ($classMetadata->table['name'] ?? 'routes_data_records');
+        $currentTableName = $classMetadata->getTableName();
 
         if ($currentTableName !== $recordsTableName) {
             // Get existing indexes

@@ -48,7 +48,7 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ **Chart.js integration** - Interactive performance charts
 - ✅ **Symfony UX Twig Components** - Optional modern component system
 - ✅ Symfony 6.1+, 7.x, and 8.x compatible
-- ✅ **FrankenPHP** — Compatible with FrankenPHP (including worker mode); demos (Symfony 7 and 8) run with FrankenPHP and Caddy (see [demo/symfony7/README.md](demo/symfony7/README.md))
+- ✅ **FrankenPHP** — Compatible with FrankenPHP; production Caddyfile can use worker mode, while **dev demos** use `APP_ENV=dev` so the image entrypoint swaps in `Caddyfile.dev` (no worker, comfortable local dev). See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) and the demo READMEs.
 
 ## Screenshots
 
@@ -152,7 +152,7 @@ The bundle automatically tracks performance metrics for all routes (except ignor
 
 ### Manual Metrics Update
 
-Use the command to manually set or update route metrics:
+Use the command to inject sample metrics through the same **`PerformanceMetricsService`** pipeline as HTTP tracking (updates **`RouteData`**; may append **`RouteDataRecord`** rows when `enable_access_records` is enabled — same rules as live requests):
 
 ```bash
 # Set route metrics
@@ -162,7 +162,7 @@ php bin/console nowo:performance:set-route app_home \
     --queries=10 \
     --query-time=0.2
 
-# Update with worse metrics (higher time or more queries)
+# Another example with more metrics
 php bin/console nowo:performance:set-route app_user_show \
     --env=prod \
     --request-time=1.2 \
@@ -231,29 +231,23 @@ See [Commands](docs/COMMANDS.md) for full documentation. Main commands:
 - **`nowo:performance:purge-records`** - Purge old access records (by age or all)
 - **`nowo:performance:rebuild-aggregates`** - Rebuild `RouteData` aggregates from access records
 
-## Entity Structure
+## Entity structure (v2.x)
 
-The `RouteData` entity stores:
+Since **2.0.0**, metrics are **normalized**: **`RouteData`** holds route identity and review metadata; **per-request metrics** live in **`RouteDataRecord`** (and dashboard/API use aggregates built from records). See [V2_MIGRATION.md](docs/V2_MIGRATION.md) and [ENTITY_NORMALIZATION_PLAN.md](docs/ENTITY_NORMALIZATION_PLAN.md).
 
-- `id` - Primary key
-- `env` - Environment (dev, test, prod)
-- `name` - Route name
-- `totalQueries` - Total number of database queries
-- `queryTime` - Total query execution time in seconds
-- `requestTime` - Request execution time in seconds
-- `memoryUsage` - Peak memory usage in bytes (nullable)
-- `accessCount` - Number of times route was accessed (default: 1)
-- `lastAccessedAt` - Last access timestamp (nullable)
-- `httpMethod` - HTTP method (GET, POST, PUT, DELETE, etc.) (nullable)
-- `statusCodes` - HTTP status codes counts (JSON, e.g., {'200': 100, '404': 5}) (nullable)
-- `reviewed` - Whether record has been reviewed (default: false)
-- `reviewedAt` - Review timestamp (nullable)
-- `queriesImproved` - Whether queries improved after review (nullable)
-- `timeImproved` - Whether time improved after review (nullable)
-- `reviewedBy` - Username of reviewer (nullable)
-- `params` - Route parameters (JSON)
-- `createdAt` - Creation timestamp
-- `updatedAt` - Last update timestamp
+**`RouteData`** (`routes_data`) — one row per logical route + environment:
+
+- `id`, `env`, `name`, `httpMethod`, `params`
+- `createdAt`, `lastAccessedAt`
+- Review: `reviewed`, `reviewedAt`, `reviewedBy`, `queriesImproved`, `timeImproved`
+- `saveAccessRecords` — when access records are enabled globally, you can disable per-route record creation
+
+**`RouteDataRecord`** (`routes_data_records`) — optional temporal log when `enable_access_records: true` (one row per request, deduplicated by `request_id` when set):
+
+- Timing and load: `responseTime`, `totalQueries`, `queryTime`, `memoryUsage`, `statusCode`, `accessedAt`
+- Context: `route_params`, `route_path`, `referer`, `user_identifier`, `user_id`, `request_id`
+
+Listed metrics (request time, query counts, status code ratios, etc.) in the UI and exports are **computed from records** (or cached aggregates), not stored as scalar columns on `RouteData`.
 
 ## How It Works
 
@@ -268,8 +262,7 @@ The `RouteData` entity stores:
      - **Fallback 1**: `DoctrineDataCollector` from Symfony profiler
      - **Fallback 2**: Request attributes (`_profiler`, `_profiler_profile`)
      - **Fallback 3**: Stopwatch (time only)
-   - Saves metrics to database via `PerformanceMetricsService`
-4. Metrics are only updated if they're worse (higher time or more queries)
+   - Persists via `PerformanceMetricsService`: updates **`RouteData`** (identity + `lastAccessedAt`); when **`enable_access_records`** is on, inserts a **`RouteDataRecord`** for that request (subject to deduplication and per-route `saveAccessRecords`), unless metrics are recorded asynchronously (`async: true` with Messenger)
 
 ### Query Tracking Architecture
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
+use DateTimeImmutable;
 use Exception;
 use Nowo\PerformanceBundle\Command\SetRouteMetricsCommand;
 use Nowo\PerformanceBundle\Entity\RouteData;
@@ -327,7 +328,7 @@ final class SetRouteMetricsCommandTest extends TestCase
         $routeData = new RouteData();
         $routeData->setName('app_home');
         $routeData->setEnv('dev');
-        $routeData->setLastAccessedAt(new \DateTimeImmutable('2024-06-01 10:00:00'));
+        $routeData->setLastAccessedAt(new DateTimeImmutable('2024-06-01 10:00:00'));
 
         $withAggregates = new RouteDataWithAggregates($routeData, [
             'request_time'  => 0.75,

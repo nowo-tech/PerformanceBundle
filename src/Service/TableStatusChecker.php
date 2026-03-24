@@ -472,9 +472,7 @@ class TableStatusChecker
             /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
             $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
 
-            $name = method_exists($metadata, 'getTableName')
-                ? $metadata->getTableName()
-                : ($metadata->table['name'] ?? $this->tableName . '_records');
+            $name = $metadata->getTableName();
 
             if ($this->cacheService instanceof PerformanceCacheService) {
                 $cacheKey = 'records_table_name_' . $this->connectionName;

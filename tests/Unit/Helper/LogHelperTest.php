@@ -7,6 +7,8 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Helper;
 use Nowo\PerformanceBundle\Helper\LogHelper;
 use PHPUnit\Framework\TestCase;
 
+use function ini_get;
+
 final class LogHelperTest extends TestCase
 {
     public function testIsLoggingEnabledReturnsTrueWhenExplicitlyTrue(): void
@@ -131,5 +133,136 @@ final class LogHelperTest extends TestCase
     {
         // Backward compatibility: null should default to true
         $this->assertTrue(LogHelper::isLoggingEnabled());
+    }
+
+    /**
+     * When testSuppressOverride is false and testLogWriter is set, log() uses the writer (path coverage without stderr).
+     *
+     * @covers \Nowo\PerformanceBundle\Helper\LogHelper::log
+     */
+    public function testLogUsesWriterWhenTestSuppressOverrideFalseAndWriterSet(): void
+    {
+        $prevSuppress = LogHelper::$testSuppressOverride;
+        $prevWriter   = LogHelper::$testLogWriter;
+        try {
+            LogHelper::$testSuppressOverride = false;
+            LogHelper::$testLogWriter        = static function (string $msg): void {
+                // no-op to avoid stderr; path coverage only
+            };
+            $result = LogHelper::log('test message', true);
+            $this->assertTrue($result);
+        } finally {
+            LogHelper::$testSuppressOverride = $prevSuppress;
+            LogHelper::$testLogWriter        = $prevWriter;
+        }
+    }
+
+    /**
+     * When testSuppressOverride is false and testLogWriter is set, logf() uses the writer (path coverage without stderr).
+     *
+     * @covers \Nowo\PerformanceBundle\Helper\LogHelper::logf
+     */
+    public function testLogfUsesWriterWhenTestSuppressOverrideFalseAndWriterSet(): void
+    {
+        $prevSuppress = LogHelper::$testSuppressOverride;
+        $prevWriter   = LogHelper::$testLogWriter;
+        try {
+            LogHelper::$testSuppressOverride = false;
+            LogHelper::$testLogWriter        = static function (string $msg): void {
+                // no-op
+            };
+            $result = LogHelper::logf('formatted: %s', true, 'value');
+            $this->assertTrue($result);
+        } finally {
+            LogHelper::$testSuppressOverride = $prevSuppress;
+            LogHelper::$testLogWriter        = $prevWriter;
+        }
+    }
+
+    /**
+     * When suppress is false and testLogWriter is null, log() uses error_log (lines 86-87).
+     * Redirect error_log to a temp file to satisfy beStrictAboutOutputDuringTests.
+     *
+     * @covers \Nowo\PerformanceBundle\Helper\LogHelper::log
+     */
+    public function testLogUsesErrorLogWhenSuppressFalseAndNoTestWriter(): void
+    {
+        $prevSuppress = LogHelper::$testSuppressOverride;
+        $prevWriter   = LogHelper::$testLogWriter;
+        $prevErrorLog = ini_get('error_log');
+        $tmpFile      = tempnam(sys_get_temp_dir(), 'phpunit_log');
+        try {
+            ini_set('error_log', $tmpFile);
+            LogHelper::$testSuppressOverride = false;
+            LogHelper::$testLogWriter        = null;
+            $result                          = LogHelper::log('error_log path', true);
+            $this->assertTrue($result);
+            $this->assertStringContainsString('error_log path', (string) file_get_contents($tmpFile));
+        } finally {
+            LogHelper::$testSuppressOverride = $prevSuppress;
+            LogHelper::$testLogWriter        = $prevWriter;
+            ini_set('error_log', $prevErrorLog ?: '');
+            @unlink($tmpFile);
+        }
+    }
+
+    /**
+     * When error_log is treated as unavailable, log() returns false.
+     *
+     * @covers \Nowo\PerformanceBundle\Helper\LogHelper::log
+     */
+    public function testLogReturnsFalseWhenErrorLogNotAvailable(): void
+    {
+        $prevSuppress = LogHelper::$testSuppressOverride;
+        $prevWriter   = LogHelper::$testLogWriter;
+        $prevErrLog   = LogHelper::$testFunctionErrorLogExistsOverride;
+        try {
+            LogHelper::$testSuppressOverride               = false;
+            LogHelper::$testLogWriter                      = null;
+            LogHelper::$testFunctionErrorLogExistsOverride = false;
+            $this->assertFalse(LogHelper::log('x', true));
+        } finally {
+            LogHelper::$testSuppressOverride               = $prevSuppress;
+            LogHelper::$testLogWriter                      = $prevWriter;
+            LogHelper::$testFunctionErrorLogExistsOverride = $prevErrLog;
+        }
+    }
+
+    public function testLogfReturnsFalseWhenErrorLogNotAvailable(): void
+    {
+        $prevSuppress = LogHelper::$testSuppressOverride;
+        $prevWriter   = LogHelper::$testLogWriter;
+        $prevErrLog   = LogHelper::$testFunctionErrorLogExistsOverride;
+        try {
+            LogHelper::$testSuppressOverride               = false;
+            LogHelper::$testLogWriter                      = null;
+            LogHelper::$testFunctionErrorLogExistsOverride = false;
+            $this->assertFalse(LogHelper::logf('x %s', true, 'y'));
+        } finally {
+            LogHelper::$testSuppressOverride               = $prevSuppress;
+            LogHelper::$testLogWriter                      = $prevWriter;
+            LogHelper::$testFunctionErrorLogExistsOverride = $prevErrLog;
+        }
+    }
+
+    public function testLogfUsesErrorLogWhenSuppressFalseAndNoTestWriter(): void
+    {
+        $prevSuppress = LogHelper::$testSuppressOverride;
+        $prevWriter   = LogHelper::$testLogWriter;
+        $prevErrorLog = ini_get('error_log');
+        $tmpFile      = tempnam(sys_get_temp_dir(), 'phpunit_log');
+        try {
+            ini_set('error_log', $tmpFile);
+            LogHelper::$testSuppressOverride = false;
+            LogHelper::$testLogWriter        = null;
+            $result                          = LogHelper::logf('error_log path: %s', true, 'value');
+            $this->assertTrue($result);
+            $this->assertStringContainsString('error_log path: value', (string) file_get_contents($tmpFile));
+        } finally {
+            LogHelper::$testSuppressOverride = $prevSuppress;
+            LogHelper::$testLogWriter        = $prevWriter;
+            ini_set('error_log', $prevErrorLog ?: '');
+            @unlink($tmpFile);
+        }
     }
 }

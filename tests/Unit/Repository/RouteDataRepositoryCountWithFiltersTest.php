@@ -305,4 +305,58 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
 
         $this->assertSame(2, $result);
     }
+
+    /** Covers normalizePathForFilter from countWithFilters (route_path_pattern). */
+    public function testCountWithFiltersWithRoutePathPattern(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn('1');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('setParameter')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('andWhere')
+            ->with($this->stringContains('rec.routePath LIKE :path_pattern'))
+            ->willReturnSelf();
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->countWithFilters('dev', ['route_path_pattern' => 'http://localhost/admin']);
+
+        $this->assertSame(1, $result);
+    }
+
+    /** Covers normalizePathForFilter returning null (e.g. URL with no path) -> no path andWhere. */
+    public function testCountWithFiltersWithRoutePathPatternUrlWithNoPathDoesNotAddPathFilter(): void
+    {
+        $repository = $this->getMockBuilder(RouteDataRepository::class)
+            ->setConstructorArgs([$this->registry])
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn('0');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('setParameter')->willReturnSelf();
+        $queryBuilder->expects($this->never())
+            ->method('andWhere');
+        $queryBuilder->method('getQuery')->willReturn($query);
+
+        $repository->method('createQueryBuilder')->willReturn($queryBuilder);
+
+        $result = $repository->countWithFilters('dev', ['route_path_pattern' => 'https://example.org']);
+
+        $this->assertSame(0, $result);
+    }
 }

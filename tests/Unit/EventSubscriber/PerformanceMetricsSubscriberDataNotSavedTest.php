@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 use function is_string;
@@ -36,6 +37,17 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
         $this->metricsService = $this->createMock(PerformanceMetricsService::class);
         $this->dataCollector  = $this->createMock(PerformanceDataCollector::class);
         $this->kernel         = $this->createMock(HttpKernelInterface::class);
+    }
+
+    public function testGetSubscribedEventsReturnsRequestAndTerminate(): void
+    {
+        $events = PerformanceMetricsSubscriber::getSubscribedEvents();
+
+        $this->assertIsArray($events);
+        $this->assertArrayHasKey(KernelEvents::REQUEST, $events);
+        $this->assertArrayHasKey(KernelEvents::TERMINATE, $events);
+        $this->assertSame('onKernelRequest', $events[KernelEvents::REQUEST]);
+        $this->assertSame('onKernelTerminate', $events[KernelEvents::TERMINATE]);
     }
 
     public function testDataNotSavedWhenCollectorDisabledBetweenRequestAndTerminate(): void

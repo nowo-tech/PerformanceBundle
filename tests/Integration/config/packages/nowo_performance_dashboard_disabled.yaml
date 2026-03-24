@@ -1,0 +1,18 @@
+nowo_performance:
+    enabled: true
+    environments: [test]
+    connection: default
+    table_name: routes_data
+    track_queries: true
+    track_request_time: true
+    enable_access_records: true
+    check_table_status: true
+    ignore_routes: []
+    dashboard:
+        enabled: false
+        path: /performance
+        prefix: ''
+        roles: []
+        template: bootstrap
+        enable_record_management: true
+        enable_review_system: true

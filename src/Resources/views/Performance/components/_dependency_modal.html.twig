@@ -1,6 +1,6 @@
 {# Modal para mostrar información sobre dependencias faltantes #}
-{# template variable: 'bootstrap' or 'tailwind' (defaults to 'bootstrap' if not provided) #}
-{% set template = template|default('bootstrap') %}
+{# ui_template: 'bootstrap' or 'tailwind' (defaults to 'bootstrap' if not provided) #}
+{% set _ui = ui_template|default('bootstrap') %}
 
 {# Bootstrap version - siempre incluido #}
 <div class="modal fade" id="dependencyModal" tabindex="-1" aria-labelledby="dependencyModalLabel" aria-hidden="true">
@@ -34,7 +34,7 @@
 </div>
 
 {# Tailwind version - solo incluido si template es tailwind #}
-{% if template == 'tailwind' %}
+{% if _ui == 'tailwind' %}
 <div id="dependencyModalTailwind" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="dependencyModalTailwindLabel" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="flex min-h-screen items-center justify-center p-4 sm:p-6">
         {# Backdrop #}

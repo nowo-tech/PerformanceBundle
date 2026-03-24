@@ -55,6 +55,25 @@ final class SyncSchemaCommandIntegrationTest extends TestCase
         self::assertNotEmpty($tester->getDisplay());
     }
 
+    /**
+     * Empty database: sync-schema delegates to create-table/create-records with --update;
+     * when the table does not exist, create-table hits the "Creating Table" branch and may create the full schema.
+     */
+    public function testSyncSchemaOnFreshDatabase(): void
+    {
+        $application = new Application($this->kernel);
+        $application->setAutoExit(false);
+        $command = $application->find('nowo:performance:sync-schema');
+        $tester  = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+
+        self::assertContains($exitCode, [0, 1], 'sync-schema on empty DB should complete');
+        $display = $tester->getDisplay();
+        self::assertNotEmpty($display);
+        self::assertStringContainsString('Sync', $display);
+    }
+
     private function createTablesFirst(): void
     {
         $application = new Application($this->kernel);

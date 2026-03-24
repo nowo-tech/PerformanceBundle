@@ -1,4 +1,4 @@
-{% if template == 'bootstrap' %}
+{% if ui_template == 'bootstrap' %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: data,
                     options: {
                         responsive: true,
-                        maintainAspectRatio: {% if template == 'bootstrap' %}true{% else %}false{% endif %},
+                        maintainAspectRatio: {% if ui_template == 'bootstrap' %}true{% else %}false{% endif %},
                         plugins: {
                             legend: {
                                 display: true,
