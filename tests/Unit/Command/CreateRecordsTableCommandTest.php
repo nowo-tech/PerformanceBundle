@@ -230,5 +230,4 @@ final class CreateRecordsTableCommandTest extends TestCase
         self::assertStringContainsString('Failed to create table', $tester->getDisplay());
         self::assertStringContainsString('RouteDataRecord entity metadata not found', $tester->getDisplay());
     }
-
 }

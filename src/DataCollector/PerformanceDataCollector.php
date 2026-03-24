@@ -284,7 +284,7 @@ class PerformanceDataCollector extends DataCollector
 
         if ($queryCount === null || $queryTime === null) {
             try {
-                if ($this->queryMetricsProvider instanceof \Closure && is_callable($this->queryMetricsProvider)) {
+                if ($this->queryMetricsProvider instanceof Closure && is_callable($this->queryMetricsProvider)) {
                     $metrics    = ($this->queryMetricsProvider)();
                     $queryCount = is_array($metrics) && isset($metrics[0]) ? (int) $metrics[0] : 0;
                     $queryTime  = is_array($metrics) && isset($metrics[1]) ? (float) $metrics[1] : 0.0;
