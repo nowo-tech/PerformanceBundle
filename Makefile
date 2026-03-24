@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down build shell install test test-coverage cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos composer-sync update validate test-with-db test-coverage-with-db validate-translations
+.PHONY: help up down build shell install test test-coverage test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos composer-sync update validate test-with-db test-coverage-with-db validate-translations
 
 # Default target
 help:
@@ -18,6 +18,7 @@ help:
 	@echo "  assets        No frontend assets in this bundle (no-op)"
 	@echo "  test          Run PHPUnit tests (starts container if needed)"
 	@echo "  test-coverage Run PHPUnit tests with code coverage (HTML + Clover)"
+	@echo "  test-coverage-90  Run test-coverage and fail if coverage < 90%"
 	@echo "  test-coverage-100 Run test-coverage and fail if coverage < 100%"
 	@echo "  test-with-db  Run tests with databases (same compose: php + MySQL + PostgreSQL)"
 	@echo "  test-coverage-with-db  Run tests with coverage and databases"
@@ -88,10 +89,14 @@ test: ensure-up
 	docker-compose exec php composer test
 
 # Run tests with code coverage (no -T so coverage is shown in console with colors).
-# --process-isolation: evita que la salida se corte; hay tests con @runInSeparateProcess y con muchos
-# tests la comunicación por pipes sin TTY puede hacer que PHPUnit termine antes de mostrar el reporte (ver PHPUnit #5993).
+# --process-isolation avoids truncated output; @runInSeparateProcess tests and non-TTY pipes can otherwise
+# end the run before the report is printed (see PHPUnit issue #5993).
 test-coverage: ensure-up
 	docker-compose exec php composer test-coverage
+
+# Run test-coverage and fail if coverage is below 90%
+test-coverage-90: ensure-up
+	docker-compose exec php composer test-coverage-90
 
 # Run test-coverage and fail if coverage is below 100% (requires coverage.xml from test-coverage)
 test-coverage-100: ensure-up

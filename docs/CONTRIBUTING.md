@@ -112,6 +112,7 @@ We follow a simplified Git Flow. See [BRANCHING.md](BRANCHING.md) for full detai
 ## Coding Standards
 
 - Follow PSR-12 coding style
+- Use **English** for comments, PHPDoc, and test docblocks in `src/` and `tests/`
 - Add tests for new features
 - Update documentation as needed
 - Keep commits atomic and descriptive
@@ -126,6 +127,9 @@ make test
 
 # Run tests with coverage
 make test-coverage
+
+# Optional: fail if coverage is below 90% (after PHPUnit source excludes)
+make test-coverage-90
 
 # Check code style
 make cs-check
@@ -146,6 +150,9 @@ composer test
 # Run tests with coverage
 composer test-coverage
 
+# Optional: fail if coverage is below 90%
+composer test-coverage-90
+
 # Check code style
 composer cs-check
 
@@ -163,6 +170,7 @@ composer cs-fix
 | `make install` | Install Composer dependencies |
 | `make test` | Run PHPUnit tests (unit tests only) |
 | `make test-coverage` | Run tests with code coverage (unit tests only) |
+| `make test-coverage-90` | Run coverage then fail if statements/elements are below 90% |
 | `make test-with-db` | Run tests with databases (integration tests) |
 | `make test-coverage-with-db` | Run tests with coverage and databases |
 | `make test-up` | Start test container with databases |

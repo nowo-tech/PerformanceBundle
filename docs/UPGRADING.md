@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.15 (2026-03-24)](#upgrading-to-2015-2026-03-24)
 - [Upgrading to 2.0.14 (2026-03-09)](#upgrading-to-2014-2026-03-09)
 - [Upgrading to 2.0.13 (2026-03-02)](#upgrading-to-2013-2026-03-02)
 - [Upgrading to 2.0.12 (2026-02-02)](#upgrading-to-2012-2026-02-02)
@@ -74,13 +75,30 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 _No changes yet._
 
+## Upgrading to 2.0.15 (2026-03-24)
+
+Documentation refresh, test and coverage tooling, and no breaking changes for applications.
+
+**Added:**
+- **Composer** – `composer test-coverage-90` runs the full coverage build and fails if statements or elements are below **90%** (on the metrics PHPUnit reports after applying `<coverage><source>` excludes). **CI** still uses **80%**; see [CHANGELOG](CHANGELOG.md#2015---2026-03-24).
+
+**Changed:**
+- **PHPUnit coverage source** – `CreateTableCommand` and `CreateRecordsTableCommand` are **excluded** from the coverage report again so aggregate percentages stay usable; both commands are still covered by unit and integration tests. See `phpunit.xml.dist` comments.
+
+No database or `nowo_performance` configuration changes.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## Upgrading to 2.0.14 (2026-03-09)
 
 Test coverage and CI improvements. No schema or bundle configuration changes.
 
 **Changed:**
 - **CI** – GitHub Actions now fails if code coverage is below 80% (minimum enforced in test and coverage jobs). See [CHANGELOG](CHANGELOG.md#2014---2026-03-09).
-- **Coverage** – CreateTableCommand and CreateRecordsTableCommand are no longer excluded from coverage; additional tests were added to cover them.
+- **Coverage (2.0.14)** – At this tag, `CreateTableCommand` and `CreateRecordsTableCommand` were included in the Clover/HTML source; **2.0.15** excludes them again for aggregate reporting (tests still run). See [CHANGELOG](CHANGELOG.md#2015---2026-03-24).
 
 No upgrade steps required. Clear cache after updating:
 

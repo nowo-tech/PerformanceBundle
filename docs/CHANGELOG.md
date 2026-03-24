@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.15] - 2026-03-24](#2015-2026-03-24)
 - [[2.0.14] - 2026-03-09](#2014-2026-03-09)
   - [Added](#added)
   - [Changed](#changed)
@@ -108,16 +109,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Documentation
+_No changes yet._
 
-- **README**: Entity section updated for **v2** (`RouteData` vs `RouteDataRecord`); removed obsolete list of metric columns on `RouteData`. “How it works” and FrankenPHP bullet aligned with current tracking and demo setup (dev `Caddyfile.dev` vs prod worker). Manual metrics section clarifies the recording pipeline.
-- **COMMANDS.md** (`nowo:performance:set-route`): Removed incorrect “only update if worse” behaviour; documented v2 recording path.
-- **DEMO-FRANKENPHP.md**: `bundles.php` example expanded to match the Symfony 8 demo (Doctrine, Web Profiler, UX Twig Component, UX Icons, Twig Inspector).
-- **NOTIFICATIONS.md**: Example listener uses `AfterMetricsRecordedEvent::getRequestTime()` (v2) instead of removed `RouteData::getRequestTime()`.
+---
+
+## [2.0.15] - 2026-03-24
+
+### Added
+
+- **Composer** – `test-coverage-90` script: runs `test-coverage` then `scripts/check-coverage.php` with `--min-percent=90` (statements and elements). Intended for maintainers; **CI** still enforces **80%** (see `.github/workflows/ci.yml`).
+- **Makefile** – `make test-coverage-90` runs the same check inside Docker.
 
 ### Changed
 
-- **SetRouteMetricsCommand** inline help: describes actual behaviour (no “worse than before” gate).
+- **PHPUnit coverage** – `CreateTableCommand.php` and `CreateRecordsTableCommand.php` are **excluded** from the Clover/HTML coverage source again. Their DBAL/SQL surface inflates the denominator and makes a 90% aggregate impractical; they remain exercised by **unit** (`CreateTableCommandTest`, `CreateRecordsTableCommandTest`) and **integration** CLI tests.
+- **Tests** – Dashboard integration follows redirects before asserting status; chart data API coverage; `PerformanceMetricsService` integration cases (route params on access records, duplicate `requestId`, `saveAccessRecords` disabled); unit tests for `recordMetricsSync` with closed `EntityManager`, subscriber environment fallback without `Kernel`, and extra schema-command failure paths (metadata/`SchemaTool` errors, force + drop). Test docblocks and related comments use **English** only.
+- **Refactoring** – Type hints and assignments aligned for consistency across bundle and tests.
+- **SetRouteMetricsCommand** – Inline help describes actual behaviour (no “worse than before” gate).
+
+### Documentation
+
+- **README** – Entity section for **v2** (`RouteData` vs `RouteDataRecord`); removed obsolete metric columns on `RouteData`; “How it works” and FrankenPHP note aligned with demos (`Caddyfile.dev` vs worker). Manual metrics section clarifies the recording pipeline.
+- **COMMANDS.md** (`nowo:performance:set-route`) – Removed incorrect “only update if worse” behaviour; documented v2 recording path.
+- **DEMO-FRANKENPHP.md** – `bundles.php` example aligned with Symfony 8 demo (Doctrine, Web Profiler, UX Twig Component, UX Icons, Twig Inspector).
+- **NOTIFICATIONS.md** – Example listener uses `AfterMetricsRecordedEvent::getRequestTime()` (v2) instead of removed `RouteData::getRequestTime()`.
 
 ---
 

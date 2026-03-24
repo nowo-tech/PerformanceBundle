@@ -1,9 +1,9 @@
 # Release process
 
-## Creating a new version (e.g. v1.2.0)
+## Creating a new version (e.g. v2.0.15)
 
 1. **Ensure everything is ready**
-   - [CHANGELOG.md](CHANGELOG.md) has the target version with date and full entry; `[Unreleased]` is at the top.
+   - [CHANGELOG.md](CHANGELOG.md) has the target version with date and full entry; `[Unreleased]` is at the top (empty or “_No changes yet._”).
    - [UPGRADING.md](UPGRADING.md) has a section "Upgrading to X.Y.Z" with what's new and upgrade steps.
    - Tests pass: `make test` or `composer test`.
    - Code style: `make cs-check` or `composer cs-check`.
