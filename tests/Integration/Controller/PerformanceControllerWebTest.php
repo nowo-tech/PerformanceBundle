@@ -30,6 +30,7 @@ final class PerformanceControllerWebTest extends WebTestCase
 
     public function testClearPostWithValidCsrfViaFormSubmit(): void
     {
+        self::ensureKernelShutdown();
         $client = self::createClient();
         $this->createTablesAndRecordMetric($client);
 
@@ -51,6 +52,7 @@ final class PerformanceControllerWebTest extends WebTestCase
 
     public function testDashboardFormContainsClearForm(): void
     {
+        self::ensureKernelShutdown();
         $client = self::createClient();
         $this->createTablesAndRecordMetric($client);
 

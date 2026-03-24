@@ -1,0 +1,5 @@
+# ORM 3.6+ without native lazy calls ProxyHelper::generateLazyGhost(); that API was removed in symfony/var-exporter 8.x.
+# PHP 8.4+ supports ReflectionClass::newLazyGhost(), so we enable Doctrine native lazy objects for integration tests on 8.4+ only.
+doctrine:
+    orm:
+        enable_native_lazy_objects: true

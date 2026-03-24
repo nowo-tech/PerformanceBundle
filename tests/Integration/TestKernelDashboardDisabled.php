@@ -39,7 +39,7 @@ final class TestKernelDashboardDisabled extends BaseKernel
     {
         $confDir = $this->getProjectDir() . '/config';
         $loader->load($confDir . '/packages/framework.yaml');
-        $loader->load($confDir . '/packages/doctrine.yaml');
+        IntegrationDoctrineConfig::load($loader, $confDir . '/packages');
         $loader->load($confDir . '/packages/security.yaml');
         $loader->load($confDir . '/packages/twig.yaml');
         $loader->load($confDir . '/packages/nowo_performance_dashboard_disabled.yaml');
