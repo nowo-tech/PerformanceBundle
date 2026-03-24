@@ -58,18 +58,38 @@ jobs:
 
       - name: Install dependencies with Symfony ${{ matrix.symfony }}
         run: |
-          # DBAL 4 needs PHP ^8.2; PHP 8.1 jobs must downgrade the lock before any other update (even if the
-          # following composer update lists doctrine/dbal, Composer may still fail while the lock says 4.x).
-          if [ "${{ matrix.php }}" = "8.1" ]; then
-            composer update doctrine/dbal:3.10.5 --no-interaction --prefer-dist --no-progress
-          fi
+          # Do not run a partial `composer update` on PHP 8.1 before the steps below: if composer.lock was built
+          # on PHP 8.2+ (e.g. Symfony 7.4), Composer validates the whole lock against PHP 8.1 and aborts before any
+          # package can be downgraded. The require + full symfony/* update realigns the lock for this matrix.
           # Pin browser-kit + dom-crawler to the matrix Symfony: they are require-dev with ^6.1||^7||^8 and could
           # otherwise stay on 7.x while http-kernel is 6.4, breaking HttpKernelBrowser::doRequest vs AbstractBrowser.
           # var-exporter must match the matrix Symfony major: ORM 3.6+ needs ProxyHelper::generateLazyGhost when native
           # lazy objects are off; that method was removed in symfony/var-exporter 8.x, so a 7.x stack must not pull 8.x here.
-          composer require symfony/config:^${{ matrix.symfony }} symfony/dependency-injection:^${{ matrix.symfony }} symfony/http-kernel:^${{ matrix.symfony }} symfony/yaml:^${{ matrix.symfony }} symfony/var-exporter:^${{ matrix.symfony }} symfony/browser-kit:^${{ matrix.symfony }} symfony/dom-crawler:^${{ matrix.symfony }} --no-interaction --no-update
-          # Refresh Symfony + Doctrine together: Symfony 8 needs doctrine-bundle ^3 + DBAL ^4; other matrices keep DBAL 3 on PHP 8.1.
-          composer update symfony/* doctrine/doctrine-bundle doctrine/dbal --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          # Pin every Symfony component used by the bundle (and symfony/console, which is only transitive): otherwise the
+          # lock can keep console 7.x while yaml/http-kernel are 6.4 → PHP fatal: Command::configure(): void vs LintCommand.
+          composer require \
+            symfony/config:^${{ matrix.symfony }} \
+            symfony/console:^${{ matrix.symfony }} \
+            symfony/dependency-injection:^${{ matrix.symfony }} \
+            symfony/framework-bundle:^${{ matrix.symfony }} \
+            symfony/form:^${{ matrix.symfony }} \
+            symfony/http-kernel:^${{ matrix.symfony }} \
+            symfony/yaml:^${{ matrix.symfony }} \
+            symfony/security-bundle:^${{ matrix.symfony }} \
+            symfony/stopwatch:^${{ matrix.symfony }} \
+            symfony/translation:^${{ matrix.symfony }} \
+            symfony/twig-bundle:^${{ matrix.symfony }} \
+            symfony/var-exporter:^${{ matrix.symfony }} \
+            symfony/browser-kit:^${{ matrix.symfony }} \
+            symfony/dom-crawler:^${{ matrix.symfony }} \
+            symfony/http-client:^${{ matrix.symfony }} \
+            symfony/mailer:^${{ matrix.symfony }} \
+            symfony/mime:^${{ matrix.symfony }} \
+            --no-interaction --no-update
+          # Quote 'symfony/*' so the shell never glob-expands it (with nullglob, symfony/* can vanish and Composer would
+          # skip all Symfony packages — leaving e.g. console 7.x with yaml 6.4 → fatal Command::configure(): void).
+          # Full update reconciles require-dev (php-cs-fixer, rector, …) with the pinned Symfony major.
+          composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
 
       - name: Validate translation YAML files
         run: php scripts/validate-translations-yaml.php src/Resources/translations
@@ -180,8 +200,26 @@ jobs:
 
       - name: Install dependencies (Symfony 7.0)
         run: |
-          composer require symfony/config:^7.0 symfony/dependency-injection:^7.0 symfony/http-kernel:^7.0 symfony/yaml:^7.0 symfony/var-exporter:^7.0 symfony/browser-kit:^7.0 symfony/dom-crawler:^7.0 --no-interaction --no-update
-          composer update symfony/* doctrine/doctrine-bundle doctrine/dbal --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          composer require \
+            symfony/config:^7.0 \
+            symfony/console:^7.0 \
+            symfony/dependency-injection:^7.0 \
+            symfony/framework-bundle:^7.0 \
+            symfony/form:^7.0 \
+            symfony/http-kernel:^7.0 \
+            symfony/yaml:^7.0 \
+            symfony/security-bundle:^7.0 \
+            symfony/stopwatch:^7.0 \
+            symfony/translation:^7.0 \
+            symfony/twig-bundle:^7.0 \
+            symfony/var-exporter:^7.0 \
+            symfony/browser-kit:^7.0 \
+            symfony/dom-crawler:^7.0 \
+            symfony/http-client:^7.0 \
+            symfony/mailer:^7.0 \
+            symfony/mime:^7.0 \
+            --no-interaction --no-update
+          composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
 
       - name: Run tests with coverage
         run: |
