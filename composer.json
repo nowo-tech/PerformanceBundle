@@ -48,8 +48,10 @@
         "symfony/stopwatch": "^6.1 || ^7.0 || ^8.0",
         "symfony/translation": "^6.1 || ^7.0 || ^8.0",
         "symfony/twig-bundle": "^6.1 || ^7.0 || ^8.0",
+        "symfony/var-exporter": "^6.4 || ^7.0 || ^8.0",
         "symfony/ux-twig-component": "^2.0 || ^3.0",
         "symfony/ux-icons": "^2.0 || ^3.0",
+        "doctrine/dbal": "^3.8.2 || ^4.0",
         "doctrine/orm": "^2.13 || ^3.0",
         "doctrine/doctrine-bundle": "^2.8 || ^3.0"
     },

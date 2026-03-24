@@ -59,7 +59,12 @@ jobs:
       - name: Install dependencies with Symfony ${{ matrix.symfony }}
         run: |
           composer require symfony/config:^${{ matrix.symfony }} symfony/dependency-injection:^${{ matrix.symfony }} symfony/http-kernel:^${{ matrix.symfony }} symfony/yaml:^${{ matrix.symfony }} --no-interaction --no-update
-          composer update symfony/* --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          # Symfony 8 needs doctrine/doctrine-bundle ^3 (2.x only allows symfony/config ^6.4|^7.0), which pulls doctrine/dbal ^4.
+          if [ "${{ matrix.symfony }}" = "8.0" ]; then
+            composer update symfony/* doctrine/doctrine-bundle doctrine/dbal --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          else
+            composer update symfony/* --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          fi
 
       - name: Validate translation YAML files
         run: php scripts/validate-translations-yaml.php src/Resources/translations

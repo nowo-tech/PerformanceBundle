@@ -22,6 +22,12 @@ final class PerformanceControllerWebTest extends WebTestCase
         return new TestKernel('test', true);
     }
 
+    protected function tearDown(): void
+    {
+        self::ensureKernelShutdown();
+        parent::tearDown();
+    }
+
     public function testClearPostWithValidCsrfViaFormSubmit(): void
     {
         $client = self::createClient();
