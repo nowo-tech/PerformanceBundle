@@ -30,8 +30,6 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=password
       - MYSQL_DATABASE=performance_test
-    ports:
-      - "3307:3306"
     networks:
       - performance-bundle-network
     healthcheck:

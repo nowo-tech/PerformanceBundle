@@ -75,7 +75,7 @@ View metrics:
 ## Docker Services
 
 - **PHP**: FrankenPHP (PHP 8.4 Alpine) – HTTPS on port 8001 (container 443)
-- **MySQL**: Database server (port 3308)
+- **MySQL**: Database server (sin puerto publicado en el host; solo accesible desde la red Docker)
 
 The bundle is mounted from the repo at `/var/performance-bundle` so you can develop the bundle and see changes in the demo. All services use the Docker network `performance-demo-network`.
 

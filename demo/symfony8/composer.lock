@@ -930,9 +930,10 @@
             "dist": {
                 "type": "path",
                 "url": "/var/performance-bundle",
-                "reference": "c5d5f245f6f0703ae2818a3a3b69f95be9793b41"
+                "reference": "690d72212207523879760aca0056c79113e07649"
             },
             "require": {
+                "doctrine/dbal": "^3.8.2 || ^4.0",
                 "doctrine/doctrine-bundle": "^2.8 || ^3.0",
                 "doctrine/orm": "^2.13 || ^3.0",
                 "php": ">=8.1 <8.6",
@@ -944,6 +945,7 @@
                 "symfony/twig-bundle": "^6.1 || ^7.0 || ^8.0",
                 "symfony/ux-icons": "^2.0 || ^3.0",
                 "symfony/ux-twig-component": "^2.0 || ^3.0",
+                "symfony/var-exporter": "^6.4 || ^7.0 || ^8.0",
                 "symfony/yaml": "^6.1 || ^7.0 || ^8.0"
             },
             "require-dev": {
@@ -987,6 +989,9 @@
                 ],
                 "test-coverage": [
                     "phpunit --process-isolation --coverage-text --coverage-html coverage --coverage-clover coverage.xml"
+                ],
+                "test-coverage-90": [
+                    "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=90"
                 ],
                 "test-coverage-100": [
                     "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=100"
