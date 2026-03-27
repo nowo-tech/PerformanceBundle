@@ -1,27 +1,27 @@
+# Local environment files (never commit local secrets/overrides)
 /.env
 /.env.dev
 /.env.local
 /.env.local.php
 /.env.*.local
+
+# Symfony secrets and runtime data
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
-/vendor/
-###> symfony/framework-bundle ###
-/.env.local
-/.env.local.php
-/.env.*.local
-/config/secrets/prod/prod.decrypt.private.php
-/public/bundles/
-/var/
-/vendor/
-###< symfony/framework-bundle ###
-###> phpunit/phpunit ###
-/phpunit.xml
-.phpunit.result.cache
-###< phpunit/phpunit ###
-###> symfony/phpunit-bridge ###
-.phpunit.result.cache
-/phpunit.xml
-###< symfony/phpunit-bridge ###
 /.data/
+
+# Dependencies
+/vendor/
+
+# PHPUnit artifacts
+/phpunit.xml
+.phpunit.result.cache
+
+# Archives / compressed
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z

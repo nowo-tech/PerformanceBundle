@@ -1,0 +1,175 @@
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.2.30 with PCOV 1.0.12
+Configuration: /app/phpunit.xml.dist
+
+.............................................................   61 / 1511 (  4%)
+...................................[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m.....................  122 / 1511 (  8%)
+.............................................................  183 / 1511 ( 12%)
+.............................................................  244 / 1511 ( 16%)
+....[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m............................................  305 / 1511 ( 20%)
+.............................................................  366 / 1511 ( 24%)
+.............................................................  427 / 1511 ( 28%)
+.............................................................  488 / 1511 ( 32%)
+.............................................................  549 / 1511 ( 36%)
+.............................................................  610 / 1511 ( 40%)
+.............................................................  671 / 1511 ( 44%)
+.............................................................  732 / 1511 ( 48%)
+.............................................................  793 / 1511 ( 52%)
+..............[36;1mS[0m..............................................  854 / 1511 ( 56%)
+.............................................................  915 / 1511 ( 60%)
+.............................................................  976 / 1511 ( 64%)
+............................................................. 1037 / 1511 ( 68%)
+............................................................. 1098 / 1511 ( 72%)
+............................................................. 1159 / 1511 ( 76%)
+............................................................. 1220 / 1511 ( 80%)
+............................................................. 1281 / 1511 ( 84%)
+............................................................. 1342 / 1511 ( 88%)
+............................................................. 1403 / 1511 ( 92%)
+............................................................. 1464 / 1511 ( 96%)
+...............................................               1511 / 1511 (100%)
+
+Time: 04:16.404, Memory: 48.00 MB
+
+[30;43mOK, but some tests were skipped![0m
+[30;43mTests: 1511[0m[30;43m, Assertions: 3668[0m[30;43m, Skipped: 19[0m[30;43m.[0m
+
+Generating code coverage report in Clover XML format ... done [00:00.028]
+
+Generating code coverage report in HTML format ... done [00:00.332]
+
+
+[1;37;40mCode Coverage Report:        [0m
+[1;37;40m  2026-03-27 07:10:31        [0m
+[1;37;40m                             [0m
+[1;37;40m Summary:                    [0m
+[30;42m  Classes: 93.65% (59/63)    [0m
+[30;42m  Methods: 93.56% (421/450)  [0m
+[30;42m  Lines:   93.95% (5556/5914)[0m
+
+Nowo\PerformanceBundle\Command\CheckDependenciesCommand
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 36/ 36)[0m
+Nowo\PerformanceBundle\Command\DiagnoseCommand
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% (103/103)[0m
+Nowo\PerformanceBundle\Command\PurgeAccessRecordsCommand
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 45/ 45)[0m
+Nowo\PerformanceBundle\Command\RebuildAggregatesCommand
+  [30;42mMethods: 100.00% ( 4/ 4)[0m   [30;42mLines: 100.00% ( 65/ 65)[0m
+Nowo\PerformanceBundle\Command\SetRouteMetricsCommand
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 68/ 68)[0m
+Nowo\PerformanceBundle\Command\SyncSchemaCommand
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 43/ 43)[0m
+Nowo\PerformanceBundle\Controller\PerformanceController
+  [37;41mMethods:  34.48% (10/29)[0m   [30;43mLines:  85.06% (1543/1814)[0m
+Nowo\PerformanceBundle\DBAL\QueryTrackingConnection
+  [30;42mMethods: 100.00% (11/11)[0m   [30;42mLines: 100.00% ( 37/ 37)[0m
+Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware
+  [30;42mMethods: 100.00% ( 6/ 6)[0m   [30;42mLines: 100.00% ( 16/ 16)[0m
+Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry
+  [30;43mMethods:  66.67% ( 4/ 6)[0m   [37;41mLines:  42.39% ( 39/ 92)[0m
+Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector
+  [30;42mMethods: 100.00% (44/44)[0m   [30;42mLines: 100.00% (199/199)[0m
+Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% ( 15/ 15)[0m
+Nowo\PerformanceBundle\DependencyInjection\Compiler\TableNamePass
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% (  1/  1)[0m
+Nowo\PerformanceBundle\DependencyInjection\Configuration
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% (282/282)[0m
+Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension
+  [30;42mMethods: 100.00% ( 4/ 4)[0m   [30;42mLines: 100.00% ( 87/ 87)[0m
+Nowo\PerformanceBundle\Entity\RouteData
+  [30;42mMethods: 100.00% (31/31)[0m   [30;42mLines: 100.00% ( 67/ 67)[0m
+Nowo\PerformanceBundle\Entity\RouteDataRecord
+  [30;42mMethods: 100.00% (28/28)[0m   [30;42mLines: 100.00% ( 41/ 41)[0m
+Nowo\PerformanceBundle\EventSubscriber\PerformanceAlertSubscriber
+  [30;42mMethods: 100.00% ( 2/ 2)[0m   [30;42mLines: 100.00% (107/107)[0m
+Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber
+  [37;41mMethods:  25.00% ( 2/ 8)[0m   [30;42mLines:  92.56% (336/363)[0m
+Nowo\PerformanceBundle\EventSubscriber\QueryLogger
+  [30;42mMethods: 100.00% ( 5/ 5)[0m   [30;42mLines: 100.00% ( 11/ 11)[0m
+Nowo\PerformanceBundle\EventSubscriber\QueryTrackingConnectionSubscriber
+  [30;42mMethods: 100.00% ( 4/ 4)[0m   [30;42mLines: 100.00% ( 28/ 28)[0m
+Nowo\PerformanceBundle\EventSubscriber\RouteDataRecordTableNameSubscriber
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 16/ 16)[0m
+Nowo\PerformanceBundle\EventSubscriber\TableNameSubscriber
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 15/ 15)[0m
+Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent
+  [30;42mMethods: 100.00% ( 6/ 6)[0m   [30;42mLines: 100.00% (  6/  6)[0m
+Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent
+  [30;42mMethods: 100.00% ( 4/ 4)[0m   [30;42mLines: 100.00% (  4/  4)[0m
+Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent
+  [30;42mMethods: 100.00% ( 2/ 2)[0m   [30;42mLines: 100.00% (  2/  2)[0m
+Nowo\PerformanceBundle\Event\AfterRecordsClearedEvent
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% (  3/  3)[0m
+Nowo\PerformanceBundle\Event\BeforeMetricsRecordedEvent
+  [30;42mMethods: 100.00% (13/13)[0m   [30;42mLines: 100.00% ( 13/ 13)[0m
+Nowo\PerformanceBundle\Event\BeforeRecordDeletedEvent
+  [30;42mMethods: 100.00% ( 4/ 4)[0m   [30;42mLines: 100.00% (  4/  4)[0m
+Nowo\PerformanceBundle\Event\BeforeRecordReviewedEvent
+  [30;42mMethods: 100.00% (10/10)[0m   [30;42mLines: 100.00% ( 10/ 10)[0m
+Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent
+  [30;42mMethods: 100.00% ( 4/ 4)[0m   [30;42mLines: 100.00% (  4/  4)[0m
+Nowo\PerformanceBundle\Form\ClearPerformanceDataType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 15/ 15)[0m
+Nowo\PerformanceBundle\Form\DeleteRecordType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 10/ 10)[0m
+Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 31/ 31)[0m
+Nowo\PerformanceBundle\Form\PerformanceFiltersType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% (185/185)[0m
+Nowo\PerformanceBundle\Form\PurgeAccessRecordsType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 49/ 49)[0m
+Nowo\PerformanceBundle\Form\RecordFiltersType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% (147/147)[0m
+Nowo\PerformanceBundle\Form\ReviewRouteDataType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 73/ 73)[0m
+Nowo\PerformanceBundle\Form\StatisticsEnvFilterType
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 23/ 23)[0m
+Nowo\PerformanceBundle\Helper\LogHelper
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 32/ 32)[0m
+Nowo\PerformanceBundle\MessageBus\MessengerBusAdapter
+  [30;42mMethods: 100.00% ( 2/ 2)[0m   [30;42mLines: 100.00% (  4/  4)[0m
+Nowo\PerformanceBundle\MessageHandler\RecordMetricsMessageHandler
+  [30;42mMethods: 100.00% ( 2/ 2)[0m   [30;42mLines: 100.00% ( 18/ 18)[0m
+Nowo\PerformanceBundle\Message\RecordMetricsMessage
+  [30;42mMethods: 100.00% (14/14)[0m   [30;42mLines: 100.00% ( 14/ 14)[0m
+Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% (  1/  1)[0m
+Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% (  1/  1)[0m
+Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% (  1/  1)[0m
+Nowo\PerformanceBundle\Model\RecordFilters
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% (  1/  1)[0m
+Nowo\PerformanceBundle\Model\RouteDataWithAggregates
+  [30;42mMethods: 100.00% (25/25)[0m   [30;42mLines: 100.00% ( 34/ 34)[0m
+Nowo\PerformanceBundle\Model\StatisticsEnvFilter
+  [30;42mMethods: 100.00% ( 1/ 1)[0m   [30;42mLines: 100.00% (  1/  1)[0m
+Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel
+  [30;42mMethods: 100.00% ( 5/ 5)[0m   [30;42mLines: 100.00% ( 54/ 54)[0m
+Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel
+  [30;42mMethods: 100.00% ( 8/ 8)[0m   [30;42mLines: 100.00% (135/135)[0m
+Nowo\PerformanceBundle\Notification\PerformanceAlert
+  [30;42mMethods: 100.00% ( 8/ 8)[0m   [30;42mLines: 100.00% (  8/  8)[0m
+Nowo\PerformanceBundle\NowoPerformanceBundle
+  [30;42mMethods: 100.00% ( 3/ 3)[0m   [30;42mLines: 100.00% ( 31/ 31)[0m
+Nowo\PerformanceBundle\Repository\RouteDataRecordRepository
+  [30;42mMethods: 100.00% (18/18)[0m   [30;42mLines: 100.00% (434/434)[0m
+Nowo\PerformanceBundle\Repository\RouteDataRepository
+  [30;42mMethods: 100.00% (15/15)[0m   [30;42mLines: 100.00% (124/124)[0m
+Nowo\PerformanceBundle\Service\DependencyChecker
+  [30;42mMethods: 100.00% ( 8/ 8)[0m   [30;42mLines: 100.00% ( 90/ 90)[0m
+Nowo\PerformanceBundle\Service\NotificationService
+  [30;42mMethods: 100.00% ( 4/ 4)[0m   [30;42mLines: 100.00% ( 22/ 22)[0m
+Nowo\PerformanceBundle\Service\PerformanceAnalysisService
+  [30;42mMethods: 100.00% ( 5/ 5)[0m   [30;42mLines: 100.00% (249/249)[0m
+Nowo\PerformanceBundle\Service\PerformanceCacheService
+  [30;42mMethods: 100.00% (15/15)[0m   [30;42mLines: 100.00% ( 59/ 59)[0m
+Nowo\PerformanceBundle\Service\PerformanceMetricsService
+  [30;42mMethods: 100.00% (15/15)[0m   [30;42mLines: 100.00% (278/278)[0m
+Nowo\PerformanceBundle\Service\TableStatusChecker
+  [30;43mMethods:  86.67% (13/15)[0m   [30;42mLines:  96.09% (172/179)[0m
+Nowo\PerformanceBundle\Twig\ArrayExtension
+  [30;42mMethods: 100.00% ( 2/ 2)[0m   [30;42mLines: 100.00% (  4/  4)[0m
+Nowo\PerformanceBundle\Twig\IconExtension
+  [30;42mMethods: 100.00% ( 2/ 2)[0m   [30;42mLines: 100.00% (  6/  6)[0m

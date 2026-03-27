@@ -1,6 +1,6 @@
 # Installation Guide
 
-> 📑 **Documentation index**: [docs/README.md](README.md)
+> 📑 **Documentation index**: [README](../README.md#documentation)
 
 
 ## Table of contents

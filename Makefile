@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down build shell install test test-coverage test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos composer-sync update validate test-with-db test-coverage-with-db validate-translations
+.PHONY: help up down build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos composer-sync update validate test-with-db test-coverage-with-db validate-translations
 
 # Default target
 help:
@@ -92,7 +92,8 @@ test: ensure-up
 # --process-isolation avoids truncated output; @runInSeparateProcess tests and non-TTY pipes can otherwise
 # end the run before the report is printed (see PHPUnit issue #5993).
 test-coverage: ensure-up
-	docker-compose exec php composer test-coverage
+	docker-compose exec php composer test-coverage | tee coverage-php.txt
+	./.scripts/php-coverage-percent.sh coverage-php.txt
 
 # Run test-coverage and fail if coverage is below 90%
 test-coverage-90: ensure-up

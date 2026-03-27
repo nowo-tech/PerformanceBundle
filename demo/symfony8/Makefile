@@ -47,16 +47,9 @@ build:
 up:
 	@echo "🚀 Starting demo containers..."
 	@if [ ! -f .env ]; then \
-		echo "⚠️  .env file not found. Creating from defaults..."; \
-		echo "APP_ENV=dev" > .env; \
-		echo "APP_DEBUG=1" >> .env; \
-		echo "APP_SECRET=your-secret-key-change-this-in-production" >> .env; \
-		echo "DATABASE_URL=mysql://demo_user:password@mysql:3306/performance_demo?serverVersion=8.0&charset=utf8mb4" >> .env; \
-		echo "MYSQL_ROOT_PASSWORD=password" >> .env; \
-		echo "MYSQL_DATABASE=performance_demo" >> .env; \
-		echo "MYSQL_USER=demo_user" >> .env; \
-		echo "MYSQL_PASSWORD=password" >> .env; \
-		echo "✅ .env file created"; \
+		echo "⚠️  .env file not found. Copying .env.example..."; \
+		cp .env.example .env; \
+		echo "✅ .env file created from .env.example"; \
 	fi
 	docker-compose up -d --build
 	@echo "⏳ Waiting for MySQL to be ready..."
@@ -65,6 +58,8 @@ up:
 	docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@echo "Creating database, schema and loading fixtures..."
 	@$(MAKE) setup
+	@DEFAULT_URI=$$(grep -E '^DEFAULT_URI=' .env | cut -d= -f2-) ; \
+		echo "Demo started at: $${DEFAULT_URI:-http://localhost:8001}"
 
 # Stop containers
 down:

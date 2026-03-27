@@ -1,8 +1,8 @@
 # Performance Bundle
 
-[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-6.1%20%7C%207%20%7C%208-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/performance-bundle.svg?style=social&label=Star)](https://github.com/nowo-tech/PerformanceBundle)
+[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-6%20%7C%207%20%7C%208-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/performance-bundle.svg?style=social&label=Star)](https://github.com/nowo-tech/PerformanceBundle) [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen)](#tests-and-coverage)
 
-> ⭐ **Found this project useful?** Give it a star on GitHub! It helps us maintain and improve the project.
+> ⭐ **Found this useful?** Give it a star on GitHub! It helps us maintain and improve the project.
 
 **Symfony bundle for tracking and analyzing route performance metrics.** Automatically records request time, database query count, and query execution time for performance analysis.
 
@@ -92,8 +92,8 @@ Then, register the bundle in your `config/bundles.php`:
 <?php
 
 return [
-    // ...
-    Nowo\PerformanceBundle\NowoPerformanceBundle::class => ['all' => true],
+  // ...
+  Nowo\PerformanceBundle\NowoPerformanceBundle::class => ['all' => true],
 ];
 ```
 
@@ -104,41 +104,41 @@ return [
 ```yaml
 # config/packages/nowo_performance.yaml
 nowo_performance:
-    enabled: true
-    environments: ['prod', 'dev', 'test']
-    connection: 'default'
-    track_queries: true
-    track_request_time: true
-    ignore_routes:
-        - '_wdt'
-        - '_profiler'
-        - 'web_profiler*'
-        - '_error'
-        dashboard:
-            enabled: true
-            path: '/performance'
-            template: 'bootstrap'  # or 'tailwind'
-            roles: ['ROLE_ADMIN']  # Optional: restrict access
+  enabled: true
+  environments: ['prod', 'dev', 'test']
+  connection: 'default'
+  track_queries: true
+  track_request_time: true
+  ignore_routes:
+    - '_wdt'
+    - '_profiler'
+    - 'web_profiler*'
+    - '_error'
+    dashboard:
+      enabled: true
+      path: '/performance'
+      template: 'bootstrap' # or 'tailwind'
+      roles: ['ROLE_ADMIN'] # Optional: restrict access
 ```
 
 2. **Create the database table(s)**:
 
-   **Option A: Using the bundle commands (Recommended)**:
-   ```bash
-   php bin/console nowo:performance:create-table
-   # If you use temporal access records (enable_access_records: true):
-   php bin/console nowo:performance:create-records-table
-   # Or sync both tables in one go (add/alter columns from entities):
-   php bin/console nowo:performance:sync-schema
-   ```
+  **Option A: Using the bundle commands (Recommended)**:
+  ```bash
+  php bin/console nowo:performance:create-table
+  # If you use temporal access records (enable_access_records: true):
+  php bin/console nowo:performance:create-records-table
+  # Or sync both tables in one go (add/alter columns from entities):
+  php bin/console nowo:performance:sync-schema
+  ```
 
-   **Option B: Using Doctrine Schema**:
-   ```bash
-   php bin/console doctrine:schema:update --force
-   # or
-   php bin/console doctrine:migrations:diff
-   php bin/console doctrine:migrations:migrate
-   ```
+  **Option B: Using Doctrine Schema**:
+  ```bash
+  php bin/console doctrine:schema:update --force
+  # or
+  php bin/console doctrine:migrations:diff
+  php bin/console doctrine:migrations:migrate
+  ```
 
 3. **That's it!** The bundle will automatically track route performance metrics in the configured environments.
 
@@ -157,18 +157,18 @@ Use the command to inject sample metrics through the same **`PerformanceMetricsS
 ```bash
 # Set route metrics
 php bin/console nowo:performance:set-route app_home \
-    --env=dev \
-    --request-time=0.5 \
-    --queries=10 \
-    --query-time=0.2
+  --env=dev \
+  --request-time=0.5 \
+  --queries=10 \
+  --query-time=0.2
 
 # Another example with more metrics
 php bin/console nowo:performance:set-route app_user_show \
-    --env=prod \
-    --request-time=1.2 \
-    --queries=25 \
-    --query-time=0.3 \
-    --params='{"id":123}'
+  --env=prod \
+  --request-time=1.2 \
+  --queries=25 \
+  --query-time=0.3 \
+  --params='{"id":123}'
 ```
 
 ### Accessing Metrics
@@ -199,23 +199,23 @@ The bundle works with default settings. Create `config/packages/nowo_performance
 
 ```yaml
 nowo_performance:
+  enabled: true
+  environments: ['prod', 'dev', 'test']
+  connection: 'default'
+  table_name: 'routes_data'
+  track_queries: true
+  track_request_time: true
+  track_sub_requests: false
+  ignore_routes:
+    - '_wdt'
+    - '_profiler'
+    - 'web_profiler*'
+    - '_error'
+  dashboard:
     enabled: true
-    environments: ['prod', 'dev', 'test']
-    connection: 'default'
-    table_name: 'routes_data'
-    track_queries: true
-    track_request_time: true
-    track_sub_requests: false
-    ignore_routes:
-        - '_wdt'
-        - '_profiler'
-        - 'web_profiler*'
-        - '_error'
-    dashboard:
-        enabled: true
-        path: '/performance'
-        template: 'bootstrap'  # or 'tailwind'
-        roles: []  # empty = unrestricted
+    path: '/performance'
+    template: 'bootstrap' # or 'tailwind'
+    roles: [] # empty = unrestricted
 ```
 
 ## Commands
@@ -253,16 +253,16 @@ Listed metrics (request time, query counts, status code ratios, etc.) in the UI 
 
 1. **Event Subscriber** (`PerformanceMetricsSubscriber`) listens to kernel events
 2. On `KernelEvents::REQUEST`, it starts tracking:
-   - Request start time
-   - Resets query tracking middleware
+  - Request start time
+  - Resets query tracking middleware
 3. On `KernelEvents::TERMINATE`, it:
-   - Calculates request time
-   - Collects query count and execution time using multiple strategies:
-     - **Primary**: `QueryTrackingMiddleware` (DBAL middleware for DBAL 3.x compatibility)
-     - **Fallback 1**: `DoctrineDataCollector` from Symfony profiler
-     - **Fallback 2**: Request attributes (`_profiler`, `_profiler_profile`)
-     - **Fallback 3**: Stopwatch (time only)
-   - Persists via `PerformanceMetricsService`: updates **`RouteData`** (identity + `lastAccessedAt`); when **`enable_access_records`** is on, inserts a **`RouteDataRecord`** for that request (subject to deduplication and per-route `saveAccessRecords`), unless metrics are recorded asynchronously (`async: true` with Messenger)
+  - Calculates request time
+  - Collects query count and execution time using multiple strategies:
+   - **Primary**: `QueryTrackingMiddleware` (DBAL middleware for DBAL 3.x compatibility)
+   - **Fallback 1**: `DoctrineDataCollector` from Symfony profiler
+   - **Fallback 2**: Request attributes (`_profiler`, `_profiler_profile`)
+   - **Fallback 3**: Stopwatch (time only)
+  - Persists via `PerformanceMetricsService`: updates **`RouteData`** (identity + `lastAccessedAt`); when **`enable_access_records`** is on, inserts a **`RouteDataRecord`** for that request (subject to deduplication and per-route `saveAccessRecords`), unless metrics are recorded asynchronously (`async: true` with Messenger)
 
 ### Query Tracking Architecture
 
@@ -277,7 +277,6 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 
 ## Documentation
 
-- [Demo with FrankenPHP (development and production)](docs/DEMO-FRANKENPHP.md)
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Usage](docs/USAGE.md)
@@ -291,6 +290,7 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 
 ### Additional documentation
 
+- [Demo with FrankenPHP (development and production)](docs/DEMO-FRANKENPHP.md)
 - [Commands](docs/COMMANDS.md)
 - [Events & priorities](docs/EVENTS.md)
 - [Behaviour and notable changes](docs/BEHAVIOUR_AND_CHANGES.md)
@@ -306,6 +306,11 @@ composer test
 # Run with coverage
 composer test-coverage
 ```
+
+## Tests and coverage
+
+- Tests: PHPUnit (PHP)
+- PHP: 100%
 
 ## License
 

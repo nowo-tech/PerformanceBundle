@@ -1,0 +1,57 @@
+name: Sync Releases
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Sync missing and incomplete releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+
+          for tag in $(git tag -l 'v*' --sort=-v:refname); do
+            echo "Processing ${tag}..."
+
+            notes=""
+            if [ -f docs/CHANGELOG.md ]; then
+              notes=$(awk -v tag="$tag" '
+                BEGIN {capture=0}
+                /^## \[/ {
+                  if (capture==1) exit
+                  if ($0 ~ "^## \\\\[" tag "\\\\]") capture=1
+                }
+                capture==1 {print}
+              ' docs/CHANGELOG.md || true)
+            fi
+
+            if [ -z "${notes}" ]; then
+              notes="Release ${tag}"
+            fi
+
+            if gh release view "$tag" >/dev/null 2>&1; then
+              current_body="$(gh release view "$tag" --json body -q .body || true)"
+              if [ -z "${current_body}" ] || [ "${current_body}" = "Release ${tag}" ]; then
+                gh release edit "$tag" --notes "$notes"
+                echo "Updated release ${tag}"
+              else
+                echo "Release ${tag} already has notes"
+              fi
+            else
+              gh release create "$tag" --title "Release ${tag}" --notes "$notes"
+              echo "Created release ${tag}"
+            fi
+          done

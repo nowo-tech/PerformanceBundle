@@ -262,6 +262,26 @@ All components receive the same variables from the controller:
 - `limit` - Current result limit
 - `environments` - Array of available environments
 
+### Translation Overrides
+
+The bundle ships translations under the `nowo_performance` domain in `src/Resources/translations/`.
+
+To override any key from your Symfony application:
+
+1. Create (or edit) your app translation file, for example:
+   - `translations/nowo_performance.en.yaml`
+   - `translations/nowo_performance.es.yaml`
+2. Copy only the keys you want to customize.
+3. Clear cache in dev if needed (`php bin/console cache:clear --env=dev --no-warmup`).
+
+Example:
+
+```yaml
+# translations/nowo_performance.en.yaml
+dashboard:
+  title: "My Custom Performance Dashboard"
+```
+
 ## Dashboard Features
 
 ### Data Export

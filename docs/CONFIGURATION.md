@@ -1,6 +1,6 @@
 # Configuration Guide
 
-> 📑 **Documentation index**: [docs/README.md](README.md). Default values documented here match `Configuration.php` (source of truth).
+> 📑 **Documentation index**: [README](../README.md#documentation). Default values documented here match `Configuration.php` (source of truth).
 
 
 ## Table of contents
