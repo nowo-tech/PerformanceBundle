@@ -238,7 +238,7 @@ jobs:
           php scripts/check-coverage.php coverage.xml --min-percent=80
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: coverage.xml
           fail_ci_if_error: false
