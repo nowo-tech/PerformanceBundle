@@ -37,6 +37,11 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
 
+        // Optional: Symfony UX Twig Component (dashboard uses {{ component() }} when available; else includes).
+        if (interface_exists(\Symfony\UX\TwigComponent\ComponentInterface::class)) {
+            $loader->load('services_twig_component.yaml');
+        }
+
         $configuration = $this->getConfiguration($configs, $container);
         $config        = $this->processConfiguration($configuration, $configs);
 

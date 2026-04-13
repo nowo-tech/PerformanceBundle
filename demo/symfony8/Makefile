@@ -45,23 +45,18 @@ build:
 
 # Build and start containers
 up:
-	@echo "🚀 Starting demo containers..."
-	@if [ ! -f .env ]; then \
-		echo "⚠️  .env file not found. Copying .env.example..."; \
-		cp .env.example .env; \
-		echo "✅ .env file created from .env.example"; \
-	fi
-	docker-compose up -d --build
-	@echo "⏳ Waiting for MySQL to be ready..."
+	@if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
+	docker-compose up -d
+	@echo "Waiting for container to be ready..."
 	@sleep 5
 	@echo "Installing dependencies..."
-	docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
+	@docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
+	@docker-compose exec -T php composer require symfony/ux-icons --no-interaction || echo "⚠️  ux-icons already installed or error occurred"
 	@echo "Creating database, schema and loading fixtures..."
 	@$(MAKE) setup
-	@DEFAULT_URI=$$(grep -E '^DEFAULT_URI=' .env | cut -d= -f2-) ; \
-		echo "Demo started at: $${DEFAULT_URI:-http://localhost:8001}"
-
-# Stop containers
+	@PORT=$$(grep "^PORT=" .env 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
+	[ -z "$$PORT" ] && PORT=$$(grep "^PORT=" .env.example 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
+	echo "Demo started at: http://localhost:$$PORT"
 down:
 	@echo "🛑 Stopping containers..."
 	docker-compose down

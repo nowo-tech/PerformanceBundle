@@ -49,7 +49,6 @@
         "symfony/translation": "^6.0 || ^7.0 || ^8.0",
         "symfony/twig-bundle": "^6.0 || ^7.0 || ^8.0",
         "symfony/var-exporter": "^6.0 || ^7.0 || ^8.0",
-        "symfony/ux-twig-component": "^2.0 || ^3.0",
         "symfony/ux-icons": "^2.0 || ^3.0",
         "doctrine/dbal": "^3.8.2 || ^4.0",
         "doctrine/orm": "^2.13 || ^3.0",
@@ -67,11 +66,13 @@
         "rector/rector": "^2.0",
         "symfony/http-client": "^6.0 || ^7.0 || ^8.0",
         "symfony/mailer": "^6.0 || ^7.0 || ^8.0",
-        "symfony/mime": "^6.0 || ^7.0 || ^8.0"
+        "symfony/mime": "^6.0 || ^7.0 || ^8.0",
+        "symfony/ux-twig-component": "^2.0 || ^3.0"
     },
     "suggest": {
         "symfony/http-client": "For webhook notifications (Slack, Teams, custom webhooks)",
-        "symfony/mailer": "For email notifications"
+        "symfony/mailer": "For email notifications",
+        "symfony/ux-twig-component": "For dashboard Twig Component mode ({{ component() }}); without it, the bundle uses traditional Twig includes"
     },
     "autoload": {
         "psr-4": {

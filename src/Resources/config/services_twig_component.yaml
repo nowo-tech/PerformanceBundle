@@ -1,0 +1,10 @@
+# Loaded only when symfony/ux-twig-component is installed (see PerformanceExtension).
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Nowo\PerformanceBundle\Twig\Component\:
+        resource: '../../Twig/Component/*'
+        public: true

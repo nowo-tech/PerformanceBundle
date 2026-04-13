@@ -43,15 +43,7 @@ services:
         tags:
             - { name: twig.extension }
 
-    # Twig Components (for Symfony UX TwigComponent)
-    # These components are auto-discovered by Symfony UX TwigComponent via #[AsTwigComponent] attribute
-    # With autoconfigure: true, they should be automatically registered
-    # Explicit registration ensures they are available even if autoconfigure doesn't work
-    Nowo\PerformanceBundle\Twig\Component\:
-        resource: '../../Twig/Component/*'
-        public: true
-        # No explicit tag needed - #[AsTwigComponent] attribute handles registration
-        # Components need to be public for Twig to access them
+    # Twig UX components: see services_twig_component.yaml (loaded only when symfony/ux-twig-component is installed).
 
     # Table Status Checker
     Nowo\PerformanceBundle\Service\TableStatusChecker:
