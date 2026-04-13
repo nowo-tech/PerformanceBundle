@@ -98,7 +98,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "scripts": {
-        "test": "phpunit color=always",
+        "test": "phpunit --colors=always",
         "test-coverage": "phpunit --colors=always --process-isolation --coverage-text --coverage-html coverage --coverage-clover coverage.xml",
         "test-coverage-90": "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=90",
         "test-coverage-100": "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=100",
