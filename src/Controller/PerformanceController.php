@@ -2267,13 +2267,13 @@ class PerformanceController extends AbstractController
             $queriesImprovedBool = match ($queriesImproved) {
                 '1', 'true', 'yes' => true,
                 '0', 'false', 'no' => false,
-                default => null,
+                default            => null,
             };
 
             $timeImprovedBool = match ($timeImproved) {
                 '1', 'true', 'yes' => true,
                 '0', 'false', 'no' => false,
-                default => null,
+                default            => null,
             };
 
             $env = $this->normalizeEnv($routeData->getEnv());
