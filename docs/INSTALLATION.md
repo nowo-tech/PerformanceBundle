@@ -23,6 +23,12 @@
 - Symfony >= 6.1 || >= 7.0 || >= 8.0
 - Doctrine ORM >= 2.13 || >= 3.0
 - Doctrine Bundle >= 2.8 || >= 3.0 (3.0 required for Symfony 8)
+- `symfony/ux-icons` (required for `ux_icon()` in dashboard templates)
+- `symfony/ux-twig-component` (**optional**): without it, the dashboard uses Twig `include` partials; with it, you get Symfony UX `{{ component('nowo_performance.*') }}` rendering. Install when you want that mode and your project has no Composer conflict:
+
+```bash
+composer require symfony/ux-twig-component
+```
 
 > 📖 **For detailed information about compatibility with different Doctrine and DBAL versions, see [COMPATIBILITY.md](COMPATIBILITY.md)**
 

@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.16 (2026-04-13)](#upgrading-to-2016-2026-04-13)
 - [Upgrading to 2.0.15 (2026-03-24)](#upgrading-to-2015-2026-03-24)
 - [Upgrading to 2.0.14 (2026-03-09)](#upgrading-to-2014-2026-03-09)
 - [Upgrading to 2.0.13 (2026-03-02)](#upgrading-to-2013-2026-03-02)
@@ -74,6 +75,27 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 2.0.16 (2026-04-13)
+
+Optional UX Twig Component, CI/Docker/demo polish, and GitHub metadata. No database or `nowo_performance` schema changes.
+
+**Composer**
+
+- `symfony/ux-twig-component` is **optional** for consumers. After `composer update nowo-tech/performance-bundle`, Composer may remove that package if nothing else requires it. The dashboard keeps working with Twig includes; to retain Symfony UX component rendering, run:
+
+```bash
+composer require symfony/ux-twig-component
+```
+
+**Demos / Docker**
+
+- If you use the bundled demos, MySQL is only reachable on the Docker network (no default `3307`/`3308` host mapping). Use `docker compose exec mysql …` or connect from the `php` service using `DATABASE_URL` with host `mysql`.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 2.0.15 (2026-03-24)
 

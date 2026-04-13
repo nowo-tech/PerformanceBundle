@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.16] - 2026-04-13](#2016-2026-04-13)
 - [[2.0.15] - 2026-03-24](#2015-2026-03-24)
 - [[2.0.14] - 2026-03-09](#2014-2026-03-09)
   - [Added](#added)
@@ -110,6 +111,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [2.0.16] - 2026-04-13
+
+### Added
+
+- **GitHub** – Issue templates (bug / feature / support), `CODEOWNERS`, pull request template, repository `SECURITY.md`, and `sync-releases.yml` workflow to backfill GitHub Releases from tags.
+- **Tooling** – `.scripts/` helpers for PHP coverage summary and translation YAML validation (used by `Makefile` / Composer scripts where applicable); Cursor rules and related contributor metadata (optional for end users).
+
+### Changed
+
+- **Composer** – `symfony/ux-twig-component` is no longer a hard `require`. The dashboard already falls back to Twig `include` partials when UX Twig Component is absent; add `composer require symfony/ux-twig-component` only if you want `{{ component('nowo_performance.*') }}` mode. The package stays in `require-dev` for this repository’s tests. Twig component classes are registered via `services_twig_component.yaml`, loaded only when `ComponentInterface` exists.
+- **CI** (`.github/workflows/ci.yml`) – Stricter alignment of Symfony and related packages per matrix job and full-tree `composer update` where needed for PHP 8.1–8.5 and Symfony 6.4 / 7 / 8; integration tests adjusted (Doctrine native lazy objects on PHP 8.4+, `WebTestCase` kernel shutdown).
+- **Docker** – Root and demo `docker-compose` MySQL services no longer publish host ports; use the Docker network (e.g. service hostname `mysql`) or `docker compose exec`.
+- **Demos** – `.env.example` / `.env.test`, grouped demo `.gitignore` (including archives), `make up` copies `.env.example` to `.env` when missing and prints `Demo started at: <DEFAULT_URI>`.
+- **Documentation** – [INSTALLATION](INSTALLATION.md): optional UX Twig Component and requirements; [CONFIGURATION](CONFIGURATION.md) / [USAGE](USAGE.md): doc index links and translation override notes; removed duplicate `docs/README.md` in favour of the root [README](../README.md).
+
+### Fixed
+
+- **Composer** – Resolves install/update failures when another project dependency conflicts with a mandatory `symfony/ux-twig-component` constraint; the bundle no longer forces that package on consumers.
 
 ---
 
