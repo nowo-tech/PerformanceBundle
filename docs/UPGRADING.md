@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.17 (2026-04-13)](#upgrading-to-2017-2026-04-13)
 - [Upgrading to 2.0.16 (2026-04-13)](#upgrading-to-2016-2026-04-13)
 - [Upgrading to 2.0.15 (2026-03-24)](#upgrading-to-2015-2026-03-24)
 - [Upgrading to 2.0.14 (2026-03-09)](#upgrading-to-2014-2026-03-09)
@@ -75,6 +76,15 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 2.0.17 (2026-04-13)
+
+Patch release: fixes the Composer `test` script so `composer test` / CI no longer fails with `Test file "color=always" not found`. No database, configuration, or runtime behaviour changes.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 2.0.16 (2026-04-13)
 

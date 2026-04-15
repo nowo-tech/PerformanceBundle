@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.17] - 2026-04-13](#2017-2026-04-13)
 - [[2.0.16] - 2026-04-13](#2016-2026-04-13)
 - [[2.0.15] - 2026-03-24](#2015-2026-03-24)
 - [[2.0.14] - 2026-03-09](#2014-2026-03-09)
@@ -111,6 +112,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [2.0.17] - 2026-04-13
+
+### Fixed
+
+- **Composer** – The `test` script invoked PHPUnit with `color=always`, which PHPUnit treats as a test file path and fails (e.g. in CI). It now uses `--colors=always`, matching `test-coverage`.
 
 ---
 
