@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.18 (2026-04-15)](#upgrading-to-2018-2026-04-15)
 - [Upgrading to 2.0.17 (2026-04-13)](#upgrading-to-2017-2026-04-13)
 - [Upgrading to 2.0.16 (2026-04-13)](#upgrading-to-2016-2026-04-13)
 - [Upgrading to 2.0.15 (2026-03-24)](#upgrading-to-2015-2026-03-24)
@@ -76,6 +77,15 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 2.0.18 (2026-04-15)
+
+Demo-only maintenance (path `composer.lock` references and Symfony 8 generated `reference.php`). No changes for applications consuming the bundle from Packagist.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 2.0.17 (2026-04-13)
 

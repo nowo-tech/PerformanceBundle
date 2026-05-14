@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.18] - 2026-04-15](#2018-2026-04-15)
 - [[2.0.17] - 2026-04-13](#2017-2026-04-13)
 - [[2.0.16] - 2026-04-13](#2016-2026-04-13)
 - [[2.0.15] - 2026-03-24](#2015-2026-03-24)
@@ -112,6 +113,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [2.0.18] - 2026-04-15
+
+### Changed
+
+- **Demos** – Symfony 7 and 8 demo `composer.lock` path-repository metadata for `nowo-tech/performance-bundle` refreshed after v2.0.17. Symfony 8 demo `config/reference.php` (auto-generated) updated for PHP-CS-Fixer (`declare(strict_types=1);`).
 
 ---
 
