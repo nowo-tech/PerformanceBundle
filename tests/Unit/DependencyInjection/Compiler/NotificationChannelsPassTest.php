@@ -33,7 +33,7 @@ final class NotificationChannelsPassTest extends TestCase
         $thirdParameter = (new ReflectionMethod(TaggedIteratorArgument::class, '__construct'))
             ->getParameters()[2]
             ->getType();
-        if ($thirdParameter instanceof ReflectionNamedType && 'bool' === $thirdParameter->getName()) {
+        if ($thirdParameter instanceof ReflectionNamedType && $thirdParameter->getName() === 'bool') {
             $this->assertNull($argument->getDefaultIndexMethod(false));
             $this->assertNull($argument->getDefaultPriorityMethod(false));
         } else {

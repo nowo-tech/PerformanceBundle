@@ -38,7 +38,7 @@ final class NotificationChannelsPass implements CompilerPassInterface
             ->getParameters()[2]
             ->getType();
 
-        if ($thirdParameter instanceof ReflectionNamedType && 'bool' === $thirdParameter->getName()) {
+        if ($thirdParameter instanceof ReflectionNamedType && $thirdParameter->getName() === 'bool') {
             // Symfony 8.1+: no default index/priority methods (use #[AsTaggedItem] on services instead).
             return new TaggedIteratorArgument($tag, null, false, [], true);
         }
