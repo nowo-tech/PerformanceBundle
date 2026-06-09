@@ -36,7 +36,7 @@ final class NotificationChannelsPass implements CompilerPassInterface
         $thirdParameter = (new ReflectionMethod(TaggedIteratorArgument::class, '__construct'))
             ->getParameters()[2];
 
-        if ('needsIndexes' === $thirdParameter->getName()) {
+        if ($thirdParameter->getName() === 'needsIndexes') {
             // Symfony 8.1+: 3rd arg is $needsIndexes (bool|string|null), not defaultIndexMethod.
             return new TaggedIteratorArgument($tag, null, false, [], true);
         }
