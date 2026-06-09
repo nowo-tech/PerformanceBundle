@@ -8,7 +8,6 @@ use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass
 use Nowo\PerformanceBundle\Service\NotificationService;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
-use ReflectionNamedType;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -31,9 +30,8 @@ final class NotificationChannelsPassTest extends TestCase
         $this->assertTrue($argument->excludeSelf());
 
         $thirdParameter = (new ReflectionMethod(TaggedIteratorArgument::class, '__construct'))
-            ->getParameters()[2]
-            ->getType();
-        if ($thirdParameter instanceof ReflectionNamedType && 'bool' === $thirdParameter->getName()) {
+            ->getParameters()[2];
+        if ('needsIndexes' === $thirdParameter->getName()) {
             $this->assertNull($argument->getDefaultIndexMethod(false));
             $this->assertNull($argument->getDefaultPriorityMethod(false));
         } else {

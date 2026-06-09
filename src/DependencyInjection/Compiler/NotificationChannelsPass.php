@@ -6,7 +6,6 @@ namespace Nowo\PerformanceBundle\DependencyInjection\Compiler;
 
 use Nowo\PerformanceBundle\Service\NotificationService;
 use ReflectionMethod;
-use ReflectionNamedType;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -35,11 +34,10 @@ final class NotificationChannelsPass implements CompilerPassInterface
     private static function createTaggedIteratorArgument(string $tag): TaggedIteratorArgument
     {
         $thirdParameter = (new ReflectionMethod(TaggedIteratorArgument::class, '__construct'))
-            ->getParameters()[2]
-            ->getType();
+            ->getParameters()[2];
 
-        if ($thirdParameter instanceof ReflectionNamedType && 'bool' === $thirdParameter->getName()) {
-            // Symfony 8.1+: no default index/priority methods (use #[AsTaggedItem] on services instead).
+        if ('needsIndexes' === $thirdParameter->getName()) {
+            // Symfony 8.1+: 3rd arg is $needsIndexes (bool|string|null), not defaultIndexMethod.
             return new TaggedIteratorArgument($tag, null, false, [], true);
         }
 
