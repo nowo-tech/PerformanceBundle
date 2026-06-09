@@ -10,6 +10,7 @@ use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Service for sending performance notifications.
@@ -29,6 +30,7 @@ class NotificationService
      */
     public function __construct(
         private readonly iterable $channels = [],
+        #[Autowire('%nowo_performance.notifications.enabled%')]
         private readonly bool $enabled = false,
     ) {
     }

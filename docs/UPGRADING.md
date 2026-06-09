@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.19 (2026-06-09)](#upgrading-to-2019-2026-06-09)
 - [Upgrading to 2.0.18 (2026-04-15)](#upgrading-to-2018-2026-04-15)
 - [Upgrading to 2.0.17 (2026-04-13)](#upgrading-to-2017-2026-04-13)
 - [Upgrading to 2.0.16 (2026-04-13)](#upgrading-to-2016-2026-04-13)
@@ -77,6 +78,19 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 2.0.19 (2026-06-09)
+
+Symfony 8.1 compatibility fix for notification channel wiring. No database, configuration, or API changes.
+
+**Fixed**
+
+- Removes the `symfony/dependency-injection` 8.1 deprecation when compiling the container (`TaggedIteratorArgument` / tagged notification channels). Custom channels registered with `nowo_performance.notification_channel` behave as before.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 2.0.18 (2026-04-15)
 

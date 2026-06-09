@@ -136,11 +136,8 @@ services:
         tags:
             - { name: 'nowo_performance.notification_channel', alias: 'webhook' }
 
-    # Notification Service
+    # Notification Service (channels wired via NotificationChannelsPass — Symfony 8.1-safe)
     Nowo\PerformanceBundle\Service\NotificationService:
-        arguments:
-            $channels: !tagged_iterator 'nowo_performance.notification_channel'
-            $enabled: '%nowo_performance.notifications.enabled%'
         public: true
 
     # Performance Alert Subscriber

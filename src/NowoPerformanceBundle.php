@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle;
 
+use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -135,7 +136,7 @@ class NowoPerformanceBundle extends Bundle
     {
         parent::build($container);
 
-        // Register compiler pass for QueryTrackingMiddleware
+        $container->addCompilerPass(new NotificationChannelsPass());
         $container->addCompilerPass(new QueryTrackingMiddlewarePass());
     }
 }

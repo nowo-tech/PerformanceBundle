@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.19] - 2026-06-09](#2019-2026-06-09)
 - [[2.0.18] - 2026-04-15](#2018-2026-04-15)
 - [[2.0.17] - 2026-04-13](#2017-2026-04-13)
 - [[2.0.16] - 2026-04-13](#2016-2026-04-13)
@@ -113,6 +114,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [2.0.19] - 2026-06-09
+
+### Fixed
+
+- **Symfony 8.1** – `NotificationService` no longer triggers the `symfony/dependency-injection` deprecation about `$defaultIndexMethod` / `$defaultPriorityMethod` on tagged iterators. A `NotificationChannelsPass` compiler pass wires notification channels with a version-safe `TaggedIteratorArgument`; custom channels still use the `nowo_performance.notification_channel` tag.
+
+### Added
+
+- **Tests** – Unit tests for `NotificationChannelsPass`.
 
 ---
 
