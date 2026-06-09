@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.20] - 2026-06-09](#2020-2026-06-09)
 - [[2.0.19] - 2026-06-09](#2019-2026-06-09)
 - [[2.0.18] - 2026-04-15](#2018-2026-04-15)
 - [[2.0.17] - 2026-04-13](#2017-2026-04-13)
@@ -114,6 +115,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [2.0.20] - 2026-06-09
+
+### Added
+
+- **Documentation** – [SPEC-DRIVEN-DEVELOPMENT.md](SPEC-DRIVEN-DEVELOPMENT.md): product spec, user stories, and `REQ-*` traceability for maintainers; linked from root [README](../README.md) and [ENGRAM.md](ENGRAM.md).
+
+### Changed
+
+- **Symfony 8.1** – `NotificationChannelsPass` detects the `TaggedIteratorArgument` constructor by the third parameter name (`needsIndexes`) instead of reflection type, so tagged notification channels stay wired correctly across Symfony versions.
 
 ---
 

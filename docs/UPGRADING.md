@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.20 (2026-06-09)](#upgrading-to-2020-2026-06-09)
 - [Upgrading to 2.0.19 (2026-06-09)](#upgrading-to-2019-2026-06-09)
 - [Upgrading to 2.0.18 (2026-04-15)](#upgrading-to-2018-2026-04-15)
 - [Upgrading to 2.0.17 (2026-04-13)](#upgrading-to-2017-2026-04-13)
@@ -78,6 +79,23 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 2.0.20 (2026-06-09)
+
+Documentation and internal Symfony 8.1 wiring polish. No database, configuration, or runtime API changes for applications.
+
+**Added**
+
+- Maintainer doc [SPEC-DRIVEN-DEVELOPMENT.md](SPEC-DRIVEN-DEVELOPMENT.md) (product scope, user stories, `REQ-*` traceability).
+
+**Changed**
+
+- `NotificationChannelsPass` uses a more reliable check for the Symfony 8.1 `TaggedIteratorArgument` constructor (same behaviour for notification channels).
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 2.0.19 (2026-06-09)
 
