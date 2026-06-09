@@ -286,6 +286,7 @@ This ensures reliable query tracking across different Symfony and Doctrine versi
 - [Release](docs/RELEASE.md)
 - [Security](docs/SECURITY.md)
 - [Engram](docs/ENGRAM.md)
+- [Spec-driven development](docs/SPEC-DRIVEN-DEVELOPMENT.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ### Additional documentation
