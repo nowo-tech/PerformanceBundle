@@ -938,7 +938,7 @@
             "dist": {
                 "type": "path",
                 "url": "/var/performance-bundle",
-                "reference": "e83bed245a6a3e677a46dc1e0269e580b2e1324f"
+                "reference": "0e1a231ce1b6523d3971fde5aab1d208e8b09d9d"
             },
             "require": {
                 "doctrine/dbal": "^3.8.2 || ^4.0",
