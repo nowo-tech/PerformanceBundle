@@ -29,7 +29,7 @@ This project is maintained by [Héctor Franco Aceituno](https://github.com/HecFr
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/nowo-tech/performance-bundle.git
+   git clone https://github.com/nowo-tech/PerformanceBundle.git
    cd performance-bundle
    ```
 
@@ -57,7 +57,7 @@ This project is maintained by [Héctor Franco Aceituno](https://github.com/HecFr
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/nowo-tech/performance-bundle.git
+   git clone https://github.com/nowo-tech/PerformanceBundle.git
    cd performance-bundle
    ```
 

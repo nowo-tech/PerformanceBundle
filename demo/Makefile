@@ -266,3 +266,7 @@ performance-sync-all:
 	@$(MAKE) performance-sync-symfony7
 	@$(MAKE) performance-sync-symfony8
 	@echo "✅ Schema sync en todas las demos completado!"
+
+# REQ-MAKE-008: update-deps-all (REQ-MAKE-008)
+BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+include $(BUNDLE_ROOT)/../.scripts/Makefile.demo-aggregate-update-deps.mk

@@ -167,3 +167,9 @@ setup-hooks:
 	else \
 		echo "⚠️  .githooks directory not found, skipping hook setup"; \
 	fi
+
+# REQ-MAKE-008: update-deps (REQ-MAKE-008)
+COMPOSE := docker-compose
+SERVICE_PHP := php
+BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+include $(BUNDLE_ROOT)/../.scripts/Makefile.update-deps.mk
