@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.0.0] - 2026-06-30](#300-2026-06-30)
 - [[2.0.21] - 2026-06-30](#2021-2026-06-30)
 - [[2.0.20] - 2026-06-09](#2020-2026-06-09)
 - [[2.0.19] - 2026-06-09](#2019-2026-06-09)
@@ -116,6 +117,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.0.0] - 2026-06-30
+
+### Removed
+
+- **Symfony 6.x** and **PHP 8.1** support. The bundle now requires **PHP 8.2+** and **Symfony 7.0+** (`^7.0 || ^8.0`).
+
+### Changed
+
+- **Requirements** – `composer.json` constraints raised to PHP `>=8.2 <8.6` and Symfony `^7.0 || ^8.0` for all bundle dependencies.
+- **CI** – Test matrix aligned with the new minimums (PHP 8.2–8.5, Symfony 7.0 / 7.4 / 8.0 / 8.1).
+- **Documentation** – README, INSTALLATION, COMPATIBILITY, and ROADMAP updated for PHP 8.2+ and Symfony 7+.
 
 ---
 

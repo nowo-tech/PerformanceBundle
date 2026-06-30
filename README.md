@@ -1,12 +1,12 @@
 # Performance Bundle
 
-[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-6.0%2B%20%7C%207.4%2B%20%7C%208.0%20%7C%208.1%2B-000000?logo=symfony)](https://symfony.com)
+[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.0%2B%20%7C%208.0%2B-000000?logo=symfony)](https://symfony.com)
 
 > ⭐ **Found this useful?** Give it a star on GitHub! It helps us maintain and improve the project.
 
 **Symfony bundle for tracking and analyzing route performance metrics.** Automatically records request time, database query count, and query execution time for performance analysis.
 
-> 📋 **Compatible with Symfony 6.1+, 7.x, and 8.x** - This bundle requires Symfony 6.1 or higher.
+> 📋 **Compatible with Symfony 7.x and 8.x** - Requires PHP 8.2 or higher and Symfony 7.0 or higher.
 
 ## What is this?
 
@@ -47,7 +47,7 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ WebProfiler integration with ranking information
 - ✅ **Chart.js integration** - Interactive performance charts
 - ✅ **Symfony UX Twig Components** - Optional modern component system
-- ✅ Symfony 6.1+, 7.x, and 8.x compatible
+- ✅ Symfony 7.x and 8.x compatible
 - ✅ **FrankenPHP** — Compatible with FrankenPHP; production Caddyfile can use worker mode, while **dev demos** use `APP_ENV=dev` so the image entrypoint swaps in `Caddyfile.dev` (no worker, comfortable local dev). See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) and the demo READMEs.
 
 ## Screenshots
@@ -188,8 +188,8 @@ $worstRoutes = $metricsService->getWorstPerformingRoutes('dev', 10);
 
 ## Requirements
 
-- PHP >= 8.1, < 8.6
-- Symfony 6.1+, 7.x, or 8.x
+- PHP >= 8.2, < 8.6
+- Symfony 7.x or 8.x
 - Doctrine ORM ^2.13 || ^3.0
 - Doctrine Bundle ^2.8 || ^3.0 (3.0 required for Symfony 8)
 

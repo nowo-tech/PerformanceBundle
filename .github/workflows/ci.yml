@@ -1,4 +1,4 @@
-# CI: tests on PHP 8.1–8.5 × Symfony 6.4, 7.0, 7.4, 8.0, 8.1 (exclusions for incompatible pairs).
+# CI: tests on PHP 8.2–8.5 × Symfony 7.0, 7.4, 8.0, 8.1.
 # Coverage with PCOV; release updated via release.yml on tag push.
 name: CI
 
@@ -16,25 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.1', '8.2', '8.3', '8.4', '8.5']
-        symfony: ['6.4', '7.0', '7.4', '8.0', '8.1']
-        exclude:
-          - php: '8.1'
-            symfony: '7.0'
-          - php: '8.1'
-            symfony: '7.4'
-          - php: '8.1'
-            symfony: '8.0'
-          - php: '8.1'
-            symfony: '8.1'
-          - php: '8.2'
-            symfony: '8.0'
-          - php: '8.2'
-            symfony: '8.1'
-          - php: '8.3'
-            symfony: '8.0'
-          - php: '8.3'
-            symfony: '8.1'
+        php: ['8.2', '8.3', '8.4', '8.5']
+        symfony: ['7.0', '7.4', '8.0', '8.1']
 
     steps:
       - name: Checkout code
@@ -66,15 +49,12 @@ jobs:
 
       - name: Install dependencies with Symfony ${{ matrix.symfony }}
         run: |
-          # Do not run a partial `composer update` on PHP 8.1 before the steps below: if composer.lock was built
-          # on PHP 8.2+ (e.g. Symfony 7.4), Composer validates the whole lock against PHP 8.1 and aborts before any
-          # package can be downgraded. The require + full symfony/* update realigns the lock for this matrix.
-          # Pin browser-kit + dom-crawler to the matrix Symfony: they are require-dev with ^6.1||^7||^8 and could
-          # otherwise stay on 7.x while http-kernel is 6.4, breaking HttpKernelBrowser::doRequest vs AbstractBrowser.
+          # Pin browser-kit + dom-crawler to the matrix Symfony: they are require-dev with ^7||^8 and could
+          # otherwise stay on 8.x while http-kernel is 7.x, breaking HttpKernelBrowser::doRequest vs AbstractBrowser.
           # var-exporter must match the matrix Symfony major: ORM 3.6+ needs ProxyHelper::generateLazyGhost when native
           # lazy objects are off; that method was removed in symfony/var-exporter 8.x, so a 7.x stack must not pull 8.x here.
           # Pin every Symfony component used by the bundle (and symfony/console, which is only transitive): otherwise the
-          # lock can keep console 7.x while yaml/http-kernel are 6.4 → PHP fatal: Command::configure(): void vs LintCommand.
+          # lock can keep mismatched Symfony majors across packages.
           composer require \
             symfony/config:^${{ matrix.symfony }} \
             symfony/console:^${{ matrix.symfony }} \

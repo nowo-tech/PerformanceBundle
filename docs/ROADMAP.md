@@ -556,9 +556,9 @@ Transform the Performance Bundle into a comprehensive performance monitoring and
   - Performance regression tests
 
 - [x] **Compatibility testing** ✅ **COMPLETED**
-  - ✅ Multi-version Symfony support (6.1+, 7.x, 8.x)
+  - ✅ Multi-version Symfony support (7.x, 8.x)
   - ✅ Database compatibility (MySQL, PostgreSQL, SQLite)
-  - ✅ PHP version compatibility (8.1+)
+  - ✅ PHP version compatibility (8.2+)
   - ✅ DoctrineBundle 2.x and 3.x support
 
 ---
