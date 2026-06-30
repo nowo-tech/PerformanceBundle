@@ -19,8 +19,8 @@
 
 ## Requirements
 
-- PHP >= 8.1, < 8.6
-- Symfony >= 6.1 || >= 7.0 || >= 8.0
+- PHP >= 8.2, < 8.6
+- Symfony >= 7.0 || >= 8.0
 - Doctrine ORM >= 2.13 || >= 3.0
 - Doctrine Bundle >= 2.8 || >= 3.0 (3.0 required for Symfony 8)
 - `symfony/ux-icons` (required for `ux_icon()` in dashboard templates)

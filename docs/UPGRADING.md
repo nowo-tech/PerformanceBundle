@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.0.0 (2026-06-30)](#upgrading-to-300-2026-06-30)
 - [Upgrading to 2.0.21 (2026-06-30)](#upgrading-to-2021-2026-06-30)
 - [Upgrading to 2.0.20 (2026-06-09)](#upgrading-to-2020-2026-06-09)
 - [Upgrading to 2.0.19 (2026-06-09)](#upgrading-to-2019-2026-06-09)
@@ -80,6 +81,23 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.0.0 (2026-06-30)
+
+**Breaking change:** minimum **PHP 8.2** and **Symfony 7.0**. Symfony 6.x and PHP 8.1 are no longer supported. Stay on **v2.0.21** (or earlier 2.x) if your application has not migrated yet.
+
+**Before upgrading**
+
+1. Upgrade your application to PHP 8.2+ and Symfony 7+ (see [Symfony upgrade docs](https://symfony.com/doc/current/setup/upgrade_major.html)).
+2. On Symfony 8, ensure `doctrine/doctrine-bundle` `^3.0` is installed.
+3. Require the new major explicitly:
+
+```bash
+composer require nowo-tech/performance-bundle:^3.0
+php bin/console cache:clear
+```
+
+If Composer refuses the update, your project still satisfies the previous constraints (`php >=8.1`, Symfony 6). Upgrade the application first, then bump the bundle.
 
 ## Upgrading to 2.0.21 (2026-06-30)
 

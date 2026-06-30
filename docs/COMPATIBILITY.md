@@ -39,21 +39,22 @@ This document explains the Doctrine and DBAL versions supported by the bundle, t
 
 The bundle is compatible with the following versions:
 
+- **PHP**: `>=8.2, <8.6`
+- **Symfony**: `^7.0 || ^8.0`
 - **Doctrine ORM**: `^2.13 || ^3.0`
 - **Doctrine DBAL**: Included with ORM (2.x with ORM 2.x, 3.x with ORM 3.x)
 - **DoctrineBundle**: `^2.8 || ^3.0`
+
+> Symfony 6.x and PHP 8.1 are no longer supported (see [UPGRADING.md](UPGRADING.md)).
 
 ### Compatibility Matrix
 
 | Symfony | Doctrine ORM | Doctrine DBAL | DoctrineBundle | Support | Notes |
 |---------|--------------|---------------|----------------|---------|-------|
-| 6.1+    | 2.13+        | 2.x           | 2.8+           | ✅      | Uses reflection-based middleware |
-| 6.1+    | 2.13+        | 2.x           | 2.17.1         | ✅      | Tested - no YAML config needed |
-| 6.1+    | 2.13+        | 2.x           | 3.0+           | ✅      | Uses reflection-based middleware |
-| 7.0+    | 2.13+        | 2.x           | 2.8+           | ✅      | Uses reflection-based middleware |
+| 7.0+    | 2.13+        | 2.x           | 2.8+           | ✅      | Uses reflection-based middleware; requires PHP 8.2+ |
 | 7.0+    | 2.13+        | 2.x           | 2.17.1         | ✅      | Tested - no YAML config needed |
 | 7.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | Uses reflection-based middleware |
-| 8.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | Uses reflection-based middleware |
+| 8.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | DoctrineBundle 3.0 required |
 
 > **Note**: 
 > - DoctrineBundle 3.0 is required for Symfony 8.0+.

@@ -32,7 +32,7 @@ use const STDOUT;
  * - Route data persistence
  * - Command to set/update route metrics
  * - Support for multiple environments
- * - Symfony 6.1+, 7.x, and 8.x compatible
+ * - Symfony 7.x and 8.x compatible
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
