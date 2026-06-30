@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit;
 
+use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Nowo\PerformanceBundle\NowoPerformanceBundle;
@@ -65,14 +66,23 @@ final class NowoPerformanceBundleTest extends TestCase
 
     public function testBuildRegistersCompilerPass(): void
     {
-        $bundle    = new NowoPerformanceBundle();
-        $container = $this->createMock(ContainerBuilder::class);
+        $bundle     = new NowoPerformanceBundle();
+        $container  = $this->createMock(ContainerBuilder::class);
+        $registered = [];
 
-        $container->expects($this->once())
+        $container->expects($this->exactly(2))
             ->method('addCompilerPass')
-            ->with($this->isInstanceOf(QueryTrackingMiddlewarePass::class));
+            ->willReturnCallback(static function (object $pass) use (&$registered, $container): ContainerBuilder {
+                $registered[] = $pass;
+
+                return $container;
+            });
 
         $bundle->build($container);
+
+        $this->assertCount(2, $registered);
+        $this->assertInstanceOf(NotificationChannelsPass::class, $registered[0]);
+        $this->assertInstanceOf(QueryTrackingMiddlewarePass::class, $registered[1]);
     }
 
     public function testBuildCallsParentBuild(): void
@@ -80,10 +90,9 @@ final class NowoPerformanceBundleTest extends TestCase
         $bundle    = new NowoPerformanceBundle();
         $container = $this->createMock(ContainerBuilder::class);
 
-        // Verify that addCompilerPass is called (which means build is executed)
-        $container->expects($this->once())
+        $container->expects($this->exactly(2))
             ->method('addCompilerPass')
-            ->with($this->isInstanceOf(QueryTrackingMiddlewarePass::class));
+            ->willReturnSelf();
 
         $bundle->build($container);
     }
