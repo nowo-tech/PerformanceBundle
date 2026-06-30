@@ -1,6 +1,6 @@
 {
     "name": "nowo-tech/performance-demo-symfony8",
-    "description": "Demo project for Performance Bundle - Symfony 8.0",
+    "description": "Demo project for Performance Bundle - Symfony 8.1",
     "type": "project",
     "license": "MIT",
     "require": {
@@ -14,10 +14,10 @@
         "symfony/flex": "^2.0",
         "symfony/form": "^8.0",
         "symfony/framework-bundle": "^8.0",
-        "symfony/http-client": "8.0.*",
+        "symfony/http-client": "8.1.*",
         "symfony/runtime": "^8.0",
         "symfony/security-bundle": "^8.0",
-        "symfony/security-csrf": "8.0.*",
+        "symfony/security-csrf": "8.1.*",
         "symfony/translation": "^8.0",
         "symfony/twig-bundle": "^8.0",
         "symfony/ux-icons": "^3.0",
@@ -71,7 +71,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "8.0.*"
+            "require": "8.1.*"
         }
     },
     "repositories": [
@@ -83,8 +83,8 @@
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "*",
         "nowo-tech/twig-inspector-bundle": "*",
-        "symfony/debug-bundle": "8.0.*",
-        "symfony/var-dumper": "8.0.*",
-        "symfony/web-profiler-bundle": "8.0.*"
+        "symfony/debug-bundle": "8.1.*",
+        "symfony/var-dumper": "8.1.*",
+        "symfony/web-profiler-bundle": "8.1.*"
     }
 }

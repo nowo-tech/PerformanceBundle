@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 2.0.21 (2026-06-30)](#upgrading-to-2021-2026-06-30)
 - [Upgrading to 2.0.20 (2026-06-09)](#upgrading-to-2020-2026-06-09)
 - [Upgrading to 2.0.19 (2026-06-09)](#upgrading-to-2019-2026-06-09)
 - [Upgrading to 2.0.18 (2026-04-15)](#upgrading-to-2018-2026-04-15)
@@ -79,6 +80,20 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 2.0.21 (2026-06-30)
+
+Maintenance release: CI matrix (Symfony 7.4 / 8.1), CodeRabbit workflow, Makefile `update-deps` fixes, and documentation URL corrections. **No database, configuration, or runtime API changes** for applications.
+
+**Maintainers / demos**
+
+- `make update-deps` at the bundle root and in demos now runs correctly (requires Docker; updates bundle + demo `composer.lock` files).
+- Clone URL in [CONTRIBUTING.md](CONTRIBUTING.md) is `https://github.com/nowo-tech/PerformanceBundle.git`.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 2.0.20 (2026-06-09)
 

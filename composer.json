@@ -22,10 +22,10 @@
         "postgresql",
         "sqlite"
     ],
-    "homepage": "https://github.com/nowo-tech/performance-bundle",
+    "homepage": "https://github.com/nowo-tech/PerformanceBundle",
     "support": {
-        "issues": "https://github.com/nowo-tech/performance-bundle/issues",
-        "source": "https://github.com/nowo-tech/performance-bundle"
+        "issues": "https://github.com/nowo-tech/PerformanceBundle/issues",
+        "source": "https://github.com/nowo-tech/PerformanceBundle"
     },
     "authors": [
         {

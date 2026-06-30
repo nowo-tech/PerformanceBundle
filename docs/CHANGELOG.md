@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[2.0.21] - 2026-06-30](#2021-2026-06-30)
 - [[2.0.20] - 2026-06-09](#2020-2026-06-09)
 - [[2.0.19] - 2026-06-09](#2019-2026-06-09)
 - [[2.0.18] - 2026-04-15](#2018-2026-04-15)
@@ -115,6 +116,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [2.0.21] - 2026-06-30
+
+### Added
+
+- **CI** – Test matrix extended to Symfony **7.4** and **8.1** (with existing PHP/Symfony exclusions).
+- **CodeRabbit** – `.coderabbit.yaml` and GitHub Actions workflow for automated PR review.
+- **Makefiles** – Standard `update-deps` / `update-deps-all` targets (`REQ-MAKE-008`) for the bundle root and Symfony 7/8 demos (`COMPOSE` / `SERVICE_PHP` wiring).
+
+### Changed
+
+- **README** – Symfony compatibility badge updated (6.0+, 7.4+, 8.0, 8.1+).
+- **composer.json** – GitHub `homepage`, `issues`, and `source` URLs corrected to `nowo-tech/PerformanceBundle`.
+- **Demos** – Symfony 7 and 8 demo `composer.lock` refreshed; Symfony 7 `config/reference.php` added; Symfony 8 `reference.php` updated.
+
+### Fixed
+
+- **`make update-deps`** – Bundle and demo Makefiles no longer call `exec -T` without `docker-compose` (empty `COMPOSE`), and demo `update-deps-all` no longer loops indefinitely when demo targets were missing.
 
 ---
 

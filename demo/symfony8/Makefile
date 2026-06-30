@@ -187,3 +187,8 @@ clean:
 	rm -rf var/cache/*
 	rm -rf var/log/*
 	@echo "✅ Cleaned!"
+
+# REQ-MAKE-008: update-deps
+COMPOSE := docker-compose
+SERVICE_PHP := php
+include $(abspath $(CURDIR)/../../../.scripts/Makefile.demo-update-deps.mk)
