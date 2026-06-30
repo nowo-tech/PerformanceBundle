@@ -18,6 +18,16 @@ jobs:
       matrix:
         php: ['8.2', '8.3', '8.4', '8.5']
         symfony: ['7.0', '7.4', '8.0', '8.1']
+        exclude:
+          # doctrine/doctrine-bundle 3.x (required for Symfony 8) needs PHP ^8.4
+          - php: '8.2'
+            symfony: '8.0'
+          - php: '8.2'
+            symfony: '8.1'
+          - php: '8.3'
+            symfony: '8.0'
+          - php: '8.3'
+            symfony: '8.1'
 
     steps:
       - name: Checkout code
@@ -49,33 +59,42 @@ jobs:
 
       - name: Install dependencies with Symfony ${{ matrix.symfony }}
         run: |
+          SYMFONY="${{ matrix.symfony }}"
           # Pin browser-kit + dom-crawler to the matrix Symfony: they are require-dev with ^7||^8 and could
           # otherwise stay on 8.x while http-kernel is 7.x, breaking HttpKernelBrowser::doRequest vs AbstractBrowser.
           # var-exporter must match the matrix Symfony major: ORM 3.6+ needs ProxyHelper::generateLazyGhost when native
           # lazy objects are off; that method was removed in symfony/var-exporter 8.x, so a 7.x stack must not pull 8.x here.
           # Pin every Symfony component used by the bundle (and symfony/console, which is only transitive): otherwise the
           # lock can keep mismatched Symfony majors across packages.
+          # Symfony 8 needs doctrine/doctrine-bundle ^3.2 (PHP ^8.4); Symfony 7 uses ^2.18.
           composer require \
-            symfony/config:^${{ matrix.symfony }} \
-            symfony/console:^${{ matrix.symfony }} \
-            symfony/dependency-injection:^${{ matrix.symfony }} \
-            symfony/framework-bundle:^${{ matrix.symfony }} \
-            symfony/form:^${{ matrix.symfony }} \
-            symfony/http-kernel:^${{ matrix.symfony }} \
-            symfony/yaml:^${{ matrix.symfony }} \
-            symfony/security-bundle:^${{ matrix.symfony }} \
-            symfony/stopwatch:^${{ matrix.symfony }} \
-            symfony/translation:^${{ matrix.symfony }} \
-            symfony/twig-bundle:^${{ matrix.symfony }} \
-            symfony/var-exporter:^${{ matrix.symfony }} \
-            symfony/browser-kit:^${{ matrix.symfony }} \
-            symfony/dom-crawler:^${{ matrix.symfony }} \
-            symfony/http-client:^${{ matrix.symfony }} \
-            symfony/mailer:^${{ matrix.symfony }} \
-            symfony/mime:^${{ matrix.symfony }} \
+            symfony/config:^${SYMFONY} \
+            symfony/console:^${SYMFONY} \
+            symfony/dependency-injection:^${SYMFONY} \
+            symfony/framework-bundle:^${SYMFONY} \
+            symfony/form:^${SYMFONY} \
+            symfony/http-kernel:^${SYMFONY} \
+            symfony/yaml:^${SYMFONY} \
+            symfony/security-bundle:^${SYMFONY} \
+            symfony/stopwatch:^${SYMFONY} \
+            symfony/translation:^${SYMFONY} \
+            symfony/twig-bundle:^${SYMFONY} \
+            symfony/var-exporter:^${SYMFONY} \
             --no-interaction --no-update
+          composer require --dev \
+            symfony/browser-kit:^${SYMFONY} \
+            symfony/dom-crawler:^${SYMFONY} \
+            symfony/http-client:^${SYMFONY} \
+            symfony/mailer:^${SYMFONY} \
+            symfony/mime:^${SYMFONY} \
+            --no-interaction --no-update
+          if [[ "${SYMFONY}" == 8.* ]]; then
+            composer require doctrine/doctrine-bundle:^3.2 --no-interaction --no-update
+          else
+            composer require doctrine/doctrine-bundle:^2.18 --no-interaction --no-update
+          fi
           # Quote 'symfony/*' so the shell never glob-expands it (with nullglob, symfony/* can vanish and Composer would
-          # skip all Symfony packages — leaving e.g. console 7.x with yaml 6.4 → fatal Command::configure(): void).
+          # skip all Symfony packages — leaving e.g. console 7.x with yaml 8.x → fatal Command::configure(): void).
           # Full update reconciles require-dev (php-cs-fixer, rector, …) with the pinned Symfony major.
           composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
 
@@ -201,6 +220,9 @@ jobs:
             symfony/translation:^7.0 \
             symfony/twig-bundle:^7.0 \
             symfony/var-exporter:^7.0 \
+            doctrine/doctrine-bundle:^2.18 \
+            --no-interaction --no-update
+          composer require --dev \
             symfony/browser-kit:^7.0 \
             symfony/dom-crawler:^7.0 \
             symfony/http-client:^7.0 \
