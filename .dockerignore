@@ -1,0 +1,24 @@
+# Git and CI
+.git
+.github
+
+# Dependencies (installed during image build)
+vendor/
+
+# Demo runtime data (MySQL/Postgres volumes; often root-owned)
+demo/**/.data/
+
+# Coverage and test artifacts
+coverage/
+coverage*.xml
+coverage*.txt
+*.xml
+
+# Tool caches
+.php-cs-fixer.cache
+.phpunit.cache
+.symfony/
+
+# Local IDE / agent config
+.cursor/
+.specify/

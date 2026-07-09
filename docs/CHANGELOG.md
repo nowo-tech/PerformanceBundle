@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.1.0] - 2026-07-09](#310-2026-07-09)
 - [[3.0.1] - 2026-07-09](#301-2026-07-09)
 - [[3.0.0] - 2026-06-30](#300-2026-06-30)
 - [[2.0.21] - 2026-06-30](#2021-2026-06-30)
@@ -118,6 +119,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.1.0] - 2026-07-09
+
+### Added
+
+- **Spec Kit** – [SPEC-KIT.md](SPEC-KIT.md), baseline specs under `specs/001-baseline/`, `.specify/` scaffolding, and Cursor `speckit-*` skills; [SPEC-DRIVEN-DEVELOPMENT.md](SPEC-DRIVEN-DEVELOPMENT.md) updated for the three-layer model.
+
+### Changed
+
+- **Dashboard security** – Default `dashboard.roles` is now `['ROLE_ADMIN']` instead of `[]`. Set `roles: []` explicitly to restore unrestricted access (e.g. local dev). See [CONFIGURATION.md](CONFIGURATION.md#dashboardroles).
+- **Translations** – YAML structure normalized for `de`, `fr`, `it`, `nl`, and `pt` locales (keys unchanged).
+- **Demos** – `composer.lock` and generated `reference.php` refreshed.
 
 ---
 

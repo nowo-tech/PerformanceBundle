@@ -41,7 +41,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertTrue($this->container->getParameter('nowo_performance.dashboard.enabled'));
         $this->assertSame('/performance', $this->container->getParameter('nowo_performance.dashboard.path'));
         $this->assertSame('', $this->container->getParameter('nowo_performance.dashboard.prefix'));
-        $this->assertSame([], $this->container->getParameter('nowo_performance.dashboard.roles'));
+        $this->assertSame(['ROLE_ADMIN'], $this->container->getParameter('nowo_performance.dashboard.roles'));
         $this->assertSame('nowo_performance.cache', $this->container->getParameter('nowo_performance.cache.pool'));
     }
 
