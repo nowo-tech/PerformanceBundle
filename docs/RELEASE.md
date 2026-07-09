@@ -1,6 +1,6 @@
 # Release process
 
-## Creating a new version (e.g. v3.1.0)
+## Creating a new version (e.g. v3.1.1)
 
 1. **Ensure everything is ready**
    - [CHANGELOG.md](CHANGELOG.md) has the target version with date and full entry; `[Unreleased]` is at the top (empty or “_No changes yet._”).
