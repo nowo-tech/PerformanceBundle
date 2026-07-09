@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.0.1] - 2026-07-09](#301-2026-07-09)
 - [[3.0.0] - 2026-06-30](#300-2026-06-30)
 - [[2.0.21] - 2026-06-30](#2021-2026-06-30)
 - [[2.0.20] - 2026-06-09](#2020-2026-06-09)
@@ -117,6 +118,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.0.1] - 2026-07-09
+
+### Fixed
+
+- **CI** – Symfony 8 matrix jobs pin `doctrine/doctrine-bundle` ^3.2; Symfony 7 jobs pin ^2.18; `require-dev` Symfony packages use `--dev`. Excludes Symfony 8 on PHP 8.2/8.3 (Symfony 8 and DoctrineBundle 3.2+ need PHP ^8.4).
+- **Tests** – `NowoPerformanceBundleTest` expects both compiler passes registered in `build()` (`NotificationChannelsPass`, then `QueryTrackingMiddlewarePass`).
+
+### Changed
+
+- **Documentation** – COMPATIBILITY and INSTALLATION note that Symfony 8 stacks require PHP 8.4+ in practice (DoctrineBundle 3.2+).
 
 ---
 
