@@ -35,7 +35,7 @@ final class ConfigurationTest extends TestCase
         $this->assertTrue($config['dashboard']['enabled']);
         $this->assertSame('/performance', $config['dashboard']['path']);
         $this->assertSame('', $config['dashboard']['prefix']);
-        $this->assertSame([], $config['dashboard']['roles']);
+        $this->assertSame(['ROLE_ADMIN'], $config['dashboard']['roles']);
         $this->assertSame('nowo_performance.cache', $config['cache']['pool']);
     }
 
@@ -88,7 +88,7 @@ final class ConfigurationTest extends TestCase
         $this->assertTrue($config['dashboard']['enabled']);
         $this->assertSame('/performance', $config['dashboard']['path']);
         $this->assertSame('', $config['dashboard']['prefix']);
-        $this->assertSame([], $config['dashboard']['roles']);
+        $this->assertSame(['ROLE_ADMIN'], $config['dashboard']['roles']);
     }
 
     public function testDashboardConfigurationWithRoles(): void
