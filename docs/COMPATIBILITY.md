@@ -46,6 +46,7 @@ The bundle is compatible with the following versions:
 - **DoctrineBundle**: `^2.8 || ^3.0`
 
 > Symfony 6.x and PHP 8.1 are no longer supported (see [UPGRADING.md](UPGRADING.md)).
+> **Symfony 8** requires **PHP 8.4+** and **DoctrineBundle ^3.2** (Symfony 7 works from PHP 8.2 with DoctrineBundle 2.x).
 
 ### Compatibility Matrix
 
@@ -54,7 +55,7 @@ The bundle is compatible with the following versions:
 | 7.0+    | 2.13+        | 2.x           | 2.8+           | ✅      | Uses reflection-based middleware; requires PHP 8.2+ |
 | 7.0+    | 2.13+        | 2.x           | 2.17.1         | ✅      | Tested - no YAML config needed |
 | 7.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | Uses reflection-based middleware |
-| 8.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | DoctrineBundle 3.0 required |
+| 8.0+    | 3.0+         | 3.x           | 3.2+           | ✅      | PHP 8.4+; DoctrineBundle 3.2+ required |
 
 > **Note**: 
 > - DoctrineBundle 3.0 is required for Symfony 8.0+.

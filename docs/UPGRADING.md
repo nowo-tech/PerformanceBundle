@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.0.1 (2026-07-09)](#upgrading-to-301-2026-07-09)
 - [Upgrading to 3.0.0 (2026-06-30)](#upgrading-to-300-2026-06-30)
 - [Upgrading to 2.0.21 (2026-06-30)](#upgrading-to-2021-2026-06-30)
 - [Upgrading to 2.0.20 (2026-06-09)](#upgrading-to-2020-2026-06-09)
@@ -81,6 +82,17 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.0.1 (2026-07-09)
+
+Patch release: CI and test fixes only. **No database, configuration, or runtime API changes** for applications.
+
+**Note:** if you target **Symfony 8**, use **PHP 8.4+** and `doctrine/doctrine-bundle` **^3.2** (required by the Symfony 8 / Doctrine ecosystem).
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 3.0.0 (2026-06-30)
 
