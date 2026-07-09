@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.1.1] - 2026-07-09](#311-2026-07-09)
 - [[3.1.0] - 2026-07-09](#310-2026-07-09)
 - [[3.0.1] - 2026-07-09](#301-2026-07-09)
 - [[3.0.0] - 2026-06-30](#300-2026-06-30)
@@ -119,6 +120,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.1.1] - 2026-07-09
+
+### Fixed
+
+- **Tests** – `ConfigurationTest` expects default `dashboard.roles` `['ROLE_ADMIN']` (aligned with v3.1.0 `Configuration`).
+
+### Changed
+
+- **CI** – GitHub Actions bumps: `actions/cache` v6, `actions/checkout` v7, `actions/github-script` v9.
 
 ---
 

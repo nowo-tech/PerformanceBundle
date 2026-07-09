@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.1.1 (2026-07-09)](#upgrading-to-311-2026-07-09)
 - [Upgrading to 3.1.0 (2026-07-09)](#upgrading-to-310-2026-07-09)
 - [Upgrading to 3.0.1 (2026-07-09)](#upgrading-to-301-2026-07-09)
 - [Upgrading to 3.0.0 (2026-06-30)](#upgrading-to-300-2026-06-30)
@@ -83,6 +84,15 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.1.1 (2026-07-09)
+
+Patch release: test fix for v3.1.0 `dashboard.roles` default and CI dependency bumps. **No application or configuration changes.**
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 3.1.0 (2026-07-09)
 
