@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.1.0 (2026-07-09)](#upgrading-to-310-2026-07-09)
 - [Upgrading to 3.0.1 (2026-07-09)](#upgrading-to-301-2026-07-09)
 - [Upgrading to 3.0.0 (2026-06-30)](#upgrading-to-300-2026-06-30)
 - [Upgrading to 2.0.21 (2026-06-30)](#upgrading-to-2021-2026-06-30)
@@ -82,6 +83,24 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.1.0 (2026-07-09)
+
+**Behavior change:** the dashboard default `roles` is now **`['ROLE_ADMIN']`** (was `[]`). If you relied on open access without configuring roles, either assign `ROLE_ADMIN` to dashboard users or opt in to unrestricted access:
+
+```yaml
+# config/packages/dev/nowo_performance.yaml (local only)
+nowo_performance:
+    dashboard:
+        roles: []
+```
+
+**Added:** GitHub Spec Kit baseline ([SPEC-KIT.md](SPEC-KIT.md), `specs/001-baseline/`). No runtime impact on applications that do not use Spec Kit.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 3.0.1 (2026-07-09)
 

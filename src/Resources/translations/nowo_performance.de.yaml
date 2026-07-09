@@ -1,231 +1,221 @@
-# Übersetzungen für das Nowo Performance Bundle
-# Domain: nowo_performance
-
-# Haupt-Dashboard
 dashboard:
-    title: "Performance-Metriken-Dashboard"
-    subtitle: "Routen-Performance-Metriken überwachen und analysieren"
-    advanced_statistics: "Erweiterte Statistiken"
-    export_csv: "CSV exportieren"
-    export_json: "JSON exportieren"
-    clear_all_records: "Alle Einträge löschen"
-    back_to_dashboard: "Zurück zum Dashboard"
-    no_routes_found: "Keine Routen für die gewählten Filter gefunden."
-
-# Statistics-Komponente
+  title: Performance-Metriken-Dashboard
+  subtitle: Routen-Performance-Metriken überwachen und analysieren
+  advanced_statistics: Erweiterte Statistiken
+  export_csv: CSV exportieren
+  export_json: JSON exportieren
+  clear_all_records: Alle Einträge löschen
+  back_to_dashboard: Zurück zum Dashboard
+  no_routes_found: Keine Routen für die gewählten Filter gefunden.
 statistics:
-    total_routes: "Routen gesamt"
-    total_queries: "Anfragen gesamt"
-    avg_request_time: "Durchschn. Anfragezeit"
-    max_request_time: "Max. Anfragezeit"
-    avg_query_time: "Durchschn. Abfragezeit"
-    max_query_time: "Max. Abfragezeit"
-    max_queries: "Max. Anfragen"
-    not_available: "K.A."
-
-# Paginator (Routentabelle Index)
+  total_routes: Routen gesamt
+  total_records: Datensätze gesamt
+  view_records: Datensätze anzeigen
+  top_used_routes: Am häufigsten genutzte Routen
+  top_consumed_routes: Am meisten beanspruchte Routen (nach Latenz)
+  total_queries: Anfragen gesamt
+  avg_queries: Durchschn. Abfragen
+  max_queries: Max. Anfragen
+  avg_request_time: Durchschn. Anfragezeit
+  max_request_time: Max. Anfragezeit
+  avg_query_time: Durchschn. Abfragezeit
+  max_query_time: Max. Abfragezeit
+  not_available: K.A.
 paginator:
-    showing: "Zeige %from% bis %to% von %total% Routen"
-    previous: "Zurück"
-    next: "Weiter"
-    page: "Seite %current% von %total%"
-
-# RoutesTable-Komponente
+  showing: Zeige %from% bis %to% von %total% Routen
+  previous: Zurück
+  next: Weiter
+  page: Seite %current% von %total%
 routes_table:
-    title: "Routen"
-    route_name: "Routenname"
-    http_method: "HTTP-Methode"
-    status_codes: "Statuscodes"
-    total_responses: "Antworten gesamt"
-    error_rate: "Fehlerrate"
-    environment: "Umgebung"
-    request_time: "Anfragezeit"
-    query_time: "Abfragezeit"
-    total_queries: "Anfragen gesamt"
-    memory_usage: "Speicherverbrauch"
-    access_count: "Zugriffe"
-    last_accessed_at: "Letzter Zugriff"
-    updated_at: "Aktualisiert"
-    review_status: "Prüfstatus"
-    queries_time: "Anfragen / Zeit"
-    actions: "Aktionen"
-    reviewed: "Geprüft"
-    not_reviewed: "Nicht geprüft"
-    queries_improved: "Anfragen: ✓ Verbessert"
-    queries_not_improved: "Anfragen: ✗ Nicht verbessert"
-    time_improved: "Zeit: ✓ Verbessert"
-    time_not_improved: "Zeit: ✗ Nicht verbessert"
-    delete_record: "Eintrag löschen"
-    mark_as_reviewed: "Als geprüft markieren"
-    edit_review: "Prüfung bearbeiten"
-    delete: "Löschen"
-    review: "Prüfen"
-    cancel: "Abbrechen"
-    confirm_delete: "Möchten Sie diesen Eintrag wirklich löschen?"
-    sort_ascending: "Aufsteigend sortieren"
-    sort_descending: "Absteigend sortieren"
-
-# Filters-Komponente
+  title: Routen
+  route_name: Routenname
+  http_method: HTTP-Methode
+  status_codes: Statuscodes
+  total_responses: Antworten gesamt
+  error_rate: Fehlerrate
+  environment: Umgebung
+  request_time: Anfragezeit
+  query_time: Abfragezeit
+  total_queries: Anfragen gesamt
+  memory_usage: Speicherverbrauch
+  access_count: Zugriffe
+  last_accessed_at: Letzter Zugriff
+  updated_at: Aktualisiert
+  review_status: Prüfstatus
+  queries_time: Anfragen / Zeit
+  actions: Aktionen
+  reviewed: Geprüft
+  not_reviewed: Nicht geprüft
+  queries_improved: 'Anfragen: ✓ Verbessert'
+  queries_not_improved: 'Anfragen: ✗ Nicht verbessert'
+  time_improved: 'Zeit: ✓ Verbessert'
+  time_not_improved: 'Zeit: ✗ Nicht verbessert'
+  delete_record: Eintrag löschen
+  mark_as_reviewed: Als geprüft markieren
+  edit_review: Prüfung bearbeiten
+  delete: Löschen
+  review: Prüfen
+  cancel: Abbrechen
+  confirm_delete: Möchten Sie diesen Eintrag wirklich löschen?
+  sort_ascending: Aufsteigend sortieren
+  sort_descending: Absteigend sortieren
 filters:
-    title: "Filter"
-    show_advanced: "Erweiterte Filter anzeigen"
-    hide_advanced: "Erweiterte Filter ausblenden"
-    advanced_filters: "Erweiterte Filter"
-    environment: "Umgebung"
-    route_name: "Routenname"
-    sort_by: "Sortieren nach"
-    order: "Reihenfolge"
-    limit: "Limit"
-    min_request_time: "Min. Anfragezeit (s)"
-    max_request_time: "Max. Anfragezeit (s)"
-    min_query_count: "Min. Anfragenanzahl"
-    max_query_count: "Max. Anfragenanzahl"
-    date_from: "Datum von"
-    date_to: "Datum bis"
-    apply_filters: "Filter anwenden"
-    reset: "Zurücksetzen"
-    placeholder_route: "Nach Routennamen filtern..."
-    placeholder_time: "0.0000"
-    placeholder_count: "0"
-    request_time_range: "Anfragezeit-Bereich (Sekunden)"
-    query_count_range: "Anfragenanzahl-Bereich"
-    date_range: "Datumsbereich"
-    min: "Min"
-    max: "Max"
-
-# Prüf-Modal
+  title: Filter
+  show_advanced: Erweiterte Filter anzeigen
+  hide_advanced: Erweiterte Filter ausblenden
+  advanced_filters: Erweiterte Filter
+  environment: Umgebung
+  route_name: Routenname
+  path_url: Path / URL
+  sort_by: Sortieren nach
+  order: Reihenfolge
+  limit: Begrenzung
+  min_request_time: Min. Anfragezeit (s)
+  max_request_time: Max. Anfragezeit (s)
+  min_query_count: Min. Anfragenanzahl
+  max_query_count: Max. Anfragenanzahl
+  date_from: Datum von
+  date_to: Datum bis
+  apply_filters: Filter anwenden
+  reset: Zurücksetzen
+  placeholder_route: Nach Routennamen filtern...
+  placeholder_time: '0.0000'
+  placeholder_count: '0'
+  request_time_range: Anfragezeit-Bereich (Sekunden)
+  query_count_range: Anfragenanzahl-Bereich
+  date_range: Datumsbereich
+  min: Min.
+  max: Max.
 review:
-    modal_title: "Als geprüft markieren"
-    modal_title_edit: "Prüfung bearbeiten"
-    queries_improved: "Anfragen verbessert?"
-    time_improved: "Zeit verbessert?"
-    save_access_records: "Zugriffsaufzeichnungen für diese Route speichern"
-    not_specified: "Nicht angegeben"
-    yes: "Ja"
-    no: "Nein"
-    mark_as_reviewed: "Als geprüft markieren"
-    edit_review: "Prüfung aktualisieren"
-
-# Bestätigungsmeldungen
+  modal_title: Als geprüft markieren
+  modal_title_edit: Prüfung bearbeiten
+  queries_improved: Anfragen verbessert?
+  time_improved: Zeit verbessert?
+  save_access_records: Zugriffsaufzeichnungen für diese Route speichern
+  not_specified: Nicht angegeben
+  yes: Ja
+  no: Nein
+  mark_as_reviewed: Als geprüft markieren
+  edit_review: Prüfung aktualisieren
 confirmations:
-    clear_all_records: "Möchten Sie wirklich alle Performance-Einträge löschen? Diese Aktion kann nicht rückgängig gemacht werden."
-    delete_record: "Möchten Sie diesen Eintrag wirklich löschen?"
-
-# Flash-Meldungen
+  clear_all_records: Möchten Sie wirklich alle Performance-Einträge löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+  delete_record: Möchten Sie diesen Eintrag wirklich löschen?
 flash:
-    records_cleared: "Alle Einträge wurden erfolgreich gelöscht."
-    record_deleted: "Der Eintrag wurde erfolgreich gelöscht."
-    record_reviewed: "Der Eintrag wurde erfolgreich als geprüft markiert."
-    review_updated: "Die Prüfung wurde erfolgreich aktualisiert."
-    error: "Bei der Verarbeitung der Anfrage ist ein Fehler aufgetreten."
-
-# Erweiterte Statistiken
+  records_cleared: Alle Einträge wurden erfolgreich gelöscht.
+  record_deleted: Der Eintrag wurde erfolgreich gelöscht.
+  record_reviewed: Der Eintrag wurde erfolgreich als geprüft markiert.
+  review_updated: Die Prüfung wurde erfolgreich aktualisiert.
+  error: Bei der Verarbeitung der Anfrage ist ein Fehler aufgetreten.
 statistics_page:
-    title: "Erweiterte Performance-Statistiken"
-    subtitle: "Detaillierte statistische Auswertung zur Identifikation von Optimierungszielen"
-    routes_needing_attention: "Routen mit Handlungsbedarf"
-    routes_above_p95: "Routen über dem 95. Perzentil"
-    routes_with_outliers: "Routen mit Ausreißern"
-    metric: "Metrik"
-    mean: "Mittelwert"
-    median: "Median"
-    mode: "Modus"
-    std_deviation: "Standardabweichung"
-    min: "Min"
-    max: "Max"
-    range: "Spannweite"
-    p25: "P25"
-    p50: "P50"
-    p75: "P75"
-    p90: "P90"
-    p95: "P95"
-    p99: "P99"
-    outliers: "Ausreißer"
-    histogram: "Verteilungs-Histogramm"
-    request_time: "Anfragezeit"
-    query_time: "Abfragezeit"
-    query_count: "Anfragenanzahl"
-    memory_usage: "Speicherverbrauch"
-    access_count: "Zugriffe"
-
-# Sortieroptionen
+  title: Erweiterte Performance-Statistiken
+  subtitle: Detaillierte statistische Auswertung zur Identifikation von Optimierungszielen
+  routes_needing_attention: Routen mit Handlungsbedarf
+  routes_above_p95: Routen über dem 95. Perzentil
+  routes_with_outliers: Routen mit Ausreißern
+  metric: Metrik
+  mean: Mittelwert
+  median: Medianwert
+  mode: Modus
+  std_deviation: Standardabweichung
+  min: Min.
+  max: Max.
+  range: Spannweite
+  p25: P25
+  p50: P50
+  p75: P75
+  p90: P90
+  p95: P95
+  p99: P99
+  outliers: Ausreißer
+  histogram: Verteilungs-Histogramm
+  request_time: Anfragezeit
+  query_time: Abfragezeit
+  query_count: Anfragenanzahl
+  memory_usage: Speicherverbrauch
+  access_count: Zugriffe
 sort_options:
-    request_time: "Anfragezeit"
-    query_time: "Abfragezeit"
-    queries: "Anfragen"
-    access_count: "Zugriffe"
-    route_name: "Routenname"
-    created_at: "Erstellt am"
-    last_accessed_at: "Letzter Zugriff"
-
-# Sortierreihenfolge
+  request_time: Anfragezeit
+  query_time: Abfragezeit
+  queries: Anfragen
+  access_count: Zugriffe
+  route_name: Routenname
+  created_at: Erstellt am
+  last_accessed_at: Letzter Zugriff
 order_options:
-    descending: "Absteigend"
-    ascending: "Aufsteigend"
-
-# Zugriffsstatistiken
+  descending: Absteigend
+  ascending: Aufsteigend
 access_statistics:
-    title: "Zugriffsstatistiken nach Stunde"
-    date_range: "Datumsbereich-Filter"
-    start_date: "Startdatum"
-    end_date: "Enddatum"
-    environment: "Umgebung"
-    filter: "Filtern"
-    reset: "Zurücksetzen"
-    summary: "Zusammenfassung"
-    total_accesses: "Zugriffe gesamt"
-    period: "Zeitraum"
-    by_hour: "Statistiken nach Tagesstunde"
-    by_day_of_week: "Statistiken nach Wochentag"
-    by_month: "Statistiken nach Monat"
-    hour: "Stunde"
-    access_count: "Zugriffe"
-    avg_response_time: "Durchschn. Antwortzeit"
-    status_codes: "Statuscodes"
-    current_hour: "Aktuell"
-    requests: "Anfragen"
-    no_data: "Keine Zugriffsdaten für den gewählten Zeitraum verfügbar."
-    chart_title: "Visualisierung der Zugriffsmuster"
-    avg_response_time_ms: "Durchschn. Antwortzeit (ms)"
-    response_time_ms: "Antwortzeit (ms)"
-    filters: "Filter"
-    route: "Route"
-    status_code: "Statuscode"
-    all_routes: "Alle Routen"
-    all_status_codes: "Alle Statuscodes"
-    filtered_route: "Gefilterte Route"
-    view_records: "Einzeleinträge anzeigen"
-    back_to_statistics: "Zurück zu den Statistiken"
-    export_records_csv: "Einträge exportieren (CSV)"
-    export_records_json: "Einträge exportieren (JSON)"
-    records: "Zugriffseinträge"
-    total_records: "Einträge gesamt"
-    timestamp: "Zeitstempel"
-    response_time: "Antwortzeit"
-    total_queries: "Anfragen"
-    query_time: "Abfragezeit"
-    memory_usage: "Speicher"
-    referer: "Referer"
-    user: "Benutzer"
-    min_query_time: "Min. Abfragezeit (s)"
-    max_query_time: "Max. Abfragezeit (s)"
-    min_memory_mb: "Min. Speicher (MB)"
-    max_memory_mb: "Max. Speicher (MB)"
-    no_records: "Keine Einträge für die gewählten Filter gefunden."
-    showing: "Zeige"
-    of: "von"
-    previous: "Zurück"
-    next: "Weiter"
-    heatmap: "Zugriffs-Heatmap (Wochentag vs. Stunde)"
-    delete_records_matching_filter: "Einträge löschen, die dem Filter entsprechen"
-    delete_records_confirm: "Möchten Sie wirklich alle Einträge löschen, die dem aktuellen Filter entsprechen? Diese Aktion kann nicht rückgängig gemacht werden."
-
-# Routen- / Seitentitel (Breadcrumbs, Navigation, Meldungen)
-access_records: "Zugriffs-Einträge"
+  title: Zugriffsstatistiken nach Stunde
+  date_range: Datumsbereich-Filter
+  start_date: Startdatum
+  end_date: Enddatum
+  environment: Umgebung
+  filter: Filtern
+  reset: Zurücksetzen
+  summary: Zusammenfassung
+  total_accesses: Zugriffe gesamt
+  period: Zeitraum
+  by_hour: Statistiken nach Tagesstunde
+  by_day_of_week: Statistiken nach Wochentag
+  by_month: Statistiken nach Monat
+  hour: Stunde
+  access_count: Zugriffe
+  avg_response_time: Durchschn. Antwortzeit
+  status_codes: Statuscodes
+  current_hour: Aktuell
+  requests: Anfragen
+  no_data: Keine Zugriffsdaten für den gewählten Zeitraum verfügbar.
+  chart_title: Visualisierung der Zugriffsmuster
+  avg_response_time_ms: Durchschn. Antwortzeit (ms)
+  response_time_ms: Antwortzeit (ms)
+  filters: Filter
+  route: Routenname
+  path: Path / URL
+  path_placeholder: URL oder Pfad einfügen (z. B. https://example.com/foo oder /foo/bar)
+  params: Parameter
+  status_code: Statuscode
+  all_routes: Alle Routen
+  all_status_codes: Alle Statuscodes
+  filtered_route: Gefilterte Route
+  view_records: Einzeleinträge anzeigen
+  back_to_statistics: Zurück zu den Statistiken
+  export_records_csv: Einträge exportieren (CSV)
+  export_records_json: Einträge exportieren (JSON)
+  records: Zugriffseinträge
+  total_records: Einträge gesamt
+  timestamp: Zeitstempel
+  response_time: Antwortzeit
+  total_queries: Anfragen
+  query_time: Abfragezeit
+  memory_usage: Speicher
+  referer: Referer
+  user: Benutzer
+  min_query_time: Min. Abfragezeit (s)
+  max_query_time: Max. Abfragezeit (s)
+  min_memory_mb: Min. Speicher (MB)
+  max_memory_mb: Max. Speicher (MB)
+  no_records: Keine Einträge für die gewählten Filter gefunden.
+  showing: Zeige
+  of: von
+  previous: Zurück
+  next: Weiter
+  heatmap: Zugriffs-Heatmap (Wochentag vs. Stunde)
+  delete_records_matching_filter: Einträge löschen, die dem Filter entsprechen
+  delete_records_confirm: Möchten Sie wirklich alle Einträge löschen, die dem aktuellen Filter entsprechen? Diese Aktion kann nicht rückgängig gemacht werden.
+  purge_records_title: Datensätze bereinigen
+  purge_records_help: 'Zugriffsdatensätze nach Aufbewahrung bereinigen: alle löschen oder nur Datensätze älter als X Tage. Konfigurieren Sie access_records_retention_days für die Standardaufbewahrung.'
+  purge_type: Aktion
+  purge_all: Alle Datensätze löschen
+  purge_older_than: Datensätze älter als X Tage löschen
+  older_than_days: Tage
+  purge_records: Bereinigen
+  purge_records_confirm: Möchten Sie die ausgewählten Zugriffsdatensätze wirklich bereinigen? Dies kann nicht rückgängig gemacht werden.
+  all_environments: Alle Umgebungen
+access_records: Zugriffs-Einträge
 api:
-    chart_data: "Diagrammdaten"
-clear: "Löschen"
-delete: "Entfernen"
-delete_records_by_filter: "Einträge nach Filter löschen"
-diagnose: "Diagnose"
-index: "Dashboard"
+  chart_data: Diagrammdaten
+clear: Löschen
+delete: Entfernen
+delete_records_by_filter: Einträge nach Filter löschen
+diagnose: Diagnostizieren
+index: Dashboard

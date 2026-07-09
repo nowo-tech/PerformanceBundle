@@ -78,7 +78,7 @@ nowo_performance:
         enabled: true
         path: '/performance'
         prefix: ''
-        roles: []
+        roles: ['ROLE_ADMIN']
         template: 'bootstrap'
         enable_record_management: false
         enable_review_system: false
@@ -377,9 +377,9 @@ nowo_performance:
 #### `dashboard.roles`
 
 **Type:** `array`  
-**Default:** `[]`
+**Default:** `['ROLE_ADMIN']`
 
-Required roles to access the dashboard. Users must have **at least one** of the configured roles. If empty, access is unrestricted.
+Required roles to access the dashboard. Users must have **at least one** of the configured roles. If empty, access is unrestricted (not recommended in production).
 
 ```yaml
 nowo_performance:
@@ -400,7 +400,7 @@ nowo_performance:
 ```yaml
 nowo_performance:
     dashboard:
-        roles: []  # No restrictions (default)
+        roles: []  # No restrictions (explicit opt-in)
 ```
 
 #### `dashboard.template`
@@ -665,7 +665,15 @@ nowo_performance:
 
 ### Restricting Dashboard Access
 
-By default, the dashboard is accessible to everyone. To restrict access to specific roles:
+By default, the dashboard requires **`ROLE_ADMIN`**. To allow unrestricted access (e.g. in local dev), set `roles: []`:
+
+```yaml
+nowo_performance:
+    dashboard:
+        roles: []  # Unrestricted — not recommended in production
+```
+
+To require specific roles:
 
 ```yaml
 nowo_performance:
@@ -677,8 +685,8 @@ nowo_performance:
 
 ### Security Considerations
 
-- **Production environments**: Always configure roles in production to prevent unauthorized access
-- **Development environments**: You may leave roles empty for easier access during development
+- **Production environments**: Default `ROLE_ADMIN` applies when `roles` is omitted; tighten or extend roles as needed
+- **Development environments**: You may set `roles: []` for easier access during development
 - **Role hierarchy**: Symfony's role hierarchy is respected (e.g., `ROLE_ADMIN` includes `ROLE_USER`)
 
 ### Example: Admin-Only Dashboard
