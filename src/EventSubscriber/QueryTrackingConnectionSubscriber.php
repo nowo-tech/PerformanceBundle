@@ -83,19 +83,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Apply middleware to the connection FIRST
-        // Try multiple times in case connection isn't ready yet
-        $maxAttempts = 3;
-        $attempt     = 0;
-        while ($attempt < $maxAttempts && !isset($this->trackedConnections[$this->connectionName])) {
-            $this->applyMiddlewareToConnection();
-            ++$attempt;
-
-            // Small delay to allow connection to be ready
-            if ($attempt < $maxAttempts && !isset($this->trackedConnections[$this->connectionName])) {
-                usleep(10000); // 10ms delay
-            }
-        }
+        $this->applyMiddlewareToConnection();
 
         // Reset query tracking AFTER middleware is applied
         // This ensures queries executed after this point are tracked

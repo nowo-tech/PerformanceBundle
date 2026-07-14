@@ -62,6 +62,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             'GET',
+            null,
             'req-abc123',
         );
 
@@ -86,6 +87,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             'GET',
+            null,
             'req-abc',
             'https://referer.example/page',
         );
@@ -111,6 +113,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             'GET',
+            null,
             'req-1',
             '',
         );
@@ -157,6 +160,7 @@ final class RecordMetricsMessageTest extends TestCase
             null,
             null,
             'GET',
+            null,
             null,
             null,
             'john@example.com',
@@ -226,6 +230,7 @@ final class RecordMetricsMessageTest extends TestCase
             ['id' => 1],
             524288,
             'POST',
+            201,
             'req-xyz',
             'https://example.com/from',
             'admin@example.com',
@@ -301,6 +306,30 @@ final class RecordMetricsMessageTest extends TestCase
         $this->assertSame('CONNECT', $message->getHttpMethod());
     }
 
+    public function testGetStatusCodeReturnsValueWhenProvided(): void
+    {
+        $message = new RecordMetricsMessage(
+            'app_home',
+            'dev',
+            0.5,
+            10,
+            0.2,
+            null,
+            null,
+            'GET',
+            503,
+        );
+
+        $this->assertSame(503, $message->getStatusCode());
+    }
+
+    public function testGetStatusCodeReturnsNullWhenNotProvided(): void
+    {
+        $message = new RecordMetricsMessage('app_home', 'dev', 0.5, 5);
+
+        $this->assertNull($message->getStatusCode());
+    }
+
     public function testGetRoutePath(): void
     {
         $message = new RecordMetricsMessage(
@@ -312,6 +341,7 @@ final class RecordMetricsMessageTest extends TestCase
             ['id' => 123],
             1024,
             'GET',
+            200,
             null,
             null,
             null,

@@ -11,6 +11,7 @@
 /coverage.xml
 /coverage.txt
 /coverage-report.txt
+/coverage-php.txt
 /*.xml
 
 # PHP tool caches
@@ -25,3 +26,6 @@
 *.tgz
 *.rar
 *.7z
+# Cursor local sandbox (machine-specific; REQ-IDE-005)
+.cursor/sandbox.json
+

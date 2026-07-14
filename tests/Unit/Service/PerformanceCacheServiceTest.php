@@ -39,11 +39,14 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testGetCachedStatisticsReturnsNullOnMiss(): void
     {
-        $item = $this->createMock(CacheItemInterface::class);
-        $item->method('isHit')->willReturn(false);
+        $genItem = $this->createMock(CacheItemInterface::class);
+        $genItem->method('isHit')->willReturn(false);
+
+        $statsItem = $this->createMock(CacheItemInterface::class);
+        $statsItem->method('isHit')->willReturn(false);
 
         $pool = $this->createMock(CacheItemPoolInterface::class);
-        $pool->method('getItem')->willReturn($item);
+        $pool->method('getItem')->willReturnOnConsecutiveCalls($genItem, $statsItem);
 
         $service = new PerformanceCacheService($pool);
 
@@ -53,12 +56,15 @@ final class PerformanceCacheServiceTest extends TestCase
     public function testGetCachedStatisticsReturnsDataOnHit(): void
     {
         $data = ['total_routes' => 10, 'avg_time' => 0.5];
-        $item = $this->createMock(CacheItemInterface::class);
-        $item->method('isHit')->willReturn(true);
-        $item->method('get')->willReturn($data);
+        $genItem = $this->createMock(CacheItemInterface::class);
+        $genItem->method('isHit')->willReturn(false);
+
+        $statsItem = $this->createMock(CacheItemInterface::class);
+        $statsItem->method('isHit')->willReturn(true);
+        $statsItem->method('get')->willReturn($data);
 
         $pool = $this->createMock(CacheItemPoolInterface::class);
-        $pool->method('getItem')->willReturn($item);
+        $pool->method('getItem')->willReturnOnConsecutiveCalls($genItem, $statsItem);
 
         $service = new PerformanceCacheService($pool);
 
@@ -67,12 +73,15 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testCacheStatistics(): void
     {
+        $genItem = $this->createMock(CacheItemInterface::class);
+        $genItem->method('isHit')->willReturn(false);
+
         $item = $this->createMock(CacheItemInterface::class);
         $item->expects($this->once())->method('set')->with(['a' => 1]);
         $item->expects($this->once())->method('expiresAfter')->with(3600);
 
         $pool = $this->createMock(CacheItemPoolInterface::class);
-        $pool->method('getItem')->willReturn($item);
+        $pool->method('getItem')->willReturnOnConsecutiveCalls($genItem, $item);
         $pool->expects($this->once())->method('save')->with($item)->willReturn(true);
 
         $service = new PerformanceCacheService($pool);
@@ -82,11 +91,14 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testCacheStatisticsWithCustomTtl(): void
     {
+        $genItem = $this->createMock(CacheItemInterface::class);
+        $genItem->method('isHit')->willReturn(false);
+
         $item = $this->createMock(CacheItemInterface::class);
         $item->expects($this->once())->method('expiresAfter')->with(120);
 
         $pool = $this->createMock(CacheItemPoolInterface::class);
-        $pool->method('getItem')->willReturn($item);
+        $pool->method('getItem')->willReturnOnConsecutiveCalls($genItem, $item);
         $pool->method('save')->willReturn(true);
 
         $service = new PerformanceCacheService($pool);
@@ -130,8 +142,14 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testInvalidateStatistics(): void
     {
+        $item = $this->createMock(CacheItemInterface::class);
+        $item->method('isHit')->willReturn(false);
+        $item->expects($this->once())->method('set')->with(1);
+        $item->expects($this->once())->method('expiresAfter')->with(3600);
+
         $pool = $this->createMock(CacheItemPoolInterface::class);
-        $pool->expects($this->once())->method('deleteItem')->with($this->stringContains('stats_dev'))->willReturn(true);
+        $pool->expects($this->once())->method('getItem')->with($this->stringContains('stats_gen_dev'))->willReturn($item);
+        $pool->expects($this->once())->method('save')->with($item)->willReturn(true);
 
         $service = new PerformanceCacheService($pool);
 
@@ -140,8 +158,15 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testClearStatisticsDelegatesToInvalidateStatistics(): void
     {
+        $item = $this->createMock(CacheItemInterface::class);
+        $item->method('isHit')->willReturn(true);
+        $item->method('get')->willReturn(3);
+        $item->expects($this->once())->method('set')->with(4);
+        $item->expects($this->once())->method('expiresAfter')->with(3600);
+
         $pool = $this->createMock(CacheItemPoolInterface::class);
-        $pool->expects($this->once())->method('deleteItem')->willReturn(true);
+        $pool->method('getItem')->willReturn($item);
+        $pool->method('save')->willReturn(true);
 
         $service = new PerformanceCacheService($pool);
 
@@ -209,9 +234,12 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testCacheStatisticsWhenSaveFails(): void
     {
+        $genItem = $this->createMock(CacheItemInterface::class);
+        $genItem->method('isHit')->willReturn(false);
+
         $item = $this->createMock(CacheItemInterface::class);
         $pool = $this->createMock(CacheItemPoolInterface::class);
-        $pool->method('getItem')->willReturn($item);
+        $pool->method('getItem')->willReturnOnConsecutiveCalls($genItem, $item);
         $pool->method('save')->willReturn(false);
 
         $service = new PerformanceCacheService($pool);

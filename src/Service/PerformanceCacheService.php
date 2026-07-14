@@ -137,6 +137,9 @@ class PerformanceCacheService
     /**
      * Invalidate statistics cache for an environment.
      *
+     * Bumps a generation counter so new reads use a fresh cache key instead of
+     * deleting items synchronously on every write.
+     *
      * @param string $env The environment
      *
      * @return bool True if invalidated successfully
@@ -147,9 +150,13 @@ class PerformanceCacheService
             return false;
         }
 
-        $key = $this->getStatisticsKey($env);
+        $key  = $this->getStatisticsGenerationKey($env);
+        $item = $this->cachePool->getItem($key);
+        $gen  = $item->isHit() ? (int) $item->get() : 0;
+        $item->set($gen + 1);
+        $item->expiresAfter(self::DEFAULT_TTL);
 
-        return $this->cachePool->deleteItem($key);
+        return $this->cachePool->save($item);
     }
 
     /**
@@ -218,7 +225,32 @@ class PerformanceCacheService
      */
     private function getStatisticsKey(string $env): string
     {
-        return self::CACHE_PREFIX . 'stats_' . $env;
+        return self::CACHE_PREFIX . 'stats_' . $env . '_v' . $this->getStatisticsGeneration($env);
+    }
+
+    /**
+     * Get cache key for statistics generation counter.
+     */
+    private function getStatisticsGenerationKey(string $env): string
+    {
+        return self::CACHE_PREFIX . 'stats_gen_' . $env;
+    }
+
+    /**
+     * Read the current statistics cache generation for an environment.
+     */
+    private function getStatisticsGeneration(string $env): int
+    {
+        if (!$this->cachePool instanceof CacheItemPoolInterface) {
+            return 0;
+        }
+
+        $item = $this->cachePool->getItem($this->getStatisticsGenerationKey($env));
+        if ($item->isHit()) {
+            return (int) $item->get();
+        }
+
+        return 0;
     }
 
     /**

@@ -42,6 +42,11 @@ class QueryTrackingMiddleware implements Middleware
      */
     private static array $queryStartTimes = [];
 
+    /**
+     * Monotonic counter for cheap per-query identifiers.
+     */
+    private static int $nextQueryId = 0;
+
     public function wrap(Driver $driver): Driver
     {
         return new class($driver) extends AbstractDriverMiddleware {
@@ -82,6 +87,17 @@ class QueryTrackingMiddleware implements Middleware
         self::$queryCount      = 0;
         self::$totalQueryTime  = 0.0;
         self::$queryStartTimes = [];
+        self::$nextQueryId     = 0;
+    }
+
+    /**
+     * Generate a lightweight unique query identifier.
+     *
+     * @param object $connection The connection instance executing the query
+     */
+    public static function nextQueryId(object $connection): string
+    {
+        return spl_object_hash($connection) . '_' . (++self::$nextQueryId);
     }
 
     /**
@@ -123,7 +139,7 @@ class QueryTrackingConnection implements Connection
 
     public function prepare(string $sql): Statement
     {
-        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
+        $queryId = QueryTrackingMiddleware::nextQueryId($this);
         QueryTrackingMiddleware::startQuery($queryId);
 
         $statement = $this->connection->prepare($sql);
@@ -136,7 +152,6 @@ class QueryTrackingConnection implements Connection
 
             public function execute(mixed $params = null): Result
             {
-                microtime(true);
                 try {
                     $result = parent::execute();
                     QueryTrackingMiddleware::stopQuery($this->queryId);
@@ -152,7 +167,7 @@ class QueryTrackingConnection implements Connection
 
     public function query(string $sql): Result
     {
-        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
+        $queryId = QueryTrackingMiddleware::nextQueryId($this);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
@@ -168,7 +183,7 @@ class QueryTrackingConnection implements Connection
 
     public function exec(string $sql): int
     {
-        $queryId = spl_object_hash($this) . '_' . md5($sql) . '_' . uniqid('', true);
+        $queryId = QueryTrackingMiddleware::nextQueryId($this);
         QueryTrackingMiddleware::startQuery($queryId);
 
         try {
