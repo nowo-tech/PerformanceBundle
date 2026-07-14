@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.1.2 (2026-07-14)](#upgrading-to-312-2026-07-14)
 - [Upgrading to 3.1.1 (2026-07-09)](#upgrading-to-311-2026-07-09)
 - [Upgrading to 3.1.0 (2026-07-09)](#upgrading-to-310-2026-07-09)
 - [Upgrading to 3.0.1 (2026-07-09)](#upgrading-to-301-2026-07-09)
@@ -84,6 +85,56 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.1.2 (2026-07-14)
+
+Patch release focused on **runtime performance** and **async metrics correctness**. No database schema or configuration changes.
+
+### Async mode (`async: true`)
+
+1. **Drain the Messenger queue before deploying** if you use an asynchronous transport. `RecordMetricsMessage` gained an optional `statusCode` parameter **after** `httpMethod`; messages already queued with the old payload shape may deserialize incorrectly.
+2. After upgrade, verify that metrics and access records appear in the dashboard (especially `statusCode` on access records).
+
+The handler now calls `recordMetricsSync()` directly instead of `recordMetrics()`, so messages are persisted without re-dispatching to the bus.
+
+### Custom code
+
+- **`RecordMetricsMessage` constructor** – if you build messages with **positional** arguments, insert `statusCode` (or `null`) after `httpMethod`:
+
+  ```php
+  new RecordMetricsMessage(
+      $routeName,
+      $env,
+      $requestTime,
+      $totalQueries,
+      $queryTime,
+      $params,
+      $memoryUsage,
+      $httpMethod,
+      $statusCode, // new (optional)
+      $requestId,
+      // ...
+  );
+  ```
+
+  Named arguments are unaffected.
+
+- **`PerformanceMetricsService::recordMetricsSync()`** is now **public**. Prefer `recordMetrics()` in application code so `BeforeMetricsRecordedEvent`, async routing, and status-code filtering still apply.
+
+### Query tracking
+
+- Middleware is applied **once** on `kernel.request` (no 10 ms retry loop). On cold starts where Doctrine is not ready on the first request, query counts may be missing until the next request. This is rare in normal Symfony apps.
+
+### Statistics cache
+
+- Invalidation uses a **generation counter** (`stats_gen_{env}`) instead of deleting the statistics key on every write. Stale keys expire by TTL (default 1 hour). No action required unless you monitor cache memory closely under very high write rates.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+# If async: true with a queue transport, drain or restart workers after deploy
+php bin/console messenger:consume async -vv  # if applicable
+```
 
 ## Upgrading to 3.1.1 (2026-07-09)
 

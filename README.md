@@ -254,7 +254,7 @@ Listed metrics (request time, query counts, status code ratios, etc.) in the UI 
 1. **Event Subscriber** (`PerformanceMetricsSubscriber`) listens to kernel events
 2. On `KernelEvents::REQUEST`, it starts tracking:
   - Request start time
-  - Resets query tracking middleware
+  - Query tracking is initialized by `QueryTrackingConnectionSubscriber` (applies DBAL middleware and resets counters)
 3. On `KernelEvents::TERMINATE`, it:
   - Calculates request time
   - Collects query count and execution time using multiple strategies:

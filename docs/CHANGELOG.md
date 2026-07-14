@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.1.2] - 2026-07-14](#312-2026-07-14)
 - [[3.1.1] - 2026-07-09](#311-2026-07-09)
 - [[3.1.0] - 2026-07-09](#310-2026-07-09)
 - [[3.0.1] - 2026-07-09](#301-2026-07-09)
@@ -120,6 +121,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.1.2] - 2026-07-14
+
+### Fixed
+
+- **Async metrics** – `RecordMetricsMessageHandler` now calls `recordMetricsSync()` instead of `recordMetrics()`, fixing re-dispatch loops and ensuring metrics are persisted when `async: true`.
+- **Async access records** – `RecordMetricsMessage` includes optional `statusCode` so HTTP status is stored on `RouteDataRecord` in async mode.
+
+### Changed
+
+- **Performance** – `recordMetricsSync()` persists `RouteData` and `RouteDataRecord` in a single Doctrine `flush()` (was two).
+- **Performance** – Statistics cache invalidation bumps a generation counter instead of calling `deleteItem()` on every write ([`PerformanceCacheService`](src/Service/PerformanceCacheService.php)).
+- **Performance** – Query IDs in `QueryTrackingMiddleware` use a lightweight counter instead of `md5()` + `uniqid()` per query.
+- **Performance** – Removed unused `QueryLogger` wiring and redundant middleware reset from `PerformanceMetricsSubscriber` (reset remains in `QueryTrackingConnectionSubscriber`).
+- **Performance** – `QueryTrackingConnectionSubscriber` applies middleware once per request (removed `usleep` retry loop).
+- **API** – `PerformanceMetricsService::recordMetricsSync()` is now public (used by the async handler).
+
+### Notes
+
+- **Breaking for positional `RecordMetricsMessage` construction** – optional `statusCode` was inserted after `httpMethod`. Use named arguments or drain the Messenger queue before upgrading if `async: true`. See [UPGRADING.md](UPGRADING.md#upgrading-to-312-2026-07-14).
 
 ---
 
