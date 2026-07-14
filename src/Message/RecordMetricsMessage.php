@@ -26,6 +26,7 @@ final class RecordMetricsMessage
      * @param array<string, mixed>|null $params Route parameters
      * @param int|null $memoryUsage Peak memory usage in bytes
      * @param string|null $httpMethod HTTP method (GET, POST, PUT, DELETE, etc.)
+     * @param int|null $statusCode HTTP status code (200, 404, 500, etc.)
      * @param string|null $requestId Unique request ID for deduplication of access records
      * @param string|null $referer HTTP Referer header (page that linked to this request)
      * @param string|null $userIdentifier Logged-in user identifier (e.g. username, email)
@@ -41,6 +42,7 @@ final class RecordMetricsMessage
         private readonly ?array $params = null,
         private readonly ?int $memoryUsage = null,
         private readonly ?string $httpMethod = null,
+        private readonly ?int $statusCode = null,
         private readonly ?string $requestId = null,
         private readonly ?string $referer = null,
         private readonly ?string $userIdentifier = null,
@@ -95,6 +97,12 @@ final class RecordMetricsMessage
     public function getHttpMethod(): ?string
     {
         return $this->httpMethod;
+    }
+
+    /** @return int|null HTTP status code */
+    public function getStatusCode(): ?int
+    {
+        return $this->statusCode;
     }
 
     /** @return string|null Unique request ID for deduplication */

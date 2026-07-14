@@ -51,11 +51,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     private ?int $startMemory = null;
 
     /**
-     * Query logger instance for tracking database queries.
-     */
-    private ?QueryLogger $queryLogger = null;
-
-    /**
      * Current route name being tracked.
      */
     private ?string $routeName = null;
@@ -277,9 +272,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Track queries if enabled
         if ($this->trackQueries) {
-            // Reset query tracking middleware
-            QueryTrackingMiddleware::reset();
-            $this->queryLogger = new QueryLogger();
             $this->startQueryTracking();
         }
 
@@ -599,18 +591,10 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     /**
      * Start tracking database queries.
      *
-     * Initializes the query logger for the current request.
+     * Initializes the stopwatch for the current request.
      */
     private function startQueryTracking(): void
     {
-        if (!$this->queryLogger instanceof QueryLogger) {
-            return;
-        }
-
-        // Reset query logger for new request
-        $this->queryLogger->reset();
-
-        // Start stopwatch for query tracking
         if ($this->stopwatch instanceof Stopwatch) {
             $this->stopwatch->reset();
             $this->stopwatch->start('doctrine.queries');

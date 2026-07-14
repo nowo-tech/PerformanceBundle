@@ -19,7 +19,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         $this->metricsService = $this->createMock(PerformanceMetricsService::class);
     }
 
-    public function testInvokeCallsRecordMetricsWithAllParameters(): void
+    public function testInvokeCallsRecordMetricsSyncWithAllParameters(): void
     {
         $message = new RecordMetricsMessage(
             'app_home',
@@ -30,10 +30,11 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             ['id' => 123],
             1048576,
             'GET',
+            200,
         );
 
         $this->metricsService->expects($this->once())
-            ->method('recordMetrics')
+            ->method('recordMetricsSync')
             ->with(
                 'app_home',
                 'dev',
@@ -43,8 +44,8 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 ['id' => 123],
                 1048576,
                 'GET',
+                200,
                 null,
-                [],
                 null,
                 null,
                 null,
@@ -63,7 +64,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         );
 
         $this->metricsService->expects($this->once())
-            ->method('recordMetrics')
+            ->method('recordMetricsSync')
             ->with(
                 'app_home',
                 'dev',
@@ -74,7 +75,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 null,
-                [],
+                null,
                 null,
                 null,
                 null,
@@ -85,7 +86,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         $handler($message);
     }
 
-    public function testInvokePassesRequestIdToRecordMetrics(): void
+    public function testInvokePassesRequestIdToRecordMetricsSync(): void
     {
         $message = new RecordMetricsMessage(
             'app_home',
@@ -96,11 +97,12 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             null,
             null,
             'GET',
+            404,
             'req-abc123',
         );
 
         $this->metricsService->expects($this->once())
-            ->method('recordMetrics')
+            ->method('recordMetricsSync')
             ->with(
                 'app_home',
                 'dev',
@@ -110,9 +112,9 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 'GET',
-                null,
-                [],
+                404,
                 'req-abc123',
+                null,
                 null,
                 null,
                 null,
@@ -122,7 +124,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         $handler($message);
     }
 
-    public function testInvokePassesRefererToRecordMetrics(): void
+    public function testInvokePassesRefererToRecordMetricsSync(): void
     {
         $message = new RecordMetricsMessage(
             'app_home',
@@ -133,12 +135,13 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             null,
             null,
             'GET',
+            null,
             null,
             'https://referer.example/',
         );
 
         $this->metricsService->expects($this->once())
-            ->method('recordMetrics')
+            ->method('recordMetricsSync')
             ->with(
                 'app_home',
                 'dev',
@@ -149,9 +152,9 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 'GET',
                 null,
-                [],
                 null,
                 'https://referer.example/',
+                null,
                 null,
                 null,
             );
@@ -165,7 +168,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         $message = new RecordMetricsMessage('app_home', 'dev', 0.5, 5);
 
         $this->metricsService->expects($this->once())
-            ->method('recordMetrics')
+            ->method('recordMetricsSync')
             ->with(
                 'app_home',
                 'dev',
@@ -176,7 +179,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 null,
-                [],
+                null,
                 null,
                 null,
                 null,
@@ -187,7 +190,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         $handler($message);
     }
 
-    public function testInvokePassesUserIdentifierAndUserIdToRecordMetrics(): void
+    public function testInvokePassesUserIdentifierAndUserIdToRecordMetricsSync(): void
     {
         $message = new RecordMetricsMessage(
             'api_foo',
@@ -198,6 +201,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
             null,
             null,
             'POST',
+            201,
             null,
             null,
             'user@example.com',
@@ -205,7 +209,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         );
 
         $this->metricsService->expects($this->once())
-            ->method('recordMetrics')
+            ->method('recordMetricsSync')
             ->with(
                 'api_foo',
                 'prod',
@@ -215,19 +219,19 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 null,
                 'POST',
-                null,
-                [],
+                201,
                 null,
                 null,
                 'user@example.com',
                 '42',
+                null,
             );
 
         $handler = new RecordMetricsMessageHandler($this->metricsService);
         $handler($message);
     }
 
-    public function testInvokePassesEmptyParamsArrayToRecordMetrics(): void
+    public function testInvokePassesEmptyParamsArrayToRecordMetricsSync(): void
     {
         $message = new RecordMetricsMessage(
             'app_home',
@@ -241,7 +245,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
         );
 
         $this->metricsService->expects($this->once())
-            ->method('recordMetrics')
+            ->method('recordMetricsSync')
             ->with(
                 'app_home',
                 'dev',
@@ -252,7 +256,7 @@ final class RecordMetricsMessageHandlerTest extends TestCase
                 null,
                 'GET',
                 null,
-                [],
+                null,
                 null,
                 null,
                 null,

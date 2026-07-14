@@ -86,9 +86,11 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    public function testOnKernelRequestWhenEnabledAndRegistryThrowsRetriesAndResets(): void
+    public function testOnKernelRequestWhenEnabledAndRegistryThrowsResetsMiddleware(): void
     {
-        $this->registry->method('getConnection')->willThrowException(new RuntimeException('connection not ready'));
+        $this->registry->expects($this->exactly(2))
+            ->method('getConnection')
+            ->willThrowException(new RuntimeException('connection not ready'));
 
         $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, true, 'default');
         $event      = new RequestEvent(
@@ -178,18 +180,14 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
     }
 
     /**
-     * Covers the retry path: first attempt throws (catch runs, line 133), second attempt returns non-Connection (else branch, line 131).
-     * Ensures both exception path and success=false path are exercised in one request.
+     * Covers exception path on first attempt; middleware is not retried within the same request.
      */
-    public function testOnKernelRequestRetriesOnFailureAndUnsetsWhenApplyFails(): void
+    public function testOnKernelRequestDoesNotRetryAfterFailure(): void
     {
-        $this->registry->expects($this->atLeast(2))
+        $this->registry->expects($this->exactly(2))
             ->method('getConnection')
             ->with('default')
-            ->willReturnOnConsecutiveCalls(
-                $this->throwException(new RuntimeException('first attempt')),
-                new stdClass(),
-            );
+            ->willThrowException(new RuntimeException('first attempt'));
 
         $subscriber = new QueryTrackingConnectionSubscriber($this->registry, true, true, 'default');
         $event      = new RequestEvent(
@@ -201,7 +199,7 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
 
         $ref  = new ReflectionClass($subscriber);
         $prop = $ref->getProperty('trackedConnections');
-        $this->assertArrayNotHasKey('default', $prop->getValue($subscriber));
+        $this->assertEmpty($prop->getValue($subscriber));
     }
 
     /**

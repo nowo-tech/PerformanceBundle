@@ -43,7 +43,7 @@ final class RecordMetricsMessageHandler
      */
     public function __invoke(RecordMetricsMessage $message): void
     {
-        $this->metricsService->recordMetrics(
+        $this->metricsService->recordMetricsSync(
             $message->getRouteName(),
             $message->getEnv(),
             $message->getRequestTime(),
@@ -52,8 +52,7 @@ final class RecordMetricsMessageHandler
             $message->getParams(),
             $message->getMemoryUsage(),
             $message->getHttpMethod(),
-            null,
-            [],
+            $message->getStatusCode(),
             $message->getRequestId(),
             $message->getReferer(),
             $message->getUserIdentifier(),

@@ -238,6 +238,7 @@ class PerformanceMetricsService
                 $params,
                 $memoryUsage,
                 $httpMethod,
+                $statusCode,
                 $requestId,
                 $referer,
                 $userIdentifier,
@@ -257,7 +258,7 @@ class PerformanceMetricsService
     }
 
     /**
-     * Record metrics synchronously (internal method).
+     * Record metrics synchronously (used by sync mode and async message handler).
      *
      * @param string $routeName The route name
      * @param string $env The environment
@@ -276,7 +277,7 @@ class PerformanceMetricsService
      *
      * @return array{is_new: bool, was_updated: bool} Information about the operation
      */
-    private function recordMetricsSync(
+    public function recordMetricsSync(
         string $routeName,
         string $env,
         ?float $requestTime = null,
@@ -342,29 +343,6 @@ class PerformanceMetricsService
                 $this->entityManager->isOpen() ? 'true' : 'false',
             );
 
-            // Ensure EntityManager is open before flush
-            if (!$this->entityManager->isOpen()) {
-                $this->resetEntityManager();
-            }
-
-            // Suppress any potential output from Doctrine
-            $errorReporting = error_reporting(0);
-            $this->entityManager->flush();
-            error_reporting($errorReporting);
-
-            LogHelper::logf(
-                '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
-                $this->enableLogging,
-                $routeName,
-                $env,
-                $isNew ? 'true' : 'false',
-            );
-
-            // Invalidate cache for this environment after update
-            if ($this->cacheService instanceof PerformanceCacheService) {
-                $this->cacheService->invalidateStatistics($env);
-            }
-
             // Create access record if enabled (one per request when requestId is set)
             if ($this->enableAccessRecords) {
                 $skipAccessRecord = false;
@@ -412,11 +390,30 @@ class PerformanceMetricsService
                     }
 
                     $this->entityManager->persist($accessRecord);
-
-                    $err = error_reporting(0);
-                    $this->entityManager->flush();
-                    error_reporting($err);
                 }
+            }
+
+            // Ensure EntityManager is open before flush
+            if (!$this->entityManager->isOpen()) {
+                $this->resetEntityManager();
+            }
+
+            // Suppress any potential output from Doctrine
+            $errorReporting = error_reporting(0);
+            $this->entityManager->flush();
+            error_reporting($errorReporting);
+
+            LogHelper::logf(
+                '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
+                $this->enableLogging,
+                $routeName,
+                $env,
+                $isNew ? 'true' : 'false',
+            );
+
+            // Invalidate cache for this environment after update
+            if ($this->cacheService instanceof PerformanceCacheService) {
+                $this->cacheService->invalidateStatistics($env);
             }
 
             if ($this->eventDispatcher instanceof EventDispatcherInterface) {

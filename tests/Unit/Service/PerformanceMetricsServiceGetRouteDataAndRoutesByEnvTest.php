@@ -537,7 +537,7 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
             ->willReturnCallback(static fn (string $class): RouteDataRepository|RouteDataRecordRepository => $class === RouteData::class ? $repo : $recordRepo);
         $em->method('getConnection')->willReturn($connection);
         $em->method('isOpen')->willReturn(true);
-        $em->expects($this->exactly(2))->method('flush');
+        $em->expects($this->once())->method('flush');
         $em->expects($this->once())->method('persist')->with($this->callback(static fn ($entity): bool => $entity instanceof RouteDataRecord
             && $entity->getRequestId() === 'req-123'
             && $entity->getReferer() === 'https://example.com'
