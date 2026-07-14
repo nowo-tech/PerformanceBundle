@@ -55,7 +55,7 @@ final class PerformanceCacheServiceTest extends TestCase
 
     public function testGetCachedStatisticsReturnsDataOnHit(): void
     {
-        $data = ['total_routes' => 10, 'avg_time' => 0.5];
+        $data    = ['total_routes' => 10, 'avg_time' => 0.5];
         $genItem = $this->createMock(CacheItemInterface::class);
         $genItem->method('isHit')->willReturn(false);
 
