@@ -88,10 +88,12 @@ When `async: false` (or not set):
 When `async: true` and Messenger is available:
 
 1. Metrics are calculated at the end of the request
-2. A `RecordMetricsMessage` is created with the data
+2. A `RecordMetricsMessage` is created with the data (including optional `statusCode` for access records)
 3. The message is dispatched to the message bus
 4. The HTTP response is sent immediately (without waiting for storage)
-5. The message is processed in the background (synchronously or asynchronously depending on your configuration)
+5. `RecordMetricsMessageHandler` calls `PerformanceMetricsService::recordMetricsSync()` to persist metrics in the background (synchronously or asynchronously depending on your transport)
+
+> **Upgrading from versions before 3.1.2:** drain the Messenger queue before deploy if you use a queued transport. See [UPGRADING.md](UPGRADING.md#upgrading-to-312-2026-07-14).
 
 ## Benefits of Asynchronous Mode
 
@@ -159,6 +161,7 @@ This allows the bundle to work without Messenger, while you can opt into asynchr
 2. Check configuration: `async: true` in `nowo_performance.yaml`
 3. If using an asynchronous transport, check that the worker is running
 4. Check Symfony and Messenger logs
+5. From **3.1.2** onward, confirm workers run the updated bundle (handler uses `recordMetricsSync()`; older workers may not persist correctly)
 
 ### Metrics are stored with delay
 
