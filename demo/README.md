@@ -1,12 +1,11 @@
 # Performance Bundle – Demos
 
-This directory contains demos for the Performance Bundle, one per supported Symfony version.
+This directory contains demos for the Performance Bundle, one per supported Symfony major used for local verification.
 
 ## Demos
 
 | Demo       | Symfony | Port (default) |
 |-----------|---------|----------------|
-| symfony7  | 7.0     | 8007           |
 | symfony8  | 8.0     | 8008           |
 
 ## Requirements
@@ -19,25 +18,20 @@ This directory contains demos for the Performance Bundle, one per supported Symf
 From this directory:
 
 ```bash
-make up-symfony7    # Start Symfony 7 demo
-make setup-symfony7 # Install deps, create DB, load fixtures
-# App: http://localhost:8007
-
 make up-symfony8    # Start Symfony 8 demo
-make setup-symfony8
+make setup-symfony8 # Install deps, create DB, load fixtures
 # App: http://localhost:8008
 ```
 
-Or from inside a demo (e.g. `cd symfony8`):
+Or from inside the demo (`cd symfony8`):
 
 ```bash
 make up
 make setup
 ```
 
-See each demo's README for details:
+See the demo README for details:
 
-- [symfony7/README.md](symfony7/README.md)
 - [symfony8/README.md](symfony8/README.md)
 
 ## Commands (from demo/)

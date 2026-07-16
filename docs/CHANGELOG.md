@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.1.3] - 2026-07-16](#313-2026-07-16)
 - [[3.1.2] - 2026-07-14](#312-2026-07-14)
 - [[3.1.1] - 2026-07-09](#311-2026-07-09)
 - [[3.1.0] - 2026-07-09](#310-2026-07-09)
@@ -121,6 +122,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.1.3] - 2026-07-16
+
+### Removed
+
+- **Demo** – Removed `demo/symfony7`. Local verification demos are limited to **`demo/symfony8`**. The bundle still supports Symfony **7** and **8** at runtime (`composer.json`: `^7.0 || ^8.0`).
+
+### Changed
+
+- **Documentation** – [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md) and [demo/README.md](../demo/README.md) updated for the Symfony 8-only demo layout; `demo/Makefile` targets for symfony7 removed.
 
 ---
 

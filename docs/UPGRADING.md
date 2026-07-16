@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.1.3 (2026-07-16)](#upgrading-to-313-2026-07-16)
 - [Upgrading to 3.1.2 (2026-07-14)](#upgrading-to-312-2026-07-14)
 - [Upgrading to 3.1.1 (2026-07-09)](#upgrading-to-311-2026-07-09)
 - [Upgrading to 3.1.0 (2026-07-09)](#upgrading-to-310-2026-07-09)
@@ -85,6 +86,20 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.1.3 (2026-07-16)
+
+Patch release for **repository demos / documentation only**. **No application, configuration, or database changes.**
+
+- The **`demo/symfony7`** application was removed. Use **`demo/symfony8`** for local FrankenPHP demos (`make -C demo/symfony8 up`).
+- Runtime support for **Symfony 7** is unchanged (`symfony/framework-bundle: ^7.0 || ^8.0`).
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
+If you maintained a local checkout of `demo/symfony7`, delete or ignore that directory; it is no longer in the package tree (demos are also excluded from the Composer archive).
 
 ## Upgrading to 3.1.2 (2026-07-14)
 
