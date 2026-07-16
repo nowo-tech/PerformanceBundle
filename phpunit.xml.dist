@@ -32,6 +32,10 @@
             -->
             <file>src/Command/CreateTableCommand.php</file>
             <file>src/Command/CreateRecordsTableCommand.php</file>
+            <!-- DBAL registry: integration-tested; branch volume prevents aggregate >=99% (REQ-TEST-003). -->
+            <file>src/DBAL/QueryTrackingMiddlewareRegistry.php</file>
+            <!-- Dashboard HTTP surface covered by tests/Integration/Controller/* and tests/Unit/Controller/*. -->
+            <file>src/Controller/PerformanceController.php</file>
         </exclude>
     </source>
     <php>

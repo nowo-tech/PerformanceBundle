@@ -3,8 +3,14 @@
 Thank you for considering contributing to Performance Bundle!
 
 
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](../CODE_OF_CONDUCT.md). By participating, you are expected to uphold it. Please report unacceptable behavior to **hectorfranco@nowo.tech**.
+
 ## Table of contents
 
+- [Code of Conduct](#code-of-conduct)
 - [Maintainer](#maintainer)
 - [Development Setup](#development-setup)
   - [Using Docker (Recommended)](#using-docker-recommended)
@@ -16,6 +22,7 @@ Thank you for considering contributing to Performance Bundle!
   - [With Docker](#with-docker)
   - [Without Docker](#without-docker)
 - [Available Make Commands](#available-make-commands)
+- [Git hooks (REQ-GIT-001)](#git-hooks-req-git-001)
 - [Reporting Issues](#reporting-issues)
 - [Contact](#contact)
 
@@ -199,3 +206,16 @@ When reporting issues, please include:
 For questions or suggestions, you can reach out to:
 - GitHub: [@HecFranco](https://github.com/HecFranco)
 - Organization: [nowo-tech](https://github.com/nowo-tech)
+
+## Git hooks (REQ-GIT-001)
+
+Do **not** add `Co-authored-by: Cursor` or `cursoragent@cursor.com` trailers to commit messages.
+
+```bash
+make setup-hooks
+make check-no-cursor-coauthor
+```
+
+`make setup-hooks` installs `.githooks/commit-msg` (or sets `core.hooksPath` to `.githooks`). Run it once per clone before your first commit.
+
+CI checks **new commits on each push/PR** (not the full historical log). To purge legacy trailers from `main`, see [GITHUB_CI.md](GITHUB_CI.md) (REQ-GIT-001) and run `make strip-cursor-coauthor-from-history` before `git push --force-with-lease`.

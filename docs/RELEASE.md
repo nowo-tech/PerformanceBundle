@@ -28,3 +28,5 @@
 ## After releasing
 
 - Keep `[Unreleased]` at the top of [CHANGELOG.md](CHANGELOG.md) for the next version.
+
+After creating the release commit and tag, run `make check-no-cursor-coauthor` again **before** `git push` (REQ-GIT-001). The release commit itself is not covered by an earlier `release-check` run.

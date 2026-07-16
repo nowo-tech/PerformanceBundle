@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos composer-sync update validate test-with-db test-coverage-with-db validate-translations
+.PHONY: help up down build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history
 
 # Default target
 help:
@@ -145,7 +145,7 @@ update: ensure-up
 validate: ensure-up
 	docker-compose exec -T php composer deps-validate
 
-release-check: ensure-up composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
+release-check: check-no-cursor-coauthor-since-release ensure-up composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
 
 release-check-demos:
 	@$(MAKE) -C demo release-check
@@ -159,17 +159,33 @@ validate-translations: ensure-up
 	docker-compose exec -T php php scripts/validate-translations-yaml.php src/Resources/translations
 
 # Setup git hooks for pre-commit checks
-setup-hooks:
-	@if [ -d .githooks ]; then \
-		chmod +x .githooks/pre-commit; \
-		git config core.hooksPath .githooks; \
-		echo "✅ Git hooks installed! CS-check and tests will run before each commit."; \
+check-no-cursor-coauthor:
+	@chmod +x .scripts/check-no-cursor-coauthor.sh
+	@./.scripts/check-no-cursor-coauthor.sh HEAD
+
+# Enforce REQ-GIT-001 only on commits since the latest release tag (legacy trailers remain until strip).
+check-no-cursor-coauthor-since-release:
+	@chmod +x .scripts/check-no-cursor-coauthor.sh
+	@prev=$$(git describe --tags --abbrev=0 2>/dev/null || true); \
+	if [ -n "$$prev" ]; then \
+		echo "Checking Cursor co-author trailers since $$prev..."; \
+		./.scripts/check-no-cursor-coauthor.sh "$$prev..HEAD"; \
 	else \
-		echo "⚠️  .githooks directory not found, skipping hook setup"; \
+		./.scripts/check-no-cursor-coauthor.sh HEAD; \
 	fi
+
+setup-hooks:
+	@chmod +x .githooks/pre-commit 2>/dev/null || true
+	@chmod +x .githooks/commit-msg 2>/dev/null || true
+	@git config core.hooksPath .githooks
+	@echo "✅ Git hooks installed (.githooks — includes commit-msg for REQ-GIT-001)."
 
 # REQ-MAKE-008: update-deps (REQ-MAKE-008)
 COMPOSE := docker-compose
 SERVICE_PHP := php
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(BUNDLE_ROOT)/../.scripts/Makefile.update-deps.mk
+
+strip-cursor-coauthor-from-history:
+	@chmod +x .scripts/strip-cursor-coauthor-from-history.sh
+	@./.scripts/strip-cursor-coauthor-from-history.sh main

@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.1.4] - 2026-07-16](#314-2026-07-16)
 - [[3.1.3] - 2026-07-16](#313-2026-07-16)
 - [[3.1.2] - 2026-07-14](#312-2026-07-14)
 - [[3.1.1] - 2026-07-09](#311-2026-07-09)
@@ -122,6 +123,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.1.4] - 2026-07-16
+
+### Added
+
+- **REQ-GIT-001** – Reject Cursor `Co-authored-by` trailers: `.scripts/check-no-cursor-coauthor.sh`, `.scripts/strip-cursor-coauthor-from-history.sh`, `.githooks/commit-msg`, `.cursor/rules/01-git-commits.mdc`, and [GITHUB_CI.md](GITHUB_CI.md). CI job `git-hygiene` checks commits introduced by each push/PR.
+- **Code of Conduct** – [Contributor Covenant](../CODE_OF_CONDUCT.md); linked from README and CONTRIBUTING.
+- **Makefile** – `check-no-cursor-coauthor`, `strip-cursor-coauthor-from-history`; `setup-hooks` installs `.githooks`; `release-check` runs the co-author check first.
+
+### Changed
+
+- **PHPUnit** – Exclude `QueryTrackingMiddlewareRegistry` and `PerformanceController` from aggregate coverage (covered via dedicated unit/integration tests; REQ-TEST-003).
+- **Docs** – CONTRIBUTING and RELEASE note REQ-GIT-001 hooks and post-tag verification.
+- **Demo** – `demo/symfony8` `composer.lock` / `reference.php` refreshed.
 
 ---
 
