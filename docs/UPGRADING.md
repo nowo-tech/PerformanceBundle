@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.1.4 (2026-07-16)](#upgrading-to-314-2026-07-16)
 - [Upgrading to 3.1.3 (2026-07-16)](#upgrading-to-313-2026-07-16)
 - [Upgrading to 3.1.2 (2026-07-14)](#upgrading-to-312-2026-07-14)
 - [Upgrading to 3.1.1 (2026-07-09)](#upgrading-to-311-2026-07-09)
@@ -86,6 +87,29 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.1.4 (2026-07-16)
+
+Patch release for **repository hygiene, docs, and test coverage config**. **No application, configuration, or database changes** for consumers of the bundle.
+
+### Contributors / maintainers
+
+```bash
+make setup-hooks
+make check-no-cursor-coauthor   # full history; may still fail until trailers are stripped
+```
+
+- Do not add `Co-authored-by: Cursor` / `cursoragent@cursor.com` to commit messages.
+- CI enforces the rule on **new** commits in each push/PR. Optional full-history cleanup: `make strip-cursor-coauthor-from-history` (rewrites history; coordinate force-push). See [GITHUB_CI.md](GITHUB_CI.md).
+
+### Applications
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
+No runtime migration required. PHPUnit coverage exclusions in `phpunit.xml.dist` only affect this repository’s coverage reports.
 
 ## Upgrading to 3.1.3 (2026-07-16)
 
