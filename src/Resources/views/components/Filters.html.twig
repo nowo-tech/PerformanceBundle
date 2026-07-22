@@ -4,10 +4,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">{{ 'filters.title'|trans({}, 'nowo_performance') }}</h5>
+                    <h5 class="mb-0">{{ 'filters.title'|trans({}, 'NowoPerformanceBundle') }}</h5>
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                        <span class="when-expanded">{{ 'filters.hide_advanced'|trans({}, 'nowo_performance') }}</span>
-                        <span class="when-collapsed">{{ 'filters.show_advanced'|trans({}, 'nowo_performance') }}</span>
+                        <span class="when-expanded">{{ 'filters.hide_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
+                        <span class="when-collapsed">{{ 'filters.show_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
                     </button>
                 </div>
                 <div class="card-body">
@@ -23,7 +23,7 @@
                         <div class="col-md-3">
                             {% if not form.route.isRendered %}
                                 {{ form_label(form.route) }}
-                                {{ form_widget(form.route, {'attr': {'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
+                                {{ form_widget(form.route, {'attr': {'placeholder': 'filters.placeholder_route'|trans({}, 'NowoPerformanceBundle')}}) }}
                                 {{ form_errors(form.route) }}
                             {% endif %}
                         </div>
@@ -53,33 +53,33 @@
                         <div class="collapse" id="advancedFilters">
                             <div class="col-12">
                                 <hr>
-                                <h6 class="mb-3">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h6>
+                                <h6 class="mb-3">{{ 'filters.advanced_filters'|trans({}, 'NowoPerformanceBundle') }}</h6>
                             </div>
                             <div class="col-md-3">
                                 {% if not form.min_request_time.isRendered %}
                                     {{ form_label(form.min_request_time) }}
-                                    {{ form_widget(form.min_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.min_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'NowoPerformanceBundle')}}) }}
                                     {{ form_errors(form.min_request_time) }}
                                 {% endif %}
                             </div>
                             <div class="col-md-3">
                                 {% if not form.max_request_time.isRendered %}
                                     {{ form_label(form.max_request_time) }}
-                                    {{ form_widget(form.max_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.max_request_time, {'attr': {'placeholder': 'filters.placeholder_time'|trans({}, 'NowoPerformanceBundle')}}) }}
                                     {{ form_errors(form.max_request_time) }}
                                 {% endif %}
                             </div>
                             <div class="col-md-3">
                                 {% if not form.min_query_count.isRendered %}
                                     {{ form_label(form.min_query_count) }}
-                                    {{ form_widget(form.min_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.min_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'NowoPerformanceBundle')}}) }}
                                     {{ form_errors(form.min_query_count) }}
                                 {% endif %}
                             </div>
                             <div class="col-md-3">
                                 {% if not form.max_query_count.isRendered %}
                                     {{ form_label(form.max_query_count) }}
-                                    {{ form_widget(form.max_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.max_query_count, {'attr': {'placeholder': 'filters.placeholder_count'|trans({}, 'NowoPerformanceBundle')}}) }}
                                     {{ form_errors(form.max_query_count) }}
                                 {% endif %}
                             </div>
@@ -103,7 +103,7 @@
                             {% if not form.submit.isRendered %}
                                 {{ form_widget(form.submit) }}
                             {% endif %}
-                            <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">{{ 'filters.reset'|trans({}, 'nowo_performance') }}</a>
+                            <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">{{ 'filters.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
                         </div>
                     {{ form_end(form, {'render_rest': false}) }}
                 </div>
@@ -153,9 +153,9 @@
     <div class="bg-white shadow rounded-lg mb-8">
         <div class="px-4 py-5 sm:p-6">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">{{ 'filters.title'|trans({}, 'nowo_performance') }}</h3>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">{{ 'filters.title'|trans({}, 'NowoPerformanceBundle') }}</h3>
                 <button type="button" class="text-sm text-indigo-600 hover:text-indigo-800 focus:outline-none" onclick="toggleAdvancedFilters()">
-                    <span id="advancedFiltersToggleText">{{ 'filters.show_advanced'|trans({}, 'nowo_performance') }}</span>
+                    <span id="advancedFiltersToggleText">{{ 'filters.show_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
                 </button>
             </div>
             {{ form_start(form, {'action': path('nowo_performance.index'), 'attr': {'class': 'space-y-4'}}) }}
@@ -174,7 +174,7 @@
                         {% if not form.route.isRendered %}
                             {{ form_label(form.route, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
                             <div class="mt-1">
-                                {{ form_widget(form.route, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_route'|trans({}, 'nowo_performance')}}) }}
+                                {{ form_widget(form.route, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_route'|trans({}, 'NowoPerformanceBundle')}}) }}
                             </div>
                             {{ form_errors(form.route) }}
                         {% endif %}
@@ -210,13 +210,13 @@
 
                 {# Advanced Filters (Collapsible) #}
                 <div id="advancedFilters" class="hidden mt-6 pt-6 border-t border-gray-200">
-                    <h4 class="text-md font-semibold text-gray-900 mb-4">{{ 'filters.advanced_filters'|trans({}, 'nowo_performance') }}</h4>
+                    <h4 class="text-md font-semibold text-gray-900 mb-4">{{ 'filters.advanced_filters'|trans({}, 'NowoPerformanceBundle') }}</h4>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                             {% if not form.min_request_time.isRendered %}
                                 {{ form_label(form.min_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
                                 <div class="mt-1">
-                                    {{ form_widget(form.min_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.min_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'NowoPerformanceBundle')}}) }}
                                 </div>
                                 {{ form_errors(form.min_request_time) }}
                             {% endif %}
@@ -225,7 +225,7 @@
                             {% if not form.max_request_time.isRendered %}
                                 {{ form_label(form.max_request_time, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
                                 <div class="mt-1">
-                                    {{ form_widget(form.max_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.max_request_time, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_time'|trans({}, 'NowoPerformanceBundle')}}) }}
                                 </div>
                                 {{ form_errors(form.max_request_time) }}
                             {% endif %}
@@ -234,7 +234,7 @@
                             {% if not form.min_query_count.isRendered %}
                                 {{ form_label(form.min_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
                                 <div class="mt-1">
-                                    {{ form_widget(form.min_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.min_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'NowoPerformanceBundle')}}) }}
                                 </div>
                                 {{ form_errors(form.min_query_count) }}
                             {% endif %}
@@ -243,7 +243,7 @@
                             {% if not form.max_query_count.isRendered %}
                                 {{ form_label(form.max_query_count, null, {'attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
                                 <div class="mt-1">
-                                    {{ form_widget(form.max_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'nowo_performance')}}) }}
+                                    {{ form_widget(form.max_query_count, {'attr': {'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'filters.placeholder_count'|trans({}, 'NowoPerformanceBundle')}}) }}
                                 </div>
                                 {{ form_errors(form.max_query_count) }}
                             {% endif %}
@@ -274,7 +274,7 @@
                         {{ form_widget(form.submit, {'attr': {'class': 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'}}) }}
                     {% endif %}
                     <a href="{{ path('nowo_performance.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        {{ 'filters.reset'|trans({}, 'nowo_performance') }}
+                        {{ 'filters.reset'|trans({}, 'NowoPerformanceBundle') }}
                     </a>
                 </div>
             {{ form_end(form, {'render_rest': false}) }}
@@ -288,10 +288,10 @@
         
         if (advancedFilters.classList.contains('hidden')) {
             advancedFilters.classList.remove('hidden');
-            toggleText.textContent = '{{ 'filters.hide_advanced'|trans({}, 'nowo_performance') }}';
+            toggleText.textContent = '{{ 'filters.hide_advanced'|trans({}, 'NowoPerformanceBundle') }}';
         } else {
             advancedFilters.classList.add('hidden');
-            toggleText.textContent = '{{ 'filters.show_advanced'|trans({}, 'nowo_performance') }}';
+            toggleText.textContent = '{{ 'filters.show_advanced'|trans({}, 'NowoPerformanceBundle') }}';
         }
     }
 

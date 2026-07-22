@@ -1,18 +1,18 @@
 {% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
-{% block title %}{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}{% endblock %}
+{% block title %}{{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}{% endblock %}
 
 {% block content %}
 {% if ui_template == 'bootstrap' %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}</h1>
+            <h1>{{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}</h1>
             <div>
                 <a href="{{ path('nowo_performance.access_records', {env: environment, start_date: start_date|date('Y-m-d\\TH:i'), end_date: end_date|date('Y-m-d\\TH:i'), route: selected_route, status_code: selected_status_code}) }}" class="btn btn-info me-2">
-                    {{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}
+                    {{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
                 <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
-                    {{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}
+                    {{ 'dashboard.back_to_dashboard'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
             </div>
         </div>
@@ -20,7 +20,7 @@
         {# Filters #}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h5>
+                <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h5>
             </div>
             <div class="card-body">
                 {{ form_start(filterForm, {'action': path('nowo_performance.access_statistics'), 'attr': {'class': 'row g-3'}}) }}
@@ -32,11 +32,11 @@
                     <div class="col-md-2">{{ form_row(filterForm.status_code) }}</div>
                     <div class="col-md-12">
                         {{ form_widget(filterForm.filter) }}
-                        <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="btn btn-secondary">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
+                        <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="btn btn-secondary">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
                     </div>
                 {{ form_end(filterForm, {'render_rest': false}) }}
                 {% if enable_record_management|default(false) %}
-                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                         {{ form_widget(deleteByFilterForm) }}
                     {{ form_end(deleteByFilterForm) }}
                 {% endif %}
@@ -47,24 +47,24 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">{{ 'access_statistics.summary'|trans({}, 'nowo_performance') }}</h5>
+                        <h5 class="card-title">{{ 'access_statistics.summary'|trans({}, 'NowoPerformanceBundle') }}</h5>
                         <div class="row">
                             <div class="col-md-4">
                                 <p class="card-text">
-                                    <strong>{{ 'access_statistics.total_accesses'|trans({}, 'nowo_performance') }}:</strong> 
+                                    <strong>{{ 'access_statistics.total_accesses'|trans({}, 'NowoPerformanceBundle') }}:</strong> 
                                     <span class="badge bg-primary">{{ total_access_count|number_format }}</span>
                                 </p>
                             </div>
                             <div class="col-md-4">
                                 <p class="card-text">
-                                    <strong>{{ 'access_statistics.period'|trans({}, 'nowo_performance') }}:</strong>
+                                    <strong>{{ 'access_statistics.period'|trans({}, 'NowoPerformanceBundle') }}:</strong>
                                     {{ start_date|date(dateFormat) }} - {{ end_date|date(dateFormat) }}
                                 </p>
                             </div>
                             <div class="col-md-4">
                                 {% if selected_route %}
                                     <p class="card-text">
-                                        <strong>{{ 'access_statistics.filtered_route'|trans({}, 'nowo_performance') }}:</strong>
+                                        <strong>{{ 'access_statistics.filtered_route'|trans({}, 'NowoPerformanceBundle') }}:</strong>
                                         <code>{{ selected_route }}</code>
                                     </p>
                                 {% endif %}
@@ -79,7 +79,7 @@
             <div class="col-md-12 mb-4">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h5>
+                        <h5 class="mb-0">{{ 'access_statistics.by_hour'|trans({}, 'NowoPerformanceBundle') }}</h5>
                     </div>
                     <div class="card-body">
                         <canvas id="hourlyChart" style="height: 300px;"></canvas>
@@ -89,7 +89,7 @@
             <div class="col-md-6 mb-4">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">{{ 'access_statistics.by_day_of_week'|trans({}, 'nowo_performance') }}</h5>
+                        <h5 class="mb-0">{{ 'access_statistics.by_day_of_week'|trans({}, 'NowoPerformanceBundle') }}</h5>
                     </div>
                     <div class="card-body">
                         <canvas id="dayOfWeekChart" style="height: 300px;"></canvas>
@@ -99,7 +99,7 @@
             <div class="col-md-6 mb-4">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">{{ 'access_statistics.by_month'|trans({}, 'nowo_performance') }}</h5>
+                        <h5 class="mb-0">{{ 'access_statistics.by_month'|trans({}, 'NowoPerformanceBundle') }}</h5>
                     </div>
                     <div class="card-body">
                         <canvas id="monthlyChart" style="height: 300px;"></canvas>
@@ -110,7 +110,7 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">{{ 'access_statistics.heatmap'|trans({}, 'nowo_performance') }}</h5>
+                <h5 class="mb-0">{{ 'access_statistics.heatmap'|trans({}, 'NowoPerformanceBundle') }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="heatmapChart" style="height: 400px;"></canvas>
@@ -119,17 +119,17 @@
 
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h5>
+                <h5 class="mb-0">{{ 'access_statistics.by_hour'|trans({}, 'NowoPerformanceBundle') }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>{{ 'access_statistics.hour'|trans({}, 'nowo_performance') }}</th>
-                                <th>{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}</th>
-                                <th>{{ 'access_statistics.avg_response_time'|trans({}, 'nowo_performance') }}</th>
-                                <th>{{ 'access_statistics.status_codes'|trans({}, 'nowo_performance') }}</th>
+                                <th>{{ 'access_statistics.hour'|trans({}, 'NowoPerformanceBundle') }}</th>
+                                <th>{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}</th>
+                                <th>{{ 'access_statistics.avg_response_time'|trans({}, 'NowoPerformanceBundle') }}</th>
+                                <th>{{ 'access_statistics.status_codes'|trans({}, 'NowoPerformanceBundle') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -138,7 +138,7 @@
                                     <td>
                                         <strong>{{ '%02d'|format(stat.hour) }}:00</strong>
                                         {% if stat.hour == "now"|date('G') %}
-                                            <span class="badge bg-info">{{ 'access_statistics.current_hour'|trans({}, 'nowo_performance') }}</span>
+                                            <span class="badge bg-info">{{ 'access_statistics.current_hour'|trans({}, 'NowoPerformanceBundle') }}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -167,7 +167,7 @@
                                                     {% elseif statusCode >= 400 and statusCode < 500 %}{% set badgeClass = 'bg-warning text-dark' %}
                                                     {% elseif statusCode >= 500 %}{% set badgeClass = 'bg-danger' %}
                                                     {% endif %}
-                                                    <span class="badge {{ badgeClass }}" title="{{ count }} {{ 'access_statistics.requests'|trans({}, 'nowo_performance') }}">
+                                                    <span class="badge {{ badgeClass }}" title="{{ count }} {{ 'access_statistics.requests'|trans({}, 'NowoPerformanceBundle') }}">
                                                         {{ statusCode }}: {{ count }}
                                                     </span>
                                                 {% endfor %}
@@ -180,7 +180,7 @@
                             {% else %}
                                 <tr>
                                     <td colspan="4" class="text-center text-muted">
-                                        {{ 'access_statistics.no_data'|trans({}, 'nowo_performance') }}
+                                        {{ 'access_statistics.no_data'|trans({}, 'NowoPerformanceBundle') }}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -193,19 +193,19 @@
 {% else %}
     {# Tailwind #}
     <div class="mb-6 flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}</h1>
+        <h1 class="text-3xl font-bold text-gray-900">{{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}</h1>
         <div class="flex gap-2">
             <a href="{{ path('nowo_performance.access_records', {env: environment, start_date: start_date|date('Y-m-d\\TH:i'), end_date: end_date|date('Y-m-d\\TH:i'), route: selected_route, status_code: selected_status_code}) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                {{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}
+                {{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}
             </a>
             <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                {{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}
+                {{ 'dashboard.back_to_dashboard'|trans({}, 'NowoPerformanceBundle') }}
             </a>
         </div>
     </div>
 
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h2>
         {{ form_start(filterForm, {'action': path('nowo_performance.access_statistics'), 'attr': {'class': 'space-y-4'}}) }}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
@@ -236,30 +236,30 @@
             </div>
             <div class="flex flex-wrap items-center gap-2 pt-2">
                 {{ form_widget(filterForm.filter, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}
-                <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
+                <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
             </div>
         {{ form_end(filterForm, {'render_rest': false}) }}
         {% if enable_record_management|default(false) %}
-            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                 {{ form_widget(deleteByFilterForm, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700'}}) }}
             {{ form_end(deleteByFilterForm) }}
         {% endif %}
     </div>
 
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.summary'|trans({}, 'nowo_performance') }}</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.summary'|trans({}, 'NowoPerformanceBundle') }}</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-                <p class="text-sm text-gray-500">{{ 'access_statistics.total_accesses'|trans({}, 'nowo_performance') }}</p>
+                <p class="text-sm text-gray-500">{{ 'access_statistics.total_accesses'|trans({}, 'NowoPerformanceBundle') }}</p>
                 <p class="text-xl font-semibold"><span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800">{{ total_access_count|number_format }}</span></p>
             </div>
             <div>
-                <p class="text-sm text-gray-500">{{ 'access_statistics.period'|trans({}, 'nowo_performance') }}</p>
+                <p class="text-sm text-gray-500">{{ 'access_statistics.period'|trans({}, 'NowoPerformanceBundle') }}</p>
                 <p class="text-gray-900">{{ start_date|date(dateFormat) }} — {{ end_date|date(dateFormat) }}</p>
             </div>
             {% if selected_route %}
             <div>
-                <p class="text-sm text-gray-500">{{ 'access_statistics.filtered_route'|trans({}, 'nowo_performance') }}</p>
+                <p class="text-sm text-gray-500">{{ 'access_statistics.filtered_route'|trans({}, 'NowoPerformanceBundle') }}</p>
                 <p><code class="text-sm bg-gray-100 px-1 rounded">{{ selected_route }}</code></p>
             </div>
             {% endif %}
@@ -268,37 +268,37 @@
 
     <div class="space-y-6 mb-6">
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_hour'|trans({}, 'NowoPerformanceBundle') }}</h2>
             <div style="height: 300px;"><canvas id="hourlyChart"></canvas></div>
         </div>
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_day_of_week'|trans({}, 'nowo_performance') }}</h2>
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_day_of_week'|trans({}, 'NowoPerformanceBundle') }}</h2>
                 <div style="height: 300px;"><canvas id="dayOfWeekChart"></canvas></div>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_month'|trans({}, 'nowo_performance') }}</h2>
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.by_month'|trans({}, 'NowoPerformanceBundle') }}</h2>
                 <div style="height: 300px;"><canvas id="monthlyChart"></canvas></div>
             </div>
         </div>
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.heatmap'|trans({}, 'nowo_performance') }}</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.heatmap'|trans({}, 'NowoPerformanceBundle') }}</h2>
             <div style="height: 400px;"><canvas id="heatmapChart"></canvas></div>
         </div>
     </div>
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.by_hour'|trans({}, 'nowo_performance') }}</h2>
+            <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.by_hour'|trans({}, 'NowoPerformanceBundle') }}</h2>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.hour'|trans({}, 'nowo_performance') }}</th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}</th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.avg_response_time'|trans({}, 'nowo_performance') }}</th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.status_codes'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.hour'|trans({}, 'NowoPerformanceBundle') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.avg_response_time'|trans({}, 'NowoPerformanceBundle') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.status_codes'|trans({}, 'NowoPerformanceBundle') }}</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -307,7 +307,7 @@
                         <td class="px-4 py-3 text-sm">
                             <strong>{{ '%02d'|format(stat.hour) }}:00</strong>
                             {% if stat.hour == "now"|date('G') %}
-                                <span class="ml-1 inline-flex px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ 'access_statistics.current_hour'|trans({}, 'nowo_performance') }}</span>
+                                <span class="ml-1 inline-flex px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ 'access_statistics.current_hour'|trans({}, 'NowoPerformanceBundle') }}</span>
                             {% endif %}
                         </td>
                         <td class="px-4 py-3 text-sm">
@@ -334,7 +334,7 @@
                                         {% elseif statusCode >= 400 and statusCode < 500 %}{% set badgeClass = 'bg-amber-100 text-amber-800' %}
                                         {% elseif statusCode >= 500 %}{% set badgeClass = 'bg-red-100 text-red-800' %}
                                         {% endif %}
-                                        <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ badgeClass }}" title="{{ count }} {{ 'access_statistics.requests'|trans({}, 'nowo_performance') }}">{{ statusCode }}: {{ count }}</span>
+                                        <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ badgeClass }}" title="{{ count }} {{ 'access_statistics.requests'|trans({}, 'NowoPerformanceBundle') }}">{{ statusCode }}: {{ count }}</span>
                                     {% endfor %}
                                 </div>
                             {% else %}
@@ -344,7 +344,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ 'access_statistics.no_data'|trans({}, 'nowo_performance') }}</td>
+                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ 'access_statistics.no_data'|trans({}, 'NowoPerformanceBundle') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -370,14 +370,14 @@
                         labels: labels,
                         datasets: [
                             {
-                                label: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}',
+                                label: '{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}',
                                 data: accessCounts,
                                 borderColor: 'rgb(75, 192, 192)',
                                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                                 yAxisID: 'y',
                             },
                             {
-                                label: '{{ 'access_statistics.avg_response_time_ms'|trans({}, 'nowo_performance') }}',
+                                label: '{{ 'access_statistics.avg_response_time_ms'|trans({}, 'NowoPerformanceBundle') }}',
                                 data: avgResponseTimes,
                                 borderColor: 'rgb(255, 99, 132)',
                                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -390,8 +390,8 @@
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         scales: {
-                            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}' } },
-                            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '{{ 'access_statistics.response_time_ms'|trans({}, 'nowo_performance') }}' }, grid: { drawOnChartArea: false } }
+                            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}' } },
+                            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '{{ 'access_statistics.response_time_ms'|trans({}, 'NowoPerformanceBundle') }}' }, grid: { drawOnChartArea: false } }
                         }
                     }
                 });
@@ -409,7 +409,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}',
+                            label: '{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}',
                             data: accessCounts,
                             backgroundColor: 'rgba(54, 162, 235, 0.5)',
                             borderColor: 'rgba(54, 162, 235, 1)',
@@ -420,7 +420,7 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            y: { beginAtZero: true, title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}' } }
+                            y: { beginAtZero: true, title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}' } }
                         }
                     }
                 });
@@ -438,7 +438,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}',
+                            label: '{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}',
                             data: accessCounts,
                             backgroundColor: 'rgba(255, 99, 132, 0.5)',
                             borderColor: 'rgba(255, 99, 132, 1)',
@@ -449,7 +449,7 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            y: { beginAtZero: true, title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'nowo_performance') }}' } }
+                            y: { beginAtZero: true, title: { display: true, text: '{{ 'access_statistics.access_count'|trans({}, 'NowoPerformanceBundle') }}' } }
                         }
                     }
                 });

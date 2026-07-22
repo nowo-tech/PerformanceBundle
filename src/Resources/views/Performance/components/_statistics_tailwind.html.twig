@@ -9,7 +9,7 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.total_routes'|trans({}, 'nowo_performance') }}</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.total_routes'|trans({}, 'NowoPerformanceBundle') }}</dt>
                         <dd class="text-lg font-semibold text-blue-600">{{ stats.total_routes }}</dd>
                     </dl>
                 </div>
@@ -26,9 +26,9 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.total_records'|trans({}, 'nowo_performance') }}</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}</dt>
                         <dd class="text-lg font-semibold text-gray-600">{{ stats.total_records|default(0)|number_format }}</dd>
-                        <dd class="text-xs"><a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="text-indigo-600 hover:text-indigo-800">{{ 'statistics.view_records'|trans({}, 'nowo_performance') }}</a></dd>
+                        <dd class="text-xs"><a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="text-indigo-600 hover:text-indigo-800">{{ 'statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}</a></dd>
                     </dl>
                 </div>
             </div>
@@ -44,12 +44,12 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_queries'|trans({}, 'nowo_performance') }}</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_queries'|trans({}, 'NowoPerformanceBundle') }}</dt>
                         <dd class="text-lg font-semibold text-cyan-600">
                             {% if stats.avg_queries is defined and stats.avg_queries is not null %}
                                 {{ stats.avg_queries|number_format(1) }}
                             {% else %}
-                                {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                                {{ 'statistics.not_available'|trans({}, 'NowoPerformanceBundle') }}
                             {% endif %}
                         </dd>
                     </dl>
@@ -66,12 +66,12 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_queries'|trans({}, 'nowo_performance') }}</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_queries'|trans({}, 'NowoPerformanceBundle') }}</dt>
                         <dd class="text-lg font-semibold text-cyan-600">
                             {% if stats.max_queries is defined and stats.max_queries is not null %}
                                 {{ stats.max_queries }}
                             {% else %}
-                                {{ 'statistics.not_available'|trans({}, 'nowo_performance') }}
+                                {{ 'statistics.not_available'|trans({}, 'NowoPerformanceBundle') }}
                             {% endif %}
                         </dd>
                     </dl>
@@ -88,7 +88,7 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_request_time'|trans({}, 'nowo_performance') }}</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.avg_request_time'|trans({}, 'NowoPerformanceBundle') }}</dt>
                         <dd class="text-lg font-semibold text-amber-600">{{ (stats.avg_request_time * 1000)|number_format(2) }} ms</dd>
                     </dl>
                 </div>
@@ -104,7 +104,7 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_request_time'|trans({}, 'nowo_performance') }}</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.max_request_time'|trans({}, 'NowoPerformanceBundle') }}</dt>
                         <dd class="text-lg font-semibold text-red-600">{{ (stats.max_request_time * 1000)|number_format(2) }} ms</dd>
                     </dl>
                 </div>
@@ -116,7 +116,7 @@
 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-8">
     <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="px-4 py-3 border-b border-gray-200">
-            <h3 class="text-sm font-medium text-gray-900">{{ 'statistics.top_used_routes'|trans({}, 'nowo_performance') }}</h3>
+            <h3 class="text-sm font-medium text-gray-900">{{ 'statistics.top_used_routes'|trans({}, 'NowoPerformanceBundle') }}</h3>
         </div>
         <ul class="divide-y divide-gray-200">
             {% for r in stats.top_used_routes|default([]) %}
@@ -129,7 +129,7 @@
     </div>
     <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="px-4 py-3 border-b border-gray-200">
-            <h3 class="text-sm font-medium text-gray-900">{{ 'statistics.top_consumed_routes'|trans({}, 'nowo_performance') }}</h3>
+            <h3 class="text-sm font-medium text-gray-900">{{ 'statistics.top_consumed_routes'|trans({}, 'NowoPerformanceBundle') }}</h3>
         </div>
         <ul class="divide-y divide-gray-200">
             {% for r in stats.top_consumed_routes|default([]) %}

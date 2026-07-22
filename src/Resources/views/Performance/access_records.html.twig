@@ -1,6 +1,6 @@
 {% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
-{% block title %}{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}{% endblock %}
+{% block title %}{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}{% endblock %}
 
 {% block content %}
 {% set export_params = {
@@ -22,26 +22,26 @@
 {% if ui_template == 'bootstrap' %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}</h1>
+            <h1>{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}</h1>
             <div>
                 <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="btn btn-success me-2">
-                    {{ 'access_statistics.export_records_csv'|trans({}, 'nowo_performance') }}
+                    {{ 'access_statistics.export_records_csv'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
                 <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="btn btn-info me-2 text-white">
-                    {{ 'access_statistics.export_records_json'|trans({}, 'nowo_performance') }}
+                    {{ 'access_statistics.export_records_json'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
                 <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="btn btn-info me-2">
-                    {{ 'access_statistics.back_to_statistics'|trans({}, 'nowo_performance') }}
+                    {{ 'access_statistics.back_to_statistics'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
                 <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
-                    {{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}
+                    {{ 'dashboard.back_to_dashboard'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
             </div>
         </div>
 
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h5>
+                <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h5>
             </div>
             <div class="card-body">
                 {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'row g-3'}}) }}
@@ -59,11 +59,11 @@
                     <div class="col-md-3">{{ form_row(filterForm.user) }}</div>
                     <div class="col-md-12">
                         {{ form_widget(filterForm.filter) }}
-                        <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="btn btn-secondary">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
+                        <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="btn btn-secondary">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
                     </div>
                 {{ form_end(filterForm, {'render_rest': false}) }}
                 {% if enable_record_management|default(false) %}
-                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                         {{ form_widget(deleteByFilterForm) }}
                     {{ form_end(deleteByFilterForm) }}
                 {% endif %}
@@ -73,11 +73,11 @@
         {% if enable_record_management|default(false) and purgeForm is defined %}
         <div class="card mb-4 border-warning">
             <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0">{{ 'access_statistics.purge_records_title'|trans({}, 'nowo_performance') }}</h5>
+                <h5 class="mb-0">{{ 'access_statistics.purge_records_title'|trans({}, 'NowoPerformanceBundle') }}</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted small">{{ 'access_statistics.purge_records_help'|trans({}, 'nowo_performance') }}</p>
-                {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                <p class="text-muted small">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
+                {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                     {{ form_widget(purgeForm._token) }}
                     <div class="col-md-2">{{ form_row(purgeForm.purgeType) }}</div>
                     <div class="col-md-2 purge-days-field">{{ form_row(purgeForm.days) }}</div>
@@ -90,9 +90,9 @@
 
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">{{ 'access_statistics.records'|trans({}, 'nowo_performance') }}</h5>
+                <h5 class="mb-0">{{ 'access_statistics.records'|trans({}, 'NowoPerformanceBundle') }}</h5>
                 <span class="badge bg-primary">
-                    {{ 'access_statistics.total_records'|trans({}, 'nowo_performance') }}: {{ paginated_data.total|number_format }}
+                    {{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}
                 </span>
             </div>
             <div class="card-body">
@@ -101,16 +101,16 @@
                         <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'accessed_at', order: (sort_by|default('accessed_at') == 'accessed_at' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.timestamp'|trans({}, 'nowo_performance') }}{% if sort_by|default('accessed_at') == 'accessed_at' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'route', order: (sort_by|default('') == 'route' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.route'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'route' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'path', order: (sort_by|default('') == 'path' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.path'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'path' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'status_code', order: (sort_by|default('') == 'status_code' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.status_code'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'status_code' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'response_time', order: (sort_by|default('') == 'response_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.response_time'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'response_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'total_queries', order: (sort_by|default('') == 'total_queries' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.total_queries'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'total_queries' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'query_time', order: (sort_by|default('') == 'query_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.query_time'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'query_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'memory_usage', order: (sort_by|default('') == 'memory_usage' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.memory_usage'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'memory_usage' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th>{{ 'access_statistics.referer'|trans({}, 'nowo_performance') }}</th>
-                                    <th>{{ 'access_statistics.user'|trans({}, 'nowo_performance') }}</th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'accessed_at', order: (sort_by|default('accessed_at') == 'accessed_at' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.timestamp'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('accessed_at') == 'accessed_at' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'route', order: (sort_by|default('') == 'route' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.route'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'route' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'path', order: (sort_by|default('') == 'path' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.path'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'path' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'status_code', order: (sort_by|default('') == 'status_code' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.status_code'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'status_code' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'response_time', order: (sort_by|default('') == 'response_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.response_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'response_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'total_queries', order: (sort_by|default('') == 'total_queries' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.total_queries'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'total_queries' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'query_time', order: (sort_by|default('') == 'query_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.query_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'query_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'memory_usage', order: (sort_by|default('') == 'memory_usage' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.memory_usage'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'memory_usage' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                                    <th>{{ 'access_statistics.referer'|trans({}, 'NowoPerformanceBundle') }}</th>
+                                    <th>{{ 'access_statistics.user'|trans({}, 'NowoPerformanceBundle') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -208,7 +208,7 @@
                                 {% if paginated_data.page > 1 %}
                                     <li class="page-item">
                                         <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page - 1})) }}">
-                                            {{ 'access_statistics.previous'|trans({}, 'nowo_performance') }}
+                                            {{ 'access_statistics.previous'|trans({}, 'NowoPerformanceBundle') }}
                                         </a>
                                     </li>
                                 {% endif %}
@@ -230,7 +230,7 @@
                                 {% if paginated_data.page < paginated_data.total_pages %}
                                     <li class="page-item">
                                         <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page + 1})) }}">
-                                            {{ 'access_statistics.next'|trans({}, 'nowo_performance') }}
+                                            {{ 'access_statistics.next'|trans({}, 'NowoPerformanceBundle') }}
                                         </a>
                                     </li>
                                 {% endif %}
@@ -238,17 +238,17 @@
                         </nav>
                         <div class="text-center mt-3">
                             <small class="text-muted">
-                                {{ 'access_statistics.showing'|trans({}, 'nowo_performance') }} 
+                                {{ 'access_statistics.showing'|trans({}, 'NowoPerformanceBundle') }} 
                                 {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - 
                                 {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }}
-                                {{ 'access_statistics.of'|trans({}, 'nowo_performance') }} 
+                                {{ 'access_statistics.of'|trans({}, 'NowoPerformanceBundle') }} 
                                 {{ paginated_data.total|number_format }}
                             </small>
                         </div>
                     {% endif %}
                 {% else %}
                     <div class="alert alert-info">
-                        {{ 'access_statistics.no_records'|trans({}, 'nowo_performance') }}
+                        {{ 'access_statistics.no_records'|trans({}, 'NowoPerformanceBundle') }}
                     </div>
                 {% endif %}
             </div>
@@ -257,17 +257,17 @@
 {% else %}
     {# Tailwind #}
     <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
-        <h1 class="text-3xl font-bold text-gray-900">{{ 'access_statistics.view_records'|trans({}, 'nowo_performance') }}</h1>
+        <h1 class="text-3xl font-bold text-gray-900">{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}</h1>
         <div class="flex flex-wrap gap-2">
-            <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">{{ 'access_statistics.export_records_csv'|trans({}, 'nowo_performance') }}</a>
-            <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.export_records_json'|trans({}, 'nowo_performance') }}</a>
-            <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.back_to_statistics'|trans({}, 'nowo_performance') }}</a>
-            <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">{{ 'dashboard.back_to_dashboard'|trans({}, 'nowo_performance') }}</a>
+            <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">{{ 'access_statistics.export_records_csv'|trans({}, 'NowoPerformanceBundle') }}</a>
+            <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.export_records_json'|trans({}, 'NowoPerformanceBundle') }}</a>
+            <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.back_to_statistics'|trans({}, 'NowoPerformanceBundle') }}</a>
+            <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">{{ 'dashboard.back_to_dashboard'|trans({}, 'NowoPerformanceBundle') }}</a>
         </div>
     </div>
 
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'nowo_performance') }}</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h2>
         {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'space-y-4'}}) }}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
@@ -328,11 +328,11 @@
             </div>
             <div class="flex flex-wrap items-center gap-2 pt-2">
                 {{ form_widget(filterForm.filter, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}
-                <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'nowo_performance') }}</a>
+                <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
             </div>
         {{ form_end(filterForm, {'render_rest': false}) }}
         {% if enable_record_management|default(false) %}
-            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                 {{ form_widget(deleteByFilterForm, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700'}}) }}
             {{ form_end(deleteByFilterForm) }}
         {% endif %}
@@ -340,9 +340,9 @@
 
     {% if enable_record_management|default(false) and purgeForm is defined %}
     <div class="mt-4 rounded-lg border-2 border-amber-200 bg-amber-50 p-4">
-        <h3 class="text-lg font-medium text-amber-900 mb-2">{{ 'access_statistics.purge_records_title'|trans({}, 'nowo_performance') }}</h3>
-        <p class="text-sm text-amber-800 mb-3">{{ 'access_statistics.purge_records_help'|trans({}, 'nowo_performance') }}</p>
-        {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'nowo_performance') ~ "');"}}) }}
+        <h3 class="text-lg font-medium text-amber-900 mb-2">{{ 'access_statistics.purge_records_title'|trans({}, 'NowoPerformanceBundle') }}</h3>
+        <p class="text-sm text-amber-800 mb-3">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
+        {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
             {{ form_widget(purgeForm._token) }}
             <div class="flex-1 min-w-[140px]">{{ form_row(purgeForm.purgeType, {'attr': {'class': 'form-select'}}) }}</div>
             <div class="flex-1 min-w-[100px] purge-days-field">{{ form_row(purgeForm.days) }}</div>
@@ -354,24 +354,24 @@
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.records'|trans({}, 'nowo_performance') }}</h2>
-            <span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">{{ 'access_statistics.total_records'|trans({}, 'nowo_performance') }}: {{ paginated_data.total|number_format }}</span>
+            <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.records'|trans({}, 'NowoPerformanceBundle') }}</h2>
+            <span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">{{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}</span>
         </div>
         <div class="overflow-x-auto">
             {% if paginated_data.records|length > 0 %}
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'accessed_at', order: (sort_by|default('accessed_at') == 'accessed_at' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.timestamp'|trans({}, 'nowo_performance') }}{% if sort_by|default('accessed_at') == 'accessed_at' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'route', order: (sort_by|default('') == 'route' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.route'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'route' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'path', order: (sort_by|default('') == 'path' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.path'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'path' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'status_code', order: (sort_by|default('') == 'status_code' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.status_code'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'status_code' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'response_time', order: (sort_by|default('') == 'response_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.response_time'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'response_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'total_queries', order: (sort_by|default('') == 'total_queries' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.total_queries'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'total_queries' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'query_time', order: (sort_by|default('') == 'query_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.query_time'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'query_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'memory_usage', order: (sort_by|default('') == 'memory_usage' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.memory_usage'|trans({}, 'nowo_performance') }}{% if sort_by|default('') == 'memory_usage' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.referer'|trans({}, 'nowo_performance') }}</th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.user'|trans({}, 'nowo_performance') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'accessed_at', order: (sort_by|default('accessed_at') == 'accessed_at' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.timestamp'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('accessed_at') == 'accessed_at' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'route', order: (sort_by|default('') == 'route' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.route'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'route' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'path', order: (sort_by|default('') == 'path' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.path'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'path' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'status_code', order: (sort_by|default('') == 'status_code' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.status_code'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'status_code' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'response_time', order: (sort_by|default('') == 'response_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.response_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'response_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'total_queries', order: (sort_by|default('') == 'total_queries' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.total_queries'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'total_queries' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'query_time', order: (sort_by|default('') == 'query_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.query_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'query_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'memory_usage', order: (sort_by|default('') == 'memory_usage' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.memory_usage'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'memory_usage' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.referer'|trans({}, 'NowoPerformanceBundle') }}</th>
+                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.user'|trans({}, 'NowoPerformanceBundle') }}</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -427,20 +427,20 @@
                 {% set pagination_params = _base_params %}
                 <nav class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
                     <p class="text-sm text-gray-600">
-                        {{ 'access_statistics.showing'|trans({}, 'nowo_performance') }} {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }} {{ 'access_statistics.of'|trans({}, 'nowo_performance') }} {{ paginated_data.total|number_format }}
+                        {{ 'access_statistics.showing'|trans({}, 'NowoPerformanceBundle') }} {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }} {{ 'access_statistics.of'|trans({}, 'NowoPerformanceBundle') }} {{ paginated_data.total|number_format }}
                     </p>
                     <div class="flex gap-2">
                         {% if paginated_data.page > 1 %}
-                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page - 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.previous'|trans({}, 'nowo_performance') }}</a>
+                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page - 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.previous'|trans({}, 'NowoPerformanceBundle') }}</a>
                         {% endif %}
                         {% if paginated_data.page < paginated_data.total_pages %}
-                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page + 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.next'|trans({}, 'nowo_performance') }}</a>
+                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page + 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.next'|trans({}, 'NowoPerformanceBundle') }}</a>
                         {% endif %}
                     </div>
                 </nav>
             {% endif %}
             {% else %}
-            <div class="px-4 py-12 text-center text-gray-500">{{ 'access_statistics.no_records'|trans({}, 'nowo_performance') }}</div>
+            <div class="px-4 py-12 text-center text-gray-500">{{ 'access_statistics.no_records'|trans({}, 'NowoPerformanceBundle') }}</div>
             {% endif %}
         </div>
     </div>

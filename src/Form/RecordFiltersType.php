@@ -54,7 +54,7 @@ class RecordFiltersType extends AbstractType
         $builder
             ->add('start_date', DateTimeType::class, [
                 'label'              => 'access_statistics.start_date',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'widget'             => 'single_text',
                 // 'html5' => false,
                 // 'format' => 'yyyy-MM-dd',
@@ -66,7 +66,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('end_date', DateTimeType::class, [
                 'label'              => 'access_statistics.end_date',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'widget'             => 'single_text',
                 // 'html5' => false,
                 // 'format' => 'yyyy-MM-dd',
@@ -78,7 +78,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('env', ChoiceType::class, [
                 'label'                     => 'access_statistics.environment',
-                'translation_domain'        => 'nowo_performance',
+                'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesEnv,
                 'choice_translation_domain' => false,
                 'required'                  => false,
@@ -87,7 +87,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('route', ChoiceType::class, [
                 'label'                     => 'access_statistics.route',
-                'translation_domain'        => 'nowo_performance',
+                'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesRoute,
                 'choice_translation_domain' => false,
                 'required'                  => false,
@@ -96,7 +96,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('path', TextType::class, [
                 'label'              => 'access_statistics.path',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'property_path'      => 'path',
                 'attr'               => [
@@ -106,7 +106,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('status_code', ChoiceType::class, [
                 'label'                     => 'access_statistics.status_code',
-                'translation_domain'        => 'nowo_performance',
+                'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesStatus,
                 'choice_translation_domain' => false,
                 'required'                  => false,
@@ -116,7 +116,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('min_query_time', NumberType::class, [
                 'label'              => 'access_statistics.min_query_time',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'property_path'      => 'minQueryTime',
                 'scale'              => 3,
@@ -124,7 +124,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('max_query_time', NumberType::class, [
                 'label'              => 'access_statistics.max_query_time',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'property_path'      => 'maxQueryTime',
                 'scale'              => 3,
@@ -132,7 +132,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('min_memory_mb', NumberType::class, [
                 'label'              => 'access_statistics.min_memory_mb',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'mapped'             => false,
                 'data'               => isset($options['data']) && $options['data']->minMemoryUsage !== null
@@ -141,7 +141,7 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('max_memory_mb', NumberType::class, [
                 'label'              => 'access_statistics.max_memory_mb',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'mapped'             => false,
                 'data'               => isset($options['data']) && $options['data']->maxMemoryUsage !== null
@@ -150,13 +150,13 @@ class RecordFiltersType extends AbstractType
             ])
             ->add('referer', TextType::class, [
                 'label'              => 'access_statistics.referer',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'attr'               => ['class' => 'form-control', 'placeholder' => 'example.com'],
             ])
             ->add('user', TextType::class, [
                 'label'              => 'access_statistics.user',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'attr'               => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
             ])
@@ -174,7 +174,7 @@ class RecordFiltersType extends AbstractType
         $builder
             ->add('filter', SubmitType::class, [
                 'label'              => 'access_statistics.filter',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-primary'],
             ]);
     }

@@ -47,13 +47,13 @@ class ReviewRouteDataType extends AbstractType
         $builder
             ->add('queries_improved', ChoiceType::class, [
                 'label'              => 'review.queries_improved',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
                     'review.not_specified' => '',
                     'review.yes'           => '1',
                     'review.no'            => '0',
                 ],
-                'choice_translation_domain' => 'nowo_performance',
+                'choice_translation_domain' => 'NowoPerformanceBundle',
                 'required'                  => false,
                 'placeholder'               => false,
                 'data'                      => $queriesData,
@@ -63,13 +63,13 @@ class ReviewRouteDataType extends AbstractType
             ])
             ->add('time_improved', ChoiceType::class, [
                 'label'              => 'review.time_improved',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
                     'review.not_specified' => '',
                     'review.yes'           => '1',
                     'review.no'            => '0',
                 ],
-                'choice_translation_domain' => 'nowo_performance',
+                'choice_translation_domain' => 'NowoPerformanceBundle',
                 'required'                  => false,
                 'placeholder'               => false,
                 'data'                      => $timeData,
@@ -82,7 +82,7 @@ class ReviewRouteDataType extends AbstractType
             $saveAccessRecordsData = ($routeData instanceof RouteData) ? $routeData->getSaveAccessRecords() : true;
             $builder->add('save_access_records', CheckboxType::class, [
                 'label'              => 'review.save_access_records',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $saveAccessRecordsData,
                 'attr'               => [
@@ -93,7 +93,7 @@ class ReviewRouteDataType extends AbstractType
 
         $builder->add('submit', SubmitType::class, [
             'label'              => $submitLabel,
-            'translation_domain' => 'nowo_performance',
+            'translation_domain' => 'NowoPerformanceBundle',
             'attr'               => [
                 'class' => 'btn btn-primary',
             ],

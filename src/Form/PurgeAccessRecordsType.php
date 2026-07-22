@@ -39,32 +39,32 @@ class PurgeAccessRecordsType extends AbstractType
         $builder
             ->add('purgeType', ChoiceType::class, [
                 'label'              => 'access_statistics.purge_type',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
                     'access_statistics.purge_all'        => PurgeAccessRecordsRequest::PURGE_ALL,
                     'access_statistics.purge_older_than' => PurgeAccessRecordsRequest::PURGE_OLDER_THAN,
                 ],
-                'choice_translation_domain' => 'nowo_performance',
+                'choice_translation_domain' => 'NowoPerformanceBundle',
                 'attr'                      => ['class' => 'form-select purge-type-select'],
             ])
             ->add('days', IntegerType::class, [
                 'label'              => 'access_statistics.older_than_days',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $options['default_days'] ?? 30,
                 'attr'               => ['class' => 'form-control', 'min' => 1, 'placeholder' => '30'],
             ])
             ->add('env', ChoiceType::class, [
                 'label'                     => 'access_statistics.environment',
-                'translation_domain'        => 'nowo_performance',
+                'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesEnv,
-                'choice_translation_domain' => 'nowo_performance',
+                'choice_translation_domain' => 'NowoPerformanceBundle',
                 'required'                  => false,
                 'attr'                      => ['class' => 'form-select'],
             ])
             ->add('submit', SubmitType::class, [
                 'label'              => 'access_statistics.purge_records',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-warning'],
             ]);
     }

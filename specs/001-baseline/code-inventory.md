@@ -95,8 +95,8 @@ This file proves that **every production source artifact** under `src/` is refer
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
-| `nowo_performance.en.yaml` | English catalog | FR-I18N-001 |
-| `nowo_performance.es.yaml` | Spanish catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.en.yaml` | English catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.es.yaml` | Spanish catalog | FR-I18N-001 |
 | `nowo_performance.ca.yaml` | Catalan catalog | FR-I18N-001 |
 | `nowo_performance.cs.yaml` | Czech catalog | FR-I18N-001 |
 | `nowo_performance.de.yaml` | German catalog | FR-I18N-001 |

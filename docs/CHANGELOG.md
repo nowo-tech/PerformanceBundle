@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.2.0] - 2026-07-22](#320-2026-07-22)
 - [[3.1.4] - 2026-07-16](#314-2026-07-16)
 - [[3.1.3] - 2026-07-16](#313-2026-07-16)
 - [[3.1.2] - 2026-07-14](#312-2026-07-14)
@@ -123,6 +124,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.2.0] - 2026-07-22
+
+### Changed
+
+- **Translations (REQ-I18N-003)** – Domain and catalog filenames renamed from `nowo_performance` to **`NowoPerformanceBundle`** (`src/Resources/translations/NowoPerformanceBundle.{locale}.yaml`). Twig, forms, and flash messages updated accordingly. See [UPGRADING.md](UPGRADING.md#upgrading-to-320-2026-07-22).
+- **Docs** – [USAGE.md](USAGE.md) translation override examples updated; baseline [spec.md](../specs/001-baseline/spec.md) FR-I18N-001 updated.
+
+### Notes
+
+- **Breaking for apps that override translations** – rename override files and replace the domain string `nowo_performance` → `NowoPerformanceBundle` in custom Twig/forms. Config alias, routes, and UX component names are unchanged.
 
 ---
 
