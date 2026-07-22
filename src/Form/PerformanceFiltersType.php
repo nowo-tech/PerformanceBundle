@@ -43,7 +43,7 @@ class PerformanceFiltersType extends AbstractType
         $builder
             ->add('env', ChoiceType::class, [
                 'label'              => 'filters.environment',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => array_combine(
                     array_map(strtoupper(...), $environments),
                     $environments,
@@ -58,7 +58,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('route', TextType::class, [
                 'label'              => 'filters.route_name',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $currentRoute,
                 'attr'               => [
@@ -67,7 +67,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('path', TextType::class, [
                 'label'              => 'filters.path_url',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $options['current_path'] ?? null,
                 'attr'               => [
@@ -77,7 +77,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('sort', ChoiceType::class, [
                 'label'              => 'filters.sort_by',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
                     'sort_options.request_time'     => 'requestTime',
                     'sort_options.query_time'       => 'queryTime',
@@ -87,7 +87,7 @@ class PerformanceFiltersType extends AbstractType
                     'sort_options.created_at'       => 'createdAt',
                     'sort_options.last_accessed_at' => 'lastAccessedAt',
                 ],
-                'choice_translation_domain' => 'nowo_performance',
+                'choice_translation_domain' => 'NowoPerformanceBundle',
                 'data'                      => $currentSortBy,
                 'required'                  => false,
                 'attr'                      => [
@@ -96,12 +96,12 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('order', ChoiceType::class, [
                 'label'              => 'filters.order',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
                     'order_options.descending' => 'DESC',
                     'order_options.ascending'  => 'ASC',
                 ],
-                'choice_translation_domain' => 'nowo_performance',
+                'choice_translation_domain' => 'NowoPerformanceBundle',
                 'data'                      => $currentOrder,
                 'required'                  => false,
                 'attr'                      => [
@@ -110,7 +110,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('limit', IntegerType::class, [
                 'label'              => 'filters.limit',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $currentLimit,
                 'attr'               => [
@@ -121,7 +121,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('min_request_time', NumberType::class, [
                 'label'              => 'filters.min_request_time',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $options['current_min_request_time'] ?? null,
                 'scale'              => 4,
@@ -132,7 +132,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('max_request_time', NumberType::class, [
                 'label'              => 'filters.max_request_time',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $options['current_max_request_time'] ?? null,
                 'scale'              => 4,
@@ -143,7 +143,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('min_query_count', IntegerType::class, [
                 'label'              => 'filters.min_query_count',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $options['current_min_query_count'] ?? null,
                 'attr'               => [
@@ -153,7 +153,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('max_query_count', IntegerType::class, [
                 'label'              => 'filters.max_query_count',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $options['current_max_query_count'] ?? null,
                 'attr'               => [
@@ -163,7 +163,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('date_from', DateType::class, [
                 'label'              => 'filters.date_from',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'widget'             => 'single_text',
                 'data'               => $options['current_date_from'] ?? null,
@@ -173,7 +173,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('date_to', DateType::class, [
                 'label'              => 'filters.date_to',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'widget'             => 'single_text',
                 'data'               => $options['current_date_to'] ?? null,
@@ -183,7 +183,7 @@ class PerformanceFiltersType extends AbstractType
             ])
             ->add('submit', SubmitType::class, [
                 'label'              => 'filters.apply_filters',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => [
                     'class' => 'btn btn-primary',
                 ],

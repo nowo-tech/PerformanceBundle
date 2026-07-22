@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.2.0 (2026-07-22)](#upgrading-to-320-2026-07-22)
 - [Upgrading to 3.1.4 (2026-07-16)](#upgrading-to-314-2026-07-16)
 - [Upgrading to 3.1.3 (2026-07-16)](#upgrading-to-313-2026-07-16)
 - [Upgrading to 3.1.2 (2026-07-14)](#upgrading-to-312-2026-07-14)
@@ -87,6 +88,44 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.2.0 (2026-07-22)
+
+### Breaking: translation domain rename (REQ-I18N-003)
+
+The Symfony translation **domain** (and catalog filenames) changed from `nowo_performance` to **`NowoPerformanceBundle`**.
+
+| Before | After |
+|--------|--------|
+| `\|trans(..., 'nowo_performance')` | `\|trans(..., 'NowoPerformanceBundle')` |
+| `translation_domain => 'nowo_performance'` | `translation_domain => 'NowoPerformanceBundle'` |
+| `translations/nowo_performance.{locale}.yaml` | `translations/NowoPerformanceBundle.{locale}.yaml` |
+
+**Unchanged:** DI/config alias `nowo_performance`, route names (`nowo_performance.*`), Twig UX component names (`nowo_performance.Filters`, etc.), Twig namespace `@NowoPerformanceBundle`.
+
+#### Migration steps
+
+1. If your app **overrides** bundle translations, rename the files and keep the same keys:
+
+   ```bash
+   # example
+   mv translations/nowo_performance.es.yaml translations/NowoPerformanceBundle.es.yaml
+   ```
+
+2. Search your project for the old domain string and update templates/forms:
+
+   ```bash
+   rg -n "nowo_performance" templates/ src/ --glob '*.{twig,php,yaml,yml}'
+   ```
+
+3. Clear cache:
+
+   ```bash
+   composer update nowo-tech/performance-bundle
+   php bin/console cache:clear
+   ```
+
+4. Spot-check the dashboard UI locale (labels should resolve again).
 
 ## Upgrading to 3.1.4 (2026-07-16)
 

@@ -2330,8 +2330,8 @@ class PerformanceController extends AbstractController
                 }
 
                 $this->addFlash('success', $wasAlreadyReviewed
-                    ? $this->trans('flash.review_updated', [], 'nowo_performance')
-                    : $this->trans('flash.record_reviewed', [], 'nowo_performance'));
+                    ? $this->trans('flash.review_updated', [], 'NowoPerformanceBundle')
+                    : $this->trans('flash.record_reviewed', [], 'NowoPerformanceBundle'));
             } else {
                 $this->addFlash('error', 'Record not found.');
             }

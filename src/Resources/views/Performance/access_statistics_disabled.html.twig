@@ -1,17 +1,17 @@
 {% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
-{% block title %}{{ 'access_statistics.title'|trans({}, 'nowo_performance') }}{% endblock %}
+{% block title %}{{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}{% endblock %}
 
 {% block content %}
     <div class="container mt-4">
         <div class="alert alert-warning" role="alert">
-            <h4 class="alert-heading">{{ 'access_statistics.disabled_title'|trans({}, 'nowo_performance') }}</h4>
-            <p>{{ 'access_statistics.disabled_message'|trans({}, 'nowo_performance') }}</p>
+            <h4 class="alert-heading">{{ 'access_statistics.disabled_title'|trans({}, 'NowoPerformanceBundle') }}</h4>
+            <p>{{ 'access_statistics.disabled_message'|trans({}, 'NowoPerformanceBundle') }}</p>
             <hr>
             <p class="mb-0">
-                {{ 'access_statistics.enable_instructions'|trans({}, 'nowo_performance') }}
+                {{ 'access_statistics.enable_instructions'|trans({}, 'NowoPerformanceBundle') }}
                 <code>enable_access_records: true</code>
-                {{ 'access_statistics.in_config'|trans({}, 'nowo_performance') }}
+                {{ 'access_statistics.in_config'|trans({}, 'NowoPerformanceBundle') }}
             </p>
         </div>
     </div>

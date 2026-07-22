@@ -35,7 +35,7 @@ class ClearPerformanceDataType extends AbstractType
             ->add('env', HiddenType::class)
             ->add('submit', SubmitType::class, [
                 'label'              => 'dashboard.clear_all_records',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-danger'],
             ]);
     }

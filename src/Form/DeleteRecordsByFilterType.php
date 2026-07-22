@@ -50,7 +50,7 @@ class DeleteRecordsByFilterType extends AbstractType
             ->add('user', HiddenType::class)
             ->add('submit', SubmitType::class, [
                 'label'              => 'access_statistics.delete_records_matching_filter',
-                'translation_domain' => 'nowo_performance',
+                'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-danger'],
             ]);
     }

@@ -10,8 +10,8 @@
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h1>{{ 'dashboard.title'|trans({}, 'nowo_performance') }}</h1>
-                            <p class="text-muted">{{ 'dashboard.subtitle'|trans({}, 'nowo_performance') }}</p>
+                            <h1>{{ 'dashboard.title'|trans({}, 'NowoPerformanceBundle') }}</h1>
+                            <p class="text-muted">{{ 'dashboard.subtitle'|trans({}, 'NowoPerformanceBundle') }}</p>
                         </div>
                         <div class="d-flex gap-2">
                         <a href="{{ path('nowo_performance.diagnose') }}" class="btn btn-warning text-dark">
@@ -20,23 +20,23 @@
                         </a>
                         <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="btn btn-info text-white">
                             {{ ux_icon('bi:bar-chart', {height: '16px', width: '16px', class: 'me-1'}) }}
-                            {{ 'dashboard.advanced_statistics'|trans({}, 'nowo_performance') }}
+                            {{ 'dashboard.advanced_statistics'|trans({}, 'NowoPerformanceBundle') }}
                         </a>
                         <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="btn btn-success">
                             {{ ux_icon('bi:download', {height: '16px', width: '16px', class: 'me-1'}) }}
-                            {{ 'dashboard.export_csv'|trans({}, 'nowo_performance') }}
+                            {{ 'dashboard.export_csv'|trans({}, 'NowoPerformanceBundle') }}
                         </a>
                         <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="btn btn-info text-white">
                             {{ ux_icon('bi:file-text', {height: '16px', width: '16px', class: 'me-1'}) }}
-                            {{ 'dashboard.export_json'|trans({}, 'nowo_performance') }}
+                            {{ 'dashboard.export_json'|trans({}, 'NowoPerformanceBundle') }}
                         </a>
                         {% if enableAccessRecords is defined and enableAccessRecords %}
                             <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="btn btn-outline-primary">
                                 {{ ux_icon('bi:clock', {height: '16px', width: '16px', class: 'me-1'}) }}
-                                {{ 'access_statistics.title'|trans({}, 'nowo_performance') }}
+                                {{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}
                             </a>
                         {% endif %}
-                        {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                        {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                             {{ form_widget(clearForm.env) }}
                             {{ form_widget(clearForm.submit, {'attr': {'class': 'btn btn-danger'}}) }}
                         {{ form_end(clearForm) }}
@@ -47,8 +47,8 @@
     {% else %}
         <div class="mb-8 flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">{{ 'dashboard.title'|trans({}, 'nowo_performance') }}</h1>
-                <p class="mt-2 text-sm text-gray-600">{{ 'dashboard.subtitle'|trans({}, 'nowo_performance') }}</p>
+                <h1 class="text-3xl font-bold text-gray-900">{{ 'dashboard.title'|trans({}, 'NowoPerformanceBundle') }}</h1>
+                <p class="mt-2 text-sm text-gray-600">{{ 'dashboard.subtitle'|trans({}, 'NowoPerformanceBundle') }}</p>
             </div>
             <div class="flex space-x-2">
                 <a href="{{ path('nowo_performance.diagnose') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
@@ -57,23 +57,23 @@
                 </a>
                 <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     {{ ux_icon('bi:bar-chart', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                    {{ 'dashboard.advanced_statistics'|trans({}, 'nowo_performance') }}
+                    {{ 'dashboard.advanced_statistics'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
                 <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     {{ ux_icon('bi:download', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                    {{ 'dashboard.export_csv'|trans({}, 'nowo_performance') }}
+                    {{ 'dashboard.export_csv'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
                 <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
                     {{ ux_icon('bi:file-text', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                    {{ 'dashboard.export_json'|trans({}, 'nowo_performance') }}
+                    {{ 'dashboard.export_json'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
                 {% if enableAccessRecords is defined and enableAccessRecords %}
                     <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         {{ ux_icon('bi:clock', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                        {{ 'access_statistics.title'|trans({}, 'nowo_performance') }}
+                        {{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}
                     </a>
                 {% endif %}
-                {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'class': 'inline', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'nowo_performance') ~ "');"}}) }}
+                {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'class': 'inline', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                     {{ form_widget(clearForm.env) }}
                     {{ form_widget(clearForm.submit, {'attr': {'class': 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'}}) }}
                 {{ form_end(clearForm) }}

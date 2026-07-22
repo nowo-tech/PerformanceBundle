@@ -163,7 +163,7 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 
 ### Internationalization
 
-- **FR-I18N-001**: Translation catalogs `nowo_performance.*.yaml` MUST cover dashboard labels, alerts, and form validation messages.
+- **FR-I18N-001**: Translation catalogs `NowoPerformanceBundle.*.yaml` MUST cover dashboard labels, alerts, and form validation messages.
 
 ---
 
