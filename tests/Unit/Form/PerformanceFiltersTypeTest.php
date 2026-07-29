@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
 use Symfony\Component\Form\Test\TypeTestCase;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class PerformanceFiltersTypeTest extends TypeTestCase
 {
@@ -60,7 +61,7 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
 
     public function testConfigureOptionsSetsDefaults(): void
     {
-        $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
+        $resolver = $this->createMock(OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
             ->with($this->callback(static fn ($defaults): bool => isset($defaults['method'])

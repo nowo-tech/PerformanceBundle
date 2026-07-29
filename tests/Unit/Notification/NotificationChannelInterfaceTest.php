@@ -9,6 +9,8 @@ use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Verifies that built-in notification channels implement NotificationChannelInterface.
@@ -17,7 +19,7 @@ final class NotificationChannelInterfaceTest extends TestCase
 {
     public function testEmailNotificationChannelImplementsInterface(): void
     {
-        if (!interface_exists(\Symfony\Component\Mailer\MailerInterface::class)) {
+        if (!interface_exists(MailerInterface::class)) {
             $this->markTestSkipped('symfony/mailer is not installed.');
         }
         $channel = new EmailNotificationChannel(null, 'from@example.com', [], false);
@@ -26,7 +28,7 @@ final class NotificationChannelInterfaceTest extends TestCase
 
     public function testWebhookNotificationChannelImplementsInterface(): void
     {
-        if (!interface_exists(\Symfony\Contracts\HttpClient\HttpClientInterface::class)) {
+        if (!interface_exists(HttpClientInterface::class)) {
             $this->markTestSkipped('symfony/http-client is not installed.');
         }
         $channel = new WebhookNotificationChannel(null, '', 'json', [], false);

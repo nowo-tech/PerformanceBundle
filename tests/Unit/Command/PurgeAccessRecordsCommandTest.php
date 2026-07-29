@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 use DateTimeImmutable;
 use Nowo\PerformanceBundle\Command\PurgeAccessRecordsCommand;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -14,7 +15,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 final class PurgeAccessRecordsCommandTest extends TestCase
 {
-    private \PHPUnit\Framework\MockObject\MockObject $parameterBag;
+    private MockObject $parameterBag;
 
     protected function setUp(): void
     {

@@ -10,11 +10,13 @@ use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 
 final class EmailNotificationChannelTest extends TestCase
 {
-    private const MAILER_INTERFACE = \Symfony\Component\Mailer\MailerInterface::class;
-    private const EMAIL_CLASS      = \Symfony\Component\Mime\Email::class;
+    private const MAILER_INTERFACE = MailerInterface::class;
+    private const EMAIL_CLASS      = Email::class;
 
     protected function setUp(): void
     {

@@ -8,6 +8,7 @@ use Nowo\PerformanceBundle\Tests\Integration\TestKernelDashboardDisabled;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -53,7 +54,7 @@ final class PerformanceControllerDashboardDisabledIntegrationTest extends TestCa
         self::assertSame(404, $response->getStatusCode());
     }
 
-    private function handleGetFollowingRedirects(string $uri): \Symfony\Component\HttpFoundation\Response
+    private function handleGetFollowingRedirects(string $uri): Response
     {
         $request  = Request::create($uri, Request::METHOD_GET);
         $response = $this->kernel->handle($request, HttpKernelInterface::MAIN_REQUEST, true);

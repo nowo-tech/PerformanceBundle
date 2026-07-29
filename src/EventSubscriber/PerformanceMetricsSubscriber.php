@@ -7,13 +7,14 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 use Doctrine\DBAL\Logging\Middleware;
 use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
-use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
@@ -114,6 +115,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
          */
         #[Autowire(service: '?kernel')]
         private readonly ?KernelInterface $kernel = null,
+        private readonly ?QueryTrackingCounters $queryCounters = null,
     ) {
         $this->dataCollector->setEnabled($enabled);
         $this->dataCollector->setAsync($async);
@@ -159,8 +161,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $env = $request->server->get('APP_ENV');
         } elseif (isset($_SERVER['APP_ENV'])) {
             $env = $_SERVER['APP_ENV'];
-        } elseif (isset($_ENV['APP_ENV'])) {
-            $env = $_ENV['APP_ENV'];
+        } elseif (($appEnv = getenv('APP_ENV')) !== false && $appEnv !== '') {
+            $env = $appEnv;
         } else {
             $env = 'dev';
         }
@@ -264,7 +266,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $mainRequest = $this->requestStack->getMainRequest();
             }
             // Request does not have getMainRequest(); only RequestStack does. Use current request if we have no stack.
-            if (!$mainRequest instanceof \Symfony\Component\HttpFoundation\Request) {
+            if (!$mainRequest instanceof Request) {
                 $mainRequest = $request;
             }
             $this->requestId = $mainRequest->attributes->get('_performance_request_id');
@@ -313,8 +315,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $env = $request->server->get('APP_ENV');
         } elseif (isset($_SERVER['APP_ENV'])) {
             $env = $_SERVER['APP_ENV'];
-        } elseif (isset($_ENV['APP_ENV'])) {
-            $env = $_ENV['APP_ENV'];
+        } elseif (($appEnv = getenv('APP_ENV')) !== false && $appEnv !== '') {
+            $env = $appEnv;
         } else {
             $env = 'dev'; // Default fallback
         }
@@ -617,29 +619,29 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     /**
      * Get query metrics from QueryTrackingMiddleware, Doctrine DataCollector, or fallback.
      *
-     * @param \Symfony\Component\HttpFoundation\Request|null $request The request object (optional, will use RequestStack if not provided)
+     * @param Request|null $request The request object (optional, will use RequestStack if not provided)
      *
      * @return array{count: int, time: float} Array with query count and total time
      */
-    private function getQueryMetrics(?\Symfony\Component\HttpFoundation\Request $request = null): array
+    private function getQueryMetrics(?Request $request = null): array
     {
         $queryCount = 0;
         $queryTime  = 0.0;
 
         // Priority 1: Try to get metrics from QueryTrackingMiddleware (most reliable for our use case)
         try {
-            $queryCount = QueryTrackingMiddleware::getQueryCount();
-            $queryTime  = QueryTrackingMiddleware::getTotalQueryTime();
+            $queryCount = $this->queryCounters?->getQueryCount() ?? 0;
+            $queryTime  = $this->queryCounters?->getTotalQueryTime() ?? 0.0;
 
             // Even if count is 0, return it if we got valid data (time might be 0 for very fast queries)
             // Only fallback if both are 0 AND we have a request to check profiler
-            if ($queryCount > 0 || ($queryTime > 0 && !$request instanceof \Symfony\Component\HttpFoundation\Request)) {
+            if ($queryCount > 0 || ($queryTime > 0 && !$request instanceof Request)) {
                 return ['count' => $queryCount, 'time' => $queryTime];
             }
 
             // If middleware returned 0/0, it might not be working, try fallback
             // But only if we have a request to check profiler
-            if ($queryCount === 0 && $queryTime === 0.0 && $request instanceof \Symfony\Component\HttpFoundation\Request) {
+            if ($queryCount === 0 && $queryTime === 0.0 && $request instanceof Request) {
                 // Continue to fallback methods
             } else {
                 // Return what we got from middleware
@@ -655,11 +657,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Priority 3: Try to get from request attributes (fallback)
         // Use provided request or get from RequestStack
-        if (!$request instanceof \Symfony\Component\HttpFoundation\Request && $this->requestStack instanceof RequestStack) {
+        if (!$request instanceof Request && $this->requestStack instanceof RequestStack) {
             $request = $this->requestStack->getMainRequest();
         }
 
-        if ($request instanceof \Symfony\Component\HttpFoundation\Request) {
+        if ($request instanceof Request) {
             try {
                 // Try multiple ways to get the profiler from request
                 $profilerProfile = $request->attributes->get('_profiler');
@@ -667,7 +669,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 // If not in attributes, try to get from parent request (for sub-requests)
                 if ($profilerProfile === null && $this->requestStack instanceof RequestStack) {
                     $parentRequest = $this->requestStack->getParentRequest();
-                    if ($parentRequest instanceof \Symfony\Component\HttpFoundation\Request) {
+                    if ($parentRequest instanceof Request) {
                         $profilerProfile = $parentRequest->attributes->get('_profiler');
                     }
                 }

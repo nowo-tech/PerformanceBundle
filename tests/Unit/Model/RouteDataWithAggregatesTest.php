@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Model;
 
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -24,7 +25,7 @@ final class RouteDataWithAggregatesTest extends TestCase
         $this->routeData->method('isReviewed')->willReturn(false);
         $this->routeData->method('__toString')->willReturn('app_home');
         $this->routeData->method('getAccessRecords')
-            ->willReturn(new \Doctrine\Common\Collections\ArrayCollection());
+            ->willReturn(new ArrayCollection());
     }
 
     public function testAggregateGetters(): void

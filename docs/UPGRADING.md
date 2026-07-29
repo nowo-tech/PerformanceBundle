@@ -5,7 +5,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
-- [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.2.1 (2026-07-29)](#upgrading-to-321-2026-07-29)
 - [Upgrading to 3.2.0 (2026-07-22)](#upgrading-to-320-2026-07-22)
 - [Upgrading to 3.1.4 (2026-07-16)](#upgrading-to-314-2026-07-16)
 - [Upgrading to 3.1.3 (2026-07-16)](#upgrading-to-313-2026-07-16)
@@ -85,9 +85,14 @@ This guide helps you upgrade between versions of the Performance Bundle.
   - [Testing Your Upgrade](#testing-your-upgrade)
   - [Troubleshooting](#troubleshooting)
 
-## Upgrading to next release (Unreleased)
+## Upgrading to 3.2.1 (2026-07-29)
 
-_No changes yet._
+No intentional breaking changes for application installs. Continue requiring `nowo-tech/performance-bundle: ^3.2` (or `^3.0`).
+
+- **DBAL 4.4:** Schema/table name helpers no longer call deprecated `AbstractAsset::getName()` / `getQuotedName()`. No config changes required; clear cache after upgrade.
+- **Query tracking:** Counters moved to a resettable `QueryTrackingCounters` service (safer under FrankenPHP worker). No public API change for consumers.
+- **Portuguese catalogs:** Keys `review.yes` / `review.no` replace invalid YAML boolean keys `review.true` / `review.false`. If you override `NowoPerformanceBundle.pt.yaml`, update those keys.
+- **Contributors / demos:** Symfony 8 demo uses FrankenPHP PHP 8.5 and `FRANKENPHP_MODE` (default `worker`). PHPStan loads FrankenPHP classic + worker rulesets. Use `make demo-smoke` / `make down-dev` as needed.
 
 ## Upgrading to 3.2.0 (2026-07-22)
 

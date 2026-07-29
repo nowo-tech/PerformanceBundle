@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Command;
 
-use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -46,6 +47,7 @@ final class DiagnoseCommand extends Command
     public function __construct(
         private readonly ParameterBagInterface $parameterBag,
         private readonly ?TableStatusChecker $tableStatusChecker = null,
+        private readonly ?QueryTrackingCounters $queryCounters = null,
         ?callable $middlewareStatusProvider = null,
     ) {
         parent::__construct();
@@ -174,9 +176,9 @@ HELP
         if ($this->middlewareStatusProvider !== null) {
             [$initialCount, $initialTime] = ($this->middlewareStatusProvider)();
         } else {
-            QueryTrackingMiddleware::reset();
-            $initialCount = QueryTrackingMiddleware::getQueryCount();
-            $initialTime  = QueryTrackingMiddleware::getTotalQueryTime();
+            $this->queryCounters?->reset();
+            $initialCount = $this->queryCounters?->getQueryCount() ?? 0;
+            $initialTime  = $this->queryCounters?->getTotalQueryTime() ?? 0.0;
         }
 
         $io->text(sprintf('Initial query count: %d', $initialCount));
@@ -196,7 +198,7 @@ HELP
         $io->section('How Query Tracking Works');
 
         // Detect DoctrineBundle version and method used
-        $doctrineVersion = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
+        $doctrineVersion = QueryTrackingMiddlewareRegistry::detectDoctrineBundleVersion();
         $method          = 'Event Subscriber (Reflection)';
 
         $io->text([

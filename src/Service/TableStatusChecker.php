@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
+use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -62,11 +69,11 @@ class TableStatusChecker
     /**
      * Get schema manager from connection (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Connection $connection The database connection
+     * @param Connection $connection The database connection
      *
-     * @return \Doctrine\DBAL\Schema\AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> The schema manager
+     * @return AbstractSchemaManager<AbstractPlatform> The schema manager
      */
-    private function getSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
+    private function getSchemaManager(Connection $connection): AbstractSchemaManager
     {
         /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
         if (method_exists($connection, 'createSchemaManager')) {
@@ -100,15 +107,15 @@ class TableStatusChecker
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
-            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+            if (!$connection instanceof Connection) {
                 throw new RuntimeException('Registry did not return a DBAL Connection.');
             }
             $schemaManager = $this->getSchemaManager($connection);
 
             // Get the actual table name from entity metadata (after TableNameSubscriber has processed it)
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteData::class);
+            /** @var ClassMetadata<object> $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(RouteData::class);
             // Use method_exists check to avoid linter errors and ensure compatibility
             $hasGetTableName = method_exists($metadata, 'getTableName');
             $actualTableName = $hasGetTableName ? $metadata->getTableName() : $metadata->table['name'] ?? $this->tableName;
@@ -220,15 +227,15 @@ class TableStatusChecker
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
-            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+            if (!$connection instanceof Connection) {
                 throw new RuntimeException('Registry did not return a DBAL Connection.');
             }
             $schemaManager = $this->getSchemaManager($connection);
 
             // Get the actual table name from entity metadata
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteData::class);
+            /** @var ClassMetadata<object> $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(RouteData::class);
             // Use method_exists check to avoid linter errors and ensure compatibility
             $hasGetTableName = method_exists($metadata, 'getTableName');
             $actualTableName = $hasGetTableName ? $metadata->getTableName() : $metadata->table['name'] ?? $this->tableName;
@@ -248,13 +255,7 @@ class TableStatusChecker
             $table           = $schemaManager->introspectTable($actualTableName);
             $existingColumns = [];
             foreach ($table->getColumns() as $column) {
-                // Use getName() directly - getQuotedName() is deprecated in DBAL 3.x
-                // Column names from introspectTable() are already unquoted
-                $columnName = method_exists($column, 'getName') ? $column->getName() : '';
-                // Convert Name object to string if needed
-                $columnName = is_string($columnName) ? $columnName : (string) $columnName;
-                // Remove quotes if present (shouldn't be, but just in case)
-                $columnName                               = trim($columnName, '`"\'');
+                $columnName                               = DbalSchemaNameHelper::getLogicalName($column);
                 $existingColumns[strtolower($columnName)] = true;
             }
 
@@ -282,13 +283,13 @@ class TableStatusChecker
     /**
      * Get list of expected column names from entity metadata.
      *
-     * @param \Doctrine\ORM\Mapping\ClassMetadata $metadata Entity metadata
+     * @param ClassMetadata $metadata Entity metadata
      *
      * @return array<string> List of expected column names
      *
      * @phpstan-ignore missingType.generics (ClassMetadata used without entity type)
      */
-    private function getExpectedColumns(\Doctrine\ORM\Mapping\ClassMetadata $metadata): array
+    private function getExpectedColumns(ClassMetadata $metadata): array
     {
         $expectedColumns = [];
 
@@ -323,7 +324,7 @@ class TableStatusChecker
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
-            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+            if (!$connection instanceof Connection) {
                 throw new RuntimeException('Registry did not return a DBAL Connection.');
             }
             $schemaManager    = $this->getSchemaManager($connection);
@@ -406,13 +407,13 @@ class TableStatusChecker
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
-            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+            if (!$connection instanceof Connection) {
                 throw new RuntimeException('Registry did not return a DBAL Connection.');
             }
             $schemaManager = $this->getSchemaManager($connection);
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
-            $metadata         = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+            /** @var ClassMetadata<object> $metadata */
+            $metadata         = $entityManager->getMetadataFactory()->getMetadataFor(RouteDataRecord::class);
             $recordsTableName = $this->getRecordsTableName();
 
             if (!$schemaManager->tablesExist([$recordsTableName])) {
@@ -427,9 +428,7 @@ class TableStatusChecker
             $table           = $schemaManager->introspectTable($recordsTableName);
             $existingColumns = [];
             foreach ($table->getColumns() as $column) {
-                $columnName                               = method_exists($column, 'getName') ? $column->getName() : '';
-                $columnName                               = is_string($columnName) ? $columnName : (string) $columnName;
-                $columnName                               = trim($columnName, '`"\'');
+                $columnName                               = DbalSchemaNameHelper::getLogicalName($column);
                 $existingColumns[strtolower($columnName)] = true;
             }
 
@@ -469,8 +468,8 @@ class TableStatusChecker
 
         try {
             $entityManager = $this->registry->getManager($this->connectionName);
-            /** @var \Doctrine\ORM\Mapping\ClassMetadata<object> $metadata */
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+            /** @var ClassMetadata<object> $metadata */
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(RouteDataRecord::class);
 
             $name = $metadata->getTableName();
 

@@ -93,8 +93,8 @@ review:
   time_improved: Tempo Melhorado?
   save_access_records: Guardar registos de acesso para esta rota
   not_specified: Não especificado
-  true: Sim
-  false: Não
+  yes: Sim
+  no: Não
   mark_as_reviewed: Marcar como Revisado
   edit_review: Atualizar revisão
 confirmations:

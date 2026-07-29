@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Repository;
 
 use DateTimeImmutable;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
@@ -53,7 +54,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $record3->setResponseTime(1.0);
         $record3->setStatusCode(500);
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())
             ->method('getResult')
             ->willReturn([$record1, $record2, $record3]);
@@ -115,7 +116,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $record->setResponseTime(0.3);
         $record->setStatusCode(200);
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$record]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -145,7 +146,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -194,7 +195,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $record2->setResponseTime(1.0);
         $record2->setStatusCode(500);
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$record1, $record2]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -231,7 +232,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -272,7 +273,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $record2->setResponseTime(1.0);
         $record2->setStatusCode(500);
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$record1, $record2]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -303,7 +304,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -344,7 +345,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $record3->setRouteData($routeData);
         $record3->setAccessedAt(new DateTimeImmutable('2024-01-03 14:00:00')); // Wednesday 14:00
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$record1, $record2, $record3]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -374,7 +375,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -401,7 +402,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())
             ->method('getSingleScalarResult')
             ->willReturn('42');
@@ -445,7 +446,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())
             ->method('getSingleScalarResult')
             ->willReturn('15');
@@ -480,7 +481,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())->method('getSingleScalarResult')->willReturn('7');
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -509,7 +510,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())->method('getSingleScalarResult')->willReturn('3');
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -538,7 +539,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())->method('getSingleScalarResult')->willReturn('1');
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -564,7 +565,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())->method('getSingleScalarResult')->willReturn('0');
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -590,7 +591,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())->method('getSingleScalarResult')->willReturn('2');
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -616,7 +617,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())->method('getSingleScalarResult')->willReturn('0');
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -642,7 +643,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())->method('getSingleScalarResult')->willReturn('0');
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -667,7 +668,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())
             ->method('execute')
             ->willReturn(5);
@@ -747,7 +748,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())
             ->method('execute')
             ->willReturn(10);
@@ -793,7 +794,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())
             ->method('getSingleScalarResult')
             ->willReturn('7');
@@ -839,7 +840,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->expects($this->once())
             ->method('getSingleColumnResult')
             ->willReturn([]);
@@ -868,11 +869,11 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $selectQuery1 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery1 = $this->createMock(Query::class);
         $selectQuery1->expects($this->once())->method('getSingleColumnResult')->willReturn([1, 2, 3]);
-        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery = $this->createMock(Query::class);
         $deleteQuery->expects($this->once())->method('execute')->willReturn(3);
-        $selectQuery2 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery2 = $this->createMock(Query::class);
         $selectQuery2->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
 
         $callCount = 0;
@@ -917,9 +918,9 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $countQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $countQuery = $this->createMock(Query::class);
         $countQuery->method('getSingleScalarResult')->willReturn(0);
-        $recordsQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $recordsQuery = $this->createMock(Query::class);
         $recordsQuery->method('getResult')->willReturn([]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -964,7 +965,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $query = $this->createMock(Query::class);
         $query->method('getSingleScalarResult')->willReturn(0);
         $query->method('getResult')->willReturn([]);
 
@@ -1005,7 +1006,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $selectQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery = $this->createMock(Query::class);
         $selectQuery->expects($this->once())
             ->method('getSingleColumnResult')
             ->willReturn([]);
@@ -1033,11 +1034,11 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $selectQuery1 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery1 = $this->createMock(Query::class);
         $selectQuery1->expects($this->once())->method('getSingleColumnResult')->willReturn([1, 2, 3]);
-        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery = $this->createMock(Query::class);
         $deleteQuery->expects($this->once())->method('execute')->willReturn(3);
-        $selectQuery2 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery2 = $this->createMock(Query::class);
         $selectQuery2->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
 
         $callCount = 0;
@@ -1075,7 +1076,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery = $this->createMock(Query::class);
         $deleteQuery->expects($this->once())->method('execute')->willReturn(7);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -1104,11 +1105,11 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $selectQuery1 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery1 = $this->createMock(Query::class);
         $selectQuery1->expects($this->once())->method('getSingleColumnResult')->willReturn([10, 20]);
-        $deleteQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $deleteQuery = $this->createMock(Query::class);
         $deleteQuery->expects($this->once())->method('execute')->willReturn(2);
-        $selectQuery2 = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery2 = $this->createMock(Query::class);
         $selectQuery2->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
 
         $callCount = 0;
@@ -1154,7 +1155,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $selectQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery = $this->createMock(Query::class);
         $selectQuery->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
 
         $selectQb = $this->createMock(QueryBuilder::class);
@@ -1184,7 +1185,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->onlyMethods(['createQueryBuilder'])
             ->getMock();
 
-        $selectQuery = $this->createMock(\Doctrine\ORM\Query::class);
+        $selectQuery = $this->createMock(Query::class);
         $selectQuery->expects($this->once())->method('getSingleColumnResult')->willReturn([]);
 
         $selectQb = $this->createMock(QueryBuilder::class);

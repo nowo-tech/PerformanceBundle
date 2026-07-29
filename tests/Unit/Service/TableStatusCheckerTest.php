@@ -6,7 +6,10 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
@@ -176,7 +179,7 @@ final class TableStatusCheckerTest extends TestCase
         $schemaManager   = $this->createMock(AbstractSchemaManager::class);
         $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadataFactory->method('getMetadataFor')->willReturn($metadata);
@@ -285,7 +288,7 @@ final class TableStatusCheckerTest extends TestCase
         $schemaManager   = $this->createMock(AbstractSchemaManager::class);
         $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadata->method('getFieldNames')->willReturn(['id', 'name', 'env']);
@@ -299,10 +302,10 @@ final class TableStatusCheckerTest extends TestCase
             $connection->method('getSchemaManager')->willReturn($schemaManager);
         }
         $schemaManager->method('tablesExist')->willReturn(true);
-        $table   = $this->createMock(\Doctrine\DBAL\Schema\Table::class);
-        $colId   = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
-        $colName = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
-        $colEnv  = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
+        $table   = $this->createMock(Table::class);
+        $colId   = $this->createMock(Column::class);
+        $colName = $this->createMock(Column::class);
+        $colEnv  = $this->createMock(Column::class);
         $colId->method('getName')->willReturn('id');
         $colName->method('getName')->willReturn('name');
         $colEnv->method('getName')->willReturn('env');
@@ -329,7 +332,7 @@ final class TableStatusCheckerTest extends TestCase
         $schemaManager   = $this->createMock(AbstractSchemaManager::class);
         $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadataFactory->method('getMetadataFor')->willReturn($metadata);
@@ -477,7 +480,7 @@ final class TableStatusCheckerTest extends TestCase
         $schemaManager   = $this->createMock(AbstractSchemaManager::class);
         $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadata->method('getFieldNames')->willReturn(['id', 'name', 'env']);
@@ -516,7 +519,7 @@ final class TableStatusCheckerTest extends TestCase
         $schemaManager   = $this->createMock(AbstractSchemaManager::class);
         $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadata->method('getFieldNames')->willReturn(['id', 'name', 'env']);
@@ -530,8 +533,8 @@ final class TableStatusCheckerTest extends TestCase
             $connection->method('getSchemaManager')->willReturn($schemaManager);
         }
         $schemaManager->method('tablesExist')->willReturn(true);
-        $table = $this->createMock(\Doctrine\DBAL\Schema\Table::class);
-        $col   = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
+        $table = $this->createMock(Table::class);
+        $col   = $this->createMock(Column::class);
         $col->method('getName')->willReturn('id');
         $table->method('getColumns')->willReturn([$col]);
         $schemaManager->method('introspectTable')->willReturn($table);
@@ -563,7 +566,7 @@ final class TableStatusCheckerTest extends TestCase
         $schemaManager   = $this->createMock(AbstractSchemaManager::class);
         $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadata->method('getFieldNames')->willReturn(['id']);
@@ -666,7 +669,7 @@ final class TableStatusCheckerTest extends TestCase
         $schemaManager   = $this->createMock(AbstractSchemaManager::class);
         $entityManager   = $this->createMock(EntityManagerInterface::class);
         $metadataFactory = $this->createMock(ClassMetadataFactory::class);
-        $metadata        = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
 
         $metadata->method('getTableName')->willReturn('routes_data');
         $metadata->method('getFieldNames')->willReturn(['id', 'name', 'env', 'extra']);
@@ -680,8 +683,8 @@ final class TableStatusCheckerTest extends TestCase
             $connection->method('getSchemaManager')->willReturn($schemaManager);
         }
         $schemaManager->method('tablesExist')->willReturn(true);
-        $table = $this->createMock(\Doctrine\DBAL\Schema\Table::class);
-        $col   = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
+        $table = $this->createMock(Table::class);
+        $col   = $this->createMock(Column::class);
         $col->method('getName')->willReturn('id');
         $table->method('getColumns')->willReturn([$col]);
         $schemaManager->method('introspectTable')->willReturn($table);

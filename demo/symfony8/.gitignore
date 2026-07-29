@@ -25,3 +25,6 @@
 *.tgz
 *.rar
 *.7z
+
+# pnpm local store (never commit)
+/.pnpm-store

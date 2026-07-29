@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.2.1] - 2026-07-29](#321-2026-07-29)
 - [[3.2.0] - 2026-07-22](#320-2026-07-22)
 - [[3.1.4] - 2026-07-16](#314-2026-07-16)
 - [[3.1.3] - 2026-07-16](#313-2026-07-16)
@@ -124,6 +125,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.2.1] - 2026-07-29
+
+### Added
+
+- FrankenPHP Friendly Worker Mode banner (REQ-DOCS-017); `make demo-smoke` / `down-dev` (REQ-TEST-011, REQ-MAKE-007).
+- PHPUnit `SYMFONY_DEPRECATIONS_HELPER=max[direct]=0` (REQ-SF-005).
+- `QueryTrackingCounters` service (instance state + `kernel.reset`) replacing mutable static middleware counters (FrankenPHP-safe; REQ-CS-005 / REQ-CS-006).
+- `QueryTrackingMiddlewareResetter` and `DbalSchemaNameHelper` for worker-safe DBAL schema naming.
+- **REQ-CS-005:** `phpstan.neon.dist` includes `nowo-tech/phpstan-frankenphp` classic + worker rulesets.
+- Demo Symfony 8 entrypoint selects classic vs worker via `FRANKENPHP_MODE` (default `worker`).
+- GitHub About homepage + topics; Packagist keyword `php` (REQ-DOCS-018 / REQ-PKG-004).
+
+### Changed
+
+- Demo Symfony 8 image bumped to FrankenPHP **PHP 8.5**.
+- Root/demo `.gitignore` ignore `.pnpm-store` (REQ-GITIGNORE-003).
+
+### Fixed
+
+- **DBAL 4.4 deprecation** – Replaced deprecated `AbstractAsset::getName()` / `getQuotedName()` with `getObjectName()` via `DbalSchemaNameHelper` in `TableStatusChecker`, schema commands, and the performance controller (see [doctrine/dbal#7094](https://github.com/doctrine/dbal/pull/7094)).
+- Portuguese translations: `review.true`/`review.false` → `review.yes`/`review.no` (YAML boolean keys broke `cache:clear`).
+- Demo Makefile: absolute `DOCKER_BIN` so GNU make does not execvp the local `docker/` directory (Permission denied).
+
+### Documentation
+
+- [CONFIGURATION.md](CONFIGURATION.md), [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md), [UPGRADING.md](UPGRADING.md), [RELEASE.md](RELEASE.md) updated for 3.2.1.
 
 ---
 

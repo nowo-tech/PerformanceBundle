@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 use Nowo\PerformanceBundle\Form\StatisticsEnvFilterType;
 use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
 use Symfony\Component\Form\Test\TypeTestCase;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class StatisticsEnvFilterTypeTest extends TypeTestCase
 {
@@ -29,7 +30,7 @@ final class StatisticsEnvFilterTypeTest extends TypeTestCase
 
     public function testConfigureOptionsSetsDefaults(): void
     {
-        $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
+        $resolver = $this->createMock(OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
             ->with($this->callback(static fn (array $defaults): bool => isset($defaults['data_class'])

@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Repository;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
@@ -418,7 +419,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
     /**
      * Apply common record filters to a query builder.
      *
-     * @param \Doctrine\ORM\QueryBuilder $qb Query builder
+     * @param QueryBuilder $qb Query builder
      * @param DateTimeImmutable|null $startDate Optional start date
      * @param DateTimeImmutable|null $endDate Optional end date
      * @param string|null $routeName Optional route name
@@ -430,7 +431,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * @param int|null $maxMemoryUsage Optional max memory (bytes)
      */
     private function applyRecordFilters(
-        \Doctrine\ORM\QueryBuilder $qb,
+        QueryBuilder $qb,
         ?DateTimeImmutable $startDate = null,
         ?DateTimeImmutable $endDate = null,
         ?string $routeName = null,

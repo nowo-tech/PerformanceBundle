@@ -13,6 +13,7 @@ use Exception;
 use LogicException;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
 use Nowo\PerformanceBundle\MessageBus\MessageBusInterface;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
@@ -120,7 +121,7 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
         $bus     = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
             ->method('dispatch')
-            ->with($this->callback(static fn ($msg): bool => $msg instanceof \Nowo\PerformanceBundle\Message\RecordMetricsMessage
+            ->with($this->callback(static fn ($msg): bool => $msg instanceof RecordMetricsMessage
                 && $msg->getRouteName() === 'async_route'
                 && $msg->getEnv() === 'test'))
             ->willReturn(null);

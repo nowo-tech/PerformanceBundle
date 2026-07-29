@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
+use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Symfony\Component\Form\Test\TypeTestCase;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class ReviewRouteDataTypeTest extends TypeTestCase
 {
@@ -36,7 +38,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
     public function testConfigureOptionsSetsDefaults(): void
     {
-        $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
+        $resolver = $this->createMock(OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
             ->with($this->callback(static fn ($defaults): bool => isset($defaults['method'])
@@ -84,7 +86,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
     public function testBuildFormWithEnableAccessRecordsAddsSaveAccessRecordsField(): void
     {
-        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData = new RouteData();
         $routeData->setSaveAccessRecords(true);
 
         $form = $this->factory->create(ReviewRouteDataType::class, null, [
@@ -98,7 +100,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
     public function testBuildFormWithEnableAccessRecordsAndRouteSaveAccessRecordsFalse(): void
     {
-        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData = new RouteData();
         $routeData->setSaveAccessRecords(false);
 
         $form = $this->factory->create(ReviewRouteDataType::class, null, [
@@ -171,7 +173,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
     public function testBuildFormWithReviewedRouteDataUsesEditLabel(): void
     {
-        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData = new RouteData();
         $routeData->setName('app_home')->setEnv('dev')->setReviewed(true);
 
         $form = $this->factory->create(ReviewRouteDataType::class, null, [
@@ -184,7 +186,7 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 
     public function testBuildFormWithUnreviewedRouteDataUsesMarkAsReviewedLabel(): void
     {
-        $routeData = new \Nowo\PerformanceBundle\Entity\RouteData();
+        $routeData = new RouteData();
         $routeData->setName('app_home')->setEnv('dev')->setReviewed(false);
 
         $form = $this->factory->create(ReviewRouteDataType::class, null, [

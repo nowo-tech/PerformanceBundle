@@ -6,6 +6,8 @@ namespace Nowo\PerformanceBundle\DataCollector;
 
 use Closure;
 use Exception;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
+use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
@@ -14,6 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Throwable;
 
 use function is_array;
@@ -97,7 +100,7 @@ class PerformanceDataCollector extends DataCollector
      * @param bool $checkTableStatus Whether to check table existence/completeness (default true). Set false to save queries.
      * @param callable|null $queryMetricsProvider Optional callable returning [int count, float time]. When null, QueryTrackingMiddleware is used. Used in tests to cover the fallback catch.
      */
-    public function __construct(private readonly ?RouteDataRepository $repository = null, private readonly ?KernelInterface $kernel = null, private readonly ?TableStatusChecker $tableStatusChecker = null, private readonly ?DependencyChecker $dependencyChecker = null, private readonly ?RouteDataRecordRepository $recordRepository = null, private readonly bool $checkTableStatus = true, private readonly ?Closure $queryMetricsProvider = null)
+    public function __construct(private readonly ?RouteDataRepository $repository = null, private readonly ?KernelInterface $kernel = null, private readonly ?TableStatusChecker $tableStatusChecker = null, private readonly ?DependencyChecker $dependencyChecker = null, private readonly ?RouteDataRecordRepository $recordRepository = null, private readonly bool $checkTableStatus = true, private readonly ?Closure $queryMetricsProvider = null, private readonly ?QueryTrackingCounters $queryCounters = null)
     {
     }
 
@@ -289,8 +292,8 @@ class PerformanceDataCollector extends DataCollector
                     $queryCount = is_array($metrics) && isset($metrics[0]) ? (int) $metrics[0] : 0;
                     $queryTime  = is_array($metrics) && isset($metrics[1]) ? (float) $metrics[1] : 0.0;
                 } else {
-                    $queryCount = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getQueryCount();
-                    $queryTime  = \Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware::getTotalQueryTime();
+                    $queryCount = $this->queryCounters?->getQueryCount() ?? 0;
+                    $queryTime  = $this->queryCounters?->getTotalQueryTime() ?? 0.0;
                 }
             } catch (Exception) {
                 // Fallback to stored values or 0
@@ -350,7 +353,7 @@ class PerformanceDataCollector extends DataCollector
         if ($this->repository instanceof RouteDataRepository && $routeName !== null) {
             try {
                 $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
-                if ($routeData instanceof \Nowo\PerformanceBundle\Entity\RouteData) {
+                if ($routeData instanceof RouteData) {
                     $accessCount = $this->recordRepository instanceof RouteDataRecordRepository
                         ? $this->recordRepository->countByRouteData($routeData)
                         : null;
@@ -434,8 +437,8 @@ class PerformanceDataCollector extends DataCollector
      */
     private function isMessengerAvailable(): bool
     {
-        return interface_exists(\Symfony\Component\Messenger\MessageBusInterface::class)
-            || class_exists(\Symfony\Component\Messenger\MessageBusInterface::class);
+        return interface_exists(MessageBusInterface::class)
+            || class_exists(MessageBusInterface::class);
     }
 
     public function getName(): string

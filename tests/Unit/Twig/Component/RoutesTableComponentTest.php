@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Twig\Component;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Twig\Component\RoutesTableComponent;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Form\FormView;
 
 final class RoutesTableComponentTest extends TestCase
 {
@@ -84,7 +85,7 @@ final class RoutesTableComponentTest extends TestCase
     public function testReviewFormsAndDeleteFormsCanBeAssigned(): void
     {
         $component = new RoutesTableComponent();
-        $formView  = $this->createMock(\Symfony\Component\Form\FormView::class);
+        $formView  = $this->createMock(FormView::class);
 
         $component->reviewForms = [1 => $formView];
         $component->deleteForms = [2 => $formView];

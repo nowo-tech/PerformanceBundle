@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Model;
 
 use DateTimeImmutable;
+use Doctrine\Common\Collections\Collection;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Stringable;
 
 /**
@@ -95,9 +97,9 @@ final class RouteDataWithAggregates implements Stringable
     }
 
     /**
-     * @return \Doctrine\Common\Collections\Collection<int, \Nowo\PerformanceBundle\Entity\RouteDataRecord>
+     * @return Collection<int, RouteDataRecord>
      */
-    public function getAccessRecords(): \Doctrine\Common\Collections\Collection
+    public function getAccessRecords(): Collection
     {
         return $this->routeData->getAccessRecords();
     }

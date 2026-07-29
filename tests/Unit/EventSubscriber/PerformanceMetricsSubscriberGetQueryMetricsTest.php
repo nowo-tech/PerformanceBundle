@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
-use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +22,7 @@ final class PerformanceMetricsSubscriberGetQueryMetricsTest extends TestCase
 {
     public function testGetQueryMetricsUsesProfilerDoctrineCollectorWhenMiddlewareReturnsZero(): void
     {
-        QueryTrackingMiddleware::reset();
+        // counters injected per test
 
         $doctrineCollector = $this->createMock(DoctrineDataCollector::class);
         $doctrineCollector->method('getQueryCount')->willReturn(4);
@@ -53,7 +53,7 @@ final class PerformanceMetricsSubscriberGetQueryMetricsTest extends TestCase
 
     public function testGetQueryMetricsUsesGetCollectorWhenGetReturnsNull(): void
     {
-        QueryTrackingMiddleware::reset();
+        // counters injected per test
 
         $doctrineCollector = $this->createMock(DoctrineDataCollector::class);
         $doctrineCollector->method('getQueryCount')->willReturn(2);
@@ -89,7 +89,7 @@ final class PerformanceMetricsSubscriberGetQueryMetricsTest extends TestCase
 
     public function testGetQueryMetricsUsesGetCollectorsMap(): void
     {
-        QueryTrackingMiddleware::reset();
+        // counters injected per test
 
         $doctrineCollector = $this->createMock(DoctrineDataCollector::class);
         $doctrineCollector->method('getQueryCount')->willReturn(1);
@@ -130,7 +130,7 @@ final class PerformanceMetricsSubscriberGetQueryMetricsTest extends TestCase
 
     public function testGetQueryMetricsFallsBackToStopwatchWhenProfilerEmpty(): void
     {
-        QueryTrackingMiddleware::reset();
+        // counters injected per test
 
         $stopwatch = new Stopwatch();
         $stopwatch->start('doctrine.queries');
@@ -149,7 +149,7 @@ final class PerformanceMetricsSubscriberGetQueryMetricsTest extends TestCase
 
     public function testGetQueryMetricsReadsProfilerFromParentRequestOnStack(): void
     {
-        QueryTrackingMiddleware::reset();
+        // counters injected per test
 
         $doctrineCollector = $this->createMock(DoctrineDataCollector::class);
         $doctrineCollector->method('getQueryCount')->willReturn(3);
@@ -184,7 +184,7 @@ final class PerformanceMetricsSubscriberGetQueryMetricsTest extends TestCase
 
     public function testGetQueryMetricsReadsProfilerProfileAttribute(): void
     {
-        QueryTrackingMiddleware::reset();
+        // counters injected per test
 
         $doctrineCollector = $this->createMock(DoctrineDataCollector::class);
         $doctrineCollector->method('getQueryCount')->willReturn(5);

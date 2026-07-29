@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DBAL;
 
+use Composer\InstalledVersions;
+use Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension;
+use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\Persistence\ManagerRegistry;
@@ -228,14 +231,14 @@ class QueryTrackingMiddlewareRegistry
      */
     public static function detectDoctrineBundleVersion(): ?string
     {
-        if (!class_exists(\Doctrine\Bundle\DoctrineBundle\DoctrineBundle::class)) {
+        if (!class_exists(DoctrineBundle::class)) {
             return null;
         }
 
         // Method 1: Try to get version from installed packages (Composer)
-        if (class_exists(\Composer\InstalledVersions::class)) {
+        if (class_exists(InstalledVersions::class)) {
             try {
-                $version = \Composer\InstalledVersions::getVersion('doctrine/doctrine-bundle');
+                $version = InstalledVersions::getVersion('doctrine/doctrine-bundle');
                 if ($version !== null) {
                     // Remove 'v' prefix if present
                     return ltrim($version, 'v');
@@ -247,7 +250,7 @@ class QueryTrackingMiddlewareRegistry
 
         // Method 2: Try to read from composer.json
         try {
-            $reflection = new ReflectionClass(\Doctrine\Bundle\DoctrineBundle\DoctrineBundle::class);
+            $reflection = new ReflectionClass(DoctrineBundle::class);
             $filename   = $reflection->getFileName();
 
             if ($filename !== false) {
@@ -266,9 +269,9 @@ class QueryTrackingMiddlewareRegistry
 
         // Method 3: Try to detect by checking available methods/classes
         // DoctrineBundle 3.x has different structure than 2.x
-        if (class_exists(\Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension::class)) {
+        if (class_exists(DoctrineExtension::class)) {
             try {
-                $reflection = new ReflectionClass(\Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension::class);
+                $reflection = new ReflectionClass(DoctrineExtension::class);
                 // Check if it has methods that indicate version 3.x
                 if ($reflection->hasMethod('getConfiguration')) {
                     // This is a heuristic - version 3.x typically has this structure

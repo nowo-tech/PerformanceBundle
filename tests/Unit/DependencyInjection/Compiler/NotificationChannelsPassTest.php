@@ -28,16 +28,10 @@ final class NotificationChannelsPassTest extends TestCase
         $this->assertFalse($argument->needsIndexes());
         $this->assertSame([], $argument->getExclude());
         $this->assertTrue($argument->excludeSelf());
-
-        $thirdParameter = (new ReflectionMethod(TaggedIteratorArgument::class, '__construct'))
-            ->getParameters()[2];
-        if ($thirdParameter->getName() === 'needsIndexes') {
-            $this->assertNull($argument->getDefaultIndexMethod(false));
-            $this->assertNull($argument->getDefaultPriorityMethod(false));
-        } else {
-            $this->assertNull($argument->getDefaultIndexMethod());
-            $this->assertNull($argument->getDefaultPriorityMethod());
-        }
+        (new ReflectionMethod(TaggedIteratorArgument::class, '__construct'))
+            ->getParameters();
+        $this->assertNull($argument->getDefaultIndexMethod());
+        $this->assertNull($argument->getDefaultPriorityMethod());
     }
 
     public function testProcessDoesNothingWhenNotificationServiceIsMissing(): void

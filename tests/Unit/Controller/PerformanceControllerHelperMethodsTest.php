@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
@@ -13,6 +14,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Tests for PerformanceController helper methods.
@@ -103,7 +105,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
         $routeData->method('getId')->willReturn(1);
         $routeData->method('getEnv')->willReturn('dev');
         $routeData->method('getName')->willReturn('test');
-        $routeData->method('getAccessRecords')->willReturn(new \Doctrine\Common\Collections\ArrayCollection());
+        $routeData->method('getAccessRecords')->willReturn(new ArrayCollection());
         $dt = $createdAt ?? new DateTimeImmutable('2025-01-27');
         $routeData->method('getCreatedAt')->willReturn($dt);
         $routeData->method('getLastAccessedAt')->willReturn($lastAccessedAt ?? $dt);
@@ -830,7 +832,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithNoFilters(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
 
@@ -840,7 +842,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithRouteFilter(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('route', 'test_route');
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
@@ -851,7 +853,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithMinRequestTime(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('min_request_time', '0.5');
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
@@ -863,7 +865,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithMaxRequestTime(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('max_request_time', '1.0');
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
@@ -875,7 +877,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithMinQueryCount(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('min_query_count', '10');
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
@@ -887,7 +889,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithMaxQueryCount(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('max_query_count', '50');
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
@@ -899,7 +901,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithDateFrom(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('date_from', '2025-01-01');
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
@@ -911,7 +913,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithDateTo(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('date_to', '2025-12-31');
 
         $result = $this->callPrivateMethod('buildFiltersFromRequest', $request);
@@ -923,7 +925,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithAllFilters(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('route', 'test_route');
         $request->query->set('min_request_time', '0.5');
         $request->query->set('max_request_time', '1.0');
@@ -946,7 +948,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestIgnoresInvalidDate(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('date_from', 'invalid-date');
         $request->query->set('date_to', 'also-invalid');
 
@@ -958,7 +960,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
 
     public function testBuildFiltersFromRequestWithDateTimeFormat(): void
     {
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $request = new Request();
         $request->query->set('date_from', '2025-01-01 10:30:00');
         $request->query->set('date_to', '2025-12-31 23:59:59');
 

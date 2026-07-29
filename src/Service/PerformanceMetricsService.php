@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
@@ -107,7 +108,7 @@ class PerformanceMetricsService
     /**
      * Get the DBAL connection used by the metrics service.
      */
-    public function getConnection(): \Doctrine\DBAL\Connection
+    public function getConnection(): Connection
     {
         return $this->entityManager->getConnection();
     }

@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\UX\Icons\Twig\IconExtension;
+use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
+use Symfony\UX\TwigComponent\ComponentInterface;
+use Symfony\UX\TwigComponent\TwigComponentBundle;
+
 use function function_exists;
 
 /**
@@ -28,9 +36,9 @@ class DependencyChecker
     public function isTwigComponentAvailable(): bool
     {
         // Check if bundle classes exist
-        $classesExist = class_exists(\Symfony\UX\TwigComponent\TwigComponentBundle::class)
-            || interface_exists(\Symfony\UX\TwigComponent\ComponentInterface::class)
-            || class_exists(\Symfony\UX\TwigComponent\Attribute\AsTwigComponent::class);
+        $classesExist = class_exists(TwigComponentBundle::class)
+            || interface_exists(ComponentInterface::class)
+            || class_exists(AsTwigComponent::class);
 
         // Also verify that the Twig function is available
         // This is a runtime check that can only be done when Twig is initialized
@@ -46,7 +54,7 @@ class DependencyChecker
     public function isIconsAvailable(): bool
     {
         return function_exists('ux_icon')
-            || class_exists(\Symfony\UX\Icons\Twig\IconExtension::class)
+            || class_exists(IconExtension::class)
             || function_exists('twig_get_function') && twig_get_function('ux_icon') !== null;
     }
 
@@ -57,8 +65,8 @@ class DependencyChecker
      */
     public function isMessengerAvailable(): bool
     {
-        return interface_exists(\Symfony\Component\Messenger\MessageBusInterface::class)
-            || class_exists(\Symfony\Component\Messenger\MessageBusInterface::class);
+        return interface_exists(MessageBusInterface::class)
+            || class_exists(MessageBusInterface::class);
     }
 
     /**
@@ -68,8 +76,8 @@ class DependencyChecker
      */
     public function isMailerAvailable(): bool
     {
-        return interface_exists(\Symfony\Component\Mailer\MailerInterface::class)
-            || class_exists(\Symfony\Component\Mailer\MailerInterface::class);
+        return interface_exists(MailerInterface::class)
+            || class_exists(MailerInterface::class);
     }
 
     /**
@@ -79,8 +87,8 @@ class DependencyChecker
      */
     public function isHttpClientAvailable(): bool
     {
-        return interface_exists(\Symfony\Contracts\HttpClient\HttpClientInterface::class)
-            || class_exists(\Symfony\Contracts\HttpClient\HttpClientInterface::class);
+        return interface_exists(HttpClientInterface::class)
+            || class_exists(HttpClientInterface::class);
     }
 
     /**

@@ -1,6 +1,6 @@
-# FrankenPHP (Dunglas) - PHP 8.4 Alpine
+# FrankenPHP (Dunglas) - PHP 8.5 Alpine
 # https://frankenphp.dev/docs/docker/
-FROM dunglas/frankenphp:1-php8.4-alpine
+FROM dunglas/frankenphp:1-php8.5-alpine
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -31,12 +31,7 @@ ENV PATH="/app/vendor/bin:${PATH}"
 ENV SERVER_NAME=:80
 
 # Entrypoint: when APP_ENV=dev copy Caddyfile.dev (no worker), ensure var dirs, then run FrankenPHP
-RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
-    echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'if [ "${APP_ENV:-prod}" = "dev" ]; then cp /etc/frankenphp/Caddyfile.dev /etc/frankenphp/Caddyfile; fi' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'mkdir -p /app/var/cache /app/var/log' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'chmod -R 777 /app/var' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'exec frankenphp run --config /etc/frankenphp/Caddyfile --adapter caddyfile' >> /usr/local/bin/docker-entrypoint.sh && \
-    chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["docker-entrypoint.sh"]

@@ -10,11 +10,13 @@ use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class WebhookNotificationChannelTest extends TestCase
 {
-    private const HTTP_CLIENT_INTERFACE = \Symfony\Contracts\HttpClient\HttpClientInterface::class;
-    private const RESPONSE_INTERFACE    = \Symfony\Contracts\HttpClient\ResponseInterface::class;
+    private const HTTP_CLIENT_INTERFACE = HttpClientInterface::class;
+    private const RESPONSE_INTERFACE    = ResponseInterface::class;
 
     protected function setUp(): void
     {

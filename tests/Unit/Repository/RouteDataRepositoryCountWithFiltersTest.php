@@ -9,6 +9,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -16,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryCountWithFiltersTest extends TestCase
 {
-    private \PHPUnit\Framework\MockObject\MockObject $registry;
+    private MockObject $registry;
 
     protected function setUp(): void
     {
@@ -109,7 +110,7 @@ final class RouteDataRepositoryCountWithFiltersTest extends TestCase
             ->willReturnSelf();
         $queryBuilder->expects($this->exactly(2))
             ->method('setParameter')
-            ->willReturnCallback(function ($key, $value) use ($queryBuilder): \PHPUnit\Framework\MockObject\MockObject {
+            ->willReturnCallback(function ($key, $value) use ($queryBuilder): MockObject {
                 if ($key === 'route_pattern') {
                     $this->assertSame('%api%', $value);
                 }

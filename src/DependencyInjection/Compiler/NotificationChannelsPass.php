@@ -28,10 +28,10 @@ final class NotificationChannelsPass implements CompilerPassInterface
         }
 
         $container->getDefinition(NotificationService::class)
-            ->setArgument('$channels', self::createTaggedIteratorArgument(self::CHANNEL_TAG));
+            ->setArgument('$channels', $this->createTaggedIteratorArgument(self::CHANNEL_TAG));
     }
 
-    private static function createTaggedIteratorArgument(string $tag): TaggedIteratorArgument
+    private function createTaggedIteratorArgument(string $tag): TaggedIteratorArgument
     {
         $thirdParameter = (new ReflectionMethod(TaggedIteratorArgument::class, '__construct'))
             ->getParameters()[2];

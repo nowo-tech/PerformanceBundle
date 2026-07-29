@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Controller;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver;
+use Doctrine\DBAL\Schema\Column;
 use Exception;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
 use Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordsClearedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
+use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
 use Nowo\PerformanceBundle\Form\DeleteRecordType;
@@ -26,14 +32,17 @@ use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
 use Nowo\PerformanceBundle\Model\RecordFilters;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
+use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -114,7 +123,7 @@ class PerformanceController extends AbstractController
         /** @var list<int> */
         #[Autowire('%nowo_performance.track_status_codes%')]
         private readonly array $trackStatusCodes = [200, 404, 500, 503],
-        private readonly ?\Nowo\PerformanceBundle\Repository\RouteDataRecordRepository $recordRepository = null,
+        private readonly ?RouteDataRecordRepository $recordRepository = null,
         #[Autowire('%nowo_performance.enable_access_records%')]
         private readonly bool $enableAccessRecords = false,
         #[Autowire('%nowo_performance.enabled%')]
@@ -316,7 +325,7 @@ class PerformanceController extends AbstractController
                 }
                 $stats = $this->calculateStats($allRoutes);
                 // Add record count and top rankings when access records enabled
-                if ($this->enableAccessRecords && $this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository) {
+                if ($this->enableAccessRecords && $this->recordRepository instanceof RouteDataRecordRepository) {
                     $stats['total_records']       = $this->recordRepository->getTotalAccessCount($env);
                     $stats['top_used_routes']     = $this->getTopUsedRoutes($allRoutes, 5);
                     $stats['top_consumed_routes'] = $this->getTopConsumedRoutes($allRoutes, 5);
@@ -648,7 +657,7 @@ class PerformanceController extends AbstractController
             'min'            => round($min, 4),
             'max'            => round($max, 4),
             'range'          => round($range, 4),
-            'percentiles'    => array_map(static fn ($v): float => round($v, 4), $percentiles),
+            'percentiles'    => array_map(static fn (float|int $v): float => round($v, 4), $percentiles),
             'outliers_count' => count($outliers),
             'outliers'       => array_map(static fn (float|int $v): float => round($v, 4), array_values($outliers)),
             'distribution'   => $distribution,
@@ -886,8 +895,7 @@ class PerformanceController extends AbstractController
                 }
 
                 // Normalize to array<string> (getDistinctEnvironments returns array but values may be inferred mixed)
-                /** @phpstan-ignore function.alreadyNarrowedType (filter narrows to string) */
-                $environments = array_values(array_filter($raw, is_string(...)));
+                $environments = array_values(array_filter($raw, static fn ($v): bool => is_string($v)));
             } catch (Exception) {
                 // Fallback to default environments if repository query fails
                 $environments = ['dev', 'test', 'prod'];
@@ -1093,7 +1101,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Temporal access records are disabled.');
         }
 
-        if (!$this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository) {
+        if (!$this->recordRepository instanceof RouteDataRecordRepository) {
             throw $this->createNotFoundException('RouteDataRecordRepository is not available.');
         }
 
@@ -1228,7 +1236,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Temporal access records are disabled.');
         }
 
-        if (!$this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository) {
+        if (!$this->recordRepository instanceof RouteDataRecordRepository) {
             throw $this->createNotFoundException('RouteDataRecordRepository is not available.');
         }
 
@@ -1286,7 +1294,7 @@ class PerformanceController extends AbstractController
             $result = ['records' => [], 'total' => 0];
         }
 
-        $data = array_map(static function (\Nowo\PerformanceBundle\Entity\RouteDataRecord $r): array {
+        $data = array_map(static function (RouteDataRecord $r): array {
             $rd = $r->getRouteData();
 
             return [
@@ -1553,10 +1561,10 @@ class PerformanceController extends AbstractController
         }
 
         // When tableStatusChecker is not available, fall back to manual records table check (only if check is enabled)
-        if ($this->checkTableStatus && $this->enableAccessRecords && $this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository && !$this->tableStatusChecker instanceof TableStatusChecker) {
+        if ($this->checkTableStatus && $this->enableAccessRecords && $this->recordRepository instanceof RouteDataRecordRepository && !$this->tableStatusChecker instanceof TableStatusChecker) {
             try {
                 $entityManager    = $this->metricsService->getEntityManager();
-                $metadata         = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+                $metadata         = $entityManager->getMetadataFactory()->getMetadataFor(RouteDataRecord::class);
                 $recordsTableName = method_exists($metadata, 'getTableName')
                     ? $metadata->getTableName()
                     : ($metadata->table['name'] ?? 'nowo_performance_records');
@@ -1577,12 +1585,9 @@ class PerformanceController extends AbstractController
                     $table           = $schemaManager->introspectTable($recordsTableName);
                     $existingColumns = [];
                     foreach ($table->getColumns() as $column) {
-                        $columnName = $column instanceof \Doctrine\DBAL\Schema\Column
-                            ? $column->getName()
+                        $columnName                               = $column instanceof Column
+                            ? DbalSchemaNameHelper::getLogicalName($column)
                             : '';
-                        /** @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-                        $columnName                               = is_string($columnName) ? $columnName : (string) $columnName;
-                        $columnName                               = trim($columnName, '`"\'');
                         $existingColumns[strtolower($columnName)] = true;
                     }
                     $expectedRecordsColumns = [];
@@ -1678,7 +1683,7 @@ class PerformanceController extends AbstractController
         // 7. Subscriber Status Check
         $subscriberStatus = [
             'subscriber_registered'          => false,
-            'subscriber_class'               => \Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber::class,
+            'subscriber_class'               => PerformanceMetricsSubscriber::class,
             'data_collector_enabled'         => false,
             'data_collector_disabled_reason' => null,
             'last_route_tracked'             => null,
@@ -1692,7 +1697,7 @@ class PerformanceController extends AbstractController
             $detectionMethod = null;
 
             // Method 1: Check event dispatcher listeners (most reliable)
-            if ($container instanceof \Psr\Container\ContainerInterface && $container->has('event_dispatcher')) {
+            if ($container instanceof ContainerInterface && $container->has('event_dispatcher')) {
                 try {
                     $eventDispatcher = $container->get('event_dispatcher');
 
@@ -1728,13 +1733,13 @@ class PerformanceController extends AbstractController
             }
 
             // Method 2: Try to get the service directly from container
-            if (!$subscriberFound && $container instanceof \Psr\Container\ContainerInterface) {
+            if (!$subscriberFound && $container instanceof ContainerInterface) {
                 try {
-                    $subscriberServiceId = \Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber::class;
+                    $subscriberServiceId = PerformanceMetricsSubscriber::class;
                     // Try with FQCN first
                     if ($container->has($subscriberServiceId)) {
                         $subscriber = $container->get($subscriberServiceId);
-                        if ($subscriber instanceof \Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber) {
+                        if ($subscriber instanceof PerformanceMetricsSubscriber) {
                             $subscriberFound = true;
                             $detectionMethod = 'Found in container by FQCN';
                         }
@@ -1747,11 +1752,11 @@ class PerformanceController extends AbstractController
             // Method 3: Check if subscriber class exists and is properly configured
             // Since it's explicitly registered in services.yaml with kernel.event_subscriber tag,
             // if the class exists, it should be registered
-            if (!$subscriberFound && class_exists(\Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber::class)) {
+            if (!$subscriberFound && class_exists(PerformanceMetricsSubscriber::class)) {
                 // Verify it implements EventSubscriberInterface
-                $reflection = new ReflectionClass(\Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber::class);
+                $reflection = new ReflectionClass(PerformanceMetricsSubscriber::class);
                 // Check if it has getSubscribedEvents method
-                if ($reflection->implementsInterface(\Symfony\Component\EventDispatcher\EventSubscriberInterface::class) && $reflection->hasMethod('getSubscribedEvents')) {
+                if ($reflection->implementsInterface(EventSubscriberInterface::class) && $reflection->hasMethod('getSubscribedEvents')) {
                     $subscriberFound = true;
                     $detectionMethod = 'Class exists and implements EventSubscriberInterface (assumed registered via services.yaml)';
                 }
@@ -1764,10 +1769,10 @@ class PerformanceController extends AbstractController
         } catch (Exception $e) {
             $subscriberStatus['subscriber_error'] = $e->getMessage();
             // If there's an error but the class exists and implements the interface, assume it's registered
-            if (class_exists(\Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber::class)) {
+            if (class_exists(PerformanceMetricsSubscriber::class)) {
                 try {
-                    $reflection = new ReflectionClass(\Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber::class);
-                    if ($reflection->implementsInterface(\Symfony\Component\EventDispatcher\EventSubscriberInterface::class)) {
+                    $reflection = new ReflectionClass(PerformanceMetricsSubscriber::class);
+                    if ($reflection->implementsInterface(EventSubscriberInterface::class)) {
                         $subscriberStatus['subscriber_registered'] = true;
                         $subscriberStatus['detection_method']      = 'Fallback: Class exists and implements EventSubscriberInterface';
                     }
@@ -2541,7 +2546,7 @@ class PerformanceController extends AbstractController
         $heatmapData           = [];
         $totalAccessCount      = 0;
 
-        if ($this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository) {
+        if ($this->recordRepository instanceof RouteDataRecordRepository) {
             try {
                 $statisticsByHour      = $this->recordRepository->getStatisticsByHour($env, $startDate, $endDate, $routeName, $path, $statusCode);
                 $statisticsByDayOfWeek = $this->recordRepository->getStatisticsByDayOfWeek($env, $startDate, $endDate, $routeName, $path, $statusCode);
@@ -2707,7 +2712,7 @@ class PerformanceController extends AbstractController
             'total_pages' => 0,
         ];
 
-        if ($this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository) {
+        if ($this->recordRepository instanceof RouteDataRecordRepository) {
             try {
                 $paginatedData = $this->recordRepository->getPaginatedRecords(
                     $env,
@@ -2834,7 +2839,7 @@ class PerformanceController extends AbstractController
         $env       = $this->normalizeEnv($data->env);
         $envFilter = $env !== '' ? $env : null;
 
-        if (!$this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository) {
+        if (!$this->recordRepository instanceof RouteDataRecordRepository) {
             $this->addFlash('error', 'RouteDataRecordRepository is not available.');
 
             return $this->redirectToRoute('nowo_performance.access_records', ['env' => $env ?: $currentEnv]);
@@ -2954,7 +2959,7 @@ class PerformanceController extends AbstractController
             }
         }
 
-        if (!$this->recordRepository instanceof \Nowo\PerformanceBundle\Repository\RouteDataRecordRepository) {
+        if (!$this->recordRepository instanceof RouteDataRecordRepository) {
             $this->addFlash('error', 'Access records repository is not available.');
 
             return $this->redirectToRoute('nowo_performance.access_records', ['env' => $env]);
@@ -3061,11 +3066,11 @@ class PerformanceController extends AbstractController
      * When the driver is wrapped with middleware (like AbstractDriverMiddleware),
      * the getName() method may not be available. This method handles both cases.
      *
-     * @param \Doctrine\DBAL\Connection $connection The database connection
+     * @param Connection $connection The database connection
      *
      * @return string The driver name or 'unknown' if unable to determine
      */
-    private function getDriverName(\Doctrine\DBAL\Connection $connection): string
+    private function getDriverName(Connection $connection): string
     {
         try {
             $driver = $connection->getDriver();
@@ -3092,7 +3097,7 @@ class PerformanceController extends AbstractController
                     $driverProperty = $reflection->getProperty('driver');
                     $wrappedDriver  = $driverProperty->getValue($driver);
 
-                    if ($wrappedDriver instanceof \Doctrine\DBAL\Driver && method_exists($wrappedDriver, 'getName')) {
+                    if ($wrappedDriver instanceof Driver && method_exists($wrappedDriver, 'getName')) {
                         /** @var callable $getName */
                         $getName = [$wrappedDriver, 'getName'];
 

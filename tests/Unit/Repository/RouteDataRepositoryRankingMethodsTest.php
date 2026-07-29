@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Repository;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -14,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryRankingMethodsTest extends TestCase
 {
-    private \PHPUnit\Framework\MockObject\MockObject $registry;
+    private MockObject $registry;
     private RouteDataRepository $repository;
 
     protected function setUp(): void

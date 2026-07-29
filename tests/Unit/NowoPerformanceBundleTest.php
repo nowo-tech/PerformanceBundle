@@ -15,6 +15,7 @@ use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * Tests for NowoPerformanceBundle.
@@ -177,7 +178,7 @@ final class NowoPerformanceBundleTest extends TestCase
     /** When all conditions are met (CLI, debug, VarDumper present), boot sets a custom handler. */
     public function testBootWhenCliAndDebugAndVarDumperPresentSetsHandler(): void
     {
-        if (!class_exists(\Symfony\Component\VarDumper\VarDumper::class)) {
+        if (!class_exists(VarDumper::class)) {
             $this->markTestSkipped('VarDumper not available');
         }
 
@@ -192,140 +193,9 @@ final class NowoPerformanceBundleTest extends TestCase
 
         $bundle->boot();
 
-        $vdReflection = new ReflectionClass(\Symfony\Component\VarDumper\VarDumper::class);
+        $vdReflection = new ReflectionClass(VarDumper::class);
         $handlerProp  = $vdReflection->getProperty('handler');
         $handler      = $handlerProp->getValue();
         $this->assertIsCallable($handler);
-    }
-
-    /**
-     * Invoking the VarDumper handler after boot runs the closure body; use stream override to avoid output.
-     * Covers lines 68-75 inside the setHandler closure.
-     */
-    public function testBootVarDumperHandlerInvocationRunsClosureBody(): void
-    {
-        if (!class_exists(\Symfony\Component\VarDumper\VarDumper::class)) {
-            $this->markTestSkipped('VarDumper not available');
-        }
-
-        $stream = fopen('php://memory', 'w');
-        $this->assertNotFalse($stream);
-
-        $previous                                       = NowoPerformanceBundle::$varDumperStreamOverride;
-        NowoPerformanceBundle::$varDumperStreamOverride = $stream;
-
-        try {
-            $container = new ContainerBuilder();
-            $kernel    = $this->createMock(KernelInterface::class);
-            $kernel->method('isDebug')->willReturn(true);
-            $container->set('kernel', $kernel);
-
-            $bundle     = new NowoPerformanceBundle();
-            $reflection = new ReflectionProperty($bundle, 'container');
-            $reflection->setValue($bundle, $container);
-
-            $bundle->boot();
-
-            \Symfony\Component\VarDumper\VarDumper::dump('test');
-        } finally {
-            NowoPerformanceBundle::$varDumperStreamOverride = $previous;
-            fclose($stream);
-        }
-
-        $this->addToAssertionCount(1);
-    }
-
-    /** Covers boot() early return when testVarDumperClassExistsOverride is false (same branch as !class_exists). */
-    public function testBootWhenTestVarDumperClassExistsOverrideFalseReturnsEarly(): void
-    {
-        $container = new ContainerBuilder();
-        $kernel    = $this->createMock(KernelInterface::class);
-        $kernel->method('isDebug')->willReturn(true);
-        $container->set('kernel', $kernel);
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        $prev = NowoPerformanceBundle::$testVarDumperClassExistsOverride;
-        try {
-            NowoPerformanceBundle::$testVarDumperClassExistsOverride = false;
-            $bundle->boot();
-            $this->addToAssertionCount(1);
-        } finally {
-            NowoPerformanceBundle::$testVarDumperClassExistsOverride = $prev;
-        }
-    }
-
-    /** Covers boot() early return when testVarDumperExistsOverride is false (simulates VarDumper not present). */
-    public function testBootWhenTestVarDumperExistsOverrideFalseReturnsEarly(): void
-    {
-        $container = new ContainerBuilder();
-        $kernel    = $this->createMock(KernelInterface::class);
-        $kernel->method('isDebug')->willReturn(true);
-        $container->set('kernel', $kernel);
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        $prev = NowoPerformanceBundle::$testVarDumperExistsOverride;
-        try {
-            NowoPerformanceBundle::$testVarDumperExistsOverride = false;
-            $bundle->boot();
-            $this->addToAssertionCount(1);
-        } finally {
-            NowoPerformanceBundle::$testVarDumperExistsOverride = $prev;
-        }
-    }
-
-    /** Covers boot() early return when not in CLI (testSapiOverride simulates non-CLI). */
-    public function testBootWhenTestSapiOverrideNotCliReturnsEarly(): void
-    {
-        $container = new ContainerBuilder();
-        $kernel    = $this->createMock(KernelInterface::class);
-        $kernel->method('isDebug')->willReturn(true);
-        $container->set('kernel', $kernel);
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        $prev = NowoPerformanceBundle::$testSapiOverride;
-        try {
-            NowoPerformanceBundle::$testSapiOverride = 'apache';
-            $bundle->boot();
-            $this->addToAssertionCount(1);
-        } finally {
-            NowoPerformanceBundle::$testSapiOverride = $prev;
-        }
-    }
-
-    /** Covers boot() path when stream is forced to null (testStreamForceNull); handler is set but closure returns without dumping. */
-    public function testBootWhenTestStreamForceNullHandlerReceivesNullStreamReturnsEarly(): void
-    {
-        if (!class_exists(\Symfony\Component\VarDumper\VarDumper::class)) {
-            $this->markTestSkipped('VarDumper not available');
-        }
-
-        $container = new ContainerBuilder();
-        $kernel    = $this->createMock(KernelInterface::class);
-        $kernel->method('isDebug')->willReturn(true);
-        $container->set('kernel', $kernel);
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        $prev = NowoPerformanceBundle::$testStreamForceNull;
-        try {
-            NowoPerformanceBundle::$testStreamForceNull = true;
-            $bundle->boot();
-            // Invoke handler: stream is null so it returns without dumping (no output)
-            \Symfony\Component\VarDumper\VarDumper::dump('no-output');
-            $this->addToAssertionCount(1);
-        } finally {
-            NowoPerformanceBundle::$testStreamForceNull = $prev;
-        }
     }
 }

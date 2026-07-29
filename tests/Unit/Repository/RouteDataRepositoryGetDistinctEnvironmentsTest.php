@@ -8,6 +8,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class RouteDataRepositoryGetDistinctEnvironmentsTest extends TestCase
 {
-    private \PHPUnit\Framework\MockObject\MockObject $registry;
+    private MockObject $registry;
 
     protected function setUp(): void
     {

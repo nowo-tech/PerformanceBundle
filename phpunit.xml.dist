@@ -42,5 +42,7 @@
         <ini name="error_reporting" value="-1"/>
         <ini name="display_errors" value="1"/>
         <ini name="display_startup_errors" value="1"/>
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="max[direct]=0"/>
     </php>
 </phpunit>
+

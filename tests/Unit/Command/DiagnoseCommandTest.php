@@ -6,13 +6,14 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
 use Nowo\PerformanceBundle\Command\DiagnoseCommand;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 final class DiagnoseCommandTest extends TestCase
 {
-    private \PHPUnit\Framework\MockObject\MockObject $parameterBag;
+    private MockObject $parameterBag;
     private DiagnoseCommand $command;
 
     protected function setUp(): void
@@ -118,7 +119,7 @@ final class DiagnoseCommandTest extends TestCase
         });
 
         $middlewareStatusProvider = static fn (): array => [1, 0.0];
-        $command                  = new DiagnoseCommand($this->parameterBag, null, $middlewareStatusProvider);
+        $command                  = new DiagnoseCommand($this->parameterBag, null, null, $middlewareStatusProvider);
         $tester                   = new CommandTester($command);
         $tester->execute([]);
 

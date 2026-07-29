@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Nowo\PerformanceBundle\Service\NotificationService;
@@ -170,7 +171,7 @@ final class NotificationServiceTest extends TestCase
             ->method('send')
             ->with(
                 $this->isInstanceOf(PerformanceAlert::class),
-                $this->isInstanceOf(\Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent::class),
+                $this->isInstanceOf(AfterMetricsRecordedEvent::class),
             )
             ->willReturn(true);
 
@@ -182,7 +183,7 @@ final class NotificationServiceTest extends TestCase
         );
         $routeData = new RouteData();
         $routeData->setName('api_slow')->setEnv('prod');
-        $event = new \Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent($routeData, true, 0.5, 50);
+        $event = new AfterMetricsRecordedEvent($routeData, true, 0.5, 50);
 
         $results = $service->sendAlert($alert, $event);
 

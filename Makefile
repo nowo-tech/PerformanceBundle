@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history
+.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "Targets:"
 	@echo "  up            Start Docker container"
 	@echo "  down          Stop Docker container"
+	@echo "  down-dev      Stop root compose (dev) and remove orphans"
 	@echo "  build         Rebuild Docker image (no cache)"
 	@echo "  shell         Open shell in container"
 	@echo "  install       Install Composer dependencies"
@@ -29,6 +30,7 @@ help:
 	@echo "  phpstan       Run PHPStan static analysis"
 	@echo "  qa            Run all QA checks (cs-check + test)"
 	@echo "  release-check Pre-release: cs-fix, cs-check, rector-dry, phpstan, test-coverage, demo healthchecks"
+	@echo "  demo-smoke    REQ-TEST-011: boot demo + HTTP 200"
 	@echo "  composer-sync Validate composer.json and align composer.lock"
 	@echo "  clean         Remove vendor and cache"
 	@echo "  update        Update composer.lock (composer update)"
@@ -46,109 +48,115 @@ help:
 
 # Rebuild Docker image (no cache)
 build:
-	docker-compose build --no-cache
+	$(COMPOSE) build --no-cache
 
 # Build and start containers (php + mysql + postgres)
 up:
 	@echo "Building Docker image..."
-	docker-compose build
+	$(COMPOSE) build
 	@echo "Starting containers (PHP, MySQL, PostgreSQL)..."
-	docker-compose up -d
+	$(COMPOSE) up -d
 	@echo "Waiting for databases to be ready..."
 	@sleep 10
 	@echo "Installing dependencies..."
-	docker-compose exec -T php sh -c "composer install --no-interaction || composer update --no-interaction"
+	$(COMPOSE) exec -T php sh -c "composer install --no-interaction || composer update --no-interaction"
 	@echo "✅ Container ready!"
 
 # Stop container
 down:
-	docker-compose down
+	$(COMPOSE) down
+
+down-dev:
+	$(COMPOSE) down --remove-orphans
 
 # Ensure root container is running (start if not). Used by cs-fix, cs-check, qa, install, test, test-coverage, validate-translations.
 # Also sets git safe.directory /app inside the container so Composer can read the repo (avoids "dubious ownership" when bind-mounting).
 ensure-up:
-	@if ! docker-compose exec -T php true 2>/dev/null; then \
-		echo "Starting container (root docker-compose)..."; \
-		docker-compose up -d; \
+	@if ! $(COMPOSE) exec -T php true 2>/dev/null; then \
+		echo "Starting container (root $(COMPOSE))..."; \
+		$(COMPOSE) up -d; \
 		sleep 3; \
-		docker-compose exec -T php sh -c "composer install --no-interaction || composer update --no-interaction"; \
+		$(COMPOSE) exec -T php sh -c "composer install --no-interaction || composer update --no-interaction"; \
 	fi
-	@docker-compose exec -T php git config --global --add safe.directory /app 2>/dev/null || true
+	@$(COMPOSE) exec -T php git config --global --add safe.directory /app 2>/dev/null || true
 
 # Open shell in container
 shell: ensure-up
-	docker-compose exec php sh
+	$(COMPOSE) exec php sh
 
 # Install dependencies
 install: ensure-up
-	docker-compose exec -T php composer install
+	$(COMPOSE) exec -T php composer install
 
 # Run tests only (no coverage). Starts PHP container if needed.
 # Run tests (no -T so TTY is allocated and PHPUnit can show colors in console)
 test: ensure-up
-	docker-compose exec php composer test
+	$(COMPOSE) exec php composer test
 
 # Run tests with code coverage (no -T so coverage is shown in console with colors).
 # --process-isolation avoids truncated output; @runInSeparateProcess tests and non-TTY pipes can otherwise
 # end the run before the report is printed (see PHPUnit issue #5993).
 test-coverage: ensure-up
-	docker-compose exec php composer test-coverage | tee coverage-php.txt
+	$(COMPOSE) exec php composer test-coverage | tee coverage-php.txt
 	./.scripts/php-coverage-percent.sh coverage-php.txt
 
 # Run test-coverage and fail if coverage is below 90%
 test-coverage-90: ensure-up
-	docker-compose exec php composer test-coverage-90
+	$(COMPOSE) exec php composer test-coverage-90
 
 # Run test-coverage and fail if coverage is below 100% (requires coverage.xml from test-coverage)
 test-coverage-100: ensure-up
-	docker-compose exec php composer test-coverage
-	docker-compose exec -T php php scripts/check-coverage.php coverage.xml --min-percent=100
+	$(COMPOSE) exec php composer test-coverage
+	$(COMPOSE) exec -T php php scripts/check-coverage.php coverage.xml --min-percent=100
 
-# Run tests with databases (php + MySQL + PostgreSQL in same compose; §2.2 single docker-compose)
+# Run tests with databases (php + MySQL + PostgreSQL in same compose; §2.2 single $(COMPOSE))
 test-with-db: ensure-up
-	docker-compose exec -T php composer test
+	$(COMPOSE) exec -T php composer test
 
 # Run tests with coverage and databases (same compose)
 test-coverage-with-db: ensure-up
-	docker-compose exec php composer test-coverage
+	$(COMPOSE) exec php composer test-coverage
 
 # Check code style
 cs-check: ensure-up
-	docker-compose exec -T php composer cs-check
+	$(COMPOSE) exec -T php composer cs-check
 
 # Fix code style
 cs-fix: ensure-up
-	docker-compose exec -T php composer cs-fix
+	$(COMPOSE) exec -T php composer cs-fix
 
 rector: ensure-up
-	docker-compose exec -T php composer rector
+	$(COMPOSE) exec -T php composer rector
 
 rector-dry: ensure-up
-	docker-compose exec -T php composer rector-dry
+	$(COMPOSE) exec -T php composer rector-dry
 
 phpstan: ensure-up
-	docker-compose exec -T php composer phpstan
+	$(COMPOSE) exec -T php composer phpstan
 
 # Run all QA
 qa: ensure-up
-	docker-compose exec -T php composer qa
+	$(COMPOSE) exec -T php composer qa
 
 composer-sync: ensure-up
-	docker-compose exec -T php composer validate --strict
-	docker-compose exec -T php composer update --no-install
+	$(COMPOSE) exec -T php composer validate --strict
+	$(COMPOSE) exec -T php composer update --no-install
 
 # Update composer.lock
 update: ensure-up
-	docker-compose exec -T php composer deps-update
+	$(COMPOSE) exec -T php composer deps-update
 
 # Validate composer.json
 validate: ensure-up
-	docker-compose exec -T php composer deps-validate
+	$(COMPOSE) exec -T php composer deps-validate
 
 release-check: check-no-cursor-coauthor-since-release ensure-up composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
 
 release-check-demos:
 	@$(MAKE) -C demo release-check
+
+demo-smoke:
+	@$(MAKE) -C demo demo-smoke
 
 # No frontend assets in this bundle (single recipe to avoid Make warning)
 assets:
@@ -156,7 +164,7 @@ assets:
 
 # Validate YAML translation files (duplicate keys, syntax if ext-yaml available). Starts PHP container if needed.
 validate-translations: ensure-up
-	docker-compose exec -T php php scripts/validate-translations-yaml.php src/Resources/translations
+	$(COMPOSE) exec -T php php scripts/validate-translations-yaml.php src/Resources/translations
 
 # Setup git hooks for pre-commit checks
 check-no-cursor-coauthor:
@@ -181,10 +189,12 @@ setup-hooks:
 	@echo "✅ Git hooks installed (.githooks — includes commit-msg for REQ-GIT-001)."
 
 # REQ-MAKE-008: update-deps (REQ-MAKE-008)
-COMPOSE := docker-compose
+# Prefer Compose V2 plugin (GitHub Actions / modern Docker Desktop); fall back to docker-compose V1 (REQ-MAKE-010).
+COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 SERVICE_PHP := php
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-include $(BUNDLE_ROOT)/../.scripts/Makefile.update-deps.mk
+# Optional: monorepo helper absent on standalone GitHub Actions checkout (REQ-MAKE-009).
+-include $(BUNDLE_ROOT)/../.scripts/Makefile.update-deps.mk
 
 strip-cursor-coauthor-from-history:
 	@chmod +x .scripts/strip-cursor-coauthor-from-history.sh

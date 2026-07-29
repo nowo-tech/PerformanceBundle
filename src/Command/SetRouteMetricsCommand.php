@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Command;
 
 use Exception;
+use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -119,7 +120,7 @@ HELP
             // Check if route exists
             $existingRoute = $this->metricsService->getRouteData($routeName, $env);
 
-            if (!$existingRoute instanceof \Nowo\PerformanceBundle\Entity\RouteData) {
+            if (!$existingRoute instanceof RouteData) {
                 $io->info(sprintf('Creating new route metrics for "%s" in environment "%s"', $routeName, $env));
             } else {
                 $io->info(sprintf('Updating route metrics for "%s" in environment "%s"', $routeName, $env));
@@ -137,7 +138,7 @@ HELP
             );
 
             $routeData = $this->metricsService->getRouteData($routeName, $env);
-            if ($routeData instanceof \Nowo\PerformanceBundle\Entity\RouteData) {
+            if ($routeData instanceof RouteData) {
                 $routesWithAgg = $this->metricsService->getRoutesWithAggregates($env);
                 $display       = null;
                 foreach ($routesWithAgg as $r) {

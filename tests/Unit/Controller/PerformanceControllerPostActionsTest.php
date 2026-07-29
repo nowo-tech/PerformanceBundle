@@ -28,6 +28,8 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -354,7 +356,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
     {
         $controller = $this->createController(enabled: false);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class);
+        $this->expectException(NotFoundHttpException::class);
         $controller->delete(1, Request::create('/performance/1/delete', 'POST'));
     }
 
@@ -362,7 +364,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
     {
         $controller = $this->createController(enableRecordManagement: false);
 
-        $this->expectException(\Symfony\Component\Security\Core\Exception\AccessDeniedException::class);
+        $this->expectException(AccessDeniedException::class);
         $controller->delete(1, Request::create('/performance/1/delete', 'POST'));
     }
 
@@ -370,7 +372,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
     {
         $controller = $this->createController(enabled: false);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class);
+        $this->expectException(NotFoundHttpException::class);
         $controller->review(1, Request::create('/performance/1/review', 'POST'));
     }
 
@@ -378,7 +380,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
     {
         $controller = $this->createController(enableReviewSystem: false);
 
-        $this->expectException(\Symfony\Component\Security\Core\Exception\AccessDeniedException::class);
+        $this->expectException(AccessDeniedException::class);
         $controller->review(1, Request::create('/performance/1/review', 'POST'));
     }
 
@@ -1091,7 +1093,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
             true,
         );
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class);
+        $this->expectException(NotFoundHttpException::class);
         $controller->deleteRecordsByFilter(Request::create('/performance/delete-records-by-filter', 'POST'));
     }
 
@@ -1134,7 +1136,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
             true,
         );
 
-        $this->expectException(\Symfony\Component\Security\Core\Exception\AccessDeniedException::class);
+        $this->expectException(AccessDeniedException::class);
         $controller->deleteRecordsByFilter(Request::create('/performance/delete-records-by-filter', 'POST'));
     }
 

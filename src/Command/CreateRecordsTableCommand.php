@@ -5,9 +5,22 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Command;
 
 use Closure;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\Index;
+use Doctrine\ORM\Mapping\UniqueConstraint;
+use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
 use ReflectionClass;
 use ReflectionException;
 use RuntimeException;
@@ -104,11 +117,11 @@ HELP
     /**
      * Get schema manager from connection (compatible with DBAL 2.x and 3.x).
      *
-     * @param \Doctrine\DBAL\Connection $connection The database connection
+     * @param Connection $connection The database connection
      *
-     * @return \Doctrine\DBAL\Schema\AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform>
+     * @return AbstractSchemaManager<AbstractPlatform>
      */
-    private function getSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
+    private function getSchemaManager(Connection $connection): AbstractSchemaManager
     {
         // DBAL 3.x uses createSchemaManager(); check kept for DBAL 2.x compatibility
         /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
@@ -140,7 +153,7 @@ HELP
 
         try {
             $connection = $this->registry->getConnection($this->connectionName);
-            if (!$connection instanceof \Doctrine\DBAL\Connection) {
+            if (!$connection instanceof Connection) {
                 throw new RuntimeException('Registry did not return a DBAL Connection.');
             }
             $schemaManager = $this->getSchemaManager($connection);
@@ -150,7 +163,7 @@ HELP
             if (!$entityManager instanceof EntityManagerInterface) {
                 throw new RuntimeException('Registry did not return an EntityManager.');
             }
-            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+            $metadata = $entityManager->getMetadataFactory()->getMetadataFor(RouteDataRecord::class);
 
             // Get table name from metadata (compatible with different Doctrine versions)
             if (method_exists($metadata, 'getTableName')) {
@@ -231,11 +244,11 @@ HELP
      */
     private function createTableUsingSchemaTool(EntityManagerInterface $entityManager, SymfonyStyle $io): void
     {
-        $schemaTool = new \Doctrine\ORM\Tools\SchemaTool($entityManager);
+        $schemaTool = new SchemaTool($entityManager);
         $metadata   = $entityManager->getMetadataFactory()->getAllMetadata();
 
         // Filter to only RouteDataRecord entity
-        $routeDataRecordMetadata = array_filter($metadata, static fn (\Doctrine\ORM\Mapping\ClassMetadata $meta): bool => $meta->getName() === \Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+        $routeDataRecordMetadata = array_filter($metadata, static fn (ClassMetadata $meta): bool => $meta->getName() === RouteDataRecord::class);
 
         if ($routeDataRecordMetadata === []) {
             throw new RuntimeException('RouteDataRecord entity metadata not found.');
@@ -256,7 +269,7 @@ HELP
         foreach ($sql as $statement) {
             // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
             $platformClass = $platform::class;
-            $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+            $isMySQL       = $platform instanceof MySQLPlatform
                 || str_contains(strtolower($platformClass), 'mysql')
                 || str_contains(strtolower($platformClass), 'mariadb');
 
@@ -298,7 +311,7 @@ HELP
         $schemaManager = $this->getSchemaManager($connection);
 
         // Get the actual table name from entity metadata
-        $metadata = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+        $metadata = $entityManager->getMetadataFactory()->getMetadataFor(RouteDataRecord::class);
         // Get table name from metadata (compatible with different Doctrine versions)
         if (method_exists($metadata, 'getTableName')) {
             /** @var Closure(): string $getTableName */
@@ -324,7 +337,7 @@ HELP
 
         $platform      = $connection->getDatabasePlatform();
         $platformClass = $platform::class;
-        $isMySQL       = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+        $isMySQL       = $platform instanceof MySQLPlatform
             || str_contains(strtolower($platformClass), 'mysql')
             || str_contains(strtolower($platformClass), 'mariadb');
 
@@ -382,7 +395,7 @@ HELP
                 $fieldType = $metadata->getTypeOfField($fieldName);
                 if (in_array(strtolower((string) $fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
                     $generatorType = $metadata->generatorType ?? null;
-                    if (in_array($generatorType, [null, \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_AUTO, \Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
+                    if (in_array($generatorType, [null, ClassMetadata::GENERATOR_TYPE_AUTO, ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
                         || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
                         $isAutoincrement = true;
                     }
@@ -531,7 +544,7 @@ HELP
     /**
      * Quote identifier (DBAL 2.x / 3.x compatible).
      */
-    private function quoteIdentifier(\Doctrine\DBAL\Platforms\AbstractPlatform $platform, string $identifier): string
+    private function quoteIdentifier(AbstractPlatform $platform, string $identifier): string
     {
         /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
         if (method_exists($platform, 'quoteSingleIdentifier')) {
@@ -542,30 +555,11 @@ HELP
     }
 
     /**
-     * Get column name from Column (DBAL 2.x / 3.x compatible).
+     * Get column name from Column (DBAL 3.x / 4.x compatible).
      */
-    private function getColumnName(\Doctrine\DBAL\Schema\Column $column, \Doctrine\DBAL\Connection $connection): string
+    private function getColumnName(Column $column, Connection $connection): string
     {
-        /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-        if (method_exists($column, 'getQuotedName')) {
-            return $column->getQuotedName($connection->getDatabasePlatform());
-        }
-        /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-        if (method_exists($column, 'getName')) {
-            $name = $column->getName();
-
-            /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-            return is_string($name) ? $name : (string) $name;
-        }
-        try {
-            $reflection   = new ReflectionClass($column);
-            $nameProperty = $reflection->getProperty('name');
-            $name         = $nameProperty->getValue($column);
-
-            return is_string($name) ? $name : (string) $name;
-        } catch (Exception) {
-            return '';
-        }
+        return DbalSchemaNameHelper::getLogicalName($column);
     }
 
     /**
@@ -574,9 +568,9 @@ HELP
      * @param array<string, mixed> $expectedInfo
      */
     private function columnNeedsUpdate(
-        \Doctrine\DBAL\Schema\Column $existingColumn,
+        Column $existingColumn,
         array $expectedInfo,
-        \Doctrine\DBAL\Platforms\AbstractPlatform $platform,
+        AbstractPlatform $platform,
     ): bool {
         if ($existingColumn->getNotnull() !== !$expectedInfo['nullable']) {
             return true;
@@ -625,11 +619,11 @@ HELP
      * Get SQL column definition for a column.
      *
      * @param array<string, mixed> $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param AbstractPlatform $platform Database platform
      *
      * @return string SQL column definition
      */
-    private function getColumnDefinition(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
+    private function getColumnDefinition(array $columnInfo, AbstractPlatform $platform): string
     {
         $sqlType  = $this->getColumnSQLType($columnInfo, $platform);
         $nullable = $columnInfo['nullable'];
@@ -655,7 +649,7 @@ HELP
         $nullConstraint = $nullable ? ' NULL' : ' NOT NULL';
         $autoincrement  = '';
         $platformClass  = $platform::class;
-        $isMySQL        = $platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform
+        $isMySQL        = $platform instanceof MySQLPlatform
             || str_contains(strtolower($platformClass), 'mysql')
             || str_contains(strtolower($platformClass), 'mariadb');
         if (!empty($columnInfo['autoincrement']) && $isMySQL) {
@@ -669,11 +663,11 @@ HELP
      * Get SQL type string for a column.
      *
      * @param array<string, mixed> $columnInfo Column information
-     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform Database platform
+     * @param AbstractPlatform $platform Database platform
      *
      * @return string SQL type declaration
      */
-    private function getColumnSQLType(array $columnInfo, \Doctrine\DBAL\Platforms\AbstractPlatform $platform): string
+    private function getColumnSQLType(array $columnInfo, AbstractPlatform $platform): string
     {
         $type    = $columnInfo['type'];
         $options = $columnInfo['options'];
@@ -684,15 +678,15 @@ HELP
         try {
             $doctrineType = null;
             /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-            if (method_exists(\Doctrine\DBAL\Types\Type::class, 'getTypeRegistry')) {
-                $typeRegistry = \Doctrine\DBAL\Types\Type::getTypeRegistry();
+            if (method_exists(Type::class, 'getTypeRegistry')) {
+                $typeRegistry = Type::getTypeRegistry();
                 $doctrineType = $typeRegistry->get($type);
-            } elseif (method_exists(\Doctrine\DBAL\Types\Type::class, 'getType')) {
+            } elseif (method_exists(Type::class, 'getType')) {
                 // DBAL 2.x method
-                $doctrineType = \Doctrine\DBAL\Types\Type::getType($type);
+                $doctrineType = Type::getType($type);
             }
 
-            if ($doctrineType instanceof \Doctrine\DBAL\Types\Type) {
+            if ($doctrineType instanceof Type) {
                 $column = [];
                 if ($length !== null) {
                     $column['length'] = $length;
@@ -735,16 +729,16 @@ HELP
      *
      * @param EntityManagerInterface $entityManager The entity manager
      * @param SymfonyStyle $io The Symfony style output
-     * @param \Doctrine\DBAL\Schema\Table $table The table schema
+     * @param Table $table The table schema
      */
-    private function addMissingIndexes(EntityManagerInterface $entityManager, SymfonyStyle $io, \Doctrine\DBAL\Schema\Table $table): void
+    private function addMissingIndexes(EntityManagerInterface $entityManager, SymfonyStyle $io, Table $table): void
     {
         $connection = $entityManager->getConnection();
         $platform   = $connection->getDatabasePlatform();
         $this->getSchemaManager($connection);
 
         // Get expected indexes from entity metadata
-        $metadata        = $entityManager->getMetadataFactory()->getMetadataFor(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+        $metadata        = $entityManager->getMetadataFactory()->getMetadataFor(RouteDataRecord::class);
         $expectedIndexes = [];
 
         // Get indexes from table metadata
@@ -758,8 +752,8 @@ HELP
         }
 
         try {
-            $reflection = new ReflectionClass(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
-            $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\Index::class);
+            $reflection = new ReflectionClass(RouteDataRecord::class);
+            $attributes = $reflection->getAttributes(Index::class);
             foreach ($attributes as $attribute) {
                 $index     = $attribute->newInstance();
                 $indexName = $index->name ?? null;
@@ -794,8 +788,8 @@ HELP
             }
         }
         try {
-            $reflection = new ReflectionClass(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
-            $attributes = $reflection->getAttributes(\Doctrine\ORM\Mapping\UniqueConstraint::class);
+            $reflection = new ReflectionClass(RouteDataRecord::class);
+            $attributes = $reflection->getAttributes(UniqueConstraint::class);
             foreach ($attributes as $attribute) {
                 $constraint     = $attribute->newInstance();
                 $constraintName = $constraint->name ?? null;
@@ -813,7 +807,7 @@ HELP
 
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
-            $existingIndexes[strtolower($index->getName())] = $index;
+            $existingIndexes[strtolower(DbalSchemaNameHelper::getLogicalName($index))] = $index;
         }
 
         $indexesToAdd = [];

@@ -9,6 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\UX\TwigComponent\ComponentInterface;
 
 use function dirname;
 
@@ -38,7 +39,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $loader->load('services.yaml');
 
         // Optional: Symfony UX Twig Component (dashboard uses {{ component() }} when available; else includes).
-        if (interface_exists(\Symfony\UX\TwigComponent\ComponentInterface::class)) {
+        if (interface_exists(ComponentInterface::class)) {
             $loader->load('services_twig_component.yaml');
         }
 
@@ -102,6 +103,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $notificationsConfig = $config['notifications'] ?? [];
         $notificationsPath   = Configuration::ALIAS . '.notifications';
         $container->setParameter($notificationsPath . '.enabled', $notificationsConfig['enabled'] ?? false);
+        $container->setParameter($notificationsPath . '.http_timeout', $notificationsConfig['http_timeout'] ?? 10.0);
 
         $emailConfig = $notificationsConfig['email'] ?? [];
         $container->setParameter($notificationsPath . '.email.enabled', $emailConfig['enabled'] ?? false);
