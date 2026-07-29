@@ -10,7 +10,6 @@ use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Schema\Column;
 use Exception;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
-use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
 use Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordsClearedEvent;
@@ -26,6 +25,7 @@ use Nowo\PerformanceBundle\Form\PurgeAccessRecordsType;
 use Nowo\PerformanceBundle\Form\RecordFiltersType;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Form\StatisticsEnvFilterType;
+use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
 use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
@@ -1585,7 +1585,7 @@ class PerformanceController extends AbstractController
                     $table           = $schemaManager->introspectTable($recordsTableName);
                     $existingColumns = [];
                     foreach ($table->getColumns() as $column) {
-                        $columnName                               = $column instanceof Column
+                        $columnName = $column instanceof Column
                             ? DbalSchemaNameHelper::getLogicalName($column)
                             : '';
                         $existingColumns[strtolower($columnName)] = true;
