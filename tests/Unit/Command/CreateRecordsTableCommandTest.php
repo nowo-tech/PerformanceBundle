@@ -7,9 +7,12 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ObjectManager;
 use Nowo\PerformanceBundle\Command\CreateRecordsTableCommand;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -90,13 +93,13 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     public function testExecuteWhenTableExistsWithoutOptions(): void
     {
-        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata = $this->createMock(ClassMetadata::class);
         $metadata->method('getTableName')->willReturn('routes_data_records');
         $metadata->table = ['name' => 'routes_data_records'];
 
         $this->metadataFactory
             ->method('getMetadataFor')
-            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->with(RouteDataRecord::class)
             ->willReturn($metadata);
         $this->schemaManager->method('tablesExist')->with(['routes_data_records'])->willReturn(true);
 
@@ -138,7 +141,7 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     public function testExecuteWhenRegistryReturnsNonEntityManagerReturnsFailure(): void
     {
-        $objectManager = $this->createMock(\Doctrine\Persistence\ObjectManager::class);
+        $objectManager = $this->createMock(ObjectManager::class);
         $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
         $this->registry->method('getManager')->with('default')->willReturn($objectManager);
         $this->schemaManager->method('tablesExist')->willReturn(false);
@@ -152,13 +155,13 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     public function testExecuteWithUpdateWhenTableDoesNotExistInSchemaManager(): void
     {
-        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata = $this->createMock(ClassMetadata::class);
         $metadata->method('getTableName')->willReturn('routes_data_records');
         $metadata->table = ['name' => 'routes_data_records'];
 
         $this->metadataFactory
             ->method('getMetadataFor')
-            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->with(RouteDataRecord::class)
             ->willReturn($metadata);
         $this->entityManager->method('getConnection')->willReturn($this->connection);
         $this->schemaManager->method('tablesExist')->with(['routes_data_records'])->willReturnOnConsecutiveCalls(true, false);
@@ -175,7 +178,7 @@ final class CreateRecordsTableCommandTest extends TestCase
     public function testExecuteWhenGetMetadataForThrowsReturnsFailure(): void
     {
         $this->metadataFactory->method('getMetadataFor')
-            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->with(RouteDataRecord::class)
             ->willThrowException(new RuntimeException('Record metadata error'));
 
         $tester = new CommandTester($this->command);
@@ -188,13 +191,13 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     public function testExecuteWhenSchemaToolFindsNoRouteDataRecordMetadataReturnsFailure(): void
     {
-        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata = $this->createMock(ClassMetadata::class);
         $metadata->method('getTableName')->willReturn('routes_data_records');
         $metadata->table = ['name' => 'routes_data_records'];
 
         $this->metadataFactory
             ->method('getMetadataFor')
-            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->with(RouteDataRecord::class)
             ->willReturn($metadata);
         $this->metadataFactory->method('getAllMetadata')->willReturn([]);
         $this->schemaManager->method('tablesExist')->with(['routes_data_records'])->willReturn(false);
@@ -210,13 +213,13 @@ final class CreateRecordsTableCommandTest extends TestCase
 
     public function testExecuteWhenTableExistsWithForceDropsTableThenFailsCreateWithoutMetadata(): void
     {
-        $metadata = $this->createMock(\Doctrine\ORM\Mapping\ClassMetadata::class);
+        $metadata = $this->createMock(ClassMetadata::class);
         $metadata->method('getTableName')->willReturn('routes_data_records');
         $metadata->table = ['name' => 'routes_data_records'];
 
         $this->metadataFactory
             ->method('getMetadataFor')
-            ->with(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class)
+            ->with(RouteDataRecord::class)
             ->willReturn($metadata);
         $this->metadataFactory->method('getAllMetadata')->willReturn([]);
         $this->entityManager->method('getConnection')->willReturn($this->connection);

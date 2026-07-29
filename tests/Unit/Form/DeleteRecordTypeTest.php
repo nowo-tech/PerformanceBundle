@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\DeleteRecordType;
 use Symfony\Component\Form\Test\TypeTestCase;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class DeleteRecordTypeTest extends TypeTestCase
 {
@@ -31,7 +32,7 @@ final class DeleteRecordTypeTest extends TypeTestCase
 
     public function testConfigureOptionsSetsDefaultsAndRequired(): void
     {
-        $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
+        $resolver = $this->createMock(OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
             ->with($this->callback(static fn (array $defaults): bool => isset($defaults['method']) && $defaults['method'] === 'POST'

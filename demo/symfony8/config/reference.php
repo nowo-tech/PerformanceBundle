@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 // This file is auto-generated and is for apps only. Bundles SHOULD NOT rely on its content.
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
@@ -1295,6 +1293,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     },
  *     notifications?: array{ // Performance alert notifications configuration
  *         enabled?: bool|Param, // Enable or disable performance notifications // Default: false
+ *         http_timeout?: float|Param, // HTTP timeout in seconds for Slack/Teams/generic webhook requests. Keep below PHP max_execution_time / FrankenPHP write timeout. // Default: 10.0
  *         email?: array{ // Email notification configuration
  *             enabled?: bool|Param, // Enable email notifications (requires symfony/mailer) // Default: false
  *             from?: scalar|Param|null, // Sender email address // Default: "noreply@example.com"

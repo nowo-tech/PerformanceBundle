@@ -40,18 +40,18 @@ help:
 # Build Docker images (without starting)
 build:
 	@echo "🔨 Building demo images..."
-	docker-compose build
+	$(COMPOSE) build
 	@echo "✅ Build complete!"
 
 # Build and start containers
 up:
 	@if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
-	docker-compose up -d
+	$(COMPOSE) up -d
 	@echo "Waiting for container to be ready..."
 	@sleep 5
 	@echo "Installing dependencies..."
-	@docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
-	@docker-compose exec -T php composer require symfony/ux-icons --no-interaction || echo "⚠️  ux-icons already installed or error occurred"
+	@$(COMPOSE) exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
+	@$(COMPOSE) exec -T php composer require symfony/ux-icons --no-interaction || echo "⚠️  ux-icons already installed or error occurred"
 	@echo "Creating database, schema and loading fixtures..."
 	@$(MAKE) setup
 	@PORT=$$(grep "^PORT=" .env 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
@@ -59,36 +59,36 @@ up:
 	echo "Demo started at: http://localhost:$$PORT"
 down:
 	@echo "🛑 Stopping containers..."
-	docker-compose down
+	$(COMPOSE) down
 	@echo "✅ Containers stopped!"
 
 # Restart containers (no down/up)
 restart: ensure-up
 	@echo "🔄 Restarting containers..."
-	docker-compose restart
+	$(COMPOSE) restart
 	@echo "✅ Containers restarted!"
 
 # Rebuild image without cache
 build:
 	@echo "🔨 Rebuilding image (no cache)..."
-	docker-compose build --no-cache
+	$(COMPOSE) build --no-cache
 	@echo "✅ Image rebuilt!"
 
 # Ensure container is running (start if not). Used by install, shell, setup, update-bundle, etc.
 ensure-up:
-	@if ! docker-compose exec -T php true 2>/dev/null; then \
+	@if ! $(COMPOSE) exec -T php true 2>/dev/null; then \
 		echo "Starting container..."; \
-		docker-compose up -d; \
+		$(COMPOSE) up -d; \
 		sleep 5; \
 	fi
 
 # Open shell in PHP container
 shell: ensure-up
-	docker-compose exec php sh
+	$(COMPOSE) exec php sh
 
 # Ensure containers are running (start if not)
 ensure-up:
-	@if ! docker-compose exec -T php true 2>/dev/null; then \
+	@if ! $(COMPOSE) exec -T php true 2>/dev/null; then \
 		echo "Containers not running. Run 'make up' first."; \
 		exit 1; \
 	fi
@@ -96,14 +96,14 @@ ensure-up:
 # Update bundle from path repo and clear cache
 update-bundle: ensure-up
 	@echo "🔄 Updating nowo-tech/performance-bundle..."
-	docker-compose exec -T php composer update nowo-tech/performance-bundle --no-interaction
-	docker-compose exec -T php php bin/console cache:clear
+	$(COMPOSE) exec -T php composer update nowo-tech/performance-bundle --no-interaction
+	$(COMPOSE) exec -T php php bin/console cache:clear
 	@echo "✅ Bundle updated. Reload the page in the browser."
 
 # Install dependencies
 install: ensure-up
 	@echo "📦 Installing dependencies..."
-	docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
+	$(COMPOSE) exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@echo "✅ Dependencies installed!"
 
 # Complete setup
@@ -112,7 +112,7 @@ setup: ensure-up
 	@echo "Waiting for MySQL to be ready..."
 	@sleep 3
 	@echo "Installing dependencies..."
-	-docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction --ignore-platform-reqs 2>/dev/null || docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
+	-docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction --ignore-platform-reqs 2>/dev/null || $(COMPOSE) exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@echo "Creating database..."
 	-docker-compose exec -T php php bin/console doctrine:database:create --if-not-exists --no-interaction
 	@echo "Creating schema..."
@@ -150,35 +150,35 @@ db-fixtures:
 
 db-view:
 	@echo "📋 Viewing performance metrics..."
-	docker-compose exec -T php php bin/console dbal:run-sql "SELECT * FROM routes_data ORDER BY request_time DESC LIMIT 10" 2>/dev/null || echo "No metrics yet or connection error"
+	$(COMPOSE) exec -T php php bin/console dbal:run-sql "SELECT * FROM routes_data ORDER BY request_time DESC LIMIT 10" 2>/dev/null || echo "No metrics yet or connection error"
 
 # Performance Bundle: sync DB structure with entity metadata (add missing, alter differing columns)
 performance-sync:
 	@echo "🔄 Syncing Performance Bundle schema (routes_data + routes_data_records)..."
-	docker-compose exec -T php php bin/console nowo:performance:sync-schema --no-interaction
+	$(COMPOSE) exec -T php php bin/console nowo:performance:sync-schema --no-interaction
 	@echo "✅ Schema sync complete!"
 
 # Performance Bundle: sync and drop columns no longer in entity
 performance-sync-drop:
 	@echo "🔄 Syncing Performance Bundle schema (with --drop-obsolete)..."
-	docker-compose exec -T php php bin/console nowo:performance:sync-schema --drop-obsolete --no-interaction
+	$(COMPOSE) exec -T php php bin/console nowo:performance:sync-schema --drop-obsolete --no-interaction
 	@echo "✅ Schema sync complete!"
 
 # Show logs
 logs:
-	docker-compose logs -f
+	$(COMPOSE) logs -f
 
 # Update bundle from path repo
 update-bundle: ensure-up
-	docker-compose exec -T php composer update nowo-tech/performance-bundle --no-interaction
-	docker-compose exec -T php php bin/console cache:clear
+	$(COMPOSE) exec -T php composer update nowo-tech/performance-bundle --no-interaction
+	$(COMPOSE) exec -T php php bin/console cache:clear
 	@echo "Bundle updated."
 
 test: ensure-up
-	docker-compose exec -T php composer test 2>/dev/null || docker-compose exec -T php php bin/console list
+	$(COMPOSE) exec -T php composer test 2>/dev/null || $(COMPOSE) exec -T php php bin/console list
 
 test-coverage: ensure-up
-	docker-compose exec -T php composer test-coverage 2>/dev/null || docker-compose exec -T php composer test
+	$(COMPOSE) exec -T php composer test-coverage 2>/dev/null || $(COMPOSE) exec -T php composer test
 
 # Clean vendor and cache
 clean:
@@ -189,6 +189,11 @@ clean:
 	@echo "✅ Cleaned!"
 
 # REQ-MAKE-008: update-deps
-COMPOSE := docker-compose
+# Prefer Compose V2 plugin (GitHub Actions / modern Docker Desktop); fall back to docker-compose V1 (REQ-MAKE-010).
+# Absolute docker path: this demo has a ./docker/ dir and an empty PATH segment makes GNU make
+# execvp("docker") hit the directory → "Permission denied" (Error 127).
+DOCKER_BIN := $(shell command -v docker 2>/dev/null || echo /usr/bin/docker)
+COMPOSE := $(shell $(DOCKER_BIN) compose version >/dev/null 2>&1 && echo "$(DOCKER_BIN) compose" || echo "docker-compose")
 SERVICE_PHP := php
-include $(abspath $(CURDIR)/../../../.scripts/Makefile.demo-update-deps.mk)
+# Optional: monorepo helper absent on standalone GitHub Actions checkout (REQ-MAKE-009).
+-include $(abspath $(CURDIR)/../../../.scripts/Makefile.demo-update-deps.mk)

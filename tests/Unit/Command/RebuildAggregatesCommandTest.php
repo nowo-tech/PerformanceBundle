@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Nowo\PerformanceBundle\Command\RebuildAggregatesCommand;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
@@ -113,7 +114,7 @@ final class RebuildAggregatesCommandTest extends TestCase
         $record->setRouteData($managed);
         $record->setAccessedAt(new DateTimeImmutable('2024-01-15 12:00:00'));
 
-        $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
+        $repo = $this->getMockBuilder(EntityRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
         $repo->method('find')->with(1)->willReturn($managed);
@@ -250,7 +251,7 @@ final class RebuildAggregatesCommandTest extends TestCase
         $record3->setRouteData($managed3);
         $record3->setAccessedAt(new DateTimeImmutable('2024-01-01 12:00:00'));
 
-        $repo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $repo = $this->createMock(EntityRepository::class);
         $repo->method('find')
             ->willReturnCallback(static fn (int $id): ?RouteData => match ($id) {
                 1       => $managed1,
@@ -293,7 +294,7 @@ final class RebuildAggregatesCommandTest extends TestCase
             ->method('findBy')
             ->willReturn([$route]);
 
-        $repo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $repo = $this->createMock(EntityRepository::class);
         $repo->method('find')->with(99)->willReturn(null);
 
         $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
@@ -320,7 +321,7 @@ final class RebuildAggregatesCommandTest extends TestCase
         $managed->setName('empty')->setEnv('dev');
         $idRef->setValue($managed, 1);
 
-        $repo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $repo = $this->createMock(EntityRepository::class);
         $repo->method('find')->with(1)->willReturn($managed);
 
         $this->recordRepository

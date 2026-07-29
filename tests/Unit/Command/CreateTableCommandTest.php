@@ -11,7 +11,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ObjectManager;
 use Nowo\PerformanceBundle\Command\CreateTableCommand;
+use Nowo\PerformanceBundle\Entity\RouteData;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -104,7 +106,7 @@ final class CreateTableCommandTest extends TestCase
         $metadata        = $this->createMock(ClassMetadata::class);
         $metadata->table = ['name' => 'routes_data'];
 
-        $this->metadataFactory->method('getMetadataFor')->with(\Nowo\PerformanceBundle\Entity\RouteData::class)->willReturn($metadata);
+        $this->metadataFactory->method('getMetadataFor')->with(RouteData::class)->willReturn($metadata);
         $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturn(true);
 
         $tester = new CommandTester($this->command);
@@ -144,7 +146,7 @@ final class CreateTableCommandTest extends TestCase
 
     public function testExecuteWhenRegistryReturnsNonEntityManagerReturnsFailure(): void
     {
-        $objectManager = $this->createMock(\Doctrine\Persistence\ObjectManager::class);
+        $objectManager = $this->createMock(ObjectManager::class);
         $this->registry->method('getConnection')->with('default')->willReturn($this->connection);
         $this->registry->method('getManager')->with('default')->willReturn($objectManager);
         $this->schemaManager->method('tablesExist')->willReturn(false);
@@ -161,7 +163,7 @@ final class CreateTableCommandTest extends TestCase
         $metadata        = $this->createMock(ClassMetadata::class);
         $metadata->table = ['name' => 'routes_data'];
 
-        $this->metadataFactory->method('getMetadataFor')->with(\Nowo\PerformanceBundle\Entity\RouteData::class)->willReturn($metadata);
+        $this->metadataFactory->method('getMetadataFor')->with(RouteData::class)->willReturn($metadata);
         $this->metadataFactory->method('getAllMetadata')->willReturn([]);
         $this->entityManager->method('getMetadataFactory')->willReturn($this->metadataFactory);
         $this->entityManager->method('getConnection')->willReturn($this->connection);
@@ -180,7 +182,7 @@ final class CreateTableCommandTest extends TestCase
         $metadata        = $this->createMock(ClassMetadata::class);
         $metadata->table = ['name' => 'routes_data'];
 
-        $this->metadataFactory->method('getMetadataFor')->with(\Nowo\PerformanceBundle\Entity\RouteData::class)->willReturn($metadata);
+        $this->metadataFactory->method('getMetadataFor')->with(RouteData::class)->willReturn($metadata);
         $this->entityManager->method('getConnection')->willReturn($this->connection);
         $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturnOnConsecutiveCalls(true, false);
 
@@ -196,7 +198,7 @@ final class CreateTableCommandTest extends TestCase
     public function testExecuteWhenGetMetadataForThrowsReturnsFailure(): void
     {
         $this->metadataFactory->method('getMetadataFor')
-            ->with(\Nowo\PerformanceBundle\Entity\RouteData::class)
+            ->with(RouteData::class)
             ->willThrowException(new RuntimeException('Metadata mapping error'));
 
         $tester = new CommandTester($this->command);
@@ -212,7 +214,7 @@ final class CreateTableCommandTest extends TestCase
         $metadata        = $this->createMock(ClassMetadata::class);
         $metadata->table = ['name' => 'routes_data'];
 
-        $this->metadataFactory->method('getMetadataFor')->with(\Nowo\PerformanceBundle\Entity\RouteData::class)->willReturn($metadata);
+        $this->metadataFactory->method('getMetadataFor')->with(RouteData::class)->willReturn($metadata);
         $this->metadataFactory->method('getAllMetadata')->willReturn([]);
         $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturn(false);
 
@@ -231,7 +233,7 @@ final class CreateTableCommandTest extends TestCase
         // @phpstan-ignore assign.propertyType
         $metadata->table = [];
 
-        $this->metadataFactory->method('getMetadataFor')->with(\Nowo\PerformanceBundle\Entity\RouteData::class)->willReturn($metadata);
+        $this->metadataFactory->method('getMetadataFor')->with(RouteData::class)->willReturn($metadata);
         $this->schemaManager->method('tablesExist')->with(['routes_data'])->willReturn(true);
 
         $tester = new CommandTester($this->command);

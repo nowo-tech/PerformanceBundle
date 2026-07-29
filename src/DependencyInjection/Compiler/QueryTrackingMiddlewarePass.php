@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DependencyInjection\Compiler;
 
+use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Compiler pass to register QueryTrackingMiddleware with Doctrine DBAL.
@@ -54,7 +56,8 @@ class QueryTrackingMiddlewarePass implements CompilerPassInterface
         $middlewareId = 'nowo_performance.dbal.query_tracking_middleware';
         if (!$container->hasDefinition($middlewareId)) {
             $container->register($middlewareId, QueryTrackingMiddleware::class)
-                ->setPublic(false);
+                ->setPublic(false)
+                ->setArgument('$counters', new Reference(QueryTrackingCounters::class));
         }
 
         // Note: The middleware is applied via QueryTrackingConnectionSubscriber

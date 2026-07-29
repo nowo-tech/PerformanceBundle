@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Entity;
 
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
@@ -124,7 +126,7 @@ class RouteData implements Stringable
     {
         $this->createdAt      = new DateTimeImmutable();
         $this->lastAccessedAt = new DateTimeImmutable();
-        $this->accessRecords  = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->accessRecords  = new ArrayCollection();
     }
 
     /**
@@ -439,17 +441,17 @@ class RouteData implements Stringable
     /**
      * Access records for temporal analysis.
      *
-     * @var \Doctrine\Common\Collections\Collection<int, RouteDataRecord>
+     * @var Collection<int, RouteDataRecord>
      */
     #[ORM\OneToMany(targetEntity: RouteDataRecord::class, mappedBy: 'routeData', cascade: ['remove'])]
-    private \Doctrine\Common\Collections\Collection $accessRecords;
+    private Collection $accessRecords;
 
     /**
      * Get access records.
      *
-     * @return \Doctrine\Common\Collections\Collection<int, RouteDataRecord> Access records
+     * @return Collection<int, RouteDataRecord> Access records
      */
-    public function getAccessRecords(): \Doctrine\Common\Collections\Collection
+    public function getAccessRecords(): Collection
     {
         return $this->accessRecords;
     }

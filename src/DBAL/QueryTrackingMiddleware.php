@@ -17,113 +17,44 @@ use PDO;
 /**
  * DBAL Middleware for tracking database queries.
  *
- * This middleware intercepts all database queries and tracks their count and execution time.
- * Compatible with DBAL 3.x (which removed SQLLogger).
+ * Counters live on {@see QueryTrackingCounters} (shared DI service) so FrankenPHP
+ * workers do not leak mutable static state across requests.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
 class QueryTrackingMiddleware implements Middleware
 {
-    /**
-     * Query count tracker.
-     */
-    private static int $queryCount = 0;
+    public function __construct(
+        private readonly QueryTrackingCounters $counters = new QueryTrackingCounters(),
+    ) {
+    }
 
-    /**
-     * Total query execution time in seconds.
-     */
-    private static float $totalQueryTime = 0.0;
-
-    /**
-     * Start times for queries being tracked.
-     *
-     * @var array<string, float>
-     */
-    private static array $queryStartTimes = [];
-
-    /**
-     * Monotonic counter for cheap per-query identifiers.
-     */
-    private static int $nextQueryId = 0;
+    public function getCounters(): QueryTrackingCounters
+    {
+        return $this->counters;
+    }
 
     public function wrap(Driver $driver): Driver
     {
-        return new class($driver) extends AbstractDriverMiddleware {
+        $counters = $this->counters;
+
+        return new class($driver, $counters) extends AbstractDriverMiddleware {
+            public function __construct(
+                Driver $driver,
+                private readonly QueryTrackingCounters $counters,
+            ) {
+                parent::__construct($driver);
+            }
+
             public function connect(array $params): Connection
             {
                 return new QueryTrackingConnection(
                     parent::connect($params),
+                    $this->counters,
                 );
             }
         };
-    }
-
-    /**
-     * Get the total number of queries executed.
-     *
-     * @return int The query count
-     */
-    public static function getQueryCount(): int
-    {
-        return self::$queryCount;
-    }
-
-    /**
-     * Get the total execution time for all queries.
-     *
-     * @return float The total query time in seconds
-     */
-    public static function getTotalQueryTime(): float
-    {
-        return self::$totalQueryTime;
-    }
-
-    /**
-     * Reset all query tracking metrics.
-     */
-    public static function reset(): void
-    {
-        self::$queryCount      = 0;
-        self::$totalQueryTime  = 0.0;
-        self::$queryStartTimes = [];
-        self::$nextQueryId     = 0;
-    }
-
-    /**
-     * Generate a lightweight unique query identifier.
-     *
-     * @param object $connection The connection instance executing the query
-     */
-    public static function nextQueryId(object $connection): string
-    {
-        return spl_object_hash($connection) . '_' . (++self::$nextQueryId);
-    }
-
-    /**
-     * Record the start of a query execution.
-     *
-     * @param string $queryId Unique identifier for the query
-     */
-    public static function startQuery(string $queryId): void
-    {
-        self::$queryStartTimes[$queryId] = microtime(true);
-    }
-
-    /**
-     * Record the end of a query execution.
-     *
-     * @param string $queryId Unique identifier for the query
-     */
-    public static function stopQuery(string $queryId): void
-    {
-        if (!isset(self::$queryStartTimes[$queryId])) {
-            return;
-        }
-
-        ++self::$queryCount;
-        self::$totalQueryTime += microtime(true) - self::$queryStartTimes[$queryId];
-        unset(self::$queryStartTimes[$queryId]);
     }
 }
 
@@ -134,19 +65,24 @@ class QueryTrackingConnection implements Connection
 {
     public function __construct(
         private readonly Connection $connection,
+        private readonly QueryTrackingCounters $counters,
     ) {
     }
 
     public function prepare(string $sql): Statement
     {
-        $queryId = QueryTrackingMiddleware::nextQueryId($this);
-        QueryTrackingMiddleware::startQuery($queryId);
+        $queryId = $this->counters->nextQueryId($this);
+        $this->counters->startQuery($queryId);
 
         $statement = $this->connection->prepare($sql);
+        $counters  = $this->counters;
 
-        return new class($statement, $queryId) extends AbstractStatementMiddleware {
-            public function __construct(Statement $statement, private readonly string $queryId)
-            {
+        return new class($statement, $queryId, $counters) extends AbstractStatementMiddleware {
+            public function __construct(
+                Statement $statement,
+                private readonly string $queryId,
+                private readonly QueryTrackingCounters $counters,
+            ) {
                 parent::__construct($statement);
             }
 
@@ -154,11 +90,11 @@ class QueryTrackingConnection implements Connection
             {
                 try {
                     $result = parent::execute();
-                    QueryTrackingMiddleware::stopQuery($this->queryId);
+                    $this->counters->stopQuery($this->queryId);
 
                     return $result;
                 } catch (Exception $e) {
-                    QueryTrackingMiddleware::stopQuery($this->queryId);
+                    $this->counters->stopQuery($this->queryId);
                     throw $e;
                 }
             }
@@ -167,32 +103,32 @@ class QueryTrackingConnection implements Connection
 
     public function query(string $sql): Result
     {
-        $queryId = QueryTrackingMiddleware::nextQueryId($this);
-        QueryTrackingMiddleware::startQuery($queryId);
+        $queryId = $this->counters->nextQueryId($this);
+        $this->counters->startQuery($queryId);
 
         try {
             $result = $this->connection->query($sql);
-            QueryTrackingMiddleware::stopQuery($queryId);
+            $this->counters->stopQuery($queryId);
 
             return $result;
         } catch (Exception $e) {
-            QueryTrackingMiddleware::stopQuery($queryId);
+            $this->counters->stopQuery($queryId);
             throw $e;
         }
     }
 
     public function exec(string $sql): int
     {
-        $queryId = QueryTrackingMiddleware::nextQueryId($this);
-        QueryTrackingMiddleware::startQuery($queryId);
+        $queryId = $this->counters->nextQueryId($this);
+        $this->counters->startQuery($queryId);
 
         try {
             $result = $this->connection->exec($sql);
-            QueryTrackingMiddleware::stopQuery($queryId);
+            $this->counters->stopQuery($queryId);
 
             return (int) $result;
         } catch (Exception $e) {
-            QueryTrackingMiddleware::stopQuery($queryId);
+            $this->counters->stopQuery($queryId);
             throw $e;
         }
     }

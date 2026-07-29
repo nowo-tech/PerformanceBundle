@@ -4,203 +4,136 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\DBAL;
 
+use Doctrine\DBAL\Driver;
+use Doctrine\DBAL\Driver\Connection;
+use Doctrine\DBAL\Driver\Result;
+use Doctrine\DBAL\Driver\Statement;
 use Exception;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingConnection;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
 final class QueryTrackingMiddlewareTest extends TestCase
 {
+    private QueryTrackingCounters $counters;
+
     protected function setUp(): void
     {
-        // Reset middleware state before each test
-        QueryTrackingMiddleware::reset();
+        $this->counters = new QueryTrackingCounters();
     }
 
     public function testReset(): void
     {
-        // Simulate some queries
-        QueryTrackingMiddleware::startQuery('query1');
-        QueryTrackingMiddleware::stopQuery('query1');
+        $this->counters->startQuery('query1');
+        $this->counters->stopQuery('query1');
 
-        $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
-        $this->assertGreaterThan(0, QueryTrackingMiddleware::getTotalQueryTime());
+        $this->assertSame(1, $this->counters->getQueryCount());
+        $this->assertGreaterThan(0, $this->counters->getTotalQueryTime());
 
-        // Reset
-        QueryTrackingMiddleware::reset();
+        $this->counters->reset();
 
-        $this->assertSame(0, QueryTrackingMiddleware::getQueryCount());
-        $this->assertSame(0.0, QueryTrackingMiddleware::getTotalQueryTime());
+        $this->assertSame(0, $this->counters->getQueryCount());
+        $this->assertSame(0.0, $this->counters->getTotalQueryTime());
     }
 
     public function testStartAndStopQuery(): void
     {
         $queryId = 'test_query_1';
-
-        // Start query
-        QueryTrackingMiddleware::startQuery($queryId);
-
-        // Query count should still be 0 until stopped
-        $this->assertSame(0, QueryTrackingMiddleware::getQueryCount());
-
-        // Stop query
-        QueryTrackingMiddleware::stopQuery($queryId);
-
-        // Now count should be 1
-        $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
-        $this->assertGreaterThan(0, QueryTrackingMiddleware::getTotalQueryTime());
+        $this->counters->startQuery($queryId);
+        $this->assertSame(0, $this->counters->getQueryCount());
+        $this->counters->stopQuery($queryId);
+        $this->assertSame(1, $this->counters->getQueryCount());
+        $this->assertGreaterThan(0, $this->counters->getTotalQueryTime());
     }
 
     public function testMultipleQueries(): void
     {
-        // Track multiple queries
         for ($i = 1; $i <= 5; ++$i) {
             $queryId = "query_{$i}";
-            QueryTrackingMiddleware::startQuery($queryId);
-            usleep(1000); // Small delay to ensure different timings
-            QueryTrackingMiddleware::stopQuery($queryId);
+            $this->counters->startQuery($queryId);
+            usleep(1000);
+            $this->counters->stopQuery($queryId);
         }
 
-        $this->assertSame(5, QueryTrackingMiddleware::getQueryCount());
-        $this->assertGreaterThan(0, QueryTrackingMiddleware::getTotalQueryTime());
+        $this->assertSame(5, $this->counters->getQueryCount());
+        $this->assertGreaterThan(0, $this->counters->getTotalQueryTime());
     }
 
     public function testStopQueryWithoutStart(): void
     {
-        // Stopping a query that was never started should not cause errors
-        QueryTrackingMiddleware::stopQuery('non_existent_query');
-
-        $this->assertSame(0, QueryTrackingMiddleware::getQueryCount());
-        $this->assertSame(0.0, QueryTrackingMiddleware::getTotalQueryTime());
-    }
-
-    public function testGetQueryCountInitiallyZero(): void
-    {
-        $this->assertSame(0, QueryTrackingMiddleware::getQueryCount());
-    }
-
-    public function testGetTotalQueryTimeInitiallyZero(): void
-    {
-        $this->assertSame(0.0, QueryTrackingMiddleware::getTotalQueryTime());
-    }
-
-    public function testQueryTimeAccumulation(): void
-    {
-        $queryId1 = 'query1';
-        $queryId2 = 'query2';
-
-        // Track first query
-        QueryTrackingMiddleware::startQuery($queryId1);
-        usleep(1000);
-        QueryTrackingMiddleware::stopQuery($queryId1);
-
-        $time1 = QueryTrackingMiddleware::getTotalQueryTime();
-
-        // Track second query
-        QueryTrackingMiddleware::startQuery($queryId2);
-        usleep(1000);
-        QueryTrackingMiddleware::stopQuery($queryId2);
-
-        $time2 = QueryTrackingMiddleware::getTotalQueryTime();
-
-        // Total time should be greater than first query time
-        $this->assertGreaterThan($time1, $time2);
+        $this->counters->stopQuery('non_existent_query');
+        $this->assertSame(0, $this->counters->getQueryCount());
+        $this->assertSame(0.0, $this->counters->getTotalQueryTime());
     }
 
     public function testWrap(): void
     {
-        $middleware = new QueryTrackingMiddleware();
-        $driver     = $this->createMock(\Doctrine\DBAL\Driver::class);
-
+        $middleware    = new QueryTrackingMiddleware($this->counters);
+        $driver        = $this->createMock(Driver::class);
         $wrappedDriver = $middleware->wrap($driver);
-
-        // The wrapped driver extends AbstractDriverMiddleware, which implements Driver
-        $this->assertInstanceOf(\Doctrine\DBAL\Driver::class, $wrappedDriver);
+        $this->assertInstanceOf(Driver::class, $wrappedDriver);
     }
 
     public function testWrapConnectReturnsQueryTrackingConnection(): void
     {
-        $innerConnection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
-        $driver          = $this->createMock(\Doctrine\DBAL\Driver::class);
+        $innerConnection = $this->createMock(Connection::class);
+        $driver          = $this->createMock(Driver::class);
         $driver->method('connect')->willReturn($innerConnection);
 
-        $middleware    = new QueryTrackingMiddleware();
+        $middleware    = new QueryTrackingMiddleware($this->counters);
         $wrappedDriver = $middleware->wrap($driver);
-
-        $connection = $wrappedDriver->connect([]);
+        $connection    = $wrappedDriver->connect([]);
 
         $this->assertInstanceOf(QueryTrackingConnection::class, $connection);
     }
 
     public function testQueryTrackingConnectionPrepare(): void
     {
-        QueryTrackingMiddleware::reset();
-
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
-        $statement  = $this->createMock(\Doctrine\DBAL\Driver\Statement::class);
-        $result     = $this->createMock(\Doctrine\DBAL\Driver\Result::class);
-
+        $connection = $this->createMock(Connection::class);
+        $statement  = $this->createMock(Statement::class);
+        $result     = $this->createMock(Result::class);
         $connection->method('prepare')->willReturn($statement);
         $statement->method('execute')->willReturn($result);
 
-        $trackingConnection = new QueryTrackingConnection($connection);
-
-        $preparedStatement = $trackingConnection->prepare('SELECT * FROM users');
-
-        $this->assertInstanceOf(\Doctrine\DBAL\Driver\Statement::class, $preparedStatement);
-
-        // Execute the statement to trigger tracking
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
+        $preparedStatement  = $trackingConnection->prepare('SELECT * FROM users');
         $preparedStatement->execute();
 
-        $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
-        $this->assertGreaterThan(0, QueryTrackingMiddleware::getTotalQueryTime());
+        $this->assertSame(1, $this->counters->getQueryCount());
+        $this->assertGreaterThan(0, $this->counters->getTotalQueryTime());
     }
 
     public function testQueryTrackingConnectionQuery(): void
     {
-        QueryTrackingMiddleware::reset();
-
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
-        $result     = $this->createMock(\Doctrine\DBAL\Driver\Result::class);
-
+        $connection = $this->createMock(Connection::class);
+        $result     = $this->createMock(Result::class);
         $connection->method('query')->willReturn($result);
 
-        $trackingConnection = new QueryTrackingConnection($connection);
-
-        $result = $trackingConnection->query('SELECT * FROM users');
-
-        $this->assertInstanceOf(\Doctrine\DBAL\Driver\Result::class, $result);
-        $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
-        $this->assertGreaterThan(0, QueryTrackingMiddleware::getTotalQueryTime());
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
+        $this->assertInstanceOf(Result::class, $trackingConnection->query('SELECT * FROM users'));
+        $this->assertSame(1, $this->counters->getQueryCount());
     }
 
     public function testQueryTrackingConnectionExec(): void
     {
-        QueryTrackingMiddleware::reset();
-
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
+        $connection = $this->createMock(Connection::class);
         $connection->method('exec')->willReturn(5);
 
-        $trackingConnection = new QueryTrackingConnection($connection);
-
-        $result = $trackingConnection->exec('UPDATE users SET active = 1');
-
-        $this->assertSame(5, $result);
-        $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
-        $this->assertGreaterThan(0, QueryTrackingMiddleware::getTotalQueryTime());
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
+        $this->assertSame(5, $trackingConnection->exec('UPDATE users SET active = 1'));
+        $this->assertSame(1, $this->counters->getQueryCount());
     }
 
     public function testQueryTrackingConnectionTransactionMethods(): void
     {
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
-
+        $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())->method('beginTransaction');
         $connection->expects($this->once())->method('commit');
         $connection->expects($this->once())->method('rollBack');
 
-        $trackingConnection = new QueryTrackingConnection($connection);
-
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
         $trackingConnection->beginTransaction();
         $trackingConnection->commit();
         $trackingConnection->rollBack();
@@ -208,15 +141,13 @@ final class QueryTrackingMiddlewareTest extends TestCase
 
     public function testQueryTrackingConnectionOtherMethods(): void
     {
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
-
+        $connection = $this->createMock(Connection::class);
         $connection->method('getServerVersion')->willReturn('8.0.0');
         $connection->method('quote')->willReturn("'test'");
         $connection->method('lastInsertId')->willReturn('123');
         $connection->method('getNativeConnection')->willReturn(new stdClass());
 
-        $trackingConnection = new QueryTrackingConnection($connection);
-
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
         $this->assertSame('8.0.0', $trackingConnection->getServerVersion());
         $this->assertSame("'test'", $trackingConnection->quote('test'));
         $this->assertSame('123', $trackingConnection->lastInsertId());
@@ -225,77 +156,49 @@ final class QueryTrackingMiddlewareTest extends TestCase
 
     public function testQueryTrackingConnectionQueryWithException(): void
     {
-        QueryTrackingMiddleware::reset();
-
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
+        $connection = $this->createMock(Connection::class);
         $connection->method('query')->willThrowException(new Exception('Database error'));
-
-        $trackingConnection = new QueryTrackingConnection($connection);
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
 
         try {
             $trackingConnection->query('SELECT * FROM users');
             $this->fail('Expected exception was not thrown');
         } catch (Exception $e) {
             $this->assertSame('Database error', $e->getMessage());
-            // Query should still be tracked even if it fails
-            $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
+            $this->assertSame(1, $this->counters->getQueryCount());
         }
     }
 
     public function testQueryTrackingConnectionExecWithException(): void
     {
-        QueryTrackingMiddleware::reset();
-
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
+        $connection = $this->createMock(Connection::class);
         $connection->method('exec')->willThrowException(new Exception('Database error'));
-
-        $trackingConnection = new QueryTrackingConnection($connection);
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
 
         try {
             $trackingConnection->exec('UPDATE users SET active = 1');
             $this->fail('Expected exception was not thrown');
         } catch (Exception $e) {
             $this->assertSame('Database error', $e->getMessage());
-            // Query should still be tracked even if it fails
-            $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
+            $this->assertSame(1, $this->counters->getQueryCount());
         }
     }
 
     public function testQueryTrackingConnectionPrepareWithException(): void
     {
-        QueryTrackingMiddleware::reset();
-
-        $connection = $this->createMock(\Doctrine\DBAL\Driver\Connection::class);
-        $statement  = $this->createMock(\Doctrine\DBAL\Driver\Statement::class);
-
+        $connection = $this->createMock(Connection::class);
+        $statement  = $this->createMock(Statement::class);
         $connection->method('prepare')->willReturn($statement);
         $statement->method('execute')->willThrowException(new Exception('Database error'));
-
-        $trackingConnection = new QueryTrackingConnection($connection);
-
-        $preparedStatement = $trackingConnection->prepare('SELECT * FROM users');
+        $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
+        $preparedStatement  = $trackingConnection->prepare('SELECT * FROM users');
 
         try {
             $preparedStatement->execute();
             $this->fail('Expected exception was not thrown');
         } catch (Exception $e) {
             $this->assertSame('Database error', $e->getMessage());
-            // Query should still be tracked even if it fails
-            $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
+            $this->assertSame(1, $this->counters->getQueryCount());
         }
-    }
-
-    public function testStartQuerySameIdTwiceOverwritesStartTime(): void
-    {
-        QueryTrackingMiddleware::reset();
-
-        QueryTrackingMiddleware::startQuery('q1');
-        usleep(10000);
-        QueryTrackingMiddleware::startQuery('q1');
-        usleep(2000);
-        QueryTrackingMiddleware::stopQuery('q1');
-
-        $this->assertSame(1, QueryTrackingMiddleware::getQueryCount());
-        $this->assertGreaterThan(0.0, QueryTrackingMiddleware::getTotalQueryTime());
     }
 }

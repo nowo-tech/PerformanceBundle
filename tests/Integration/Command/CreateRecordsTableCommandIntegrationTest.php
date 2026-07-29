@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Integration\Command;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -25,7 +26,7 @@ final class CreateRecordsTableCommandIntegrationTest extends TestCase
         $this->kernel->shutdown();
     }
 
-    private function getCommand(): \Symfony\Component\Console\Command\Command
+    private function getCommand(): Command
     {
         $application = new Application($this->kernel);
         $application->setAutoExit(false);

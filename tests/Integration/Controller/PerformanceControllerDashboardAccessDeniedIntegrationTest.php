@@ -8,6 +8,7 @@ use Nowo\PerformanceBundle\Tests\Integration\TestKernelDashboardRoleAdmin;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -53,7 +54,7 @@ final class PerformanceControllerDashboardAccessDeniedIntegrationTest extends Te
         self::assertContains($response->getStatusCode(), [401, 403], 'Anonymous user without ROLE_ADMIN should receive 401 or 403');
     }
 
-    private function handleGetFollowingRedirects(string $uri): \Symfony\Component\HttpFoundation\Response
+    private function handleGetFollowingRedirects(string $uri): Response
     {
         $request  = Request::create($uri, Request::METHOD_GET);
         $response = $this->kernel->handle($request, HttpKernelInterface::MAIN_REQUEST, true);

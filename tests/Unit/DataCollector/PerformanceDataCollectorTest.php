@@ -13,6 +13,7 @@ use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -668,7 +669,7 @@ final class PerformanceDataCollectorTest extends TestCase
 
     public function testCollectWhenGetParameterThrowsUsesDefaultRankingEnabled(): void
     {
-        $container = $this->createMock(\Symfony\Component\DependencyInjection\ContainerInterface::class);
+        $container = $this->createMock(ContainerInterface::class);
         $container->method('getParameter')->with('nowo_performance.dashboard.enable_ranking_queries')->willThrowException(new Exception('param missing'));
 
         $kernel = $this->createMock(KernelInterface::class);
@@ -702,7 +703,7 @@ final class PerformanceDataCollectorTest extends TestCase
 
     public function testCollectWhenEnableRankingQueriesFalseSkipsRankingQueries(): void
     {
-        $container = $this->createMock(\Symfony\Component\DependencyInjection\ContainerInterface::class);
+        $container = $this->createMock(ContainerInterface::class);
         $container->method('getParameter')->with('nowo_performance.dashboard.enable_ranking_queries')->willReturn(false);
 
         $kernel = $this->createMock(KernelInterface::class);

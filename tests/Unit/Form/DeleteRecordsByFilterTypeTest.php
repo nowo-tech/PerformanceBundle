@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
 use Symfony\Component\Form\Test\TypeTestCase;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class DeleteRecordsByFilterTypeTest extends TypeTestCase
 {
@@ -39,7 +40,7 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
 
     public function testConfigureOptionsSetsDefaults(): void
     {
-        $resolver = $this->createMock(\Symfony\Component\OptionsResolver\OptionsResolver::class);
+        $resolver = $this->createMock(OptionsResolver::class);
         $resolver->expects($this->once())
             ->method('setDefaults')
             ->with($this->callback(static fn (array $defaults): bool => isset($defaults['data_class'])

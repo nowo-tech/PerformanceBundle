@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Twig\Component;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Symfony\Component\Form\FormView;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /**
@@ -58,14 +59,14 @@ final class RoutesTableComponent
     /**
      * Review forms indexed by route ID.
      *
-     * @var array<int, \Symfony\Component\Form\FormView>
+     * @var array<int, FormView>
      */
     public array $reviewForms = [];
 
     /**
      * Delete-record forms indexed by route ID (FormType with CSRF only).
      *
-     * @var array<int, \Symfony\Component\Form\FormView>
+     * @var array<int, FormView>
      */
     public array $deleteForms = [];
 }

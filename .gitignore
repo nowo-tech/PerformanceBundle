@@ -29,3 +29,9 @@
 # Cursor local sandbox (machine-specific; REQ-IDE-005)
 .cursor/sandbox.json
 
+
+# pnpm local store
+.pnpm-store/
+
+# Integration test kernel cache/logs (can be root-owned from Docker)
+/tests/Integration/var/

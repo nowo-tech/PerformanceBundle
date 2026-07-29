@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
+use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddleware;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingMiddlewareRegistry;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -13,7 +14,6 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Throwable;
 
 /**
  * Event subscriber that applies QueryTrackingMiddleware to Doctrine connections.
@@ -35,20 +35,17 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
     private array $trackedConnections = [];
 
     /**
-     * Test-only: when set, applyMiddlewareToConnection throws after creating middleware (covers catch block). Leave null in production.
-     */
-    public static ?Throwable $testApplyMiddlewareThrowable = null;
-
-    /**
      * Creates a new instance.
      *
      * @param ManagerRegistry $registry The Doctrine registry
+     * @param QueryTrackingCounters $counters Shared query counters
      * @param bool $enabled Whether the bundle is enabled
      * @param bool $trackQueries Whether query tracking is enabled
      * @param string $connectionName The connection name to track
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
+        private readonly QueryTrackingCounters $counters,
         #[Autowire('%nowo_performance.enabled%')]
         private readonly bool $enabled,
         #[Autowire('%nowo_performance.track_queries%')]
@@ -87,7 +84,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
 
         // Reset query tracking AFTER middleware is applied
         // This ensures queries executed after this point are tracked
-        QueryTrackingMiddleware::reset();
+        $this->counters->reset();
     }
 
     /**
@@ -106,11 +103,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
         }
 
         try {
-            $middleware = new QueryTrackingMiddleware();
-
-            if (self::$testApplyMiddlewareThrowable instanceof Throwable) {
-                throw self::$testApplyMiddlewareThrowable;
-            }
+            $middleware = new QueryTrackingMiddleware($this->counters);
 
             // Use the registry to apply middleware with version detection
             $success = QueryTrackingMiddlewareRegistry::applyMiddleware(

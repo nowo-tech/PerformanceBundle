@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\EventSubscriber\TableNameSubscriber;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -30,7 +31,7 @@ final class TableNameSubscriberTest extends TestCase
         $classMetadata = $this->createMock(ClassMetadata::class);
         $classMetadata->expects($this->once())
             ->method('getName')
-            ->willReturn(\Nowo\PerformanceBundle\Entity\RouteData::class);
+            ->willReturn(RouteData::class);
 
         // Initialize table property to avoid "must not be accessed before initialization" error
         $reflection = new ReflectionClass($classMetadata);
@@ -94,7 +95,7 @@ final class TableNameSubscriberTest extends TestCase
         $classMetadata = $this->createMock(ClassMetadata::class);
         $classMetadata->expects($this->once())
             ->method('getName')
-            ->willReturn(\Nowo\PerformanceBundle\Entity\RouteData::class);
+            ->willReturn(RouteData::class);
         $classMetadata->expects($this->any())
             ->method('getTableName')
             ->willReturn($tableName);

@@ -40,7 +40,7 @@ final class PerformanceMetricsServiceRecordMetricsSyncClosedEmTest extends TestC
         $freshEm->method('isOpen')->willReturn(true);
         $freshEm->method('flush');
         $freshEm->method('getRepository')
-            ->willReturnCallback(static function (string $class) use ($routeRepo, $recordRepo) {
+            ->willReturnCallback(static function (string $class) use ($routeRepo, $recordRepo): ?\PHPUnit\Framework\MockObject\MockObject {
                 if ($class === RouteData::class) {
                     return $routeRepo;
                 }
@@ -70,12 +70,10 @@ final class PerformanceMetricsServiceRecordMetricsSyncClosedEmTest extends TestC
             ] as $prop => $value
         ) {
             $rp = new ReflectionProperty(PerformanceMetricsService::class, $prop);
-            $rp->setAccessible(true);
             $rp->setValue($service, $value);
         }
 
         $m = new ReflectionMethod(PerformanceMetricsService::class, 'recordMetricsSync');
-        $m->setAccessible(true);
 
         $result = $m->invoke(
             $service,

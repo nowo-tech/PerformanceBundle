@@ -610,6 +610,7 @@ Performance alert notifications configuration. See [NOTIFICATIONS.md](NOTIFICATI
 nowo_performance:
     notifications:
         enabled: true
+        http_timeout: 10.0   # seconds for Slack/Teams/generic webhook HttpClient (REQ-RUNTIME-001)
         email:
             enabled: true
             from: 'noreply@example.com'
@@ -626,6 +627,10 @@ nowo_performance:
             format: 'json'
             headers: []
 ```
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `notifications.http_timeout` | float (seconds) | `10.0` | Connect/total timeout for Slack, Teams, and generic webhook HTTP requests. Keep below PHP `max_execution_time` and FrankenPHP/Caddy write timeout. |
 
 ## Environment-Specific Configuration
 

@@ -32,6 +32,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
      * @param string $format Payload format ('json', 'slack', 'teams')
      * @param array<string, mixed> $headers Additional HTTP headers
      * @param bool $enabled Whether this channel is enabled
+     * @param float $timeout HTTP timeout in seconds (from nowo_performance.notifications.http_timeout)
      */
     public function __construct(
         private readonly ?HttpClientInterface $httpClient,
@@ -39,6 +40,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
         private readonly string $format = 'json',
         private readonly array $headers = [],
         private readonly bool $enabled = false,
+        private readonly float $timeout = 10.0,
     ) {
     }
 
@@ -51,10 +53,13 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
         try {
             $payload = $this->buildPayload($alert, $context);
             $headers = array_merge(['Content-Type' => 'application/json'], $this->headers);
+            $timeout = max(0.1, $this->timeout);
 
             $this->httpClient->request('POST', $this->webhookUrl, [
-                'headers' => $headers,
-                'json'    => $payload,
+                'headers'      => $headers,
+                'json'         => $payload,
+                'timeout'      => $timeout,
+                'max_duration' => $timeout,
             ]);
 
             return true;

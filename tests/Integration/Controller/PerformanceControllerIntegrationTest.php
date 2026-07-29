@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 use function is_array;
@@ -1077,7 +1078,7 @@ final class PerformanceControllerIntegrationTest extends TestCase
         return $first->getId();
     }
 
-    private function requestPost(string $uri, array $data, bool $followRedirect = false, array $server = []): \Symfony\Component\HttpFoundation\Response
+    private function requestPost(string $uri, array $data, bool $followRedirect = false, array $server = []): Response
     {
         $request = Request::create($uri, Request::METHOD_POST, $data, [], [], $server);
         $request->headers->set('Content-Type', 'application/x-www-form-urlencoded');
@@ -1103,7 +1104,7 @@ final class PerformanceControllerIntegrationTest extends TestCase
         $service->recordMetrics('integration_test_route', 'test', 0.1, 3, 0.02);
     }
 
-    private function requestGet(string $uri): \Symfony\Component\HttpFoundation\Response
+    private function requestGet(string $uri): Response
     {
         $request  = Request::create($uri, Request::METHOD_GET);
         $response = $this->kernel->handle($request, HttpKernelInterface::MAIN_REQUEST, false);

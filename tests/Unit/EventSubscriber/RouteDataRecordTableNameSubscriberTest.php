@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\EventSubscriber\RouteDataRecordTableNameSubscriber;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -45,7 +46,7 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
         $subscriber           = new RouteDataRecordTableNameSubscriber($mainTable);
 
         $classMetadata = $this->createMock(ClassMetadata::class);
-        $classMetadata->method('getName')->willReturn(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+        $classMetadata->method('getName')->willReturn(RouteDataRecord::class);
         $classMetadata->method('getTableName')->willReturn('routes_data_records');
 
         $ref = new ReflectionClass($classMetadata);
@@ -85,7 +86,7 @@ final class RouteDataRecordTableNameSubscriberTest extends TestCase
         $classMetadata = $this->createMock(ClassMetadata::class);
         $classMetadata->expects($this->once())
             ->method('getName')
-            ->willReturn(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+            ->willReturn(RouteDataRecord::class);
         $classMetadata->expects($this->any())
             ->method('getTableName')
             ->willReturn('routes_data_records');

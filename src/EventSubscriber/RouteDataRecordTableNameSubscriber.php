@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\EventSubscriber;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Events;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use ReflectionClass;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -54,7 +55,7 @@ class RouteDataRecordTableNameSubscriber implements EventSubscriber
         $classMetadata = $eventArgs->getClassMetadata();
 
         // Only modify RouteDataRecord entity
-        if ($classMetadata->getName() !== \Nowo\PerformanceBundle\Entity\RouteDataRecord::class) {
+        if ($classMetadata->getName() !== RouteDataRecord::class) {
             return;
         }
 

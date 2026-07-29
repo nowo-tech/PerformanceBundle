@@ -8,6 +8,7 @@ use Nowo\PerformanceBundle\DependencyInjection\Configuration;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
 final class PerformanceExtensionTest extends TestCase
 {
@@ -92,7 +93,7 @@ final class PerformanceExtensionTest extends TestCase
     public function testPrependTwigConfiguration(): void
     {
         // Create a mock extension that implements the interface
-        $twigExtension = $this->createMock(\Symfony\Component\DependencyInjection\Extension\ExtensionInterface::class);
+        $twigExtension = $this->createMock(ExtensionInterface::class);
         $twigExtension->method('getAlias')->willReturn('twig');
 
         // Register twig extension manually
@@ -116,11 +117,11 @@ final class PerformanceExtensionTest extends TestCase
 
     public function testPrependWithTwigAndFrameworkExtensions(): void
     {
-        $twigExtension = $this->createMock(\Symfony\Component\DependencyInjection\Extension\ExtensionInterface::class);
+        $twigExtension = $this->createMock(ExtensionInterface::class);
         $twigExtension->method('getAlias')->willReturn('twig');
         $this->container->registerExtension($twigExtension);
 
-        $frameworkExtension = $this->createMock(\Symfony\Component\DependencyInjection\Extension\ExtensionInterface::class);
+        $frameworkExtension = $this->createMock(ExtensionInterface::class);
         $frameworkExtension->method('getAlias')->willReturn('framework');
         $this->container->registerExtension($frameworkExtension);
 
