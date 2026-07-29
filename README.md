@@ -1,9 +1,5 @@
 # Performance Bundle
 
-![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
-
-FrankenPHP worker mode: supported (PHPStan FrankenPHP rules + Symfony 8 demo with `FRANKENPHP_MODE=worker`).
-
 [![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.0%2B%20%7C%208.0%2B-000000?logo=symfony)](https://symfony.com)
 
 > ⭐ **Found this useful?** Give it a star on GitHub! It helps us maintain and improve the project.
@@ -11,6 +7,10 @@ FrankenPHP worker mode: supported (PHPStan FrankenPHP rules + Symfony 8 demo wit
 **Symfony bundle for tracking and analyzing route performance metrics.** Automatically records request time, database query count, and query execution time for performance analysis.
 
 > 📋 **Compatible with Symfony 7.x and 8.x** - Requires PHP 8.2 or higher and Symfony 7.0 or higher.
+
+![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
+
+This bundle is **FrankenPHP worker mode friendly**.
 
 ## What is this?
 
@@ -53,34 +53,6 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ **Symfony UX Twig Components** - Optional modern component system
 - ✅ Symfony 7.x and 8.x compatible
 - ✅ **FrankenPHP** — Compatible with FrankenPHP; production Caddyfile can use worker mode, while **dev demos** use `APP_ENV=dev` so the image entrypoint swaps in `Caddyfile.dev` (no worker, comfortable local dev). See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) and the demo READMEs.
-
-## Screenshots
-
-The bundle provides a web dashboard to monitor and analyze route performance. Below are the main views.
-
-### Performance Metrics Dashboard
-
-The main dashboard shows KPIs (total routes, records, average/max queries and request time), top routes by usage and by latency, filters (environment, sort, limit), an optional “Optional Dependencies Missing” alert with `composer require` hints, a **Performance Trends** chart (average and max request time over days), and a **Routes** table with columns: route name, HTTP method, status codes, access count, environment, request time, query time, total queries, memory usage, last accessed at, access records link, and review status.
-
-![Performance Metrics Dashboard](docs/images/dashboard-main.png)
-
-*Access: dashboard path configured in `nowo_performance.dashboard.path` (e.g. `/performance`). Use **Diagnose**, **Advanced Statistics**, **Export CSV/JSON**, **Access Statistics by Hour**, and **Clear All Records** from the toolbar.*
-
-### Advanced Performance Statistics
-
-This view provides statistical analysis to find optimization targets: **Performance Recommendations** (e.g. high average query count, request time outliers), **Correlation Analysis** (request time vs query time, query time vs query count, memory vs request time), **Efficiency Analysis** (query time ratio), **Traffic Distribution** and hot/bad routes, **Routes Needing Attention** (high request time or query count by percentile), and detailed **Request Time**, **Query Time**, **Query Count**, **Memory Usage**, and **Access Count** sections with min/mean/median/max, percentiles, and distribution histograms.
-
-![Advanced Performance Statistics](docs/images/dashboard-advanced-statistics.png)
-
-*Access: **Advanced Statistics** button from the main dashboard. Requires enough route data for meaningful stats.*
-
-### Access Statistics by Hour
-
-When **temporal access records** are enabled (`enable_access_records: true`), this page shows access patterns over time: filters (date range, environment, route, status code), **Total Accesses** and period, **Statistics by Hour of Day** (line chart: access count and average response time), **Statistics by Day of Week** and **by Month** (bar charts), **Access Heatmap** (day of week vs hour), and a detailed table by hour with access count, average response time, and status code breakdown. You can **Delete records matching filter** from here.
-
-![Access Statistics by Hour](docs/images/dashboard-access-statistics.png)
-
-*Access: **Access Statistics by Hour** from the main dashboard. Requires `enable_access_records: true` and the `routes_data_records` table (see [Configuration](docs/CONFIGURATION.md#enable_access_records)).*
 
 ## Installation
 
@@ -148,8 +120,39 @@ nowo_performance:
 
 For detailed installation steps (including sync-schema and migrations), see [Installation Guide](docs/INSTALLATION.md).
 
-## Usage
+## Requirements
 
+- PHP >= 8.2, < 8.6
+- Symfony 7.x or 8.x
+- Doctrine ORM ^2.13 || ^3.0
+- Doctrine Bundle ^2.8 || ^3.0 (3.0 required for Symfony 8)
+
+## Configuration
+
+The bundle works with default settings. Create `config/packages/nowo_performance.yaml`. For the full reference and all options, see [Configuration Guide](docs/CONFIGURATION.md).
+
+```yaml
+nowo_performance:
+  enabled: true
+  environments: ['prod', 'dev', 'test']
+  connection: 'default'
+  table_name: 'routes_data'
+  track_queries: true
+  track_request_time: true
+  track_sub_requests: false
+  ignore_routes:
+    - '_wdt'
+    - '_profiler'
+    - 'web_profiler*'
+    - '_error'
+  dashboard:
+    enabled: true
+    path: '/performance'
+    template: 'bootstrap' # or 'tailwind'
+    roles: [] # empty = unrestricted
+```
+
+## Usage
 ### Automatic Tracking
 
 The bundle automatically tracks performance metrics for all routes (except ignored ones) in configured environments.
@@ -190,38 +193,6 @@ $routes = $metricsService->getRoutesByEnvironment('dev');
 $worstRoutes = $metricsService->getWorstPerformingRoutes('dev', 10);
 ```
 
-## Requirements
-
-- PHP >= 8.2, < 8.6
-- Symfony 7.x or 8.x
-- Doctrine ORM ^2.13 || ^3.0
-- Doctrine Bundle ^2.8 || ^3.0 (3.0 required for Symfony 8)
-
-## Configuration
-
-The bundle works with default settings. Create `config/packages/nowo_performance.yaml`. For the full reference and all options, see [Configuration Guide](docs/CONFIGURATION.md).
-
-```yaml
-nowo_performance:
-  enabled: true
-  environments: ['prod', 'dev', 'test']
-  connection: 'default'
-  table_name: 'routes_data'
-  track_queries: true
-  track_request_time: true
-  track_sub_requests: false
-  ignore_routes:
-    - '_wdt'
-    - '_profiler'
-    - 'web_profiler*'
-    - '_error'
-  dashboard:
-    enabled: true
-    path: '/performance'
-    template: 'bootstrap' # or 'tailwind'
-    roles: [] # empty = unrestricted
-```
-
 ## Commands
 
 See [Commands](docs/COMMANDS.md) for full documentation. Main commands:
@@ -234,24 +205,6 @@ See [Commands](docs/COMMANDS.md) for full documentation. Main commands:
 - **`nowo:performance:check-dependencies`** - Check status of optional dependencies (UX Icons, Messenger, Mailer)
 - **`nowo:performance:purge-records`** - Purge old access records (by age or all)
 - **`nowo:performance:rebuild-aggregates`** - Rebuild `RouteData` aggregates from access records
-
-## Entity structure (v2.x)
-
-Since **2.0.0**, metrics are **normalized**: **`RouteData`** holds route identity and review metadata; **per-request metrics** live in **`RouteDataRecord`** (and dashboard/API use aggregates built from records). See [V2_MIGRATION.md](docs/V2_MIGRATION.md) and [ENTITY_NORMALIZATION_PLAN.md](docs/ENTITY_NORMALIZATION_PLAN.md).
-
-**`RouteData`** (`routes_data`) — one row per logical route + environment:
-
-- `id`, `env`, `name`, `httpMethod`, `params`
-- `createdAt`, `lastAccessedAt`
-- Review: `reviewed`, `reviewedAt`, `reviewedBy`, `queriesImproved`, `timeImproved`
-- `saveAccessRecords` — when access records are enabled globally, you can disable per-route record creation
-
-**`RouteDataRecord`** (`routes_data_records`) — optional temporal log when `enable_access_records: true` (one row per request, deduplicated by `request_id` when set):
-
-- Timing and load: `responseTime`, `totalQueries`, `queryTime`, `memoryUsage`, `statusCode`, `accessedAt`
-- Context: `route_params`, `route_path`, `referer`, `user_identifier`, `user_id`, `request_id`
-
-Listed metrics (request time, query counts, status code ratios, etc.) in the UI and exports are **computed from records** (or cached aggregates), not stored as scalar columns on `RouteData`.
 
 ## How It Works
 
@@ -279,8 +232,53 @@ The bundle uses a **multi-layered approach** for query tracking:
 
 This ensures reliable query tracking across different Symfony and Doctrine versions.
 
-## Documentation
+## Screenshots
 
+The bundle provides a web dashboard to monitor and analyze route performance. Below are the main views.
+
+### Performance Metrics Dashboard
+
+The main dashboard shows KPIs (total routes, records, average/max queries and request time), top routes by usage and by latency, filters (environment, sort, limit), an optional “Optional Dependencies Missing” alert with `composer require` hints, a **Performance Trends** chart (average and max request time over days), and a **Routes** table with columns: route name, HTTP method, status codes, access count, environment, request time, query time, total queries, memory usage, last accessed at, access records link, and review status.
+
+![Performance Metrics Dashboard](docs/images/dashboard-main.png)
+
+*Access: dashboard path configured in `nowo_performance.dashboard.path` (e.g. `/performance`). Use **Diagnose**, **Advanced Statistics**, **Export CSV/JSON**, **Access Statistics by Hour**, and **Clear All Records** from the toolbar.*
+
+### Advanced Performance Statistics
+
+This view provides statistical analysis to find optimization targets: **Performance Recommendations** (e.g. high average query count, request time outliers), **Correlation Analysis** (request time vs query time, query time vs query count, memory vs request time), **Efficiency Analysis** (query time ratio), **Traffic Distribution** and hot/bad routes, **Routes Needing Attention** (high request time or query count by percentile), and detailed **Request Time**, **Query Time**, **Query Count**, **Memory Usage**, and **Access Count** sections with min/mean/median/max, percentiles, and distribution histograms.
+
+![Advanced Performance Statistics](docs/images/dashboard-advanced-statistics.png)
+
+*Access: **Advanced Statistics** button from the main dashboard. Requires enough route data for meaningful stats.*
+
+### Access Statistics by Hour
+
+When **temporal access records** are enabled (`enable_access_records: true`), this page shows access patterns over time: filters (date range, environment, route, status code), **Total Accesses** and period, **Statistics by Hour of Day** (line chart: access count and average response time), **Statistics by Day of Week** and **by Month** (bar charts), **Access Heatmap** (day of week vs hour), and a detailed table by hour with access count, average response time, and status code breakdown. You can **Delete records matching filter** from here.
+
+![Access Statistics by Hour](docs/images/dashboard-access-statistics.png)
+
+*Access: **Access Statistics by Hour** from the main dashboard. Requires `enable_access_records: true` and the `routes_data_records` table (see [Configuration](docs/CONFIGURATION.md#enable_access_records)).*
+
+## Entity structure (v2.x)
+
+Since **2.0.0**, metrics are **normalized**: **`RouteData`** holds route identity and review metadata; **per-request metrics** live in **`RouteDataRecord`** (and dashboard/API use aggregates built from records). See [V2_MIGRATION.md](docs/V2_MIGRATION.md) and [ENTITY_NORMALIZATION_PLAN.md](docs/ENTITY_NORMALIZATION_PLAN.md).
+
+**`RouteData`** (`routes_data`) — one row per logical route + environment:
+
+- `id`, `env`, `name`, `httpMethod`, `params`
+- `createdAt`, `lastAccessedAt`
+- Review: `reviewed`, `reviewedAt`, `reviewedBy`, `queriesImproved`, `timeImproved`
+- `saveAccessRecords` — when access records are enabled globally, you can disable per-route record creation
+
+**`RouteDataRecord`** (`routes_data_records`) — optional temporal log when `enable_access_records: true` (one row per request, deduplicated by `request_id` when set):
+
+- Timing and load: `responseTime`, `totalQueries`, `queryTime`, `memoryUsage`, `statusCode`, `accessedAt`
+- Context: `route_params`, `route_path`, `referer`, `user_identifier`, `user_id`, `request_id`
+
+Listed metrics (request time, query counts, status code ratios, etc.) in the UI and exports are **computed from records** (or cached aggregates), not stored as scalar columns on `RouteData`.
+
+## Documentation
 
 - [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 - [Installation](docs/INSTALLATION.md)
