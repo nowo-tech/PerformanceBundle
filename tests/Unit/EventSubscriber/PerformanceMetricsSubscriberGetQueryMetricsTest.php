@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
-use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\TestCase;

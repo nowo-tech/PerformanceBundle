@@ -10,7 +10,6 @@ use Nowo\PerformanceBundle\EventSubscriber\QueryTrackingConnectionSubscriber;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionMethod;
 use RuntimeException;
 use stdClass;
 use Symfony\Component\HttpFoundation\Request;
