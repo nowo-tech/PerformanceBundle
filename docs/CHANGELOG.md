@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.2.2] - 2026-07-30](#322-2026-07-30)
 - [[3.2.1] - 2026-07-29](#321-2026-07-29)
 - [[3.2.0] - 2026-07-22](#320-2026-07-22)
 - [[3.1.4] - 2026-07-16](#314-2026-07-16)
@@ -125,6 +126,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.2.2] - 2026-07-30
+
+### Added
+
+- **`dashboard.layout_template`** – Configurable Twig layout for dashboard pages (default `@NowoPerformanceBundle/Performance/layout.html.twig`). Host apps can set e.g. `base.html.twig` so the dashboard uses project chrome. Exposed as Twig global **`nowo_performance_layout_template`** via `PerformanceLayoutExtension` (REQ-UI-001).
+- **`Performance/layout.html.twig`** – Demo full HTML shell (Bootstrap/Tailwind CDN); `Performance/base.html.twig` now extends the configured layout and stacks assets with `{{ parent() }}`.
+- **`TwigPathsPass`** – Registers `@NowoPerformanceBundle` paths so `templates/bundles/NowoPerformanceBundle/` overrides win over vendor views (`prependPath` + `addPath`; REQ-TWIG-001). Twig paths are no longer prepended from `PerformanceExtension::prepend()`.
+
+### Documentation
+
+- [CONFIGURATION.md](CONFIGURATION.md) documents `dashboard.layout_template`.
+- [USAGE.md](USAGE.md) adds “Overriding templates (REQ-TWIG-001)” and layout-without-copy guidance.
 
 ---
 

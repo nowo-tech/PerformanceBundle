@@ -10,6 +10,7 @@
 - [Manual Metrics Management](#manual-metrics-management)
   - [Setting Route Metrics](#setting-route-metrics)
   - [Command Options](#command-options)
+- [Overriding templates (REQ-TWIG-001)](#overriding-templates-req-twig-001)
 - [Customizing the Dashboard View](#customizing-the-dashboard-view)
   - [CSS Framework Selection](#css-framework-selection)
   - [Component Structure](#component-structure)
@@ -31,8 +32,8 @@
   - [Accessing Status Code Data](#accessing-status-code-data)
   - [Dashboard Display](#dashboard-display)
 - [Performance Notifications](#performance-notifications)
-  - [Configuration](#configuration)
-  - [How It Works](#how-it-works)
+  - [Configuration](#configuration-1)
+  - [How It Works](#how-it-works-1)
 - [Best Practices](#best-practices)
 - [Examples](#examples)
   - [Example 1: Track API Endpoints](#example-1-track-api-endpoints)
@@ -120,6 +121,46 @@ php bin/console nowo:performance:set-route app_user_show \
 - `--query-time, -t` - Total query execution time in seconds (float)
 - `--memory, -m` - Peak memory usage in bytes (integer)
 - `--params, -p` - Route parameters as JSON string
+
+## Overriding templates (REQ-TWIG-001)
+
+The bundle registers the Twig namespace **`@NowoPerformanceBundle/`**. **`TwigPathsPass`** maps the Symfony override directory **`templates/bundles/NowoPerformanceBundle/`** to that namespace with **`prependPath()`** when the folder exists, then registers the bundle **`src/Resources/views`** path with **`addPath()`**, so your app copies are tried before the vendor templates. You do not need entries in **`config/packages/twig.yaml`** for this.
+
+**Freeze rule:** a full-file override at `templates/bundles/NowoPerformanceBundle/<subpath>` always wins and will **not** pick up vendor changes for that path until you delete or merge it. Prefer config (`dashboard.layout_template`), surgical partials, or small block overrides when you want to keep receiving UI fixes on package upgrades.
+
+**Procedure (app):**
+
+1. Take the template path relative to the bundle views root (the **`<subpath>`** below).
+2. Create **`templates/bundles/NowoPerformanceBundle/<subpath>`** in your project (same relative path).
+3. Clear the Twig / Symfony cache in dev if needed: **`php bin/console cache:clear`**.
+
+**Example:**
+
+```text
+templates/bundles/NowoPerformanceBundle/Performance/index.html.twig
+```
+
+**Templates you can override:**
+
+| Subpath | Purpose |
+|--------|---------|
+| `Performance/layout.html.twig` | Default demo full HTML shell (CDN CSS/JS). Blocks `title`, `stylesheets`, `body` / `nowo_performance_content`, `javascripts`. |
+| `Performance/base.html.twig` | Intermediate layout: extends configurable `layout_template`, flashes, `parent()` asset stacking, `{% block content %}`. Pages extend this. |
+| `Performance/index.html.twig` | Main dashboard list. |
+| `Performance/statistics.html.twig` | Advanced statistics. |
+| `Performance/diagnose.html.twig` | Diagnose page. |
+| `Performance/access_statistics.html.twig` | Access statistics / seasonality. |
+| `Performance/access_records.html.twig` | Paginated access records. |
+| `Performance/components/_*.html.twig` | Partials (filters, tables, charts, …). |
+
+**Layout without copying files (REQ-UI-001):** set **`dashboard.layout_template`** to your app layout (e.g. `base.html.twig`). The Twig global **`nowo_performance_layout_template`** mirrors that value. Dashboard pages go through `Performance/base.html.twig`, which `{% extends nowo_performance_layout_template %}` and calls **`{{ parent() }}`** on `stylesheets` / `javascripts`. Your layout should expose those blocks plus **`body`** (or `nowo_performance_content` / `nowo_ui_content`). The default bundle layout is for demos only; when `layout_template` points at the project, demo CDNs are skipped.
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    dashboard:
+        layout_template: 'base.html.twig'
+```
 
 ## Customizing the Dashboard View
 
