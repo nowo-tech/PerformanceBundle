@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle;
 
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
+use Nowo\PerformanceBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -80,5 +81,6 @@ final class NowoPerformanceBundle extends Bundle
 
         $container->addCompilerPass(new NotificationChannelsPass());
         $container->addCompilerPass(new QueryTrackingMiddlewarePass());
+        $container->addCompilerPass(new TwigPathsPass());
     }
 }

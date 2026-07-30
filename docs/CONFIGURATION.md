@@ -419,7 +419,22 @@ nowo_performance:
         template: 'tailwind'   # Use Tailwind CSS
 ```
 
-**Bootstrap (default):**
+#### `dashboard.layout_template`
+
+**Type:** `string`  
+**Default:** `'@NowoPerformanceBundle/Performance/layout.html.twig'`
+
+Twig layout that dashboard pages extend (via `Performance/base.html.twig` and Twig global **`nowo_performance_layout_template`**). Set this to your **project layout** (e.g. `base.html.twig`) so the dashboard uses host chrome; the default is the bundle demo shell only.
+
+```yaml
+nowo_performance:
+    dashboard:
+        layout_template: 'base.html.twig'
+```
+
+The host layout should define blocks **`stylesheets`**, **`javascripts`**, and **`body`** (or `nowo_performance_content`). Bundle `base.html.twig` stacks assets with `{{ parent() }}`.
+
+**Bootstrap (default)** (`dashboard.template`):
 - Uses Bootstrap 5.3.0 from CDN
 - Traditional grid system and components
 - Includes Bootstrap JavaScript bundle

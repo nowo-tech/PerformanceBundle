@@ -11,8 +11,6 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\UX\TwigComponent\ComponentInterface;
 
-use function dirname;
-
 /**
  * Extension for loading the bundle configuration.
  *
@@ -92,6 +90,10 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($dashboardPath . '.template', $dashboardConfig['template'] ?? 'bootstrap');
         $container->setParameter($dashboardPath . '.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
         $container->setParameter($dashboardPath . '.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
+        $container->setParameter(
+            $dashboardPath . '.layout_template',
+            $dashboardConfig['layout_template'] ?? '@NowoPerformanceBundle/Performance/layout.html.twig'
+        );
 
         $dateFormatsConfig = $dashboardConfig['date_formats'] ?? [];
         $container->setParameter($dashboardPath . '.date_formats.datetime', $dateFormatsConfig['datetime'] ?? 'Y-m-d H:i:s');
@@ -144,24 +146,15 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
     }
 
     /**
-     * Prepend Twig and cache configuration.
+     * Prepend cache pool configuration.
+     *
+     * Twig paths are registered by {@see Compiler\TwigPathsPass} (REQ-TWIG-001),
+     * not via prependExtensionConfig('twig', ['paths' => ...]).
      *
      * @param ContainerBuilder $container The container builder
      */
     public function prepend(ContainerBuilder $container): void
     {
-        // Prepend Twig configuration
-        if ($container->hasExtension('twig')) {
-            $bundleDir = dirname(__DIR__, 2);
-            $viewsPath = $bundleDir . '/src/Resources/views';
-
-            $container->prependExtensionConfig('twig', [
-                'paths' => [
-                    $viewsPath => 'NowoPerformanceBundle',
-                ],
-            ]);
-        }
-
         // Prepend dedicated cache pool for Performance Bundle (filesystem, 1h default TTL)
         if ($container->hasExtension('framework')) {
             $container->prependExtensionConfig('framework', [

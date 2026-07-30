@@ -5,6 +5,8 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
+- [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.2.2 (2026-07-30)](#upgrading-to-322-2026-07-30)
 - [Upgrading to 3.2.1 (2026-07-29)](#upgrading-to-321-2026-07-29)
 - [Upgrading to 3.2.0 (2026-07-22)](#upgrading-to-320-2026-07-22)
 - [Upgrading to 3.1.4 (2026-07-16)](#upgrading-to-314-2026-07-16)
@@ -84,6 +86,36 @@ This guide helps you upgrade between versions of the Performance Bundle.
   - [Optional Dependencies](#optional-dependencies)
   - [Testing Your Upgrade](#testing-your-upgrade)
   - [Troubleshooting](#troubleshooting)
+
+## Upgrading to next release (Unreleased)
+
+_No changes yet._
+
+## Upgrading to 3.2.2 (2026-07-30)
+
+No database or DI alias changes. Optional configuration for embedding the dashboard in your app layout.
+
+### Optional: use your project layout
+
+By default the dashboard uses the bundle demo shell (`@NowoPerformanceBundle/Performance/layout.html.twig`). To wrap pages in your app chrome:
+
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    dashboard:
+        layout_template: 'base.html.twig'   # or your layout path
+```
+
+Your layout should define blocks **`stylesheets`**, **`javascripts`**, and **`body`** (or `nowo_performance_content`). Bundle `Performance/base.html.twig` calls `{{ parent() }}` on asset blocks.
+
+### Template overrides (REQ-TWIG-001)
+
+App copies under `templates/bundles/NowoPerformanceBundle/` take precedence over vendor templates (via `TwigPathsPass`). Prefer `dashboard.layout_template` over copying the full layout when you only need host chrome.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 3.2.1 (2026-07-29)
 

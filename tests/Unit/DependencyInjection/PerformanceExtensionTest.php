@@ -44,6 +44,22 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('', $this->container->getParameter('nowo_performance.dashboard.prefix'));
         $this->assertSame(['ROLE_ADMIN'], $this->container->getParameter('nowo_performance.dashboard.roles'));
         $this->assertSame('nowo_performance.cache', $this->container->getParameter('nowo_performance.cache.pool'));
+        $this->assertSame(
+            '@NowoPerformanceBundle/Performance/layout.html.twig',
+            $this->container->getParameter('nowo_performance.dashboard.layout_template')
+        );
+    }
+
+    public function testLoadCustomLayoutTemplate(): void
+    {
+        $this->extension->load([
+            ['dashboard' => ['layout_template' => 'base.html.twig']],
+        ], $this->container);
+
+        $this->assertSame(
+            'base.html.twig',
+            $this->container->getParameter('nowo_performance.dashboard.layout_template')
+        );
     }
 
     public function testLoadCustomConfiguration(): void

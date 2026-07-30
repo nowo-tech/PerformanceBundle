@@ -43,6 +43,12 @@ services:
         tags:
             - { name: twig.extension }
 
+    Nowo\PerformanceBundle\Twig\PerformanceLayoutExtension:
+        arguments:
+            $layoutTemplate: '%nowo_performance.dashboard.layout_template%'
+        tags:
+            - { name: twig.extension }
+
     # Twig UX components: see services_twig_component.yaml (loaded only when symfony/ux-twig-component is installed).
 
     # Table Status Checker
