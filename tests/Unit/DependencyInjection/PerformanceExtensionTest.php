@@ -46,7 +46,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('nowo_performance.cache', $this->container->getParameter('nowo_performance.cache.pool'));
         $this->assertSame(
             '@NowoPerformanceBundle/Performance/layout.html.twig',
-            $this->container->getParameter('nowo_performance.dashboard.layout_template')
+            $this->container->getParameter('nowo_performance.dashboard.layout_template'),
         );
     }
 
@@ -58,7 +58,7 @@ final class PerformanceExtensionTest extends TestCase
 
         $this->assertSame(
             'base.html.twig',
-            $this->container->getParameter('nowo_performance.dashboard.layout_template')
+            $this->container->getParameter('nowo_performance.dashboard.layout_template'),
         );
     }
 

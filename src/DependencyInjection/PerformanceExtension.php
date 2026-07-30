@@ -92,7 +92,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($dashboardPath . '.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
         $container->setParameter(
             $dashboardPath . '.layout_template',
-            $dashboardConfig['layout_template'] ?? '@NowoPerformanceBundle/Performance/layout.html.twig'
+            $dashboardConfig['layout_template'] ?? '@NowoPerformanceBundle/Performance/layout.html.twig',
         );
 
         $dateFormatsConfig = $dashboardConfig['date_formats'] ?? [];
