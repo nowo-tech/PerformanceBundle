@@ -1,8 +1,8 @@
 # Release process
 
-> Current release target: **3.3.0** (`v3.3.0`).
+> Current release target: **3.3.1** (`v3.3.1`).
 
-## Creating a new version (e.g. v3.3.0)
+## Creating a new version (e.g. v3.3.1)
 
 1. **Ensure everything is ready**
    - [CHANGELOG.md](CHANGELOG.md) has the target version with date and full entry; `[Unreleased]` is at the top (empty or “_No changes yet._”).
@@ -14,14 +14,14 @@
 2. **Commit and push** any last changes to your default branch:
    ```bash
    git add -A
-   git commit -m "Prepare v3.2.1 release"
+   git commit -m "Prepare v3.3.1 release"
    git push origin HEAD
    ```
 
 3. **Create and push the tag**
    ```bash
-   git tag -a v3.2.1 -m "Release v3.2.1"
-   git push origin v3.2.1
+   git tag -a v3.3.1 -m "Release v3.3.1"
+   git push origin v3.3.1
    ```
 
 4. **GitHub Actions** (if configured) may create the GitHub Release from the tag.

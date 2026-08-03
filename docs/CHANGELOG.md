@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.3.1] - 2026-08-03](#331-2026-08-03)
 - [[3.3.0] - 2026-08-03](#330-2026-08-03)
 - [[3.2.2] - 2026-07-30](#322-2026-07-30)
 - [[3.2.1] - 2026-07-29](#321-2026-07-29)
@@ -127,6 +128,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.3.1] - 2026-08-03
+
+### Fixed
+
+- **`PerformanceMetricsService`** – Initialize optional `$cacheService` and `$eventDispatcher` to `null` so unit construction without `#[Required]` setters does not fatal on `instanceof` checks (CI PHPUnit on Symfony 7.0 / 7.4).
+
+### Documentation
+
+- [UPGRADING.md](UPGRADING.md), [RELEASE.md](RELEASE.md) updated for 3.3.1.
 
 ---
 

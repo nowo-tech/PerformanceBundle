@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.3.1 (2026-08-03)](#upgrading-to-331-2026-08-03)
 - [Upgrading to 3.3.0 (2026-08-03)](#upgrading-to-330-2026-08-03)
 - [Upgrading to 3.2.2 (2026-07-30)](#upgrading-to-322-2026-07-30)
 - [Upgrading to 3.2.1 (2026-07-29)](#upgrading-to-321-2026-07-29)
@@ -91,6 +92,15 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.3.1 (2026-08-03)
+
+Patch release: runtime/unit-test safety for optional DI setters on `PerformanceMetricsService`. **No database, configuration, or public API changes.**
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 3.3.0 (2026-08-03)
 
