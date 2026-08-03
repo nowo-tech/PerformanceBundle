@@ -52,12 +52,12 @@ class PerformanceMetricsService
     /**
      * Cache service for performance metrics (optional).
      */
-    private ?PerformanceCacheService $cacheService = null;
+    private ?PerformanceCacheService $cacheService;
 
     /**
      * Event dispatcher (optional).
      */
-    private ?EventDispatcherInterface $eventDispatcher = null;
+    private ?EventDispatcherInterface $eventDispatcher;
 
     /**
      * Message bus for async processing (optional).

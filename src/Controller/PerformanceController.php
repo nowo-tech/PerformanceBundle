@@ -33,6 +33,7 @@ use Nowo\PerformanceBundle\Model\RecordFilters;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
+use Nowo\PerformanceBundle\Security\PerformanceAccessCheckerInterface;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
@@ -152,6 +153,7 @@ class PerformanceController extends AbstractController
         private readonly bool $enableLogging = true,
         #[Autowire('%nowo_performance.access_records_retention_days%')]
         private readonly ?int $accessRecordsRetentionDays = null,
+        private readonly ?PerformanceAccessCheckerInterface $accessChecker = null,
     ) {
     }
 
@@ -166,6 +168,33 @@ class PerformanceController extends AbstractController
         $fallback = $this->getParameter('kernel.environment');
 
         return is_string($fallback) ? $fallback : 'dev';
+    }
+
+    /**
+     * Deny access unless the configured access checker (or legacy roles) allows it.
+     */
+    private function assertAccess(string $message = 'You do not have permission to access the performance dashboard.'): void
+    {
+        if ($this->accessChecker instanceof PerformanceAccessCheckerInterface) {
+            if (!$this->accessChecker->canAccess($this->getUser())) {
+                throw $this->createAccessDeniedException($message);
+            }
+
+            return;
+        }
+
+        // BC fallback for unit tests / wiring without checker
+        if ($this->requiredRoles === []) {
+            return;
+        }
+
+        foreach ($this->requiredRoles as $role) {
+            if ($this->isGranted($role)) {
+                return;
+            }
+        }
+
+        throw $this->createAccessDeniedException($message);
     }
 
     /**
@@ -195,20 +224,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to access the performance dashboard.');
-            }
-        }
+        $this->assertAccess('You do not have permission to access the performance dashboard.');
 
         // Get available environments (with caching)
         try {
@@ -711,20 +727,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to access the performance statistics.');
-            }
-        }
+        $this->assertAccess('You do not have permission to access the performance statistics.');
 
         // Environment selector form (FormType) – GET
         try {
@@ -895,7 +898,7 @@ class PerformanceController extends AbstractController
                 }
 
                 // Normalize to array<string> (getDistinctEnvironments returns array but values may be inferred mixed)
-                $environments = array_values(array_filter($raw, static fn ($v): bool => is_string($v)));
+                $environments = array_values(array_filter($raw, is_string(...)));
             } catch (Exception) {
                 // Fallback to default environments if repository query fails
                 $environments = ['dev', 'test', 'prod'];
@@ -928,20 +931,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to export performance data.');
-            }
-        }
+        $this->assertAccess('You do not have permission to export performance data.');
 
         $env     = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
         $filters = $this->buildFiltersFromRequest($request);
@@ -1023,20 +1013,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to export performance data.');
-            }
-        }
+        $this->assertAccess('You do not have permission to export performance data.');
 
         $env     = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
         $filters = $this->buildFiltersFromRequest($request);
@@ -1105,18 +1082,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('RouteDataRecordRepository is not available.');
         }
 
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to export access records.');
-            }
-        }
+        $this->assertAccess('You do not have permission to export access records.');
 
         $env            = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
         $startDate      = $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : null;
@@ -1240,18 +1206,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('RouteDataRecordRepository is not available.');
         }
 
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to export access records.');
-            }
-        }
+        $this->assertAccess('You do not have permission to export access records.');
 
         $env            = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
         $startDate      = $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : null;
@@ -1408,20 +1363,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to access the performance API.');
-            }
-        }
+        $this->assertAccess('You do not have permission to access the performance API.');
 
         $env       = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
         $routeName = $request->query->get('route');
@@ -1466,20 +1408,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to access the diagnostic page.');
-            }
-        }
+        $this->assertAccess('You do not have permission to access the diagnostic page.');
 
         $diagnostic = [];
 
@@ -1991,20 +1920,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to clear performance data.');
-            }
-        }
+        $this->assertAccess('You do not have permission to clear performance data.');
 
         $currentEnv = $this->normalizeEnv($this->getParameter('kernel.environment'));
         $form       = $this->createForm(ClearPerformanceDataType::class, new ClearPerformanceDataRequest($currentEnv));
@@ -2097,20 +2013,7 @@ class PerformanceController extends AbstractController
             throw $this->createAccessDeniedException('Record management is not enabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to delete performance records.');
-            }
-        }
+        $this->assertAccess('You do not have permission to delete performance records.');
 
         $form = $this->createForm(DeleteRecordType::class, null, [
             'csrf_token_id'     => 'delete_performance_record_' . $id,
@@ -2216,20 +2119,7 @@ class PerformanceController extends AbstractController
             throw $this->createAccessDeniedException('Review system is not enabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to review performance records.');
-            }
-        }
+        $this->assertAccess('You do not have permission to review performance records.');
 
         try {
             $repository = $this->metricsService->getRepository();
@@ -2477,20 +2367,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Temporal access records are disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to access temporal access statistics.');
-            }
-        }
+        $this->assertAccess('You do not have permission to access temporal access statistics.');
 
         // Get available environments and routes first (needed for form)
         try {
@@ -2621,20 +2498,7 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Temporal access records are disabled.');
         }
 
-        // Check role requirements if configured
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to access access records.');
-            }
-        }
+        $this->assertAccess('You do not have permission to access access records.');
 
         $page    = max(1, (int) $request->query->get('page', 1));
         $perPage = max(10, min(100, (int) $request->query->get('per_page', 50)));
@@ -2812,18 +2676,7 @@ class PerformanceController extends AbstractController
             throw $this->createAccessDeniedException('Record management is disabled.');
         }
 
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to purge access records.');
-            }
-        }
+        $this->assertAccess('You do not have permission to purge access records.');
 
         $currentEnv = $this->normalizeEnv($this->getParameter('kernel.environment'));
         $purgeForm  = $this->createForm(PurgeAccessRecordsType::class, new PurgeAccessRecordsRequest($currentEnv));
@@ -2897,18 +2750,7 @@ class PerformanceController extends AbstractController
             throw $this->createAccessDeniedException('Record management is disabled.');
         }
 
-        if ($this->requiredRoles !== []) {
-            $hasAccess = false;
-            foreach ($this->requiredRoles as $role) {
-                if ($this->isGranted($role)) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-            if (!$hasAccess) {
-                throw $this->createAccessDeniedException('You do not have permission to delete access records.');
-            }
-        }
+        $this->assertAccess('You do not have permission to delete access records.');
 
         $currentEnv = $this->normalizeEnv($this->getParameter('kernel.environment'));
         $form       = $this->createForm(DeleteRecordsByFilterType::class, new DeleteRecordsByFilterRequest($currentEnv, 'access_records'));

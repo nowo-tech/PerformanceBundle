@@ -712,4 +712,91 @@ final class TableStatusCheckerTest extends TestCase
 
         $this->assertSame([], $checker->getRecordsMissingColumns());
     }
+
+    /** Covers line 411: registry returns non-Connection object → RuntimeException caught → returns []. */
+    public function testGetRecordsMissingColumnsReturnsEmptyWhenRegistryReturnsNonConnection(): void
+    {
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->method('getConnection')->willReturn(new stdClass());
+
+        $checker = new TableStatusChecker($registry, 'default', 'routes_data', true);
+
+        $this->assertSame([], $checker->getRecordsMissingColumns());
+    }
+
+    /**
+     * Covers line 422: tablesExist=false with cache service → caches the missing list.
+     * Also covers the early-return on $missing.
+     */
+    public function testGetRecordsMissingColumnsWhenTableDoesNotExistCachesResult(): void
+    {
+        $cache = $this->createMock(PerformanceCacheService::class);
+        $cache->method('getCachedValue')->willReturn(null);
+        // cacheValue is called twice: once in getRecordsTableName() and once in getRecordsMissingColumns()
+        $cache->expects($this->atLeastOnce())->method('cacheValue');
+
+        $connection      = $this->createMock(Connection::class);
+        $schemaManager   = $this->createMock(AbstractSchemaManager::class);
+        $entityManager   = $this->createMock(EntityManagerInterface::class);
+        $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
+
+        $metadata->method('getTableName')->willReturn('routes_data_records');
+        $metadata->method('getFieldNames')->willReturn(['id', 'route_name']);
+        $metadata->method('getColumnName')->willReturnCallback(static fn (string $f): string => $f);
+        $metadataFactory->method('getMetadataFor')->willReturn($metadata);
+        $entityManager->method('getMetadataFactory')->willReturn($metadataFactory);
+        if (method_exists($connection, 'createSchemaManager')) {
+            $connection->method('createSchemaManager')->willReturn($schemaManager);
+        }
+        $schemaManager->method('tablesExist')->willReturn(false);
+
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->method('getConnection')->willReturn($connection);
+        $registry->method('getManager')->willReturn($entityManager);
+
+        $checker = new TableStatusChecker($registry, 'default', 'routes_data', true);
+        $checker->setCacheService($cache);
+
+        $missing = $checker->getRecordsMissingColumns();
+        $this->assertNotEmpty($missing);
+    }
+
+    /**
+     * Covers line 439: table exists but a column is missing → appended to $missingColumns.
+     */
+    public function testGetRecordsMissingColumnsReturnsListWhenColumnsMissing(): void
+    {
+        $connection      = $this->createMock(Connection::class);
+        $schemaManager   = $this->createMock(AbstractSchemaManager::class);
+        $entityManager   = $this->createMock(EntityManagerInterface::class);
+        $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+        $metadata        = $this->createMock(ClassMetadata::class);
+        $table           = $this->createMock(Table::class);
+        $existingCol     = $this->createMock(Column::class);
+
+        $existingCol->method('getName')->willReturn('id');
+        $table->method('getColumns')->willReturn([$existingCol]);
+
+        $metadata->method('getTableName')->willReturn('routes_data_records');
+        $metadata->method('getFieldNames')->willReturn(['id', 'route_name', 'created_at']);
+        $metadata->method('getColumnName')->willReturnCallback(static fn (string $f): string => $f);
+        $metadataFactory->method('getMetadataFor')->willReturn($metadata);
+        $entityManager->method('getMetadataFactory')->willReturn($metadataFactory);
+        if (method_exists($connection, 'createSchemaManager')) {
+            $connection->method('createSchemaManager')->willReturn($schemaManager);
+        }
+        $schemaManager->method('tablesExist')->willReturn(true);
+        $schemaManager->method('introspectTable')->willReturn($table);
+
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->method('getConnection')->willReturn($connection);
+        $registry->method('getManager')->willReturn($entityManager);
+
+        $checker = new TableStatusChecker($registry, 'default', 'routes_data', true);
+
+        $missing = $checker->getRecordsMissingColumns();
+        $this->assertContains('route_name', $missing);
+        $this->assertContains('created_at', $missing);
+    }
 }

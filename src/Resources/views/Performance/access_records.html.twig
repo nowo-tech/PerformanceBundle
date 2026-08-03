@@ -1,5 +1,9 @@
 {% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
+{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
+{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
+{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
+{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
 {% block title %}{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}{% endblock %}
 
 {% block content %}
@@ -19,7 +23,7 @@
     order: order|default('DESC')
 } %}
 {% set _base_params = export_params|merge({per_page: paginated_data.per_page|default(50)}) %}
-{% if ui_template == 'bootstrap' %}
+{% if _is_bootstrap %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}</h1>

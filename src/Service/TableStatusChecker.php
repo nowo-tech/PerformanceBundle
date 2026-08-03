@@ -79,7 +79,8 @@ class TableStatusChecker
         if (method_exists($connection, 'createSchemaManager')) {
             return $connection->createSchemaManager();
         }
-        // DBAL 2.x uses getSchemaManager()
+        // @codeCoverageIgnoreStart
+        // DBAL 2.x uses getSchemaManager(); unreachable in DBAL 3.x test environment.
         if (method_exists($connection, 'getSchemaManager')) {
             /** @var callable $getSchemaManager */
             $getSchemaManager = [$connection, 'getSchemaManager'];
@@ -87,6 +88,7 @@ class TableStatusChecker
             return $getSchemaManager();
         }
         throw new RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
+        // @codeCoverageIgnoreEnd
     }
 
     /**

@@ -11,6 +11,7 @@ return RectorConfig::configure()
     ])
     ->withSkip([
         __DIR__ . '/demo',
+        __DIR__ . '/tests/Integration/var',
     ])
     ->withPhpSets(php81: true)
     ->withPreparedSets(

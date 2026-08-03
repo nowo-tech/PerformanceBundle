@@ -54,13 +54,19 @@ final class LogHelper
             return true;
         }
 
+        // @codeCoverageIgnoreStart
+        // error_log() always exists in PHP; this guard is defensive dead code.
         if (!function_exists('error_log')) {
             return false;
         }
 
+        // The lines below are only reachable in production (outside the test suite).
+        // Tests/bootstrap.php defines NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS=true,
+        // so the early-return above always fires during test runs.
         error_log($message);
 
         return true;
+        // @codeCoverageIgnoreEnd
     }
 
     /**
@@ -83,6 +89,9 @@ final class LogHelper
         }
 
         $message = sprintf($format, ...$args);
+        // @codeCoverageIgnoreStart
+        // Same reasoning as log(): error_log() is always defined; actual call is masked by the
+        // test-bootstrap constant above in every test process.
         if (!function_exists('error_log')) {
             return false;
         }
@@ -90,5 +99,6 @@ final class LogHelper
         error_log($message);
 
         return true;
+        // @codeCoverageIgnoreEnd
     }
 }

@@ -23,6 +23,7 @@
   - [`check_table_status`](#check-table-status)
   - [`ignore_routes`](#ignore-routes)
   - [`dashboard`](#dashboard)
+  - [`security`](#security)
   - [`track_status_codes`](#track-status-codes)
   - [`sampling_rate`](#sampling-rate)
   - [`query_tracking_threshold`](#query-tracking-threshold)
@@ -78,13 +79,18 @@ nowo_performance:
         enabled: true
         path: '/performance'
         prefix: ''
-        roles: ['ROLE_ADMIN']
-        template: 'bootstrap'
+        roles: ['ROLE_ADMIN']              # Deprecated BC alias → security.access_roles
+        css_framework: bootstrap5          # REQ-UI-001 (alias: template)
+        # template: 'bootstrap'            # Deprecated BC → css_framework
         enable_record_management: false
         enable_review_system: false
         date_formats: { datetime: 'Y-m-d H:i:s', date: 'Y-m-d H:i' }
         auto_refresh_interval: 0
         enable_ranking_queries: true
+    security:
+        access_roles: ['ROLE_ADMIN']
+        access_checker: null               # Optional PerformanceAccessCheckerInterface service id
+        allow_unauthenticated: false       # true only for trusted local demos
     notifications:
         enabled: false
         # email, slack, teams, webhook: see NOTIFICATIONS.md
@@ -377,46 +383,55 @@ nowo_performance:
 #### `dashboard.roles`
 
 **Type:** `array`  
-**Default:** `['ROLE_ADMIN']`
+**Default:** `['ROLE_ADMIN']`  
+**Status:** Deprecated — prefer [`security.access_roles`](#security).
 
-Required roles to access the dashboard. Users must have **at least one** of the configured roles. If empty, access is unrestricted (not recommended in production).
-
-```yaml
-nowo_performance:
-    dashboard:
-        roles: ['ROLE_ADMIN']  # Only users with ROLE_ADMIN can access
-```
-
-**Multiple roles (OR logic):**
+Kept for backward compatibility. When `security.access_roles` is not set explicitly, `dashboard.roles` is mapped into `security.access_roles`. Empty disables role checks (not recommended in production).
 
 ```yaml
 nowo_performance:
     dashboard:
-        roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']  # Users with either role can access
+        roles: ['ROLE_ADMIN']  # BC — prefer security.access_roles
 ```
 
-**Unrestricted access:**
+Migrate to:
+
+```yaml
+nowo_performance:
+    security:
+        access_roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
+```
+
+#### `dashboard.css_framework`
+
+**Type:** `enum`  
+**Default:** `'bootstrap5'`  
+**Options:** `'bootstrap'` (alias of `bootstrap5`), `'bootstrap4'`, `'bootstrap5'`, `'tabler'`, `'tailwind'`, `'foundation'`, `'custom'`, `'none'`
+
+Host-chosen CSS stack for the dashboard (REQ-UI-001). Exposed as Twig global **`nowo_performance_css_framework`**. The demo ships Bootstrap-family and Tailwind markup/partials; non-`tailwind` values use the Bootstrap-family markup unless you override Twig.
 
 ```yaml
 nowo_performance:
     dashboard:
-        roles: []  # No restrictions (explicit opt-in)
+        css_framework: bootstrap5  # default (Bootstrap 5 CDN demo)
+        # css_framework: tailwind
+        # css_framework: foundation
+        # css_framework: custom
 ```
 
-#### `dashboard.template`
+#### `dashboard.template` (deprecated)
 
 **Type:** `string`  
-**Default:** `'bootstrap'`  
+**Default:** `'bootstrap'` (synced from `css_framework` to markup family `bootstrap`|`tailwind`)  
 **Options:** `'bootstrap'` or `'tailwind'`
 
-CSS framework to use for the dashboard interface.
+Deprecated BC alias for `dashboard.css_framework`. When `css_framework` is absent, `template: bootstrap` maps to `css_framework: bootstrap5` and `template: tailwind` maps to `css_framework: tailwind`. Prefer `css_framework`.
 
 ```yaml
 nowo_performance:
     dashboard:
-        template: 'bootstrap'  # Use Bootstrap 5 (default)
-        # or
-        template: 'tailwind'   # Use Tailwind CSS
+        # Deprecated — prefer css_framework:
+        template: 'bootstrap'
 ```
 
 #### `dashboard.layout_template`
@@ -434,12 +449,12 @@ nowo_performance:
 
 The host layout should define blocks **`stylesheets`**, **`javascripts`**, and **`body`** (or `nowo_performance_content`). Bundle `base.html.twig` stacks assets with `{{ parent() }}`.
 
-**Bootstrap (default)** (`dashboard.template`):
-- Uses Bootstrap 5.3.0 from CDN
+**Bootstrap family (default)** (`dashboard.css_framework: bootstrap5` / `bootstrap` / `bootstrap4` / `tabler`):
+- Uses Bootstrap 5.3.0 from CDN (demo layout)
 - Traditional grid system and components
 - Includes Bootstrap JavaScript bundle
 
-**Tailwind:**
+**Tailwind** (`dashboard.css_framework: tailwind`):
 - Uses Tailwind CSS from CDN
 - Utility-first CSS framework
 - Modern, responsive design
@@ -548,6 +563,36 @@ nowo_performance:
 - To reduce database load on each request
 
 **Note:** When disabled, the WebProfiler will still show all other performance metrics, but won't display ranking information (e.g., "Rank 5 of 100 routes by request time").
+
+### `security`
+
+Canonical dashboard access control (REQ-UI-002). Prefer these keys over deprecated `dashboard.roles`.
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `access_roles` | `[ROLE_ADMIN]` | Any matching role grants dashboard access (OR logic). Empty disables role checks. |
+| `access_checker` | `null` | Optional service id implementing `PerformanceAccessCheckerInterface`. |
+| `allow_unauthenticated` | `false` | When `true`, skips the SecurityBundle requirement (demo/dev only). |
+
+```yaml
+nowo_performance:
+    security:
+        access_roles: ['ROLE_ADMIN']
+        access_checker: null
+        allow_unauthenticated: false
+```
+
+**Custom checker:**
+
+```yaml
+nowo_performance:
+    security:
+        access_checker: App\Security\MyPerformanceAccessChecker
+```
+
+When `dashboard.enabled` is `true` and `allow_unauthenticated` is `false`, `symfony/security-bundle` is required or container compilation fails with a `LogicException`.
+
+**BC:** `dashboard.roles` remains supported. If `security.access_roles` is not set, `dashboard.roles` is copied into `access_roles`. The parameter `%nowo_performance.dashboard.roles%` is kept in sync with the effective `access_roles`.
 
 ### `track_status_codes`
 
@@ -685,28 +730,50 @@ nowo_performance:
 
 ### Restricting Dashboard Access
 
-By default, the dashboard requires **`ROLE_ADMIN`**. To allow unrestricted access (e.g. in local dev), set `roles: []`:
+By default, the dashboard requires **`ROLE_ADMIN`** via `security.access_roles`. Protect the path with Symfony `access_control` as well:
 
 ```yaml
-nowo_performance:
-    dashboard:
-        roles: []  # Unrestricted — not recommended in production
+# config/packages/security.yaml
+security:
+    access_control:
+        - { path: ^/performance, roles: ROLE_ADMIN }
 ```
 
-To require specific roles:
+```yaml
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    security:
+        access_roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
+```
+
+**Deprecated BC** — still works; prefer `security.access_roles`:
 
 ```yaml
 nowo_performance:
     dashboard:
-        enabled: true
-        path: '/performance'
-        roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
+        roles: ['ROLE_ADMIN']
+```
+
+For local demos only:
+
+```yaml
+nowo_performance:
+    security:
+        allow_unauthenticated: true  # Not for production
+```
+
+Or empty roles (disables bundle-level checks; still configure firewalls):
+
+```yaml
+nowo_performance:
+    security:
+        access_roles: []
 ```
 
 ### Security Considerations
 
-- **Production environments**: Default `ROLE_ADMIN` applies when `roles` is omitted; tighten or extend roles as needed
-- **Development environments**: You may set `roles: []` for easier access during development
+- **Production**: keep `allow_unauthenticated: false` and install SecurityBundle; default `ROLE_ADMIN` applies when roles are omitted
+- **Development**: you may use `allow_unauthenticated: true` or empty `access_roles` locally
 - **Role hierarchy**: Symfony's role hierarchy is respected (e.g., `ROLE_ADMIN` includes `ROLE_USER`)
 
 ### Example: Admin-Only Dashboard
@@ -718,15 +785,16 @@ nowo_performance:
         enabled: true
         path: '/admin/performance'
         prefix: '/admin'
-        roles: ['ROLE_ADMIN']
+    security:
+        access_roles: ['ROLE_ADMIN']
 ```
 
 ### Example: Multiple Roles
 
 ```yaml
 nowo_performance:
-    dashboard:
-        roles: ['ROLE_ADMIN', 'ROLE_MONITORING', 'ROLE_DEVOPS']
+    security:
+        access_roles: ['ROLE_ADMIN', 'ROLE_MONITORING', 'ROLE_DEVOPS']
 ```
 
 Users with **any** of these roles will have access.

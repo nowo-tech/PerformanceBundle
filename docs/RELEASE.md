@@ -1,8 +1,8 @@
 # Release process
 
-> Current release target: **3.2.1** (`v3.2.1`).
+> Current release target: **3.3.0** (`v3.3.0`).
 
-## Creating a new version (e.g. v3.2.1)
+## Creating a new version (e.g. v3.3.0)
 
 1. **Ensure everything is ready**
    - [CHANGELOG.md](CHANGELOG.md) has the target version with date and full entry; `[Unreleased]` is at the top (empty or “_No changes yet._”).

@@ -1,4 +1,8 @@
-{% if ui_template == 'bootstrap' %}
+{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
+{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
+{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
+{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
+{% if _is_bootstrap %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -93,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: data,
                     options: {
                         responsive: true,
-                        maintainAspectRatio: {% if ui_template == 'bootstrap' %}true{% else %}false{% endif %},
+                        maintainAspectRatio: {% if _is_bootstrap %}true{% else %}false{% endif %},
                         plugins: {
                             legend: {
                                 display: true,

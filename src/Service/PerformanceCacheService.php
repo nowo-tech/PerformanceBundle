@@ -242,7 +242,7 @@ class PerformanceCacheService
     private function getStatisticsGeneration(string $env): int
     {
         if (!$this->cachePool instanceof CacheItemPoolInterface) {
-            return 0;
+            return 0; // @codeCoverageIgnore – only reachable if getStatisticsKey() were called without a prior pool-null guard; defensive dead code
         }
 
         $item = $this->cachePool->getItem($this->getStatisticsGenerationKey($env));

@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\DependencyInjection;
 
 use Nowo\PerformanceBundle\DependencyInjection\Configuration;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
 final class ConfigurationTest extends TestCase
@@ -37,6 +38,9 @@ final class ConfigurationTest extends TestCase
         $this->assertSame('', $config['dashboard']['prefix']);
         $this->assertSame(['ROLE_ADMIN'], $config['dashboard']['roles']);
         $this->assertSame('nowo_performance.cache', $config['cache']['pool']);
+        $this->assertSame(['ROLE_ADMIN'], $config['security']['access_roles']);
+        $this->assertNull($config['security']['access_checker']);
+        $this->assertFalse($config['security']['allow_unauthenticated']);
     }
 
     public function testCustomConfiguration(): void
@@ -71,6 +75,36 @@ final class ConfigurationTest extends TestCase
         $this->assertSame('/metrics', $config['dashboard']['path']);
         $this->assertSame('/admin', $config['dashboard']['prefix']);
         $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $config['dashboard']['roles']);
+        $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $config['security']['access_roles']);
+    }
+
+    public function testDashboardRolesMapsToSecurityAccessRolesWhenAccessRolesNotSet(): void
+    {
+        $configuration = new Configuration();
+        $config        = $this->processor->processConfiguration($configuration, [[
+            'dashboard' => [
+                'roles' => ['ROLE_MONITORING'],
+            ],
+        ]]);
+
+        $this->assertSame(['ROLE_MONITORING'], $config['dashboard']['roles']);
+        $this->assertSame(['ROLE_MONITORING'], $config['security']['access_roles']);
+    }
+
+    public function testExplicitSecurityAccessRolesWinsOverDashboardRoles(): void
+    {
+        $configuration = new Configuration();
+        $config        = $this->processor->processConfiguration($configuration, [[
+            'dashboard' => [
+                'roles' => ['ROLE_LEGACY'],
+            ],
+            'security' => [
+                'access_roles' => ['ROLE_ADMIN'],
+            ],
+        ]]);
+
+        $this->assertSame(['ROLE_LEGACY'], $config['dashboard']['roles']);
+        $this->assertSame(['ROLE_ADMIN'], $config['security']['access_roles']);
     }
 
     public function testPartialConfiguration(): void
@@ -194,7 +228,61 @@ final class ConfigurationTest extends TestCase
         $configuration = new Configuration();
         $config        = $this->processor->processConfiguration($configuration, []);
 
+        $this->assertSame('bootstrap5', $config['dashboard']['css_framework']);
         $this->assertSame('bootstrap', $config['dashboard']['template']);
+    }
+
+    public function testDashboardCssFrameworkAcceptsCanonicalValues(): void
+    {
+        foreach (Configuration::CSS_FRAMEWORKS as $framework) {
+            $expected = $framework === 'bootstrap' ? 'bootstrap5' : $framework;
+            $config   = $this->processor->processConfiguration(new Configuration(), [[
+                'dashboard' => ['css_framework' => $framework],
+            ]]);
+
+            $this->assertSame($expected, $config['dashboard']['css_framework']);
+            $this->assertSame(
+                $expected === 'tailwind' ? 'tailwind' : 'bootstrap',
+                $config['dashboard']['template'],
+            );
+        }
+    }
+
+    public function testDashboardTemplateBcMapsToCssFramework(): void
+    {
+        $bootstrap = $this->processor->processConfiguration(new Configuration(), [[
+            'dashboard' => ['template' => 'bootstrap'],
+        ]]);
+        $this->assertSame('bootstrap5', $bootstrap['dashboard']['css_framework']);
+        $this->assertSame('bootstrap', $bootstrap['dashboard']['template']);
+
+        $tailwind = $this->processor->processConfiguration(new Configuration(), [[
+            'dashboard' => ['template' => 'tailwind'],
+        ]]);
+        $this->assertSame('tailwind', $tailwind['dashboard']['css_framework']);
+        $this->assertSame('tailwind', $tailwind['dashboard']['template']);
+    }
+
+    public function testDashboardCssFrameworkWinsOverTemplate(): void
+    {
+        $config = $this->processor->processConfiguration(new Configuration(), [[
+            'dashboard' => [
+                'template'      => 'bootstrap',
+                'css_framework' => 'tailwind',
+            ],
+        ]]);
+
+        $this->assertSame('tailwind', $config['dashboard']['css_framework']);
+        $this->assertSame('tailwind', $config['dashboard']['template']);
+    }
+
+    public function testInvalidDashboardCssFrameworkFails(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->processor->processConfiguration(new Configuration(), [[
+            'dashboard' => ['css_framework' => 'bulma'],
+        ]]);
     }
 
     public function testDashboardEnableRecordManagementDefault(): void

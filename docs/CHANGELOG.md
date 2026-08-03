@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.3.0] - 2026-08-03](#330-2026-08-03)
 - [[3.2.2] - 2026-07-30](#322-2026-07-30)
 - [[3.2.1] - 2026-07-29](#321-2026-07-29)
 - [[3.2.0] - 2026-07-22](#320-2026-07-22)
@@ -126,6 +127,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 _No changes yet._
+
+---
+
+## [3.3.0] - 2026-08-03
+
+### Added
+
+- **REQ-UI-002** – Canonical `security` config: `access_roles` (default `['ROLE_ADMIN']`), optional `access_checker`, `allow_unauthenticated` (default `false`). Ships `PerformanceAccessCheckerInterface`, `ConfigurablePerformanceAccessChecker`, and `AllowAllPerformanceAccessChecker`.
+- Compile-time `LogicException` when the dashboard is enabled without `symfony/security-bundle` and `allow_unauthenticated` is `false`.
+- **REQ-UI-001** – `dashboard.css_framework` enum (`bootstrap`→`bootstrap5`, `bootstrap4`, `bootstrap5`, `tabler`, `tailwind`, `foundation`, `custom`, `none`). Twig global **`nowo_performance_css_framework`**.
+- Unit tests for access checkers, extension security wiring, and additional DBAL/helper coverage.
+
+### Changed
+
+- Dashboard authorization goes through `PerformanceAccessCheckerInterface` (`assertAccess()` in `PerformanceController`) instead of duplicated `isGranted` loops.
+- Templates prefer `nowo_performance_css_framework` (with BC fallbacks to `css_framework` / `ui_template` / `template`).
+- README coverage note updated (~99% lines).
+- Stop tracking generated `coverage-php.txt` (already listed in `.gitignore`).
+
+### Deprecated
+
+- **`dashboard.roles`** – mapped to `security.access_roles` when `access_roles` is not set; prefer `security.access_roles`.
+- **`dashboard.template`** – mapped to `css_framework` when absent (`bootstrap`→`bootstrap5`, `tailwind`→`tailwind`); prefer `dashboard.css_framework`.
+
+### Documentation
+
+- [CONFIGURATION.md](CONFIGURATION.md), [SECURITY.md](SECURITY.md), [UPGRADING.md](UPGRADING.md) updated for `security.*` and `css_framework`.
 
 ---
 

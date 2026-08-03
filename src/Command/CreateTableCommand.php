@@ -339,7 +339,7 @@ HELP
         $table              = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
-            $columnName                                  = $this->getColumnName($column, $connection);
+            $columnName                                  = $this->getColumnName($column);
             $existingColumnsMap[strtolower($columnName)] = $column;
         }
 
@@ -379,7 +379,7 @@ HELP
                         $table              = $schemaManager->introspectTable($actualTableName);
                         $existingColumnsMap = [];
                         foreach ($table->getColumns() as $column) {
-                            $columnName                                  = $this->getColumnName($column, $connection);
+                            $columnName                                  = $this->getColumnName($column);
                             $existingColumnsMap[strtolower($columnName)] = $column;
                         }
                     }
@@ -462,7 +462,7 @@ HELP
         // Columns that exist in DB but not in entity (obsolete) - only when --drop-obsolete
         if ($dropObsolete) {
             foreach ($table->getColumns() as $column) {
-                $columnName      = $this->getColumnName($column, $connection);
+                $columnName      = $this->getColumnName($column);
                 $columnNameLower = strtolower($columnName);
                 // Never drop primary key column
                 if ($columnNameLower === 'id') {
@@ -510,7 +510,7 @@ HELP
             $table              = $schemaManager->introspectTable($actualTableName);
             $existingColumnsMap = [];
             foreach ($table->getColumns() as $column) {
-                $columnName                                  = $this->getColumnName($column, $connection);
+                $columnName                                  = $this->getColumnName($column);
                 $existingColumnsMap[strtolower($columnName)] = $column;
             }
         }
@@ -872,7 +872,7 @@ HELP
         $table              = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
-            $columnName                                  = $this->getColumnName($column, $connection);
+            $columnName                                  = $this->getColumnName($column);
             $existingColumnsMap[strtolower($columnName)] = $column;
         }
 
@@ -943,7 +943,7 @@ HELP
 
         if ($dropObsolete) {
             foreach ($table->getColumns() as $column) {
-                $columnName      = $this->getColumnName($column, $connection);
+                $columnName      = $this->getColumnName($column);
                 $columnNameLower = strtolower($columnName);
                 if ($columnNameLower === 'id') {
                     continue;
@@ -987,7 +987,7 @@ HELP
             $table              = $schemaManager->introspectTable($actualTableName);
             $existingColumnsMap = [];
             foreach ($table->getColumns() as $column) {
-                $columnName                                  = $this->getColumnName($column, $connection);
+                $columnName                                  = $this->getColumnName($column);
                 $existingColumnsMap[strtolower($columnName)] = $column;
             }
         }
@@ -1086,7 +1086,7 @@ HELP
 
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
-            $indexName                               = $this->getAssetName($index, $connection);
+            $indexName                               = $this->getAssetName($index);
             $existingIndexes[strtolower($indexName)] = $index;
         }
 
@@ -1197,11 +1197,10 @@ HELP
      * Get column name from Column object (compatible with DBAL 3.x and 4.x).
      *
      * @param Column $column The column object
-     * @param Connection $connection The database connection
      *
      * @return string The column name
      */
-    private function getColumnName(Column $column, Connection $connection): string
+    private function getColumnName(Column $column): string
     {
         return DbalSchemaNameHelper::getLogicalName($column);
     }
@@ -1210,13 +1209,12 @@ HELP
      * Get asset name from AbstractAsset object (compatible with DBAL 3.x and 4.x).
      *
      * @param AbstractAsset $asset The asset object (Column, Index, etc.)
-     * @param Connection $connection The database connection
      *
      * @return string The asset name
      *
      * @phpstan-ignore missingType.generics (AbstractAsset used for Column/Index compat)
      */
-    private function getAssetName(AbstractAsset $asset, Connection $connection): string
+    private function getAssetName(AbstractAsset $asset): string
     {
         return DbalSchemaNameHelper::getLogicalName($asset);
     }
@@ -1349,7 +1347,7 @@ HELP
 
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
-            $indexName                               = $this->getAssetName($index, $connection);
+            $indexName                               = $this->getAssetName($index);
             $existingIndexes[strtolower($indexName)] = $index;
         }
 

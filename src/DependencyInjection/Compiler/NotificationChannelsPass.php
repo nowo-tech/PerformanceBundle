@@ -41,6 +41,6 @@ final class NotificationChannelsPass implements CompilerPassInterface
             return new TaggedIteratorArgument($tag, null, false, [], true);
         }
 
-        return new TaggedIteratorArgument($tag, null, null, false, null, [], true);
+        return new TaggedIteratorArgument($tag, null, null, false, null, [], true); // @codeCoverageIgnore – only reached on Symfony <8.1 (3rd param was defaultIndexMethod)
     }
 }

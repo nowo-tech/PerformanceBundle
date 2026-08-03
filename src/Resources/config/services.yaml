@@ -46,6 +46,7 @@ services:
     Nowo\PerformanceBundle\Twig\PerformanceLayoutExtension:
         arguments:
             $layoutTemplate: '%nowo_performance.dashboard.layout_template%'
+            $cssFramework: '%nowo_performance.dashboard.css_framework%'
         tags:
             - { name: twig.extension }
 
