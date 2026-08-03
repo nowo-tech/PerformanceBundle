@@ -331,7 +331,7 @@ HELP
         $table              = $schemaManager->introspectTable($actualTableName);
         $existingColumnsMap = [];
         foreach ($table->getColumns() as $column) {
-            $columnName                                  = $this->getColumnName($column, $connection);
+            $columnName                                  = $this->getColumnName($column);
             $existingColumnsMap[strtolower($columnName)] = $column;
         }
 
@@ -367,7 +367,7 @@ HELP
                         $table              = $schemaManager->introspectTable($actualTableName);
                         $existingColumnsMap = [];
                         foreach ($table->getColumns() as $column) {
-                            $colName                                  = $this->getColumnName($column, $connection);
+                            $colName                                  = $this->getColumnName($column);
                             $existingColumnsMap[strtolower($colName)] = $column;
                         }
                     }
@@ -438,7 +438,7 @@ HELP
 
         if ($dropObsolete) {
             foreach ($table->getColumns() as $column) {
-                $columnName      = $this->getColumnName($column, $connection);
+                $columnName      = $this->getColumnName($column);
                 $columnNameLower = strtolower($columnName);
                 if ($columnNameLower === 'id') {
                     continue;
@@ -483,7 +483,7 @@ HELP
             $table              = $schemaManager->introspectTable($actualTableName);
             $existingColumnsMap = [];
             foreach ($table->getColumns() as $column) {
-                $columnName                                  = $this->getColumnName($column, $connection);
+                $columnName                                  = $this->getColumnName($column);
                 $existingColumnsMap[strtolower($columnName)] = $column;
             }
         }
@@ -557,7 +557,7 @@ HELP
     /**
      * Get column name from Column (DBAL 3.x / 4.x compatible).
      */
-    private function getColumnName(Column $column, Connection $connection): string
+    private function getColumnName(Column $column): string
     {
         return DbalSchemaNameHelper::getLogicalName($column);
     }

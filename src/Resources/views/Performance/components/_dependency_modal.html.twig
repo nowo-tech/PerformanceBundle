@@ -1,6 +1,8 @@
 {# Modal para mostrar información sobre dependencias faltantes #}
-{# ui_template: 'bootstrap' or 'tailwind' (defaults to 'bootstrap' if not provided) #}
-{% set _ui = ui_template|default('bootstrap') %}
+{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
+{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
+{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
+{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
 
 {# Bootstrap version - siempre incluido #}
 <div class="modal fade" id="dependencyModal" tabindex="-1" aria-labelledby="dependencyModalLabel" aria-hidden="true">

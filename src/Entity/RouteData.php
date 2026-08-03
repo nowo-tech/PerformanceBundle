@@ -74,13 +74,13 @@ class RouteData implements Stringable
      * Creation timestamp.
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?DateTimeImmutable $createdAt = null;
+    private ?DateTimeImmutable $createdAt;
 
     /**
      * Last access timestamp (updated when a RouteDataRecord is inserted or via command).
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?DateTimeImmutable $lastAccessedAt = null;
+    private ?DateTimeImmutable $lastAccessedAt;
 
     /**
      * Whether this route has been reviewed.

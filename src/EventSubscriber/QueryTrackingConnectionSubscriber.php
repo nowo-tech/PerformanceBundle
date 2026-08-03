@@ -119,9 +119,13 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
                 // This handles cases where the connection isn't ready yet
                 unset($this->trackedConnections[$connectionKey]);
             }
+            // @codeCoverageIgnoreStart
         } catch (Exception) {
-            // Reset tracking flag on error to retry next request
+            // Reset tracking flag on error to retry next request.
+            // In practice applyMiddleware() catches all Exceptions internally and returns false;
+            // this outer catch is a last-resort safety net.
             unset($this->trackedConnections[$connectionKey]);
         }
+        // @codeCoverageIgnoreEnd
     }
 }

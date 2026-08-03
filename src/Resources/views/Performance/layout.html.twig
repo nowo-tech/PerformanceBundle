@@ -1,4 +1,8 @@
 {# Default demo shell for the performance dashboard (Bootstrap / Tailwind CDN). Override: templates/bundles/NowoPerformanceBundle/Performance/layout.html.twig or set dashboard.layout_template (e.g. base.html.twig). #}
+{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
+{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
+{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
+{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
 <!DOCTYPE html>
 <html lang="{{ app.request.locale|default('en') }}">
 <head>
@@ -7,7 +11,7 @@
     <title>{% block title %}Performance Bundle{% endblock %}</title>
     {% block stylesheets %}
         {# Demo layout CDNs — skipped when host sets layout_template to the project layout. #}
-        {% if ui_template == 'bootstrap' %}
+        {% if _is_bootstrap %}
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
             <style>
                 body {
@@ -45,7 +49,7 @@
 {% endblock %}
 
 {% block javascripts %}
-    {% if ui_template == 'bootstrap' %}
+    {% if _is_bootstrap %}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     {% endif %}
 {% endblock %}

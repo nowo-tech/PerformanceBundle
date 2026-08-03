@@ -68,6 +68,12 @@ final class QueryTrackingMiddlewareTest extends TestCase
         $this->assertSame(0.0, $this->counters->getTotalQueryTime());
     }
 
+    public function testGetCounters(): void
+    {
+        $middleware = new QueryTrackingMiddleware($this->counters);
+        $this->assertSame($this->counters, $middleware->getCounters());
+    }
+
     public function testWrap(): void
     {
         $middleware    = new QueryTrackingMiddleware($this->counters);

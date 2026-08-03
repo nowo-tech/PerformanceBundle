@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\DependencyInjection;
 
+use LogicException;
 use Nowo\PerformanceBundle\DependencyInjection\Configuration;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
+use Nowo\PerformanceBundle\Security\ConfigurablePerformanceAccessChecker;
+use Nowo\PerformanceBundle\Security\PerformanceAccessCheckerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
 final class PerformanceExtensionTest extends TestCase
@@ -19,6 +24,14 @@ final class PerformanceExtensionTest extends TestCase
     {
         $this->extension = new PerformanceExtension();
         $this->container = new ContainerBuilder();
+        $this->registerSecurityExtension($this->container);
+    }
+
+    private function registerSecurityExtension(ContainerBuilder $container): void
+    {
+        $securityExtension = $this->createMock(ExtensionInterface::class);
+        $securityExtension->method('getAlias')->willReturn('security');
+        $container->registerExtension($securityExtension);
     }
 
     public function testGetAlias(): void
@@ -47,6 +60,16 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame(
             '@NowoPerformanceBundle/Performance/layout.html.twig',
             $this->container->getParameter('nowo_performance.dashboard.layout_template'),
+        );
+        $this->assertSame('bootstrap5', $this->container->getParameter('nowo_performance.dashboard.css_framework'));
+        $this->assertSame('bootstrap', $this->container->getParameter('nowo_performance.dashboard.template'));
+        $this->assertSame(['ROLE_ADMIN'], $this->container->getParameter('nowo_performance.security.access_roles'));
+        $this->assertFalse($this->container->getParameter('nowo_performance.security.allow_unauthenticated'));
+        $this->assertTrue($this->container->hasAlias(PerformanceAccessCheckerInterface::class));
+        $this->assertTrue($this->container->hasDefinition('nowo_performance.access_checker.default'));
+        $this->assertSame(
+            ConfigurablePerformanceAccessChecker::class,
+            $this->container->getDefinition('nowo_performance.access_checker.default')->getClass(),
         );
     }
 
@@ -90,11 +113,60 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertFalse($this->container->getParameter('nowo_performance.track_request_time'));
         $this->assertSame(['_custom'], $this->container->getParameter('nowo_performance.ignore_routes'));
 
-        // Dashboard configuration
+        // Dashboard configuration — roles BC maps into security.access_roles and dashboard.roles param
         $this->assertFalse($this->container->getParameter('nowo_performance.dashboard.enabled'));
         $this->assertSame('/metrics', $this->container->getParameter('nowo_performance.dashboard.path'));
         $this->assertSame('/admin', $this->container->getParameter('nowo_performance.dashboard.prefix'));
         $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $this->container->getParameter('nowo_performance.dashboard.roles'));
+        $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $this->container->getParameter('nowo_performance.security.access_roles'));
+    }
+
+    public function testLoadThrowsWhenDashboardRequiresSecurityBundle(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new PerformanceExtension();
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('requires symfony/security-bundle');
+
+        $extension->load([[
+            'dashboard' => ['enabled' => true],
+            'security'  => ['allow_unauthenticated' => false],
+        ]], $container);
+    }
+
+    public function testLoadUsesAllowAllCheckerWhenUnauthenticatedAccessIsEnabled(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new PerformanceExtension();
+        $extension->load([[
+            'security' => ['allow_unauthenticated' => true],
+        ]], $container);
+
+        self::assertTrue($container->hasDefinition('nowo_performance.access_checker.allow_all'));
+        self::assertSame(
+            AllowAllPerformanceAccessChecker::class,
+            $container->getDefinition('nowo_performance.access_checker.allow_all')->getClass(),
+        );
+        self::assertSame(
+            'nowo_performance.access_checker.allow_all',
+            (string) $container->getAlias(PerformanceAccessCheckerInterface::class),
+        );
+    }
+
+    public function testLoadUsesCustomAccessCheckerAliasWhenConfigured(): void
+    {
+        $this->container->setDefinition('app.performance_checker', new Definition());
+        $this->extension->load([[
+            'security' => [
+                'access_checker' => 'app.performance_checker',
+            ],
+        ]], $this->container);
+
+        self::assertSame(
+            'app.performance_checker',
+            (string) $this->container->getAlias(PerformanceAccessCheckerInterface::class),
+        );
     }
 
     public function testLoadCustomCachePoolConfiguration(): void
@@ -108,26 +180,19 @@ final class PerformanceExtensionTest extends TestCase
 
     public function testPrependTwigConfiguration(): void
     {
-        // Create a mock extension that implements the interface
         $twigExtension = $this->createMock(ExtensionInterface::class);
         $twigExtension->method('getAlias')->willReturn('twig');
-
-        // Register twig extension manually
         $this->container->registerExtension($twigExtension);
 
-        // Should not throw exception
         $this->extension->prepend($this->container);
 
-        // Verify that prepend was called (we can't easily verify the exact config without more setup)
         $this->assertTrue(true);
     }
 
     public function testPrependWithoutTwigExtension(): void
     {
-        // Don't register twig extension
         $this->extension->prepend($this->container);
 
-        // Should not throw exception
         $this->assertTrue(true);
     }
 

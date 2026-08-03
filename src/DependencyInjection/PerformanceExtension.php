@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DependencyInjection;
 
+use LogicException;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
+use Nowo\PerformanceBundle\Security\ConfigurablePerformanceAccessChecker;
+use Nowo\PerformanceBundle\Security\PerformanceAccessCheckerInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\UX\TwigComponent\ComponentInterface;
+
+use function is_string;
 
 /**
  * Extension for loading the bundle configuration.
@@ -38,11 +46,26 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
 
         // Optional: Symfony UX Twig Component (dashboard uses {{ component() }} when available; else includes).
         if (interface_exists(ComponentInterface::class)) {
-            $loader->load('services_twig_component.yaml');
+            $loader->load('services_twig_component.yaml'); // @codeCoverageIgnore – symfony/ux-twig-component is a suggest, not required
         }
 
         $configuration = $this->getConfiguration($configs, $container);
         $config        = $this->processConfiguration($configuration, $configs);
+
+        $dashboardConfig = $config['dashboard'] ?? [];
+        $securityConfig  = $config['security'] ?? [
+            'access_roles'          => ['ROLE_ADMIN'],
+            'access_checker'        => null,
+            'allow_unauthenticated' => false,
+        ];
+
+        if (
+            ($dashboardConfig['enabled'] ?? true)
+            && !($securityConfig['allow_unauthenticated'] ?? false)
+            && !$this->isSecurityBundleAvailable($container)
+        ) {
+            throw new LogicException('NowoPerformanceBundle dashboard requires symfony/security-bundle when security.allow_unauthenticated is false.');
+        }
 
         // Set configuration parameters
         $container->setParameter(Configuration::ALIAS . '.enabled', $config['enabled'] ?? true);
@@ -81,13 +104,21 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($thresholdsPath . '.memory_usage.critical', $memoryUsageThresholds['critical'] ?? 50.0);
 
         // Dashboard configuration
-        $dashboardConfig = $config['dashboard'] ?? [];
-        $dashboardPath   = Configuration::ALIAS . '.dashboard';
+        $dashboardPath = Configuration::ALIAS . '.dashboard';
+        $accessRoles   = $securityConfig['access_roles'] ?? ['ROLE_ADMIN'];
         $container->setParameter($dashboardPath . '.enabled', $dashboardConfig['enabled'] ?? true);
         $container->setParameter($dashboardPath . '.path', $dashboardConfig['path'] ?? '/performance');
         $container->setParameter($dashboardPath . '.prefix', $dashboardConfig['prefix'] ?? '');
-        $container->setParameter($dashboardPath . '.roles', $dashboardConfig['roles'] ?? []);
-        $container->setParameter($dashboardPath . '.template', $dashboardConfig['template'] ?? 'bootstrap');
+        // BC: keep dashboard.roles in sync with effective security.access_roles
+        $container->setParameter($dashboardPath . '.roles', $accessRoles);
+        $cssFramework = $dashboardConfig['css_framework'] ?? 'bootstrap5';
+        if ($cssFramework === 'bootstrap') {
+            $cssFramework = 'bootstrap5';
+        }
+        // BC: keep dashboard.template as bootstrap|tailwind markup family synced from css_framework
+        $templateFamily = $cssFramework === 'tailwind' ? 'tailwind' : 'bootstrap';
+        $container->setParameter($dashboardPath . '.css_framework', $cssFramework);
+        $container->setParameter($dashboardPath . '.template', $templateFamily);
         $container->setParameter($dashboardPath . '.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
         $container->setParameter($dashboardPath . '.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
         $container->setParameter(
@@ -100,6 +131,14 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($dashboardPath . '.date_formats.date', $dateFormatsConfig['date'] ?? 'Y-m-d H:i');
         $container->setParameter($dashboardPath . '.auto_refresh_interval', $dashboardConfig['auto_refresh_interval'] ?? 0);
         $container->setParameter($dashboardPath . '.enable_ranking_queries', $dashboardConfig['enable_ranking_queries'] ?? true);
+
+        $securityPath = Configuration::ALIAS . '.security';
+        $container->setParameter($securityPath, $securityConfig);
+        $container->setParameter($securityPath . '.access_roles', $accessRoles);
+        $container->setParameter($securityPath . '.access_checker', $securityConfig['access_checker'] ?? null);
+        $container->setParameter($securityPath . '.allow_unauthenticated', $securityConfig['allow_unauthenticated'] ?? false);
+
+        $this->registerAccessChecker($container, $securityConfig);
 
         // Notifications configuration
         $notificationsConfig = $config['notifications'] ?? [];
@@ -143,6 +182,61 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
     public function getConfiguration(array $config, ContainerBuilder $container): Configuration
     {
         return new Configuration();
+    }
+
+    /**
+     * @param array{access_checker?: ?string, access_roles?: list<string>, allow_unauthenticated?: bool} $security
+     */
+    private function registerAccessChecker(ContainerBuilder $container, array $security): void
+    {
+        if ($security['allow_unauthenticated'] ?? false) {
+            $accessCheckerId = 'nowo_performance.access_checker.allow_all';
+            $container->setDefinition($accessCheckerId, new Definition(AllowAllPerformanceAccessChecker::class));
+            $container->setAlias(PerformanceAccessCheckerInterface::class, $accessCheckerId);
+
+            return;
+        }
+
+        $accessCheckerId = $security['access_checker'] ?? null;
+        if (is_string($accessCheckerId) && $accessCheckerId !== '') {
+            $container->setAlias(PerformanceAccessCheckerInterface::class, $accessCheckerId);
+
+            return;
+        }
+
+        $hasAuthorizationChecker = $container->hasDefinition('security.authorization_checker')
+            || $container->hasAlias('security.authorization_checker');
+
+        $accessCheckerId = 'nowo_performance.access_checker.default';
+        $definition      = new Definition(ConfigurablePerformanceAccessChecker::class);
+        $definition->setArgument('$accessRoles', $security['access_roles'] ?? ['ROLE_ADMIN']);
+        if ($hasAuthorizationChecker) {
+            $definition->setArgument('$authorizationChecker', new Reference('security.authorization_checker'));
+        } else {
+            $definition->setAutowired(true);
+        }
+        $container->setDefinition($accessCheckerId, $definition);
+        $container->setAlias(PerformanceAccessCheckerInterface::class, $accessCheckerId);
+    }
+
+    /**
+     * Prefer kernel.bundles: ContainerBuilder::hasExtension() can be false while SecurityBundle
+     * is already registered (e.g. during early Flex cache:clear boots).
+     */
+    private function isSecurityBundleAvailable(ContainerBuilder $container): bool
+    {
+        if ($container->hasExtension('security')) {
+            return true;
+        }
+
+        if (!$container->hasParameter('kernel.bundles')) {
+            return false;
+        }
+
+        /** @var array<string, class-string> $bundles */
+        $bundles = $container->getParameter('kernel.bundles');
+
+        return isset($bundles['SecurityBundle']);
     }
 
     /**

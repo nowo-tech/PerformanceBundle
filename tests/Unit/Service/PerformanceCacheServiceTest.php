@@ -313,4 +313,24 @@ final class PerformanceCacheServiceTest extends TestCase
 
         $this->assertFalse($service->cacheEnvironments(['dev', 'prod']));
     }
+
+    /** Covers getStatisticsGeneration line 250 (return (int)$item->get() when generation cache hits). */
+    public function testGetCachedStatisticsUsesGenerationFromCacheWhenHit(): void
+    {
+        $genItem = $this->createMock(CacheItemInterface::class);
+        $genItem->method('isHit')->willReturn(true);
+        $genItem->method('get')->willReturn(3);
+
+        $statsItem = $this->createMock(CacheItemInterface::class);
+        $statsItem->method('isHit')->willReturn(true);
+        $statsItem->method('get')->willReturn(['total_routes' => 5]);
+
+        $pool = $this->createMock(CacheItemPoolInterface::class);
+        $pool->method('getItem')->willReturnOnConsecutiveCalls($genItem, $statsItem);
+
+        $service = new PerformanceCacheService($pool);
+        $result  = $service->getCachedStatistics('prod');
+
+        $this->assertSame(['total_routes' => 5], $result);
+    }
 }

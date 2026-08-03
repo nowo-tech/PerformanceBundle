@@ -1,7 +1,11 @@
 {# Paginator for index routes table. Expects: paginator (current_page, total_pages, total_count, per_page, from, to), ui_template (bootstrap|tailwind) #}
+{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
+{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
+{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
+{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
 {% set queryParams = app.request.query.all|default({}) %}
 {% set _anchor = '#routes-table' %}
-{% if ui_template == 'bootstrap' %}
+{% if _is_bootstrap %}
 <div class="row mt-3">
     <div class="col-12">
         <nav aria-label="{{ 'paginator.page'|trans({'%current%': paginator.current_page, '%total%': paginator.total_pages}, 'NowoPerformanceBundle') }}">

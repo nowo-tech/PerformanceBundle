@@ -1,10 +1,14 @@
 {% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
 
+{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
+{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
+{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
+{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
 {% block title %}Performance Metrics Dashboard{% endblock %}
 
 {% block content %}
     {# Header Section #}
-    {% if ui_template == 'bootstrap' %}
+    {% if _is_bootstrap %}
         <div class="container mt-4">
             <div class="row mb-4">
                 <div class="col-12">
@@ -83,7 +87,7 @@
 
     {# Show missing dependencies warning #}
     {% if missingDependencies is not empty %}
-        {% if ui_template == 'bootstrap' %}
+        {% if _is_bootstrap %}
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -161,13 +165,13 @@
         {% endif %}
     {% else %}
         {# Fallback to includes if components are not available #}
-        {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ ui_template ~ '.html.twig' %}
+        {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ _ui ~ '.html.twig' %}
 
-        {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ ui_template ~ '.html.twig' %}
+        {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ _ui ~ '.html.twig' %}
 
-        {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ ui_template ~ '.html.twig' %}
+        {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ _ui ~ '.html.twig' %}
 
-        {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ ui_template ~ '.html.twig' with {
+        {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ _ui ~ '.html.twig' with {
             thresholds: thresholds|default({}),
             enableRecordManagement: enableRecordManagement,
             enableReviewSystem: enableReviewSystem,

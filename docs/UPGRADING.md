@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 - [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.3.0 (2026-08-03)](#upgrading-to-330-2026-08-03)
 - [Upgrading to 3.2.2 (2026-07-30)](#upgrading-to-322-2026-07-30)
 - [Upgrading to 3.2.1 (2026-07-29)](#upgrading-to-321-2026-07-29)
 - [Upgrading to 3.2.0 (2026-07-22)](#upgrading-to-320-2026-07-22)
@@ -90,6 +91,47 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Upgrading to next release (Unreleased)
 
 _No changes yet._
+
+## Upgrading to 3.3.0 (2026-08-03)
+
+Additive configuration for dashboard access and CSS stack. Existing `dashboard.roles` and `dashboard.template` keep working via BC maps.
+
+### Prefer canonical security keys (REQ-UI-002)
+
+```yaml
+nowo_performance:
+    security:
+        access_roles: ['ROLE_ADMIN']
+        # access_checker: App\Security\MyPerformanceAccessChecker
+        allow_unauthenticated: false
+```
+
+- When `dashboard.enabled` is `true` and `allow_unauthenticated` is `false`, **`symfony/security-bundle` is required** or container compilation fails.
+- Deprecated: `dashboard.roles` → mapped to `security.access_roles` when `access_roles` is not set. `%nowo_performance.dashboard.roles%` stays in sync with effective roles.
+- Still configure host `access_control` for the dashboard path (e.g. `^/performance`).
+
+### Prefer `dashboard.css_framework` (REQ-UI-001)
+
+```yaml
+nowo_performance:
+    dashboard:
+        css_framework: bootstrap5   # or: bootstrap | bootstrap4 | tabler | tailwind | foundation | custom | none
+```
+
+- Deprecated: `dashboard.template` (`bootstrap`|`tailwind`) → mapped to `css_framework` when absent.
+- Twig global: `nowo_performance_css_framework`.
+
+### Integrator checklist
+
+1. Keep production `allow_unauthenticated: false` and ensure SecurityBundle is installed.
+2. Migrate `dashboard.roles` → `security.access_roles` when convenient.
+3. Migrate `dashboard.template` → `dashboard.css_framework` when convenient.
+4. Clear cache and smoke-test `/performance` (403 without role; 200 as admin).
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
 
 ## Upgrading to 3.2.2 (2026-07-30)
 

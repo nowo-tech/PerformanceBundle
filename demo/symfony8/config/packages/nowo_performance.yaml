@@ -100,14 +100,14 @@ nowo_performance:
         prefix: '/demo'
 
         # Required roles to access the dashboard (users must have at least one)
-        # Empty array = no restrictions (default)
-        # Example with restrictions:
+        # Deprecated BC: prefer security.access_roles. Empty = no bundle-level role checks.
         # roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
         roles: []
 
-        # CSS framework to use for the dashboard interface
-        # Options: 'bootstrap' or 'tailwind'
-        template: 'bootstrap'
+        # Host CSS stack (REQ-UI-001). Prefer css_framework over deprecated template.
+        # Options: bootstrap | bootstrap4 | bootstrap5 | tabler | tailwind | foundation | custom | none
+        css_framework: bootstrap5
+        # template: 'bootstrap'   # Deprecated BC → css_framework
 
         # Enable individual record deletion from dashboard
         # When enabled, a delete button appears for each record in the routes table
@@ -134,6 +134,12 @@ nowo_performance:
         # When enabled, the WebProfiler will show ranking information (position by request time and query count)
         # Disable this to reduce database queries on each request (recommended for high-traffic production)
         enable_ranking_queries: true
+
+    security:
+        # Canonical access (REQ-UI-002). Empty access_roles keeps the open demo dashboard.
+        access_roles: []
+        access_checker: null
+        allow_unauthenticated: false
 
     # Enable or disable bundle logging
     # When disabled, no error_log() calls will be made by the bundle

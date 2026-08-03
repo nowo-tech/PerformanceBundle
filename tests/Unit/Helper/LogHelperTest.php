@@ -21,7 +21,7 @@ final class LogHelperTest extends TestCase
 
     public function testIsLoggingEnabledDefaultsToTrue(): void
     {
-        $this->assertTrue(LogHelper::isLoggingEnabled(null));
+        $this->assertTrue(LogHelper::isLoggingEnabled());
     }
 
     public function testLogReturnsFalseWhenDisabled(): void

@@ -53,6 +53,8 @@ final class NowoPerformanceBundle extends Bundle
         }
 
         VarDumper::setHandler(static function ($var, ...$moreVars): void {
+            // @codeCoverageIgnoreStart
+            // Closure body only executes in a real CLI+debug request, not in the test suite.
             $cloner = new VarCloner();
             $stream = @fopen('php://stderr', 'w') ?: (defined('STDOUT') && is_resource(STDOUT) ? STDOUT : null);
             if ($stream === null) {
@@ -63,6 +65,7 @@ final class NowoPerformanceBundle extends Bundle
             foreach ($moreVars as $v) {
                 $dumper->dump($cloner->cloneVar($v));
             }
+            // @codeCoverageIgnoreEnd
         });
     }
 

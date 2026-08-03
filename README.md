@@ -317,7 +317,7 @@ composer test-coverage
 ## Tests and coverage
 
 - Tests: PHPUnit (PHP)
-- PHP: ~94% lines (run `make test-coverage` for the current summary; badge rounded)
+- PHP: ~99% lines (run `make test-coverage` for the current summary; badge rounded)
 
 ## License
 

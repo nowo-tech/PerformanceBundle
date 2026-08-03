@@ -7,6 +7,9 @@ namespace Nowo\PerformanceBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
+use function array_key_exists;
+use function is_array;
+
 /**
  * Configuration class for the bundle.
  *
@@ -22,6 +25,18 @@ final class Configuration implements ConfigurationInterface
      */
     public const ALIAS = 'nowo_performance';
 
+    /** @var list<string> Host CSS stacks accepted by dashboard.css_framework (REQ-UI-001). */
+    public const CSS_FRAMEWORKS = [
+        'bootstrap',
+        'bootstrap4',
+        'bootstrap5',
+        'tabler',
+        'tailwind',
+        'foundation',
+        'custom',
+        'none',
+    ];
+
     /**
      * Builds the configuration tree.
      *
@@ -33,6 +48,25 @@ final class Configuration implements ConfigurationInterface
         $rootNode    = $treeBuilder->getRootNode();
 
         $rootNode
+            ->beforeNormalization()
+                ->always(static function (mixed $v): mixed {
+                    if (!is_array($v)) {
+                        return $v;
+                    }
+
+                    $dashboardRoles         = $v['dashboard']['roles'] ?? null;
+                    $hasExplicitAccessRoles = is_array($v['security'] ?? null)
+                        && array_key_exists('access_roles', $v['security']);
+
+                    // BC: map dashboard.roles → security.access_roles when access_roles is not set
+                    if (!$hasExplicitAccessRoles && is_array($dashboardRoles)) {
+                        $v['security'] ??= [];
+                        $v['security']['access_roles'] = $dashboardRoles;
+                    }
+
+                    return $v;
+                })
+            ->end()
             ->children()
                 ->booleanNode('enabled')
                     ->info('Enable or disable performance tracking')
@@ -171,6 +205,25 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('dashboard')
                     ->info('Performance dashboard configuration')
                     ->addDefaultsIfNotSet()
+                    ->beforeNormalization()
+                        ->ifArray()
+                        ->then(static function (array $v): array {
+                            // BC alias: dashboard.template → css_framework when css_framework absent
+                            if (isset($v['template']) && !isset($v['css_framework'])) {
+                                $v['css_framework'] = match ((string) $v['template']) {
+                                    'bootstrap' => 'bootstrap5',
+                                    'tailwind'  => 'tailwind',
+                                    default     => (string) $v['template'],
+                                };
+                            }
+                            // Canonical alias: bootstrap → bootstrap5
+                            if (isset($v['css_framework']) && $v['css_framework'] === 'bootstrap') {
+                                $v['css_framework'] = 'bootstrap5';
+                            }
+
+                            return $v;
+                        })
+                    ->end()
                     ->children()
                         ->booleanNode('enabled')
                             ->info('Enable or disable the performance dashboard')
@@ -185,13 +238,18 @@ final class Configuration implements ConfigurationInterface
                             ->defaultValue('')
                         ->end()
                         ->arrayNode('roles')
-                            ->info('Required roles to access the dashboard (users must have at least one). Empty disables role checks (not recommended in production).')
+                            ->info('Deprecated: use security.access_roles instead. Kept for BC; mapped to security.access_roles when access_roles is not set. Empty disables role checks (not recommended in production).')
                             ->prototype('scalar')->end()
                             ->defaultValue(['ROLE_ADMIN'])
                             ->example(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'])
                         ->end()
+                        ->enumNode('css_framework')
+                            ->info('Host-chosen CSS stack for the dashboard (REQ-UI-001). Twig global nowo_performance_css_framework. Values: bootstrap (alias of bootstrap5), bootstrap4, bootstrap5, tabler, tailwind, foundation, custom, none. Default bootstrap5 matches the Bootstrap CDN demo. Dual markup ships bootstrap-family and tailwind partials; other values use bootstrap-family markup unless you override Twig.')
+                            ->values(self::CSS_FRAMEWORKS)
+                            ->defaultValue('bootstrap5')
+                        ->end()
                         ->enumNode('template')
-                            ->info('CSS framework to use for the dashboard (bootstrap or tailwind)')
+                            ->info('Deprecated: use dashboard.css_framework instead. Kept for BC; mapped to css_framework when css_framework is absent (bootstrap→bootstrap5, tailwind→tailwind). Synced back to bootstrap|tailwind markup family after normalization.')
                             ->values(['bootstrap', 'tailwind'])
                             ->defaultValue('bootstrap')
                         ->end()
@@ -231,6 +289,34 @@ final class Configuration implements ConfigurationInterface
                         ->booleanNode('enable_ranking_queries')
                             ->info('Enable ranking queries in WebProfiler (request time and query count rankings). Disable to reduce database queries on each request.')
                             ->defaultValue(true)
+                        ->end()
+                    ->end()
+                    ->validate()
+                        ->always(static function (array $v): array {
+                            // Keep deprecated template synced to markup family from canonical css_framework
+                            $css           = $v['css_framework'] ?? 'bootstrap5';
+                            $v['template'] = $css === 'tailwind' ? 'tailwind' : 'bootstrap';
+
+                            return $v;
+                        })
+                    ->end()
+                ->end()
+                ->arrayNode('security')
+                    ->info('Dashboard access control (REQ-UI-002)')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('access_roles')
+                            ->info('Roles that may access the dashboard (user needs at least one). Empty disables role checks. Default ROLE_ADMIN.')
+                            ->scalarPrototype()->end()
+                            ->defaultValue(['ROLE_ADMIN'])
+                        ->end()
+                        ->scalarNode('access_checker')
+                            ->info('Optional service id implementing PerformanceAccessCheckerInterface')
+                            ->defaultNull()
+                        ->end()
+                        ->booleanNode('allow_unauthenticated')
+                            ->info('When true, skips Symfony Security requirement for the dashboard (demo/dev only)')
+                            ->defaultFalse()
                         ->end()
                     ->end()
                 ->end()

@@ -15,11 +15,42 @@ This Symfony bundle **tracks route performance metrics** (timing, database query
 
 | Threat | Mitigation |
 |--------|------------|
-| Unauthorized dashboard access | Configure `required_role` / Symfony `access_control`; never expose the dashboard anonymously in production. |
+| Unauthorized dashboard access | `security.access_roles` / custom `PerformanceAccessCheckerInterface`; Symfony `access_control`; never expose anonymously in production (`allow_unauthenticated: false`). |
 | SQL injection | Use Doctrine parameterized queries; validate sort/filter parameters. |
 | SSRF via webhook URLs | Only allow webhook URLs from trusted configuration (env), not from end-user POST bodies. |
 | Information leakage in exports | Restrict export actions to trusted roles; avoid exporting secrets from request attributes. |
 | DoS via large exports or queries | Use pagination, limits, and infrastructure timeouts. |
+
+## Admin UI guard (REQ-UI-002)
+
+The dashboard (default path `/performance`) must not be public in production.
+
+**Default configuration:**
+
+```yaml
+nowo_performance:
+    security:
+        access_roles: [ROLE_ADMIN]
+        access_checker: null
+        allow_unauthenticated: false
+```
+
+Requirements:
+
+1. Install `symfony/security-bundle` when the dashboard is enabled and `allow_unauthenticated` is `false` (otherwise container load throws `LogicException`).
+2. Configure firewalls and `access_control` for the dashboard path:
+
+```yaml
+security:
+    access_control:
+        - { path: ^/performance, roles: ROLE_ADMIN }
+```
+
+3. Optionally provide a custom `access_checker` service implementing `PerformanceAccessCheckerInterface`.
+
+**BC:** `dashboard.roles` is still accepted and mapped into `security.access_roles` when `access_roles` is not set explicitly. Prefer `security.access_roles`.
+
+Setting `allow_unauthenticated: true` is supported for local demos only.
 
 ## Secrets and cryptography
 
@@ -56,7 +87,7 @@ Before tagging a release, confirm:
 | **Dependencies** | `composer audit` clean or triaged. |
 | **Logging** | No secrets in application logs from bundle code paths. |
 | **Cryptography** | HTTPS/TLS for outbound calls is the deployer’s responsibility; document. |
-| **Permissions / exposure** | Dashboard and export routes require appropriate roles. |
+| **Permissions / exposure** | Dashboard and export routes require `access_roles` or custom checker; `allow_unauthenticated` is `false` by default. |
 | **Limits / DoS** | Export size and query limits documented where applicable. |
 
 Record confirmation in the release PR or tag notes.
