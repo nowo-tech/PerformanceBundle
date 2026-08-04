@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -13,10 +14,20 @@ final class DeleteRecordsByFilterTypeTest extends TypeTestCase
 {
     private DeleteRecordsByFilterType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new DeleteRecordsByFilterType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new DeleteRecordsByFilterType();
+        $this->formType = FormKitTestSupport::withMerger(new DeleteRecordsByFilterType());
     }
 
     public function testBuildFormCreatesAllFields(): void

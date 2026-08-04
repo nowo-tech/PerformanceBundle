@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -13,10 +14,20 @@ final class ReviewRouteDataTypeTest extends TypeTestCase
 {
     private ReviewRouteDataType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new ReviewRouteDataType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new ReviewRouteDataType();
+        $this->formType = FormKitTestSupport::withMerger(new ReviewRouteDataType());
     }
 
     public function testBuildFormCreatesAllFields(): void

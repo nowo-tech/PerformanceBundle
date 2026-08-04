@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Form;
 
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -19,8 +21,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 class DeleteRecordType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * Builds the form with a single submit button.
      *
@@ -30,7 +35,7 @@ class DeleteRecordType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         /*
-        $builder->add('submit', SubmitType::class, [
+        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
             'label' => 'Delete',
             'attr' => ['class' => $options['submit_attr_class'] ?? 'btn btn-danger btn-sm'],
         ]);

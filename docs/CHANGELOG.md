@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.4.0] - 2026-08-04](#340-2026-08-04)
 - [[3.3.1] - 2026-08-03](#331-2026-08-03)
 - [[3.3.0] - 2026-08-03](#330-2026-08-03)
 - [[3.2.2] - 2026-07-30](#322-2026-07-30)
@@ -127,9 +128,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No changes yet._
+## [3.4.0] - 2026-08-04
+
+### Changed
+
+- **FormKitBundle:** depend on [`nowo-tech/form-kit-bundle`](https://github.com/nowo-tech/FormKitBundle) ^2.0. Admin form types use `FormOptionsTrait` + profile `performance` (`#[FormKitConfig]`). Extension prepends that profile when missing; form types are tagged `form.type` so `FormOptionsMerger` is injected.
+- **UiKit:** Dashboard templates use `ui.btn` / `ui.row_actions` macros with `nowo_performance_css_framework` instead of hard-coded Bootstrap button classes.
+
+### Added
+- **REQ-TWIG-004:** require `twig/extra-bundle` + `twig/string-extra`; `make check-twig-extra` in `release-check`; demos register `TwigExtraBundle`.
+- **Twig-CS-Fixer:** `vincentlanglet/twig-cs-fixer`, `.twig-cs-fixer.php`, `composer twig:lint` / `twig:fix`.
+
+### Changed
+
+- **REQ-UI-001-kit:** Require **[UiKitBundle](https://github.com/nowo-tech/UiKitBundle)** (`nowo-tech/ui-kit-bundle` `^1.4`). Dashboard shell loads `asset('css/nowo-ui.css', 'nowo_ui_kit')` and imports `@NowoUiKitBundle/macros/ui.html.twig` (flashes via `ui.flash`). `PerformanceExtension` seeds `nowo_ui_kit.css_framework` / `icon_set` from `dashboard.css_framework` when the host has not set UiKit. Demo registers UiKit and ships `nowo_ui_kit.yaml`.
 
 ---
+
+[3.4.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.0
 
 ## [3.3.1] - 2026-08-03
 

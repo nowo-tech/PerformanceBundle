@@ -54,12 +54,12 @@ class PerformanceAnalysisService
                 $queryTimes[] = $route->getQueryTime();
             }
             if ($route->getTotalQueries() !== null) {
-                $queryCounts[] = $route->getTotalQueries();
+                $queryCounts[] = (float) $route->getTotalQueries();
             }
             if ($route->getMemoryUsage() !== null) {
                 $memoryUsages[] = $route->getMemoryUsage() / 1024 / 1024; // Convert to MB
             }
-            $accessCounts[] = $route->getAccessCount();
+            $accessCounts[] = (float) $route->getAccessCount();
         }
 
         return [

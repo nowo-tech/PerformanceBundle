@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Form;
 
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -21,8 +23,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 class DeleteRecordsByFilterType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * Builds the form with hidden fields for filter state and a submit button.
      *
@@ -31,24 +36,23 @@ class DeleteRecordsByFilterType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('_from', HiddenType::class, [
+        $this->addWithDefaults($builder, '_from', HiddenType::class, [
                 'property_path' => 'from',
                 'data'          => $options['from_value'],
-            ])
-            ->add('env', HiddenType::class)
-            ->add('start_date', HiddenType::class, ['property_path' => 'startDate'])
-            ->add('end_date', HiddenType::class, ['property_path' => 'endDate'])
-            ->add('route', HiddenType::class)
-            ->add('path', HiddenType::class)
-            ->add('status_code', HiddenType::class, ['property_path' => 'statusCode'])
-            ->add('min_query_time', HiddenType::class, ['property_path' => 'minQueryTime'])
-            ->add('max_query_time', HiddenType::class, ['property_path' => 'maxQueryTime'])
-            ->add('min_memory_usage', HiddenType::class, ['property_path' => 'minMemoryUsage'])
-            ->add('max_memory_usage', HiddenType::class, ['property_path' => 'maxMemoryUsage'])
-            ->add('referer', HiddenType::class)
-            ->add('user', HiddenType::class)
-            ->add('submit', SubmitType::class, [
+            ]);
+        $this->addWithDefaults($builder, 'env', HiddenType::class, []);
+        $this->addWithDefaults($builder, 'start_date', HiddenType::class, ['property_path' => 'startDate']);
+        $this->addWithDefaults($builder, 'end_date', HiddenType::class, ['property_path' => 'endDate']);
+        $this->addWithDefaults($builder, 'route', HiddenType::class, []);
+        $this->addWithDefaults($builder, 'path', HiddenType::class, []);
+        $this->addWithDefaults($builder, 'status_code', HiddenType::class, ['property_path' => 'statusCode']);
+        $this->addWithDefaults($builder, 'min_query_time', HiddenType::class, ['property_path' => 'minQueryTime']);
+        $this->addWithDefaults($builder, 'max_query_time', HiddenType::class, ['property_path' => 'maxQueryTime']);
+        $this->addWithDefaults($builder, 'min_memory_usage', HiddenType::class, ['property_path' => 'minMemoryUsage']);
+        $this->addWithDefaults($builder, 'max_memory_usage', HiddenType::class, ['property_path' => 'maxMemoryUsage']);
+        $this->addWithDefaults($builder, 'referer', HiddenType::class, []);
+        $this->addWithDefaults($builder, 'user', HiddenType::class, []);
+        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
                 'label'              => 'access_statistics.delete_records_matching_filter',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-danger'],

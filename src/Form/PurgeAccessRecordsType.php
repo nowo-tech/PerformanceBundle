@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Form;
 
 use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -20,8 +22,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 class PurgeAccessRecordsType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * @param FormBuilderInterface<mixed> $builder
      * @param array<string, mixed> $options
@@ -36,8 +41,7 @@ class PurgeAccessRecordsType extends AbstractType
             $environments,
         );
 
-        $builder
-            ->add('purgeType', ChoiceType::class, [
+        $this->addChoice($builder, 'purgeType', [
                 'label'              => 'access_statistics.purge_type',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
@@ -46,23 +50,23 @@ class PurgeAccessRecordsType extends AbstractType
                 ],
                 'choice_translation_domain' => 'NowoPerformanceBundle',
                 'attr'                      => ['class' => 'form-select purge-type-select'],
-            ])
-            ->add('days', IntegerType::class, [
+            ]);
+        $this->addInteger($builder, 'days', [
                 'label'              => 'access_statistics.older_than_days',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $options['default_days'] ?? 30,
                 'attr'               => ['class' => 'form-control', 'min' => 1, 'placeholder' => '30'],
-            ])
-            ->add('env', ChoiceType::class, [
+            ]);
+        $this->addChoice($builder, 'env', [
                 'label'                     => 'access_statistics.environment',
                 'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesEnv,
                 'choice_translation_domain' => 'NowoPerformanceBundle',
                 'required'                  => false,
                 'attr'                      => ['class' => 'form-select'],
-            ])
-            ->add('submit', SubmitType::class, [
+            ]);
+        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
                 'label'              => 'access_statistics.purge_records',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-warning'],

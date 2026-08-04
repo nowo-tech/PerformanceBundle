@@ -19,6 +19,8 @@
 
 ## Requirements
 
+- **FormKitBundle** (`nowo-tech/form-kit-bundle` ^2.0) — dashboard/admin Symfony forms (`FormOptionsTrait`, profile `performance`). Register `NowoFormKitBundle` in `config/bundles.php` (Flex / demo). Optional host YAML: `config/packages/nowo_form_kit.yaml`.
+
 - PHP >= 8.2, < 8.6
 - Symfony >= 7.0 || >= 8.0
 - Doctrine ORM >= 2.13 || >= 3.0
@@ -164,3 +166,13 @@ The bundle is now installed and will automatically track route performance metri
 - See [Commands](COMMANDS.md) for command documentation
 
 > **Upgrading to 2.0?** Version 2.0.0 (released 2026-01-28) introduces breaking changes (entity normalization). See [V2_MIGRATION.md](V2_MIGRATION.md) and [ENTITY_NORMALIZATION_PLAN.md](ENTITY_NORMALIZATION_PLAN.md).
+
+## Twig Extra Bundle (REQ-TWIG-004)
+
+This package ships Twig templates. Host applications **must** install and enable Twig Extra:
+
+```bash
+composer require twig/extra-bundle twig/string-extra
+```
+
+Register `Twig\Extra\TwigExtraBundle\TwigExtraBundle` in `config/bundles.php` (Flex usually does this). Demos already include the same stack. The package `release-check` runs `make check-twig-extra` to guard this contract.

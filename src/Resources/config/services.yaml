@@ -195,3 +195,9 @@ services:
     Nowo\PerformanceBundle\MessageHandler\:
         resource: '../../MessageHandler/*'
         exclude: '../../MessageHandler/AsMessageHandlerPolyfill.php'
+
+    # Form Kit injects FormOptionsMerger into tagged form types (FormOptionsMergerInjectorCompilerPass).
+    Nowo\PerformanceBundle\Form\:
+        resource: '../../Form/'
+        exclude: '../../Form/DataTransformer/'
+        tags: ['form.type']

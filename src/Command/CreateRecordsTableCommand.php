@@ -167,7 +167,7 @@ HELP
 
             // Get table name from metadata (compatible with different Doctrine versions)
             if (method_exists($metadata, 'getTableName')) {
-                /** @var callable $getTableName */
+                /** @var Closure(): string $getTableName */
                 $getTableName    = $metadata->getTableName(...);
                 $actualTableName = $getTableName();
             } else {
@@ -394,8 +394,8 @@ HELP
             if ($metadata->isIdentifier($fieldName)) {
                 $fieldType = $metadata->getTypeOfField($fieldName);
                 if (in_array(strtolower((string) $fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
-                    $generatorType = $metadata->generatorType ?? null;
-                    if (in_array($generatorType, [null, ClassMetadata::GENERATOR_TYPE_AUTO, ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
+                    $generatorType = $metadata->generatorType;
+                    if (in_array($generatorType, [ClassMetadata::GENERATOR_TYPE_AUTO, ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
                         || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
                         $isAutoincrement = true;
                     }

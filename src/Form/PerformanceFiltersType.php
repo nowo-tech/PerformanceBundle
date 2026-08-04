@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Form;
 
 use DateTimeImmutable;
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -23,8 +25,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 class PerformanceFiltersType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * Build the form.
      *
@@ -40,8 +45,7 @@ class PerformanceFiltersType extends AbstractType
         $currentOrder  = $options['current_order'] ?? 'DESC';
         $currentLimit  = $options['current_limit'] ?? 100;
 
-        $builder
-            ->add('env', ChoiceType::class, [
+        $this->addChoice($builder, 'env', [
                 'label'              => 'filters.environment',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => array_combine(
@@ -55,8 +59,8 @@ class PerformanceFiltersType extends AbstractType
                 'attr'                      => [
                     'class' => 'form-select',
                 ],
-            ])
-            ->add('route', TextType::class, [
+            ]);
+        $this->addText($builder, 'route', [
                 'label'              => 'filters.route_name',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -64,8 +68,8 @@ class PerformanceFiltersType extends AbstractType
                 'attr'               => [
                     'class' => 'form-control',
                 ],
-            ])
-            ->add('path', TextType::class, [
+            ]);
+        $this->addText($builder, 'path', [
                 'label'              => 'filters.path_url',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -74,8 +78,8 @@ class PerformanceFiltersType extends AbstractType
                     'class'       => 'form-control',
                     'placeholder' => '/path',
                 ],
-            ])
-            ->add('sort', ChoiceType::class, [
+            ]);
+        $this->addChoice($builder, 'sort', [
                 'label'              => 'filters.sort_by',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
@@ -93,8 +97,8 @@ class PerformanceFiltersType extends AbstractType
                 'attr'                      => [
                     'class' => 'form-select',
                 ],
-            ])
-            ->add('order', ChoiceType::class, [
+            ]);
+        $this->addChoice($builder, 'order', [
                 'label'              => 'filters.order',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'choices'            => [
@@ -107,8 +111,8 @@ class PerformanceFiltersType extends AbstractType
                 'attr'                      => [
                     'class' => 'form-select',
                 ],
-            ])
-            ->add('limit', IntegerType::class, [
+            ]);
+        $this->addInteger($builder, 'limit', [
                 'label'              => 'filters.limit',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -118,8 +122,8 @@ class PerformanceFiltersType extends AbstractType
                     'min'   => 1,
                     'max'   => 1000,
                 ],
-            ])
-            ->add('min_request_time', NumberType::class, [
+            ]);
+        $this->addNumber($builder, 'min_request_time', [
                 'label'              => 'filters.min_request_time',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -129,8 +133,8 @@ class PerformanceFiltersType extends AbstractType
                     'class' => 'form-control',
                     'step'  => '0.0001',
                 ],
-            ])
-            ->add('max_request_time', NumberType::class, [
+            ]);
+        $this->addNumber($builder, 'max_request_time', [
                 'label'              => 'filters.max_request_time',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -140,8 +144,8 @@ class PerformanceFiltersType extends AbstractType
                     'class' => 'form-control',
                     'step'  => '0.0001',
                 ],
-            ])
-            ->add('min_query_count', IntegerType::class, [
+            ]);
+        $this->addInteger($builder, 'min_query_count', [
                 'label'              => 'filters.min_query_count',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -150,8 +154,8 @@ class PerformanceFiltersType extends AbstractType
                     'class' => 'form-control',
                     'min'   => 0,
                 ],
-            ])
-            ->add('max_query_count', IntegerType::class, [
+            ]);
+        $this->addInteger($builder, 'max_query_count', [
                 'label'              => 'filters.max_query_count',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -160,8 +164,8 @@ class PerformanceFiltersType extends AbstractType
                     'class' => 'form-control',
                     'min'   => 0,
                 ],
-            ])
-            ->add('date_from', DateType::class, [
+            ]);
+        $this->addWithDefaults($builder, 'date_from', DateType::class, [
                 'label'              => 'filters.date_from',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -170,8 +174,8 @@ class PerformanceFiltersType extends AbstractType
                 'attr'               => [
                     'class' => 'form-control',
                 ],
-            ])
-            ->add('date_to', DateType::class, [
+            ]);
+        $this->addWithDefaults($builder, 'date_to', DateType::class, [
                 'label'              => 'filters.date_to',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -180,8 +184,8 @@ class PerformanceFiltersType extends AbstractType
                 'attr'               => [
                     'class' => 'form-control',
                 ],
-            ])
-            ->add('submit', SubmitType::class, [
+            ]);
+        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
                 'label'              => 'filters.apply_filters',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => [

@@ -4,10 +4,11 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": ">=8.5,<8.6",
         "doctrine/doctrine-bundle": "^2.8 || ^3.0",
         "doctrine/orm": "^2.13 || ^3.0",
+        "nowo-tech/form-kit-bundle": "^2.0",
         "nowo-tech/performance-bundle": "@dev",
+        "php": ">=8.5,<8.6",
         "symfony/asset": "^8.0",
         "symfony/console": "^8.0",
         "symfony/dotenv": "^8.0",
@@ -24,6 +25,8 @@
         "symfony/ux-twig-component": "^2.32",
         "symfony/validator": "^8.0",
         "symfony/yaml": "^8.0",
+        "twig/extra-bundle": "^3.12",
+        "twig/string-extra": "^3.12",
         "twig/twig": "^3.21"
     },
     "config": {

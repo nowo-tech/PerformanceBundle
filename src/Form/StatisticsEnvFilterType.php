@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Form;
 
 use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -18,8 +20,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 class StatisticsEnvFilterType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * Builds the form with a single environment choice field.
      *
@@ -31,7 +36,7 @@ class StatisticsEnvFilterType extends AbstractType
         $environments = $options['environments'] ?? ['dev', 'test', 'prod'];
         $choices      = array_combine(array_map(strtoupper(...), $environments), $environments);
 
-        $builder->add('env', ChoiceType::class, [
+        $this->addChoice($builder, 'env', [
             'label'                     => 'Environment',
             'choices'                   => $choices,
             'choice_translation_domain' => false,

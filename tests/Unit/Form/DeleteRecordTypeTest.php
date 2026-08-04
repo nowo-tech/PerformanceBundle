@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\DeleteRecordType;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -12,10 +13,20 @@ final class DeleteRecordTypeTest extends TypeTestCase
 {
     private DeleteRecordType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new DeleteRecordType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new DeleteRecordType();
+        $this->formType = FormKitTestSupport::withMerger(new DeleteRecordType());
     }
 
     /** Form type builds without adding a submit child when buildForm submit block is commented out. */

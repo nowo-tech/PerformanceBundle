@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\StatisticsEnvFilterType;
 use Nowo\PerformanceBundle\Model\StatisticsEnvFilter;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -13,10 +14,20 @@ final class StatisticsEnvFilterTypeTest extends TypeTestCase
 {
     private StatisticsEnvFilterType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new StatisticsEnvFilterType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new StatisticsEnvFilterType();
+        $this->formType = FormKitTestSupport::withMerger(new StatisticsEnvFilterType());
     }
 
     public function testBuildFormCreatesEnvField(): void
