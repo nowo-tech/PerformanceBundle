@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\DependencyInjection\Compiler;
 
 use Nowo\PerformanceBundle\Service\NotificationService;
+use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -37,8 +38,9 @@ final class NotificationChannelsPass implements CompilerPassInterface
             ->getParameters()[2];
 
         if ($thirdParameter->getName() === 'needsIndexes') {
-            // Symfony 8.1+: 3rd arg is $needsIndexes (bool|string|null), not defaultIndexMethod.
-            return new TaggedIteratorArgument($tag, null, false, [], true);
+            // Symfony 8.1+: 3rd arg is $needsIndexes. Use reflection so PHPStan (older stubs) does not
+            // type-check positional args against the pre-8.1 constructor signature.
+            return (new ReflectionClass(TaggedIteratorArgument::class))->newInstanceArgs([$tag, null, false, [], true]);
         }
 
         return new TaggedIteratorArgument($tag, null, null, false, null, [], true); // @codeCoverageIgnore – only reached on Symfony <8.1 (3rd param was defaultIndexMethod)

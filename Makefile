@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history
+.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history check-twig-extra
 
 # Default target
 help:
@@ -150,7 +150,11 @@ update: ensure-up
 validate: ensure-up
 	$(COMPOSE) exec -T php composer deps-validate
 
-release-check: check-no-cursor-coauthor-since-release ensure-up composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
+
+check-twig-extra:
+	@chmod +x .scripts/check-twig-extra.sh
+	@./.scripts/check-twig-extra.sh
+release-check: check-no-cursor-coauthor check-twig-extra-since-release ensure-up composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
 
 release-check-demos:
 	@$(MAKE) -C demo release-check
@@ -199,3 +203,6 @@ BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 strip-cursor-coauthor-from-history:
 	@chmod +x .scripts/strip-cursor-coauthor-from-history.sh
 	@./.scripts/strip-cursor-coauthor-from-history.sh main
+
+twig-lint: ensure-up
+	@$(COMPOSE) exec -T $(SERVICE_PHP) composer twig:lint || $(COMPOSE) exec -T $(SERVICE_PHP) ./vendor/bin/twig-cs-fixer lint --config=.twig-cs-fixer.php

@@ -76,8 +76,7 @@ class DependencyChecker
      */
     public function isMailerAvailable(): bool
     {
-        return interface_exists(MailerInterface::class)
-            || class_exists(MailerInterface::class);
+        return interface_exists(MailerInterface::class);
     }
 
     /**
@@ -87,8 +86,7 @@ class DependencyChecker
      */
     public function isHttpClientAvailable(): bool
     {
-        return interface_exists(HttpClientInterface::class)
-            || class_exists(HttpClientInterface::class);
+        return interface_exists(HttpClientInterface::class);
     }
 
     /**

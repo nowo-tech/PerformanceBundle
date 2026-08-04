@@ -1,5 +1,7 @@
 {# Routes Table Component #}
 {# Expects: routes, sortBy, order (for sortable headers), paginator (optional). Query params from app.request.query.all. #}
+{% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
+{% set _perf_css = nowo_performance_css_framework|default('bootstrap5') %}
 {% set _query = app.request.query.all|default({}) %}
 {% set _anchor = '#routes-table' %}
 <div class="row" id="routes-table">
@@ -177,7 +179,7 @@
                                                         route: route.name,
                                                         env: environment|default('dev')
                                                     }) }}"
-                                                       class="btn btn-sm btn-outline-secondary"
+                                                       class="{{ ui.btn('secondary', 'sm', _perf_css) }}"
                                                        title="View access records for this route">
                                                         {{ ux_icon('bi:eye', {class: 'me-1'}) }}
                                                     </a>
@@ -216,18 +218,18 @@
                                         {% endif %}
                                         {% if (enableRecordManagement is defined and enableRecordManagement) or (enableReviewSystem is defined and enableReviewSystem) %}
                                             <td>
-                                                <div class="btn-group" role="group">
+                                                <div class="{{ ui.row_actions(_perf_css) }}" role="group">
                                                     {% if enableRecordManagement is defined and enableRecordManagement and deleteForms[route.id] is defined %}
                                                         {% set deleteForm = deleteForms[route.id] %}
                                                         {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.id}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ 'confirmations.delete_record'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
                                                             {{ form_widget(deleteForm._token) }}
-                                                            <button type="submit" class="btn btn-sm btn-danger" title="{{ 'routes_table.delete'|trans({}, 'NowoPerformanceBundle') }}">
+                                                            <button type="submit" class="{{ ui.btn('danger', 'sm', _perf_css) }} nowo-ui-action-delete" title="{{ 'routes_table.delete'|trans({}, 'NowoPerformanceBundle') }}">
                                                                 {{ ux_icon('bi:trash', {class: 'me-1'}) }}
                                                             </button>
                                                         {{ form_end(deleteForm) }}
                                                     {% endif %}
                                                     {% if enableReviewSystem is defined and enableReviewSystem and reviewForms[route.id] is defined %}
-                                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal{{ route.id }}" title="{{ route.isReviewed() ? 'routes_table.edit_review'|trans({}, 'NowoPerformanceBundle') : 'routes_table.mark_as_reviewed'|trans({}, 'NowoPerformanceBundle') }}">
+                                                        <button type="button" class="{{ ui.btn('primary', 'sm', _perf_css) }}" data-bs-toggle="modal" data-bs-target="#reviewModal{{ route.id }}" title="{{ route.isReviewed() ? 'routes_table.edit_review'|trans({}, 'NowoPerformanceBundle') : 'routes_table.mark_as_reviewed'|trans({}, 'NowoPerformanceBundle') }}">
                                                             {% if route.isReviewed() %}
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V2.5h-3a.5.5 0 0 1 0-1h3.5a.5.5 0 0 1 .5.5zM12.146 6.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708-.708L13.293 8.5 12.146 7.354a.5.5 0 0 1 0-.708z"/><path d="M.5 1a.5.5 0 0 0-.5.5v12a.5.5 0 0 0 .5.5h12a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-1 0v1.5H1V2h10.5v1a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-.5-.5H.5z"/></svg>
                                                             {% else %}
@@ -272,7 +274,7 @@
                                                                         {% endif %}
                                                                     </div>
                                                                     <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'routes_table.cancel'|trans({}, 'NowoPerformanceBundle') }}</button>
+                                                                        <button type="button" class="{{ ui.btn('secondary', null, _perf_css) }}" data-bs-dismiss="modal">{{ 'routes_table.cancel'|trans({}, 'NowoPerformanceBundle') }}</button>
                                                                         {% if not reviewForm.submit.isRendered %}
                                                                             {{ form_widget(reviewForm.submit) }}
                                                                         {% endif %}

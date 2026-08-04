@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -13,10 +14,20 @@ final class ClearPerformanceDataTypeTest extends TypeTestCase
 {
     private ClearPerformanceDataType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new ClearPerformanceDataType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new ClearPerformanceDataType();
+        $this->formType = FormKitTestSupport::withMerger(new ClearPerformanceDataType());
     }
 
     public function testBuildFormCreatesEnvAndSubmit(): void

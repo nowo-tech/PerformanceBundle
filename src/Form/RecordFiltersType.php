@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Form;
 
 use Nowo\PerformanceBundle\Model\RecordFilters;
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -25,8 +27,11 @@ use function is_int;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 class RecordFiltersType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * Builds the filter form (start/end date, env, route, status code, query time and memory filters).
      *
@@ -51,8 +56,7 @@ class RecordFiltersType extends AbstractType
             '503 Service Unavailable' => '503',
         ];
 
-        $builder
-            ->add('start_date', DateTimeType::class, [
+        $this->addWithDefaults($builder, 'start_date', DateTimeType::class, [
                 'label'              => 'access_statistics.start_date',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'widget'             => 'single_text',
@@ -63,8 +67,8 @@ class RecordFiltersType extends AbstractType
                 'input'         => 'datetime_immutable',
                 'with_seconds'  => false,
                 'attr'          => ['class' => 'form-control'],
-            ])
-            ->add('end_date', DateTimeType::class, [
+            ]);
+        $this->addWithDefaults($builder, 'end_date', DateTimeType::class, [
                 'label'              => 'access_statistics.end_date',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'widget'             => 'single_text',
@@ -75,8 +79,8 @@ class RecordFiltersType extends AbstractType
                 'input'         => 'datetime_immutable',
                 'with_seconds'  => false,
                 'attr'          => ['class' => 'form-control'],
-            ])
-            ->add('env', ChoiceType::class, [
+            ]);
+        $this->addChoice($builder, 'env', [
                 'label'                     => 'access_statistics.environment',
                 'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesEnv,
@@ -84,8 +88,8 @@ class RecordFiltersType extends AbstractType
                 'required'                  => false,
                 'placeholder'               => false,
                 'attr'                      => ['class' => 'form-select'],
-            ])
-            ->add('route', ChoiceType::class, [
+            ]);
+        $this->addChoice($builder, 'route', [
                 'label'                     => 'access_statistics.route',
                 'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesRoute,
@@ -93,8 +97,8 @@ class RecordFiltersType extends AbstractType
                 'required'                  => false,
                 'placeholder'               => false,
                 'attr'                      => ['class' => 'form-select'],
-            ])
-            ->add('path', TextType::class, [
+            ]);
+        $this->addText($builder, 'path', [
                 'label'              => 'access_statistics.path',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -103,8 +107,8 @@ class RecordFiltersType extends AbstractType
                     'class'       => 'form-control',
                     'placeholder' => 'access_statistics.path_placeholder',
                 ],
-            ])
-            ->add('status_code', ChoiceType::class, [
+            ]);
+        $this->addChoice($builder, 'status_code', [
                 'label'                     => 'access_statistics.status_code',
                 'translation_domain'        => 'NowoPerformanceBundle',
                 'choices'                   => $choicesStatus,
@@ -113,24 +117,24 @@ class RecordFiltersType extends AbstractType
                 'placeholder'               => false,
                 'property_path'             => 'statusCode',
                 'attr'                      => ['class' => 'form-select'],
-            ])
-            ->add('min_query_time', NumberType::class, [
+            ]);
+        $this->addNumber($builder, 'min_query_time', [
                 'label'              => 'access_statistics.min_query_time',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'property_path'      => 'minQueryTime',
                 'scale'              => 3,
                 'attr'               => ['class' => 'form-control', 'placeholder' => '0.001', 'step' => '0.001'],
-            ])
-            ->add('max_query_time', NumberType::class, [
+            ]);
+        $this->addNumber($builder, 'max_query_time', [
                 'label'              => 'access_statistics.max_query_time',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'property_path'      => 'maxQueryTime',
                 'scale'              => 3,
                 'attr'               => ['class' => 'form-control', 'placeholder' => '5', 'step' => '0.001'],
-            ])
-            ->add('min_memory_mb', NumberType::class, [
+            ]);
+        $this->addNumber($builder, 'min_memory_mb', [
                 'label'              => 'access_statistics.min_memory_mb',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -138,8 +142,8 @@ class RecordFiltersType extends AbstractType
                 'data'               => isset($options['data']) && $options['data']->minMemoryUsage !== null
                     ? round($options['data']->minMemoryUsage / 1024 / 1024, 2) : null,
                 'attr' => ['class' => 'form-control', 'placeholder' => '0', 'step' => '0.1'],
-            ])
-            ->add('max_memory_mb', NumberType::class, [
+            ]);
+        $this->addNumber($builder, 'max_memory_mb', [
                 'label'              => 'access_statistics.max_memory_mb',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -147,14 +151,14 @@ class RecordFiltersType extends AbstractType
                 'data'               => isset($options['data']) && $options['data']->maxMemoryUsage !== null
                     ? round($options['data']->maxMemoryUsage / 1024 / 1024, 2) : null,
                 'attr' => ['class' => 'form-control', 'placeholder' => '100', 'step' => '0.1'],
-            ])
-            ->add('referer', TextType::class, [
+            ]);
+        $this->addText($builder, 'referer', [
                 'label'              => 'access_statistics.referer',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'attr'               => ['class' => 'form-control', 'placeholder' => 'example.com'],
-            ])
-            ->add('user', TextType::class, [
+            ]);
+        $this->addText($builder, 'user', [
                 'label'              => 'access_statistics.user',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
@@ -171,8 +175,7 @@ class RecordFiltersType extends AbstractType
                 return is_int($value) ? $value : (int) $value;
             },
         ));
-        $builder
-            ->add('filter', SubmitType::class, [
+        $this->addWithDefaults($builder, 'filter', SubmitType::class, [
                 'label'              => 'access_statistics.filter',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-primary'],

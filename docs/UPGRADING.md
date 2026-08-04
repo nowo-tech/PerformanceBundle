@@ -5,7 +5,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
-- [Upgrading to next release (Unreleased)](#upgrading-to-next-release-unreleased)
+- [Upgrading to 3.4.0 (2026-08-04)](#upgrading-to-340-2026-08-04)
 - [Upgrading to 3.3.1 (2026-08-03)](#upgrading-to-331-2026-08-03)
 - [Upgrading to 3.3.0 (2026-08-03)](#upgrading-to-330-2026-08-03)
 - [Upgrading to 3.2.2 (2026-07-30)](#upgrading-to-322-2026-07-30)
@@ -89,9 +89,42 @@ This guide helps you upgrade between versions of the Performance Bundle.
   - [Testing Your Upgrade](#testing-your-upgrade)
   - [Troubleshooting](#troubleshooting)
 
-## Upgrading to next release (Unreleased)
+## Upgrading to 3.4.0 (2026-08-04)
 
-_No changes yet._
+From **3.3.x** — FormKit ^2, UiKit ^1.4, Twig Extra (REQ-TWIG-004), and Twig-CS-Fixer.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+php bin/console assets:install
+```
+
+### UiKit composition (REQ-UI-001-kit)
+
+Dashboard UI depends on **[UiKitBundle](https://github.com/nowo-tech/UiKitBundle)** (`nowo-tech/ui-kit-bundle` `^1.4`).
+
+1. The package is pulled transitively; run `assets:install`.
+2. Dashboard shell loads `asset('css/nowo-ui.css', 'nowo_ui_kit')` and imports `@NowoUiKitBundle/macros/ui.html.twig`.
+3. Optional: set `nowo_ui_kit.css_framework` / `icon_set` in the host. If unset, Performance seeds those keys from `dashboard.css_framework`.
+
+### FormKitBundle (admin forms)
+
+Ensure `nowo-tech/form-kit-bundle` ^2.0 is installed (pulled transitively) and `Nowo\FormKitBundle\NowoFormKitBundle` is registered. Form types use profile `performance` via `#[FormKitConfig]`; the bundle prepends that profile when the host has not defined it.
+
+### Twig Extra Bundle (REQ-TWIG-004)
+
+Hosts that render this bundle's Twig templates must install:
+
+```bash
+composer require twig/extra-bundle twig/string-extra
+```
+
+and enable `Twig\Extra\TwigExtraBundle\TwigExtraBundle`. Flex recipes usually register it automatically.
+
+### Twig-CS-Fixer (maintainers)
+
+Package maintainers: `composer twig:lint` / `composer twig:fix` use `.twig-cs-fixer.php` over `src/` (and `templates/` when present).
+
 
 ## Upgrading to 3.3.1 (2026-08-03)
 

@@ -1,4 +1,5 @@
 {% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
+{% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
 
 {# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
 {% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
@@ -27,17 +28,17 @@
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}</h1>
-            <div>
-                <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="btn btn-success me-2">
+            <div class="{{ ui.row_actions(_perf_css) }}">
+                <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
                     {{ 'access_statistics.export_records_csv'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
-                <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="btn btn-info me-2 text-white">
+                <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
                     {{ 'access_statistics.export_records_json'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
-                <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="btn btn-info me-2">
+                <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
                     {{ 'access_statistics.back_to_statistics'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
-                <a href="{{ path('nowo_performance.index') }}" class="btn btn-secondary">
+                <a href="{{ path('nowo_performance.index') }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
                     {{ 'dashboard.back_to_dashboard'|trans({}, 'NowoPerformanceBundle') }}
                 </a>
             </div>
@@ -63,7 +64,7 @@
                     <div class="col-md-3">{{ form_row(filterForm.user) }}</div>
                     <div class="col-md-12">
                         {{ form_widget(filterForm.filter) }}
-                        <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="btn btn-secondary">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
+                        <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
                     </div>
                 {{ form_end(filterForm, {'render_rest': false}) }}
                 {% if enable_record_management|default(false) %}

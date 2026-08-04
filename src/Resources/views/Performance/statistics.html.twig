@@ -1,4 +1,5 @@
 {% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
+{% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
 
 {# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
 {% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
@@ -24,7 +25,7 @@
                         <p class="text-muted">Detailed statistical analysis to identify optimization targets</p>
                     </div>
                     <div>
-                        <a href="{{ path('nowo_performance.index', {env: environment}) }}" class="btn btn-secondary">
+                        <a href="{{ path('nowo_performance.index', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
                             ← Back to Dashboard
                         </a>
                     </div>

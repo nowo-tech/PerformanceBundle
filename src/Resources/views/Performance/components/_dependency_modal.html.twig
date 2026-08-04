@@ -1,5 +1,6 @@
 {# Modal para mostrar información sobre dependencias faltantes #}
 {# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
+{% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
 {% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
 {% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
 {% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
@@ -29,7 +30,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="{{ ui.btn('secondary', null, _perf_css) }}" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>

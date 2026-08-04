@@ -41,19 +41,23 @@
         }
     ],
     "require": {
+        "doctrine/dbal": "^3.8.2 || ^4.0",
+        "doctrine/doctrine-bundle": "^2.8 || ^3.0",
+        "doctrine/orm": "^2.13 || ^3.0",
+        "nowo-tech/form-kit-bundle": "^2.0",
+        "nowo-tech/ui-kit-bundle": "^1.4",
         "php": ">=8.2 <8.6",
-        "symfony/framework-bundle": "^7.0 || ^8.0",
         "symfony/form": "^7.0 || ^8.0",
-        "symfony/yaml": "^7.0 || ^8.0",
+        "symfony/framework-bundle": "^7.0 || ^8.0",
         "symfony/security-bundle": "^7.0 || ^8.0",
         "symfony/stopwatch": "^7.0 || ^8.0",
         "symfony/translation": "^7.0 || ^8.0",
         "symfony/twig-bundle": "^7.0 || ^8.0",
-        "symfony/var-exporter": "^7.0 || ^8.0",
         "symfony/ux-icons": "^2.0 || ^3.0",
-        "doctrine/dbal": "^3.8.2 || ^4.0",
-        "doctrine/orm": "^2.13 || ^3.0",
-        "doctrine/doctrine-bundle": "^2.8 || ^3.0"
+        "symfony/var-exporter": "^7.0 || ^8.0",
+        "symfony/yaml": "^7.0 || ^8.0",
+        "twig/extra-bundle": "^3.12",
+        "twig/string-extra": "^3.12"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
@@ -69,7 +73,8 @@
         "symfony/http-client": "^7.0 || ^8.0",
         "symfony/mailer": "^7.0 || ^8.0",
         "symfony/mime": "^7.0 || ^8.0",
-        "symfony/ux-twig-component": "^2.0 || ^3.0"
+        "symfony/ux-twig-component": "^2.0 || ^3.0",
+        "vincentlanglet/twig-cs-fixer": "^3.0"
     },
     "suggest": {
         "symfony/http-client": "For webhook notifications (Slack, Teams, custom webhooks)",
@@ -119,7 +124,10 @@
             "@cs-check",
             "@validate-translations",
             "@test"
-        ]
+        ],
+        "twig:lint": "twig-cs-fixer lint --config=.twig-cs-fixer.php",
+        "twig:fix": "twig-cs-fixer fix --config=.twig-cs-fixer.php",
+        "twig:fix:check": "twig-cs-fixer lint --config=.twig-cs-fixer.php --fix"
     },
     "scripts-descriptions": {
         "test": "Run PHPUnit tests",

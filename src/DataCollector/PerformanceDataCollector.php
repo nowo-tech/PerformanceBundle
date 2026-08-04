@@ -98,7 +98,7 @@ class PerformanceDataCollector extends DataCollector
      * @param DependencyChecker|null $dependencyChecker The dependency checker (optional)
      * @param RouteDataRecordRepository|null $recordRepository The route data record repository (optional)
      * @param bool $checkTableStatus Whether to check table existence/completeness (default true). Set false to save queries.
-     * @param callable|null $queryMetricsProvider Optional callable returning [int count, float time]. When null, QueryTrackingMiddleware is used. Used in tests to cover the fallback catch.
+     * @param Closure|null $queryMetricsProvider Optional Closure returning [int count, float time]. When null, QueryTrackingMiddleware is used. Used in tests to cover the fallback catch.
      */
     public function __construct(private readonly ?RouteDataRepository $repository = null, private readonly ?KernelInterface $kernel = null, private readonly ?TableStatusChecker $tableStatusChecker = null, private readonly ?DependencyChecker $dependencyChecker = null, private readonly ?RouteDataRecordRepository $recordRepository = null, private readonly bool $checkTableStatus = true, private readonly ?Closure $queryMetricsProvider = null, private readonly ?QueryTrackingCounters $queryCounters = null)
     {
@@ -229,7 +229,7 @@ class PerformanceDataCollector extends DataCollector
 
         // Also update the data array if it has been initialized (collect() has been called)
         // This ensures the information is available even if setRecordOperation() is called after collect()
-        if (isset($this->data) && is_array($this->data)) {
+        if (is_array($this->data)) {
             $this->data['record_was_new']     = $isNew;
             $this->data['record_was_updated'] = $wasUpdated;
         }
@@ -453,8 +453,8 @@ class PerformanceDataCollector extends DataCollector
      */
     public function isEnabled(): bool
     {
-        // Fallback to data array (for when profiler is enabled and collect() has been called)
-        return $this->enabled ?? $this->data['enabled'] ?? false;
+        // Prefer data array after collect()/serialization; otherwise use the live property
+        return (bool) ($this->data['enabled'] ?? $this->enabled);
     }
 
     /**

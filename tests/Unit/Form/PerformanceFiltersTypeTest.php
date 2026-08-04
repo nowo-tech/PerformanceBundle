@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Nowo\PerformanceBundle\Form\PerformanceFiltersType;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -14,10 +15,20 @@ final class PerformanceFiltersTypeTest extends TypeTestCase
 {
     private PerformanceFiltersType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new PerformanceFiltersType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new PerformanceFiltersType();
+        $this->formType = FormKitTestSupport::withMerger(new PerformanceFiltersType());
     }
 
     public function testBuildFormCreatesAllFields(): void

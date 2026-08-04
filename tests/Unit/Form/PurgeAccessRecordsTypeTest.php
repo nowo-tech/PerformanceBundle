@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\PurgeAccessRecordsType;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -13,10 +14,20 @@ final class PurgeAccessRecordsTypeTest extends TypeTestCase
 {
     private PurgeAccessRecordsType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new PurgeAccessRecordsType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new PurgeAccessRecordsType();
+        $this->formType = FormKitTestSupport::withMerger(new PurgeAccessRecordsType());
     }
 
     public function testBuildFormCreatesExpectedFields(): void

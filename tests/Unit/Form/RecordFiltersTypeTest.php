@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\RecordFiltersType;
 use Nowo\PerformanceBundle\Model\RecordFilters;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -13,10 +14,20 @@ final class RecordFiltersTypeTest extends TypeTestCase
 {
     private RecordFiltersType $formType;
 
+    /**
+     * @return list<object>
+     */
+    protected function getTypes(): array
+    {
+        return [
+            FormKitTestSupport::withMerger(new RecordFiltersType()),
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->formType = new RecordFiltersType();
+        $this->formType = FormKitTestSupport::withMerger(new RecordFiltersType());
     }
 
     public function testBuildFormCreatesExpectedFields(): void

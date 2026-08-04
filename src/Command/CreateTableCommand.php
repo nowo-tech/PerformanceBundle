@@ -411,10 +411,9 @@ HELP
                 // Check if it's an integer type (integer, smallint, bigint)
                 if (in_array(strtolower((string) $fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
                     // Check generator type if available
-                    $generatorType = $metadata->generatorType ?? null;
-                    // If generatorType is AUTO, IDENTITY, or SEQUENCE (for MySQL, AUTO and IDENTITY are the same)
-                    // Or if generatorType is null/not set, assume AUTO for integer IDs
-                    if (in_array($generatorType, [null, ClassMetadata::GENERATOR_TYPE_AUTO, ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
+                    $generatorType = $metadata->generatorType;
+                    // If generatorType is AUTO or IDENTITY (for MySQL, AUTO and IDENTITY are the same)
+                    if (in_array($generatorType, [ClassMetadata::GENERATOR_TYPE_AUTO, ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
                         || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
                         $isAutoincrement = true;
                     }
@@ -897,10 +896,9 @@ HELP
                 // Check if it's an integer type (integer, smallint, bigint)
                 if (in_array(strtolower((string) $fieldType), ['integer', 'int', 'smallint', 'bigint'], true)) {
                     // Check generator type if available
-                    $generatorType = $metadata->generatorType ?? null;
-                    // If generatorType is AUTO, IDENTITY, or SEQUENCE (for MySQL, AUTO and IDENTITY are the same)
-                    // Or if generatorType is null/not set, assume AUTO for integer IDs
-                    if (in_array($generatorType, [null, ClassMetadata::GENERATOR_TYPE_AUTO, ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
+                    $generatorType = $metadata->generatorType;
+                    // If generatorType is AUTO or IDENTITY (for MySQL, AUTO and IDENTITY are the same)
+                    if (in_array($generatorType, [ClassMetadata::GENERATOR_TYPE_AUTO, ClassMetadata::GENERATOR_TYPE_IDENTITY], true)
                         || isset($fieldMappingArray['generated']) && $fieldMappingArray['generated'] === true) {
                         $isAutoincrement = true;
                     }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Form;
 
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -21,8 +23,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 class ClearPerformanceDataType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * Builds the form with hidden env and submit button.
      *
@@ -31,9 +36,8 @@ class ClearPerformanceDataType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('env', HiddenType::class)
-            ->add('submit', SubmitType::class, [
+        $this->addWithDefaults($builder, 'env', HiddenType::class, []);
+        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
                 'label'              => 'dashboard.clear_all_records',
                 'translation_domain' => 'NowoPerformanceBundle',
                 'attr'               => ['class' => 'btn btn-danger'],
