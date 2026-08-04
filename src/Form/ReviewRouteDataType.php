@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Form;
 
-use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\FormKitBundle\Attribute\FormKitConfig;
 use Nowo\FormKitBundle\Form\FormOptionsTrait;
+use Nowo\PerformanceBundle\Entity\RouteData;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -50,37 +48,37 @@ class ReviewRouteDataType extends AbstractType
             : 'review.mark_as_reviewed';
 
         $this->addChoice($builder, 'queries_improved', [
-                'label'              => 'review.queries_improved',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'choices'            => [
-                    'review.not_specified' => '',
-                    'review.yes'           => '1',
-                    'review.no'            => '0',
-                ],
-                'choice_translation_domain' => 'NowoPerformanceBundle',
-                'required'                  => false,
-                'placeholder'               => false,
-                'data'                      => $queriesData,
-                'attr'                      => [
-                    'class' => 'form-select',
-                ],
-            ]);
+            'label'              => 'review.queries_improved',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'choices'            => [
+                'review.not_specified' => '',
+                'review.yes'           => '1',
+                'review.no'            => '0',
+            ],
+            'choice_translation_domain' => 'NowoPerformanceBundle',
+            'required'                  => false,
+            'placeholder'               => false,
+            'data'                      => $queriesData,
+            'attr'                      => [
+                'class' => 'form-select',
+            ],
+        ]);
         $this->addChoice($builder, 'time_improved', [
-                'label'              => 'review.time_improved',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'choices'            => [
-                    'review.not_specified' => '',
-                    'review.yes'           => '1',
-                    'review.no'            => '0',
-                ],
-                'choice_translation_domain' => 'NowoPerformanceBundle',
-                'required'                  => false,
-                'placeholder'               => false,
-                'data'                      => $timeData,
-                'attr'                      => [
-                    'class' => 'form-select',
-                ],
-            ]);
+            'label'              => 'review.time_improved',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'choices'            => [
+                'review.not_specified' => '',
+                'review.yes'           => '1',
+                'review.no'            => '0',
+            ],
+            'choice_translation_domain' => 'NowoPerformanceBundle',
+            'required'                  => false,
+            'placeholder'               => false,
+            'data'                      => $timeData,
+            'attr'                      => [
+                'class' => 'form-select',
+            ],
+        ]);
 
         if ($options['enable_access_records'] ?? false) {
             $saveAccessRecordsData = ($routeData instanceof RouteData) ? $routeData->getSaveAccessRecords() : true;

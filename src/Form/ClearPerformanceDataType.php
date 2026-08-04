@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Form;
 
-use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\FormKitBundle\Attribute\FormKitConfig;
 use Nowo\FormKitBundle\Form\FormOptionsTrait;
+use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -38,10 +38,10 @@ class ClearPerformanceDataType extends AbstractType
     {
         $this->addWithDefaults($builder, 'env', HiddenType::class, []);
         $this->addWithDefaults($builder, 'submit', SubmitType::class, [
-                'label'              => 'dashboard.clear_all_records',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'attr'               => ['class' => 'btn btn-danger'],
-            ]);
+            'label'              => 'dashboard.clear_all_records',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'attr'               => ['class' => 'btn btn-danger'],
+        ]);
     }
 
     /**

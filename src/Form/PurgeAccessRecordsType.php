@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Form;
 
-use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
 use Nowo\FormKitBundle\Attribute\FormKitConfig;
 use Nowo\FormKitBundle\Form\FormOptionsTrait;
+use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -42,35 +40,35 @@ class PurgeAccessRecordsType extends AbstractType
         );
 
         $this->addChoice($builder, 'purgeType', [
-                'label'              => 'access_statistics.purge_type',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'choices'            => [
-                    'access_statistics.purge_all'        => PurgeAccessRecordsRequest::PURGE_ALL,
-                    'access_statistics.purge_older_than' => PurgeAccessRecordsRequest::PURGE_OLDER_THAN,
-                ],
-                'choice_translation_domain' => 'NowoPerformanceBundle',
-                'attr'                      => ['class' => 'form-select purge-type-select'],
-            ]);
+            'label'              => 'access_statistics.purge_type',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'choices'            => [
+                'access_statistics.purge_all'        => PurgeAccessRecordsRequest::PURGE_ALL,
+                'access_statistics.purge_older_than' => PurgeAccessRecordsRequest::PURGE_OLDER_THAN,
+            ],
+            'choice_translation_domain' => 'NowoPerformanceBundle',
+            'attr'                      => ['class' => 'form-select purge-type-select'],
+        ]);
         $this->addInteger($builder, 'days', [
-                'label'              => 'access_statistics.older_than_days',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'data'               => $options['default_days'] ?? 30,
-                'attr'               => ['class' => 'form-control', 'min' => 1, 'placeholder' => '30'],
-            ]);
+            'label'              => 'access_statistics.older_than_days',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'data'               => $options['default_days'] ?? 30,
+            'attr'               => ['class' => 'form-control', 'min' => 1, 'placeholder' => '30'],
+        ]);
         $this->addChoice($builder, 'env', [
-                'label'                     => 'access_statistics.environment',
-                'translation_domain'        => 'NowoPerformanceBundle',
-                'choices'                   => $choicesEnv,
-                'choice_translation_domain' => 'NowoPerformanceBundle',
-                'required'                  => false,
-                'attr'                      => ['class' => 'form-select'],
-            ]);
+            'label'                     => 'access_statistics.environment',
+            'translation_domain'        => 'NowoPerformanceBundle',
+            'choices'                   => $choicesEnv,
+            'choice_translation_domain' => 'NowoPerformanceBundle',
+            'required'                  => false,
+            'attr'                      => ['class' => 'form-select'],
+        ]);
         $this->addWithDefaults($builder, 'submit', SubmitType::class, [
-                'label'              => 'access_statistics.purge_records',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'attr'               => ['class' => 'btn btn-warning'],
-            ]);
+            'label'              => 'access_statistics.purge_records',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'attr'               => ['class' => 'btn btn-warning'],
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

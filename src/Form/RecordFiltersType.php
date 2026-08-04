@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Form;
 
-use Nowo\PerformanceBundle\Model\RecordFilters;
 use Nowo\FormKitBundle\Attribute\FormKitConfig;
 use Nowo\FormKitBundle\Form\FormOptionsTrait;
+use Nowo\PerformanceBundle\Model\RecordFilters;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
-use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -57,113 +54,113 @@ class RecordFiltersType extends AbstractType
         ];
 
         $this->addWithDefaults($builder, 'start_date', DateTimeType::class, [
-                'label'              => 'access_statistics.start_date',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'widget'             => 'single_text',
-                // 'html5' => false,
-                // 'format' => 'yyyy-MM-dd',
-                'required'      => false,
-                'property_path' => 'startDate',
-                'input'         => 'datetime_immutable',
-                'with_seconds'  => false,
-                'attr'          => ['class' => 'form-control'],
-            ]);
+            'label'              => 'access_statistics.start_date',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'widget'             => 'single_text',
+            // 'html5' => false,
+            // 'format' => 'yyyy-MM-dd',
+            'required'      => false,
+            'property_path' => 'startDate',
+            'input'         => 'datetime_immutable',
+            'with_seconds'  => false,
+            'attr'          => ['class' => 'form-control'],
+        ]);
         $this->addWithDefaults($builder, 'end_date', DateTimeType::class, [
-                'label'              => 'access_statistics.end_date',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'widget'             => 'single_text',
-                // 'html5' => false,
-                // 'format' => 'yyyy-MM-dd',
-                'required'      => false,
-                'property_path' => 'endDate',
-                'input'         => 'datetime_immutable',
-                'with_seconds'  => false,
-                'attr'          => ['class' => 'form-control'],
-            ]);
+            'label'              => 'access_statistics.end_date',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'widget'             => 'single_text',
+            // 'html5' => false,
+            // 'format' => 'yyyy-MM-dd',
+            'required'      => false,
+            'property_path' => 'endDate',
+            'input'         => 'datetime_immutable',
+            'with_seconds'  => false,
+            'attr'          => ['class' => 'form-control'],
+        ]);
         $this->addChoice($builder, 'env', [
-                'label'                     => 'access_statistics.environment',
-                'translation_domain'        => 'NowoPerformanceBundle',
-                'choices'                   => $choicesEnv,
-                'choice_translation_domain' => false,
-                'required'                  => false,
-                'placeholder'               => false,
-                'attr'                      => ['class' => 'form-select'],
-            ]);
+            'label'                     => 'access_statistics.environment',
+            'translation_domain'        => 'NowoPerformanceBundle',
+            'choices'                   => $choicesEnv,
+            'choice_translation_domain' => false,
+            'required'                  => false,
+            'placeholder'               => false,
+            'attr'                      => ['class' => 'form-select'],
+        ]);
         $this->addChoice($builder, 'route', [
-                'label'                     => 'access_statistics.route',
-                'translation_domain'        => 'NowoPerformanceBundle',
-                'choices'                   => $choicesRoute,
-                'choice_translation_domain' => false,
-                'required'                  => false,
-                'placeholder'               => false,
-                'attr'                      => ['class' => 'form-select'],
-            ]);
+            'label'                     => 'access_statistics.route',
+            'translation_domain'        => 'NowoPerformanceBundle',
+            'choices'                   => $choicesRoute,
+            'choice_translation_domain' => false,
+            'required'                  => false,
+            'placeholder'               => false,
+            'attr'                      => ['class' => 'form-select'],
+        ]);
         $this->addText($builder, 'path', [
-                'label'              => 'access_statistics.path',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'property_path'      => 'path',
-                'attr'               => [
-                    'class'       => 'form-control',
-                    'placeholder' => 'access_statistics.path_placeholder',
-                ],
-            ]);
+            'label'              => 'access_statistics.path',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'property_path'      => 'path',
+            'attr'               => [
+                'class'       => 'form-control',
+                'placeholder' => 'access_statistics.path_placeholder',
+            ],
+        ]);
         $this->addChoice($builder, 'status_code', [
-                'label'                     => 'access_statistics.status_code',
-                'translation_domain'        => 'NowoPerformanceBundle',
-                'choices'                   => $choicesStatus,
-                'choice_translation_domain' => false,
-                'required'                  => false,
-                'placeholder'               => false,
-                'property_path'             => 'statusCode',
-                'attr'                      => ['class' => 'form-select'],
-            ]);
+            'label'                     => 'access_statistics.status_code',
+            'translation_domain'        => 'NowoPerformanceBundle',
+            'choices'                   => $choicesStatus,
+            'choice_translation_domain' => false,
+            'required'                  => false,
+            'placeholder'               => false,
+            'property_path'             => 'statusCode',
+            'attr'                      => ['class' => 'form-select'],
+        ]);
         $this->addNumber($builder, 'min_query_time', [
-                'label'              => 'access_statistics.min_query_time',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'property_path'      => 'minQueryTime',
-                'scale'              => 3,
-                'attr'               => ['class' => 'form-control', 'placeholder' => '0.001', 'step' => '0.001'],
-            ]);
+            'label'              => 'access_statistics.min_query_time',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'property_path'      => 'minQueryTime',
+            'scale'              => 3,
+            'attr'               => ['class' => 'form-control', 'placeholder' => '0.001', 'step' => '0.001'],
+        ]);
         $this->addNumber($builder, 'max_query_time', [
-                'label'              => 'access_statistics.max_query_time',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'property_path'      => 'maxQueryTime',
-                'scale'              => 3,
-                'attr'               => ['class' => 'form-control', 'placeholder' => '5', 'step' => '0.001'],
-            ]);
+            'label'              => 'access_statistics.max_query_time',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'property_path'      => 'maxQueryTime',
+            'scale'              => 3,
+            'attr'               => ['class' => 'form-control', 'placeholder' => '5', 'step' => '0.001'],
+        ]);
         $this->addNumber($builder, 'min_memory_mb', [
-                'label'              => 'access_statistics.min_memory_mb',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'mapped'             => false,
-                'data'               => isset($options['data']) && $options['data']->minMemoryUsage !== null
-                    ? round($options['data']->minMemoryUsage / 1024 / 1024, 2) : null,
-                'attr' => ['class' => 'form-control', 'placeholder' => '0', 'step' => '0.1'],
-            ]);
+            'label'              => 'access_statistics.min_memory_mb',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'mapped'             => false,
+            'data'               => isset($options['data']) && $options['data']->minMemoryUsage !== null
+                ? round($options['data']->minMemoryUsage / 1024 / 1024, 2) : null,
+            'attr' => ['class' => 'form-control', 'placeholder' => '0', 'step' => '0.1'],
+        ]);
         $this->addNumber($builder, 'max_memory_mb', [
-                'label'              => 'access_statistics.max_memory_mb',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'mapped'             => false,
-                'data'               => isset($options['data']) && $options['data']->maxMemoryUsage !== null
-                    ? round($options['data']->maxMemoryUsage / 1024 / 1024, 2) : null,
-                'attr' => ['class' => 'form-control', 'placeholder' => '100', 'step' => '0.1'],
-            ]);
+            'label'              => 'access_statistics.max_memory_mb',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'mapped'             => false,
+            'data'               => isset($options['data']) && $options['data']->maxMemoryUsage !== null
+                ? round($options['data']->maxMemoryUsage / 1024 / 1024, 2) : null,
+            'attr' => ['class' => 'form-control', 'placeholder' => '100', 'step' => '0.1'],
+        ]);
         $this->addText($builder, 'referer', [
-                'label'              => 'access_statistics.referer',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'attr'               => ['class' => 'form-control', 'placeholder' => 'example.com'],
-            ]);
+            'label'              => 'access_statistics.referer',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'attr'               => ['class' => 'form-control', 'placeholder' => 'example.com'],
+        ]);
         $this->addText($builder, 'user', [
-                'label'              => 'access_statistics.user',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'required'           => false,
-                'attr'               => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
-            ])
+            'label'              => 'access_statistics.user',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'required'           => false,
+            'attr'               => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
+        ])
         ;
         $builder->get('status_code')->addModelTransformer(new CallbackTransformer(
             static fn (?int $value): string => $value !== null ? (string) $value : '',
@@ -176,10 +173,10 @@ class RecordFiltersType extends AbstractType
             },
         ));
         $this->addWithDefaults($builder, 'filter', SubmitType::class, [
-                'label'              => 'access_statistics.filter',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'attr'               => ['class' => 'btn btn-primary'],
-            ]);
+            'label'              => 'access_statistics.filter',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'attr'               => ['class' => 'btn btn-primary'],
+        ]);
     }
 
     /**

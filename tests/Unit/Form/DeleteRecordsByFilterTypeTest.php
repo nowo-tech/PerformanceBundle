@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
-use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
+use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 

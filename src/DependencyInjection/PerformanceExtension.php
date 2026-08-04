@@ -374,11 +374,11 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $defaults  = [];
 
         if (!$hostHasCssFramework) {
-            $fw = (string) ($dashboard['css_framework'] ?? 'bootstrap5');
+            $fw                        = (string) ($dashboard['css_framework'] ?? 'bootstrap5');
             $defaults['css_framework'] = $fw === 'bootstrap' ? 'bootstrap5' : $fw;
         }
         if (!$hostHasIconSet) {
-            $fw = (string) ($defaults['css_framework'] ?? $dashboard['css_framework'] ?? 'bootstrap5');
+            $fw                   = (string) ($defaults['css_framework'] ?? $dashboard['css_framework'] ?? 'bootstrap5');
             $defaults['icon_set'] = $fw === 'tabler' ? 'tabler-icons' : 'bootstrap-icons';
         }
 
