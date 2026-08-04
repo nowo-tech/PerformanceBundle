@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Form;
 
-use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
 use Nowo\FormKitBundle\Attribute\FormKitConfig;
 use Nowo\FormKitBundle\Form\FormOptionsTrait;
+use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -37,9 +37,9 @@ class DeleteRecordsByFilterType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $this->addWithDefaults($builder, '_from', HiddenType::class, [
-                'property_path' => 'from',
-                'data'          => $options['from_value'],
-            ]);
+            'property_path' => 'from',
+            'data'          => $options['from_value'],
+        ]);
         $this->addWithDefaults($builder, 'env', HiddenType::class, []);
         $this->addWithDefaults($builder, 'start_date', HiddenType::class, ['property_path' => 'startDate']);
         $this->addWithDefaults($builder, 'end_date', HiddenType::class, ['property_path' => 'endDate']);
@@ -53,10 +53,10 @@ class DeleteRecordsByFilterType extends AbstractType
         $this->addWithDefaults($builder, 'referer', HiddenType::class, []);
         $this->addWithDefaults($builder, 'user', HiddenType::class, []);
         $this->addWithDefaults($builder, 'submit', SubmitType::class, [
-                'label'              => 'access_statistics.delete_records_matching_filter',
-                'translation_domain' => 'NowoPerformanceBundle',
-                'attr'               => ['class' => 'btn btn-danger'],
-            ]);
+            'label'              => 'access_statistics.delete_records_matching_filter',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'attr'               => ['class' => 'btn btn-danger'],
+        ]);
     }
 
     /**
