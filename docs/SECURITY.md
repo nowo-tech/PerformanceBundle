@@ -19,7 +19,7 @@ This Symfony bundle **tracks route performance metrics** (timing, database query
 | SQL injection | Use Doctrine parameterized queries; validate sort/filter parameters. |
 | SSRF via webhook URLs | Only allow webhook URLs from trusted configuration (env), not from end-user POST bodies. |
 | Information leakage in exports | Restrict export actions to trusted roles; avoid exporting secrets from request attributes. |
-| DoS via large exports or queries | Use pagination, limits, and infrastructure timeouts. |
+| DoS via large exports or queries | Access-record exports capped by `export.max_rows` (default **5000**, max **50000** for BC); use pagination and infrastructure timeouts. |
 
 ## Admin UI guard (REQ-UI-002)
 
@@ -88,6 +88,6 @@ Before tagging a release, confirm:
 | **Logging** | No secrets in application logs from bundle code paths. |
 | **Cryptography** | HTTPS/TLS for outbound calls is the deployer’s responsibility; document. |
 | **Permissions / exposure** | Dashboard and export routes require `access_roles` or custom checker; `allow_unauthenticated` is `false` by default. |
-| **Limits / DoS** | Export size and query limits documented where applicable. |
+| **Limits / DoS** | `export.max_rows` defaults to 5000 (configurable up to 50000). |
 
 Record confirmation in the release PR or tag notes.
