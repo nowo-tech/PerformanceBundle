@@ -140,6 +140,9 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($securityPath . '.access_checker', $securityConfig['access_checker'] ?? null);
         $container->setParameter($securityPath . '.allow_unauthenticated', $securityConfig['allow_unauthenticated'] ?? false);
 
+        $exportConfig = $config['export'] ?? [];
+        $container->setParameter(Configuration::ALIAS . '.export.max_rows', $exportConfig['max_rows'] ?? 5000);
+
         $this->registerAccessChecker($container, $securityConfig);
 
         // Notifications configuration

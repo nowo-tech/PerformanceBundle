@@ -901,7 +901,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * @param int|null $maxMemoryUsage Optional max memory (bytes)
      * @param string|null $referer Optional referer filter (partial match)
      * @param string|null $user Optional user filter (partial match)
-     * @param int $limit Maximum records to return (default 50_000)
+     * @param int $limit Maximum records to return (default 5_000; configurable via nowo_performance.export.max_rows)
      *
      * @return array{records: RouteDataRecord[], total: int}
      */
@@ -918,7 +918,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         ?int $maxMemoryUsage = null,
         ?string $referer = null,
         ?string $user = null,
-        int $limit = 50_000,
+        int $limit = 5_000,
     ): array {
         $qb = $this->createQueryBuilder('r')
             ->join('r.routeData', 'rd')
