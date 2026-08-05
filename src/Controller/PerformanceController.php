@@ -154,6 +154,8 @@ class PerformanceController extends AbstractController
         #[Autowire('%nowo_performance.access_records_retention_days%')]
         private readonly ?int $accessRecordsRetentionDays = null,
         private readonly ?PerformanceAccessCheckerInterface $accessChecker = null,
+        #[Autowire('%nowo_performance.export.max_rows%')]
+        private readonly int $exportMaxRows = 5000,
     ) {
     }
 
@@ -1120,6 +1122,7 @@ class PerformanceController extends AbstractController
                 $maxMemoryUsage,
                 $referer,
                 $user,
+                $this->exportMaxRows,
             );
         } catch (Throwable) {
             $result = ['records' => [], 'total' => 0];
@@ -1244,6 +1247,7 @@ class PerformanceController extends AbstractController
                 $maxMemoryUsage,
                 $referer,
                 $user,
+                $this->exportMaxRows,
             );
         } catch (Throwable) {
             $result = ['records' => [], 'total' => 0];

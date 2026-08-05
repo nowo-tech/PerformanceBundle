@@ -65,6 +65,7 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('bootstrap', $this->container->getParameter('nowo_performance.dashboard.template'));
         $this->assertSame(['ROLE_ADMIN'], $this->container->getParameter('nowo_performance.security.access_roles'));
         $this->assertFalse($this->container->getParameter('nowo_performance.security.allow_unauthenticated'));
+        $this->assertSame(5000, $this->container->getParameter('nowo_performance.export.max_rows'));
         $this->assertTrue($this->container->hasAlias(PerformanceAccessCheckerInterface::class));
         $this->assertTrue($this->container->hasDefinition('nowo_performance.access_checker.default'));
         $this->assertSame(

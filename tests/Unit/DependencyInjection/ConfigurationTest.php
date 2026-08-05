@@ -41,6 +41,7 @@ final class ConfigurationTest extends TestCase
         $this->assertSame(['ROLE_ADMIN'], $config['security']['access_roles']);
         $this->assertNull($config['security']['access_checker']);
         $this->assertFalse($config['security']['allow_unauthenticated']);
+        $this->assertSame(5000, $config['export']['max_rows']);
     }
 
     public function testCustomConfiguration(): void
