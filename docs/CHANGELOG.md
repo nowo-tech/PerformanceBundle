@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.4.1] - 2026-08-07](#341-2026-08-07)
 - [[3.4.0] - 2026-08-04](#340-2026-08-04)
 - [[3.3.1] - 2026-08-03](#331-2026-08-03)
 - [[3.3.0] - 2026-08-03](#330-2026-08-03)
@@ -127,6 +128,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [3.4.1] - 2026-08-07
+
+### Fixed
+
+- **CI / FormKit:** register `NowoFormKitBundle` + `NowoUiKitBundle` in integration `TestKernel*` so `FormOptionsMerger` is injected into dashboard forms (fixes `$formOptionsMerger` uninitialized errors).
+- Seed FormKit profile `performance` with `auto_help` / `auto_placeholder` false (SubmitType rejects `help`); require `nowo-tech/form-kit-bundle` `^2.2`.
+
+### Tests
+
+- `FormKitTestSupport` merger mirrors `auto_help` / `auto_placeholder` false for unit form tests.
+
+[3.4.1]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.1
 
 ## [3.4.0] - 2026-08-04
 

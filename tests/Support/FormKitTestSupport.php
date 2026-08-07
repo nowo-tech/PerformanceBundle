@@ -19,6 +19,8 @@ final class FormKitTestSupport
     {
         $profile = [
             'translation_domain' => 'NowoPerformanceBundle',
+            'auto_help'          => false,
+            'auto_placeholder'   => false,
             'defaults'           => [
                 'attr'     => [],
                 'row_attr' => [],
