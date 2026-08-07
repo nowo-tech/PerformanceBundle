@@ -317,7 +317,10 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
                 'performance' => [
                     'alias'              => 'performance',
                     'translation_domain' => 'NowoPerformanceBundle',
-                    'defaults'           => [
+                    // SubmitType rejects help/placeholder; filter forms use SubmitType via addWithDefaults.
+                    'auto_help'        => false,
+                    'auto_placeholder' => false,
+                    'defaults'         => [
                         'attr'     => ['class' => 'nowo-ui-input form-control'],
                         'row_attr' => ['class' => 'mb-2'],
                     ],

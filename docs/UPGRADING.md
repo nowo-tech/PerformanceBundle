@@ -5,6 +5,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
+- [Upgrading to 3.4.1 (2026-08-07)](#upgrading-to-341-2026-08-07)
 - [Upgrading to 3.4.0 (2026-08-04)](#upgrading-to-340-2026-08-04)
 - [Upgrading to 3.3.1 (2026-08-03)](#upgrading-to-331-2026-08-03)
 - [Upgrading to 3.3.0 (2026-08-03)](#upgrading-to-330-2026-08-03)
@@ -88,6 +89,17 @@ This guide helps you upgrade between versions of the Performance Bundle.
   - [Optional Dependencies](#optional-dependencies)
   - [Testing Your Upgrade](#testing-your-upgrade)
   - [Troubleshooting](#troubleshooting)
+
+## Upgrading to 3.4.1 (2026-08-07)
+
+From **3.4.0** — FormKit ^2.2 + CI test-kernel fix. No dashboard config migration.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
+Requires `nowo-tech/form-kit-bundle` `^2.2`. Hosts that already constrain FormKit to `^2.0` only should allow 2.2. The seeded `performance` FormKit profile disables automatic help/placeholder keys (Submit buttons).
 
 ## Upgrading to 3.4.0 (2026-08-04)
 

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Integration;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Nowo\FormKitBundle\NowoFormKitBundle;
 use Nowo\PerformanceBundle\NowoPerformanceBundle;
+use Nowo\UiKitBundle\NowoUiKitBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -27,6 +29,8 @@ class TestKernel extends BaseKernel
             new SecurityBundle(),
             new TwigBundle(),
             new UXIconsBundle(),
+            new NowoFormKitBundle(),
+            new NowoUiKitBundle(),
             new NowoPerformanceBundle(),
         ];
     }
