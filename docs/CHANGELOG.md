@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.4.2] - 2026-08-07](#342-2026-08-07)
 - [[3.4.1] - 2026-08-07](#341-2026-08-07)
 - [[3.4.0] - 2026-08-04](#340-2026-08-04)
 - [[3.3.1] - 2026-08-03](#331-2026-08-03)
@@ -128,6 +129,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [3.4.2] - 2026-08-07
+
+### Fixed
+
+- **CI:** refresh `composer.lock` content-hash after FormKit `^2.2` constraint so `composer validate --strict` passes.
+
+[3.4.2]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.2
 
 ## [3.4.1] - 2026-08-07
 

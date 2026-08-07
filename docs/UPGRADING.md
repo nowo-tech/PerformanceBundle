@@ -5,6 +5,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
+- [Upgrading to 3.4.2 (2026-08-07)](#upgrading-to-342-2026-08-07)
 - [Upgrading to 3.4.1 (2026-08-07)](#upgrading-to-341-2026-08-07)
 - [Upgrading to 3.4.0 (2026-08-04)](#upgrading-to-340-2026-08-04)
 - [Upgrading to 3.3.1 (2026-08-03)](#upgrading-to-331-2026-08-03)
@@ -89,6 +90,14 @@ This guide helps you upgrade between versions of the Performance Bundle.
   - [Optional Dependencies](#optional-dependencies)
   - [Testing Your Upgrade](#testing-your-upgrade)
   - [Troubleshooting](#troubleshooting)
+
+## Upgrading to 3.4.2 (2026-08-07)
+
+From **3.4.1** — lockfile content-hash only. No config or API changes.
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 ## Upgrading to 3.4.1 (2026-08-07)
 
