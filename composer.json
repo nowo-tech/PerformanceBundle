@@ -74,7 +74,7 @@
         "symfony/mailer": "^7.0 || ^8.0",
         "symfony/mime": "^7.0 || ^8.0",
         "symfony/ux-twig-component": "^2.0 || ^3.0",
-        "vincentlanglet/twig-cs-fixer": "^3.0"
+        "vincentlanglet/twig-cs-fixer": "^4.0"
     },
     "suggest": {
         "symfony/http-client": "For webhook notifications (Slack, Teams, custom webhooks)",
