@@ -4,49 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Integration;
 
-use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
-use Nowo\FormKitBundle\NowoFormKitBundle;
-use Nowo\PerformanceBundle\NowoPerformanceBundle;
-use Nowo\UiKitBundle\NowoUiKitBundle;
-use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
-use Symfony\Bundle\SecurityBundle\SecurityBundle;
-use Symfony\Bundle\TwigBundle\TwigBundle;
-use Symfony\Component\Config\Loader\LoaderInterface;
-use Symfony\Component\HttpKernel\Kernel as BaseKernel;
-use Symfony\UX\Icons\UXIconsBundle;
-
 /**
  * Same as TestKernel but with the performance dashboard disabled (covers controller 403/404 branches).
  */
-final class TestKernelDashboardDisabled extends BaseKernel
+final class TestKernelDashboardDisabled extends TestKernel
 {
-    public function registerBundles(): array
+    protected function performanceConfigFile(): string
     {
-        return [
-            new FrameworkBundle(),
-            new DoctrineBundle(),
-            new SecurityBundle(),
-            new TwigBundle(),
-            new UXIconsBundle(),
-            new NowoFormKitBundle(),
-            new NowoUiKitBundle(),
-            new NowoPerformanceBundle(),
-        ];
-    }
-
-    public function getProjectDir(): string
-    {
-        return __DIR__;
-    }
-
-    public function registerContainerConfiguration(LoaderInterface $loader): void
-    {
-        $confDir = $this->getProjectDir() . '/config';
-        $loader->load($confDir . '/packages/framework.yaml');
-        IntegrationDoctrineConfig::load($loader, $confDir . '/packages');
-        $loader->load($confDir . '/packages/security.yaml');
-        $loader->load($confDir . '/packages/twig.yaml');
-        $loader->load($confDir . '/packages/nowo_performance_dashboard_disabled.yaml');
-        $loader->load($confDir . '/services.yaml');
+        return 'nowo_performance_dashboard_disabled.yaml';
     }
 }

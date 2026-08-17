@@ -6,3 +6,7 @@ framework:
         storage_factory_id: session.storage.factory.mock_file
     router:
         resource: '%kernel.project_dir%/config/routes.yaml'
+    # Avoid DoctrineDbalCacheAdapterSchemaListener (needs DBAL Schema::edit() / dbal ^4.5).
+    cache:
+        app: cache.adapter.array
+        system: cache.adapter.array
