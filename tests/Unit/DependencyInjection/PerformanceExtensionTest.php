@@ -235,4 +235,129 @@ final class PerformanceExtensionTest extends TestCase
 
         $this->assertSame(['dev', 'stage', 'prod'], $this->container->getParameter('nowo_performance.environments'));
     }
+
+    public function testPrependSeedsFormKitPerformanceProfileWhenHostUnset(): void
+    {
+        $this->registerStubExtension($this->container, 'nowo_form_kit');
+        $this->container->registerExtension($this->extension);
+
+        $this->extension->prepend($this->container);
+
+        $found = false;
+        foreach ($this->container->getExtensionConfig('nowo_form_kit') as $cfg) {
+            if (($cfg['css_framework'] ?? null) === 'bootstrap'
+                && isset($cfg['profiles']['performance']['alias'])
+                && $cfg['profiles']['performance']['alias'] === 'performance'
+            ) {
+                $found = true;
+                $this->assertSame('NowoPerformanceBundle', $cfg['profiles']['performance']['translation_domain']);
+                $this->assertFalse($cfg['profiles']['performance']['auto_help']);
+                $this->assertFalse($cfg['profiles']['performance']['auto_placeholder']);
+                break;
+            }
+        }
+        $this->assertTrue($found);
+    }
+
+    public function testPrependDoesNotOverrideExplicitFormKitHostConfig(): void
+    {
+        $this->registerStubExtension($this->container, 'nowo_form_kit');
+        $this->container->prependExtensionConfig('nowo_form_kit', [
+            'css_framework' => 'none',
+            'profiles'      => [
+                'performance' => [
+                    'alias'              => 'performance',
+                    'translation_domain' => 'HostDomain',
+                ],
+            ],
+        ]);
+        $this->container->registerExtension($this->extension);
+
+        $this->extension->prepend($this->container);
+
+        $bootstrapSeed = false;
+        $profileReseed = false;
+        foreach ($this->container->getExtensionConfig('nowo_form_kit') as $cfg) {
+            if (($cfg['css_framework'] ?? null) === 'bootstrap') {
+                $bootstrapSeed = true;
+            }
+            if (($cfg['profiles']['performance']['translation_domain'] ?? null) === 'NowoPerformanceBundle') {
+                $profileReseed = true;
+            }
+        }
+        $this->assertFalse($bootstrapSeed);
+        $this->assertFalse($profileReseed);
+    }
+
+    public function testPrependSeedsUiKitFromDashboardWhenHostUnset(): void
+    {
+        $this->registerStubExtension($this->container, 'nowo_ui_kit');
+        $this->container->registerExtension($this->extension);
+        $this->container->prependExtensionConfig('nowo_performance', [
+            'dashboard' => ['css_framework' => 'bootstrap'],
+        ]);
+
+        $this->extension->prepend($this->container);
+
+        $found = false;
+        foreach ($this->container->getExtensionConfig('nowo_ui_kit') as $cfg) {
+            if (($cfg['css_framework'] ?? null) === 'bootstrap5'
+                && ($cfg['icon_set'] ?? null) === 'bootstrap-icons'
+            ) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found);
+    }
+
+    public function testPrependDoesNotOverrideExplicitUiKitHostConfig(): void
+    {
+        $this->registerStubExtension($this->container, 'nowo_ui_kit');
+        $this->container->prependExtensionConfig('nowo_ui_kit', [
+            'css_framework' => 'none',
+            'icon_set'      => 'none',
+        ]);
+        $this->container->registerExtension($this->extension);
+
+        $this->extension->prepend($this->container);
+
+        $seeded = false;
+        foreach ($this->container->getExtensionConfig('nowo_ui_kit') as $cfg) {
+            if (($cfg['css_framework'] ?? null) === 'bootstrap5'
+                || ($cfg['icon_set'] ?? null) === 'bootstrap-icons'
+            ) {
+                $seeded = true;
+            }
+        }
+        $this->assertFalse($seeded);
+    }
+
+    private function registerStubExtension(ContainerBuilder $container, string $alias): void
+    {
+        $container->registerExtension(new class($alias) implements ExtensionInterface {
+            public function __construct(private readonly string $extensionAlias)
+            {
+            }
+
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getNamespace(): string
+            {
+                return '';
+            }
+
+            public function getXsdValidationBasePath(): string|false
+            {
+                return false;
+            }
+
+            public function getAlias(): string
+            {
+                return $this->extensionAlias;
+            }
+        });
+    }
 }

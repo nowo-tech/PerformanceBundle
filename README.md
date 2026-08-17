@@ -51,6 +51,7 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ WebProfiler integration with ranking information
 - ✅ **Chart.js integration** - Interactive performance charts
 - ✅ **Symfony UX Twig Components** - Optional modern component system
+- ✅ **Nowo UiKit + FormKit** — dashboard chrome and admin forms (`nowo-tech/ui-kit-bundle`, `nowo-tech/form-kit-bundle`, `symfony/ux-icons`)
 - ✅ Symfony 7.x and 8.x compatible
 - ✅ **FrankenPHP** — Compatible with FrankenPHP; production Caddyfile can use worker mode, while **dev demos** use `APP_ENV=dev` so the image entrypoint swaps in `Caddyfile.dev` (no worker, comfortable local dev). See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) and the demo READMEs.
 
@@ -126,6 +127,7 @@ For detailed installation steps (including sync-schema and migrations), see [Ins
 - Symfony 7.x or 8.x
 - Doctrine ORM ^2.13 || ^3.0
 - Doctrine Bundle ^2.8 || ^3.0 (3.0 required for Symfony 8)
+- **nowo-tech/form-kit-bundle** ^2.2, **nowo-tech/ui-kit-bundle** ^1.4, **symfony/ux-icons** (dashboard UI)
 
 ## Configuration
 
