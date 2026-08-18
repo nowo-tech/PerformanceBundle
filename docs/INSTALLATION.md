@@ -40,6 +40,8 @@ composer require symfony/ux-twig-component
 composer require nowo-tech/performance-bundle
 ```
 
+The Flex recipe lives under `.symfony/recipe/` (copy those files if Flex does not apply them).
+
 ## Step 2: Register the Bundle
 
 The bundle should be automatically registered via Symfony Flex. If not, manually register it in `config/bundles.php`:

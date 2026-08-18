@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "914a9b424ed3b95243b8cf39abccd132",
+    "content-hash": "1247c2553bd210d69890e816bd5b9bff",
     "packages": [
         {
             "name": "doctrine/collections",
@@ -6434,6 +6434,91 @@
                 }
             ],
             "time": "2025-12-03T16:05:42+00:00"
+        },
+        {
+            "name": "nowo-tech/hot-reload-bundle",
+            "version": "v1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nowo-tech/HotReloadBundle.git",
+                "reference": "8c65ae0f3b06bf06564cac08bedad395c9d2afb5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nowo-tech/HotReloadBundle/zipball/8c65ae0f3b06bf06564cac08bedad395c9d2afb5",
+                "reference": "8c65ae0f3b06bf06564cac08bedad395c9d2afb5",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1 <8.6",
+                "symfony/config": "^7.4 || ^8.0",
+                "symfony/dependency-injection": "^7.4 || ^8.0",
+                "symfony/http-foundation": "^7.4 || ^8.0",
+                "symfony/http-kernel": "^7.4 || ^8.0",
+                "twig/extra-bundle": "^3.12",
+                "twig/string-extra": "^3.12"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "nowo-tech/phpstan-frankenphp": "^1.0",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^2.0",
+                "phpstan/phpstan-symfony": "^2.0",
+                "phpunit/phpunit": "^10.0",
+                "rector/rector": "^2.0",
+                "symfony/framework-bundle": "^7.4 || ^8.0",
+                "symfony/yaml": "^7.4 || ^8.0",
+                "twig/twig": "^3.12"
+            },
+            "suggest": {
+                "symfony/flex": "For automatic recipe installation",
+                "symfony/web-profiler-bundle": "For the Hot Reload Web Debug Toolbar / Profiler panel",
+                "twig/twig": "Required for {{ nowo_hot_reload_assets() }} Twig helper"
+            },
+            "type": "symfony-bundle",
+            "autoload": {
+                "psr-4": {
+                    "Nowo\\HotReloadBundle\\": "src/"
+                },
+                "classmap": [
+                    "NowoHotReloadBundle.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Héctor Franco Aceituno",
+                    "email": "hectorfranco@nowo.tech",
+                    "homepage": "https://github.com/HecFranco",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Nowo.tech",
+                    "homepage": "https://nowo.tech"
+                }
+            ],
+            "description": "Symfony bundle that injects FrankenPHP (Dunglas) Hot Reload client assets when FRANKENPHP_HOT_RELOAD is available.",
+            "homepage": "https://github.com/nowo-tech/HotReloadBundle",
+            "keywords": [
+                "Hmr",
+                "development",
+                "dunglas",
+                "frankenphp",
+                "hot-reload",
+                "mercure",
+                "symfony",
+                "symfony-bundle"
+            ],
+            "support": {
+                "changelog": "https://github.com/nowo-tech/HotReloadBundle/blob/main/docs/CHANGELOG.md",
+                "docs": "https://github.com/nowo-tech/HotReloadBundle/tree/main/docs",
+                "issues": "https://github.com/nowo-tech/HotReloadBundle/issues",
+                "source": "https://github.com/nowo-tech/HotReloadBundle"
+            },
+            "time": "2026-08-18T07:33:43+00:00"
         },
         {
             "name": "nowo-tech/twig-inspector-bundle",
