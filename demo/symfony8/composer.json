@@ -86,6 +86,7 @@
     ],
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "*",
+        "nowo-tech/hot-reload-bundle": "^1.4",
         "nowo-tech/twig-inspector-bundle": "*",
         "symfony/debug-bundle": "8.1.*",
         "symfony/var-dumper": "8.1.*",

@@ -6,6 +6,7 @@ use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle;
 use Nowo\FormKitBundle\NowoFormKitBundle;
 use Nowo\PerformanceBundle\NowoPerformanceBundle;
+use Nowo\HotReloadBundle\NowoHotReloadBundle;
 use Nowo\TwigInspectorBundle\NowoTwigInspectorBundle;
 use Nowo\UiKitBundle\NowoUiKitBundle;
 use Symfony\Bundle\DebugBundle\DebugBundle;
@@ -29,6 +30,7 @@ return [
     NowoUiKitBundle::class         => ['all' => true],
     TwigComponentBundle::class     => ['all' => true],
     UXIconsBundle::class           => ['all' => true],
+    NowoHotReloadBundle::class => ['dev' => true, 'test' => true],
     NowoTwigInspectorBundle::class => ['dev' => true, 'test' => true],
     TwigExtraBundle::class         => ['all' => true],
     NowoFormKitBundle::class       => ['all' => true],
