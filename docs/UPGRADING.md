@@ -5,6 +5,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
+- [Upgrading to 3.4.3 (2026-08-18)](#upgrading-to-343-2026-08-18)
 - [Upgrading to 3.4.2 (2026-08-07)](#upgrading-to-342-2026-08-07)
 - [Upgrading to 3.4.1 (2026-08-07)](#upgrading-to-341-2026-08-07)
 - [Upgrading to 3.4.0 (2026-08-04)](#upgrading-to-340-2026-08-04)
@@ -90,6 +91,14 @@ This guide helps you upgrade between versions of the Performance Bundle.
   - [Optional Dependencies](#optional-dependencies)
   - [Testing Your Upgrade](#testing-your-upgrade)
   - [Troubleshooting](#troubleshooting)
+
+## Upgrading to 3.4.3 (2026-08-18)
+
+From **3.4.2** — demos only: Hot Reload Bundle `^1.4`. No config or API changes.
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 ## Upgrading to 3.4.2 (2026-08-07)
 
