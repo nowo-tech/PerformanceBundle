@@ -119,6 +119,9 @@ jobs:
           # skip all Symfony packages — leaving e.g. console 7.x with yaml 8.x → fatal Command::configure(): void).
           # Full update reconciles require-dev (php-cs-fixer, rector, …) with the pinned Symfony major.
           composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
+      - name: Composer audit (Critical/High)
+        run: composer audit --locked
+
 
       - name: Validate translation YAML files
         run: php scripts/validate-translations-yaml.php src/Resources/translations
