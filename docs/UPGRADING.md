@@ -5,6 +5,8 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
+
+- [From 3.4.4 to 3.4.5](#from-344-to-345)
 - [Upgrading to 3.4.4 (2026-08-19)](#upgrading-to-344-2026-08-19)
 - [Upgrading to 3.4.3 (2026-08-18)](#upgrading-to-343-2026-08-18)
 - [Upgrading to 3.4.2 (2026-08-07)](#upgrading-to-342-2026-08-07)
