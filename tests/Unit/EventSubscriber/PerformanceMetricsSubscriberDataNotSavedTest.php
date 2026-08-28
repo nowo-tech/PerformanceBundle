@@ -60,12 +60,12 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
         $this->assertSame(
             [],
             $requestMethod->getAttributes(AsEventListener::class),
-            'onKernelRequest must not also use #[AsEventListener] (double registration)'
+            'onKernelRequest must not also use #[AsEventListener] (double registration)',
         );
         $this->assertSame(
             [],
             $terminateMethod->getAttributes(AsEventListener::class),
-            'onKernelTerminate must not also use #[AsEventListener] (double registration)'
+            'onKernelTerminate must not also use #[AsEventListener] (double registration)',
         );
     }
 
