@@ -12,7 +12,6 @@ use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -124,16 +123,16 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     /**
      * Get the subscribed kernel events.
      *
-     * Note: Events are registered via #[AsEventListener] attributes on methods,
-     * but this method is kept for compatibility with EventSubscriberInterface.
+     * Registered solely via EventSubscriberInterface / kernel.event_subscriber
+     * (do not also add #[AsEventListener] on these methods — that double-registers).
      *
-     * @return array<string, string> Array of event names and handlers
+     * @return array<string, array{0: string, 1: int}>
      */
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST   => 'onKernelRequest',
-            KernelEvents::TERMINATE => 'onKernelTerminate',
+            KernelEvents::REQUEST   => ['onKernelRequest', 31],
+            KernelEvents::TERMINATE => ['onKernelTerminate', -1024],
         ];
     }
 
@@ -148,7 +147,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      *
      * @param RequestEvent $event The request event
      */
-    #[AsEventListener(event: KernelEvents::REQUEST, priority: 31)]
     public function onKernelRequest(RequestEvent $event): void
     {
         $request = $event->getRequest();
@@ -289,7 +287,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      *
      * @param TerminateEvent $event The terminate event
      */
-    #[AsEventListener(event: KernelEvents::TERMINATE, priority: -1024)]
     public function onKernelTerminate(TerminateEvent $event): void
     {
         // When bundle is disabled: exit immediately without any work (no DB, no reflection, no logging)

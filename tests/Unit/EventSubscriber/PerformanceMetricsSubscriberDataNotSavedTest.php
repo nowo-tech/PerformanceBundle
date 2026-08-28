@@ -10,6 +10,8 @@ use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -46,8 +48,25 @@ final class PerformanceMetricsSubscriberDataNotSavedTest extends TestCase
         $this->assertIsArray($events);
         $this->assertArrayHasKey(KernelEvents::REQUEST, $events);
         $this->assertArrayHasKey(KernelEvents::TERMINATE, $events);
-        $this->assertSame('onKernelRequest', $events[KernelEvents::REQUEST]);
-        $this->assertSame('onKernelTerminate', $events[KernelEvents::TERMINATE]);
+        $this->assertSame(['onKernelRequest', 31], $events[KernelEvents::REQUEST]);
+        $this->assertSame(['onKernelTerminate', -1024], $events[KernelEvents::TERMINATE]);
+    }
+
+    public function testMethodsDoNotUseAsEventListenerAttributes(): void
+    {
+        $requestMethod   = new ReflectionMethod(PerformanceMetricsSubscriber::class, 'onKernelRequest');
+        $terminateMethod = new ReflectionMethod(PerformanceMetricsSubscriber::class, 'onKernelTerminate');
+
+        $this->assertSame(
+            [],
+            $requestMethod->getAttributes(AsEventListener::class),
+            'onKernelRequest must not also use #[AsEventListener] (double registration)'
+        );
+        $this->assertSame(
+            [],
+            $terminateMethod->getAttributes(AsEventListener::class),
+            'onKernelTerminate must not also use #[AsEventListener] (double registration)'
+        );
     }
 
     public function testDataNotSavedWhenCollectorDisabledBetweenRequestAndTerminate(): void

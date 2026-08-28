@@ -133,6 +133,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [3.4.6] - 2026-08-29
+
+### Fixed
+
+- **PerformanceMetricsSubscriber** – Removed duplicate kernel event registration caused by combining `EventSubscriberInterface` / `getSubscribedEvents()` with `#[AsEventListener]` on the same methods. Registration is now **only** via `EventSubscriberInterface` (priorities unchanged: `kernel.request` 31, `kernel.terminate` -1024). Hosts that forced `autoconfigure: false` to avoid double metrics can drop that override after upgrading.
+
+[3.4.6]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.6
+
 ## [3.4.5] - 2026-08-24
 
 ### Changed

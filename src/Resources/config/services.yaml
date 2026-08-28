@@ -88,7 +88,7 @@ services:
         tags:
             - { name: doctrine.event_subscriber }
 
-    # Event Subscriber (uses getSubscribedEvents method and Autowire for parameters)
+    # Event Subscriber (EventSubscriberInterface / getSubscribedEvents only — no #[AsEventListener])
     Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber:
         tags:
             - { name: kernel.event_subscriber }
