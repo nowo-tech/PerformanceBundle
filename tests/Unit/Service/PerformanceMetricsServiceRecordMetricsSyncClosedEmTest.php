@@ -11,6 +11,7 @@ use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -40,7 +41,7 @@ final class PerformanceMetricsServiceRecordMetricsSyncClosedEmTest extends TestC
         $freshEm->method('isOpen')->willReturn(true);
         $freshEm->method('flush');
         $freshEm->method('getRepository')
-            ->willReturnCallback(static function (string $class) use ($routeRepo, $recordRepo): ?\PHPUnit\Framework\MockObject\MockObject {
+            ->willReturnCallback(static function (string $class) use ($routeRepo, $recordRepo): ?MockObject {
                 if ($class === RouteData::class) {
                     return $routeRepo;
                 }
