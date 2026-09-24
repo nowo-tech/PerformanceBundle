@@ -10,7 +10,7 @@
 
 ![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
 
-This bundle is **FrankenPHP worker mode friendly**.
+This bundle is **FrankenPHP worker mode friendly** (including when the kernel is not reset between requests). See [docs/FRANKENPHP-WORKER-AUDIT.md](docs/FRANKENPHP-WORKER-AUDIT.md).
 
 ## What is this?
 
@@ -53,7 +53,7 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ **Symfony UX Twig Components** - Optional modern component system
 - ✅ **Nowo UiKit + FormKit** — dashboard chrome and admin forms (`nowo-tech/ui-kit-bundle`, `nowo-tech/form-kit-bundle`, `symfony/ux-icons`)
 - ✅ Symfony 7.x and 8.x compatible
-- ✅ **FrankenPHP** — Compatible with FrankenPHP; production Caddyfile can use worker mode, while **dev demos** use `APP_ENV=dev` so the image entrypoint swaps in `Caddyfile.dev` (no worker, comfortable local dev). See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) and the demo READMEs.
+- ✅ **FrankenPHP** — Compatible with FrankenPHP worker mode (scenario B: no kernel reboot / no `services_resetter`). Production Caddyfile can use worker mode; **dev demos** use `APP_ENV=dev` so the image entrypoint swaps in `Caddyfile.dev` (no worker, comfortable local dev). See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md), [docs/FRANKENPHP-WORKER-AUDIT.md](docs/FRANKENPHP-WORKER-AUDIT.md), and the demo READMEs.
 
 ## Installation
 
@@ -301,6 +301,7 @@ Listed metrics (request time, query counts, status code ratios, etc.) in the UI 
 ### Additional documentation
 
 - [Demo with FrankenPHP (development and production)](docs/DEMO-FRANKENPHP.md)
+- [FrankenPHP worker audit (kernel not reset)](docs/FRANKENPHP-WORKER-AUDIT.md)
 - [Commands](docs/COMMANDS.md)
 - [Events & priorities](docs/EVENTS.md)
 - [Behaviour and notable changes](docs/BEHAVIOUR_AND_CHANGES.md)

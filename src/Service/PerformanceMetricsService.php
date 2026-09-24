@@ -294,8 +294,9 @@ class PerformanceMetricsService
         ?string $userId = null,
         ?string $routePath = null,
     ): array {
-        $isNew      = false;
-        $wasUpdated = false;
+        $isNew        = false;
+        $wasUpdated   = false;
+        $accessRecord = null;
 
         LogHelper::logf(
             '[PerformanceBundle] recordMetricsSync: Looking for existing record - route=%s, env=%s',
@@ -399,10 +400,8 @@ class PerformanceMetricsService
                 $this->resetEntityManager();
             }
 
-            // Suppress any potential output from Doctrine
-            $errorReporting = error_reporting(0);
-            $this->entityManager->flush();
-            error_reporting($errorReporting);
+            // Suppress any potential output from Doctrine ("@" is restored by the engine even on exceptions)
+            @$this->entityManager->flush();
 
             LogHelper::logf(
                 '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
@@ -422,6 +421,13 @@ class PerformanceMetricsService
                 $this->eventDispatcher->dispatch($afterEvent);
             }
 
+            // Without kernel.reset (long-running worker) the shared identity map would keep one record per
+            // request and serve a stale RouteData (e.g. saveAccessRecords changed from another worker).
+            if ($accessRecord instanceof RouteDataRecord) {
+                $this->entityManager->detach($accessRecord);
+            }
+            $this->entityManager->detach($routeData);
+
             LogHelper::logf(
                 '[PerformanceBundle] recordMetricsSync: SUCCESS - route=%s, env=%s, isNew=%s, wasUpdated=%s',
                 $this->enableLogging,
@@ -433,11 +439,6 @@ class PerformanceMetricsService
 
             return ['is_new' => $isNew, 'was_updated' => $wasUpdated];
         } catch (Exception $e) {
-            // Restore error reporting
-            if (isset($errorReporting)) {
-                error_reporting($errorReporting);
-            }
-
             LogHelper::logf(
                 '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, exception=%s, message=%s',
                 $this->enableLogging,

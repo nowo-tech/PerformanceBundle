@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\EventSubscriber;
 
 use Doctrine\DBAL\Logging\Middleware;
-use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\Helper\LogHelper;
@@ -21,6 +20,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\Profiler\Profiler;
 use Symfony\Component\Stopwatch\Stopwatch;
+use Throwable;
 
 use function in_array;
 use function is_object;
@@ -91,7 +91,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         #[Autowire('%nowo_performance.track_sub_requests%')]
         private readonly bool $trackSubRequests = false,
         #[Autowire('%nowo_performance.async%')]
-        bool $async = false,
+        private readonly bool $async = false,
         #[Autowire('%nowo_performance.sampling_rate%')]
         private readonly float $samplingRate = 1.0,
         /** @var array<int> */
@@ -150,6 +150,13 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     public function onKernelRequest(RequestEvent $event): void
     {
         $request = $event->getRequest();
+
+        // Long-running runtimes (FrankenPHP worker) may not reset services between requests:
+        // start every main request with a clean collector state.
+        if ($event->isMainRequest()) {
+            $this->dataCollector->reset();
+            $this->dataCollector->setAsync($this->async);
+        }
 
         // Minimal setup for collector (route + env) so toolbar can show "disabled" with context
         $env = null;
@@ -251,7 +258,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->dataCollector->setStartTime($this->startTime);
         }
 
-        // Track initial memory usage
+        // Track initial memory usage. The peak is process-wide, so it must be reset per main request
+        // or a long-running worker would report the highest peak since it started.
+        if ($event->isMainRequest()) {
+            memory_reset_peak_usage();
+        }
         $this->startMemory = memory_get_usage(true);
 
         // Unique request ID for deduplication: one per logical request (main + sub-requests share the main's ID)
@@ -430,20 +441,16 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Record metrics - ensure no output is generated
+        // Record metrics - ensure no output is generated.
+        // Use output buffering to catch any potential output
+        // Only start a new buffer if we're not already in one (to avoid closing buffers we didn't open)
+        $obStarted = false;
+        if (ob_get_level() === 0) {
+            ob_start();
+            $obStarted = true;
+        }
+
         try {
-            // Suppress error reporting temporarily to prevent warnings from generating output
-            $errorReporting = error_reporting(0);
-
-            // Use output buffering to catch any potential output
-            // Only start a new buffer if we're not already in one (to avoid closing buffers we didn't open)
-            $obLevel   = ob_get_level();
-            $obStarted = false;
-            if ($obLevel === 0) {
-                ob_start();
-                $obStarted = true;
-            }
-
             LogHelper::logf(
                 '[PerformanceBundle] Attempting to save metrics: route=%s, env=%s, method=%s, statusCode=%s, requestTime=%s, queryCount=%s, queryTime=%s, memoryUsage=%s, samplingRate=%s',
                 $this->enableLogging,
@@ -477,7 +484,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $queryString = $request->getQueryString();
             $routePath   = $pathInfo . (is_string($queryString) && $queryString !== '' ? '?' . $queryString : '');
 
-            $result = $this->metricsService->recordMetrics(
+            // "@" silences warnings (no output) and, unlike error_reporting(0), the engine restores the
+            // process-wide level even when an exception is thrown, so a long-running worker never keeps it.
+            $result = @$this->metricsService->recordMetrics(
                 $this->routeName,
                 $env,
                 $requestTime,
@@ -498,8 +507,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             LogHelper::logf(
                 '[PerformanceBundle] recordMetrics returned: is_new=%s, was_updated=%s',
                 $this->enableLogging,
-                $result['is_new'] ? 'true' : 'false',
-                $result['was_updated'] ? 'true' : 'false',
+                ($result['is_new'] ?? false) ? 'true' : 'false',
+                ($result['was_updated'] ?? false) ? 'true' : 'false',
             );
 
             // Set record operation information in the collector
@@ -525,25 +534,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 // Still set the operation to indicate we tried (even if it failed)
                 $this->dataCollector->setRecordOperation(false, false);
             }
-
-            // Clean output buffer only if we started it
-            if ($obStarted && ob_get_level() > 0) {
-                ob_end_clean();
-            }
-
-            // Restore error reporting
-            error_reporting($errorReporting);
-        } catch (Exception $e) {
-            // Restore error reporting
-            if (isset($errorReporting)) {
-                error_reporting($errorReporting);
-            }
-
-            // Clean output buffer only if we started it
-            if (isset($obStarted) && $obStarted && ob_get_level() > 0) {
-                ob_end_clean();
-            }
-
+        } catch (Throwable $e) {
             // Log the error for debugging
             LogHelper::logf(
                 '[PerformanceBundle] Error saving metrics for route %s: %s (file: %s, line: %s)',
@@ -572,6 +563,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             // Silently fail to not break the application
             // In production, you might want to log this
         } finally {
+            // Output buffers are process-wide: always close ours, otherwise a long-running worker keeps it.
+            if ($obStarted && ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
             // Ensure setRecordOperation is always called, even if there was an unexpected error
             // This prevents "Unknown" status in the collector
             if ($this->dataCollector->wasRecordNew() === null && $this->dataCollector->wasRecordUpdated() === null) {

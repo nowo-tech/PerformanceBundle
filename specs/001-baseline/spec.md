@@ -110,6 +110,10 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 - **FR-METRICS-001**: `PerformanceMetricsSubscriber` MUST capture start time/memory on request, respect ignore list and sampling, and persist on terminate via `PerformanceMetricsService`; MUST populate `PerformanceDataCollector`.
 - **FR-METRICS-002**: `PerformanceAlertSubscriber` MUST evaluate configured thresholds and trigger notifications without blocking the response.
 
+### Long-running runtimes (FrankenPHP worker)
+
+- **FR-WORKER-001**: Under FrankenPHP worker mode with no kernel reboot between requests (including when `services_resetter` does not run), the metrics path MUST: reset process peak memory at each tracked main request; avoid leaking process-wide `error_reporting` / output-buffer mutations; detach persisted `RouteData` / `RouteDataRecord` after each write; reset `PerformanceDataCollector` (and re-apply `async`) at each main request. Full audit: [`docs/FRANKENPHP-WORKER-AUDIT.md`](../../docs/FRANKENPHP-WORKER-AUDIT.md).
+
 ### DBAL & persistence
 
 - **FR-DBAL-001**: `QueryTrackingMiddleware`, `QueryTrackingMiddlewareRegistry`, `QueryTrackingConnectionSubscriber`, and `QueryLogger` MUST count/time queries when `track_queries=true`.

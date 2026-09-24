@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.4.7] - 2026-09-24](#347-2026-09-24)
+- [[3.4.6] - 2026-08-29](#346-2026-08-29)
+- [[3.4.5] - 2026-08-24](#345-2026-08-24)
 - [[3.4.4] - 2026-08-19](#344-2026-08-19)
 - [[3.4.3] - 2026-08-18](#343-2026-08-18)
 - [[3.4.2] - 2026-08-07](#342-2026-08-07)
@@ -132,6 +135,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_No changes yet._
+
+## [3.4.7] - 2026-09-24
+
+### Fixed
+
+- **FrankenPHP worker mode (no kernel reset between requests)** – see [`docs/FRANKENPHP-WORKER-AUDIT.md`](FRANKENPHP-WORKER-AUDIT.md):
+  - `PerformanceMetricsSubscriber` calls `memory_reset_peak_usage()` at the start of each tracked main request, so `memoryUsage` (and memory alerts) no longer report the worker-lifetime peak.
+  - `PerformanceMetricsSubscriber` / `PerformanceMetricsService` no longer call `error_reporting(0)`; warnings are silenced with `@` (restored by the engine even on exceptions) and the output buffer is closed in `finally`. `onKernelTerminate()` now catches `\Throwable` (not only `\Exception`), so an `\Error` while recording metrics is logged and no longer escapes `kernel.terminate`.
+  - `PerformanceMetricsService::recordMetricsSync()` detaches the persisted `RouteDataRecord` and the `RouteData` after flush (and after `AfterMetricsRecordedEvent`), so the shared identity map does not grow per request and the next request reloads a fresh `RouteData`.
+  - The profiler collector is reset at the start of each main request and gets the configured `async` flag again (the toolbar no longer shows "sync" after the first reset nor the previous request's record status).
+- **`services_twig_component.yaml`** – Fixed invalid YAML indentation of the `Nowo\PerformanceBundle\Form\` block (the file failed to load when `symfony/ux-twig-component` was installed).
+
+### Documentation
+
+- Added `docs/FRANKENPHP-WORKER-AUDIT.md` (scenario A/B audit, W-01…W-05 findings and remediation status).
+- Spec `FR-WORKER-001`: metrics path MUST remain correct under FrankenPHP worker with no kernel reboot / no `services_resetter`.
 
 ## [3.4.6] - 2026-08-29
 

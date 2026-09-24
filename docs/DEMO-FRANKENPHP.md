@@ -105,6 +105,8 @@ From the bundle root: `make -C demo/symfony8 up`. Or from the demo directory: `m
 
 Use the default Caddyfile (with worker). Set `APP_ENV=prod` and `APP_DEBUG=0`. Do not mount `php-dev.ini`. See [TwigInspectorBundle DEMO-FRANKENPHP](https://github.com/nowo-tech/TwigInspectorBundle/blob/main/docs/DEMO-FRANKENPHP.md) for the full production Caddyfile and steps.
 
+The bundle is audited for **worker mode without kernel reset** (no `services_resetter`): see [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md). Host apps under that scenario should still clear their own EntityManager identity map between requests; the bundle detaches only the entities it writes on the metrics path.
+
 ---
 
 ## Switching classic vs worker (`FRANKENPHP_MODE`)

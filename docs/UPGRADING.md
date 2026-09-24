@@ -6,6 +6,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 
+- [From 3.4.6 to 3.4.7](#from-346-to-347)
 - [From 3.4.5 to 3.4.6](#from-345-to-346)
 - [From 3.4.4 to 3.4.5](#from-344-to-345)
 - [Upgrading to 3.4.4 (2026-08-19)](#upgrading-to-344-2026-08-19)
@@ -95,6 +96,17 @@ This guide helps you upgrade between versions of the Performance Bundle.
   - [Optional Dependencies](#optional-dependencies)
   - [Testing Your Upgrade](#testing-your-upgrade)
   - [Troubleshooting](#troubleshooting)
+
+## From 3.4.6 to 3.4.7
+
+FrankenPHP worker mode with **no kernel reboot** and **no `services_resetter`** (scenario B). See [`docs/FRANKENPHP-WORKER-AUDIT.md`](FRANKENPHP-WORKER-AUDIT.md).
+
+**No required application changes.** Behaviour notes:
+
+1. `RouteData` and `RouteDataRecord` entities written by `PerformanceMetricsService::recordMetrics()` are detached from the EntityManager after flush. `AfterMetricsRecordedEvent` listeners still receive a managed `RouteData`; code that keeps the entity after `recordMetrics()` returns must re-fetch it before modifying and flushing it.
+2. `memoryUsage` is now measured from a peak reset at the start of each main request. In long-running workers values drop to the real per-request figure; review memory thresholds tuned against the old (inflated) values.
+3. A `\Throwable` thrown while recording metrics in `kernel.terminate` (e.g. by a listener of the bundle events) is logged and swallowed like `\Exception` already was.
+4. Clearing the application's EntityManager identity map between requests (dashboard reads, app entities) remains the host application's responsibility under scenario B; the bundle only detaches its own write path entities.
 
 ## From 3.4.5 to 3.4.6
 
