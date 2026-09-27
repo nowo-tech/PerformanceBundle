@@ -15,6 +15,7 @@ use function is_array;
 use function is_string;
 
 use const PHP_URL_PATH;
+use SortDirection;
 
 /**
  * Repository for RouteData entity.
@@ -71,7 +72,7 @@ class RouteDataRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('r')
             ->where('r.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.lastAccessedAt', 'DESC')
+            ->orderBy('r.lastAccessedAt', SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }
@@ -91,7 +92,7 @@ class RouteDataRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('r')
             ->where('r.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.lastAccessedAt', 'DESC')
+            ->orderBy('r.lastAccessedAt', SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -107,7 +108,7 @@ class RouteDataRepository extends ServiceEntityRepository
         $result = $this->createQueryBuilder('r')
             ->select('DISTINCT r.env')
             ->where('r.env IS NOT NULL')
-            ->orderBy('r.env', 'ASC')
+            ->orderBy('r.env', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
 

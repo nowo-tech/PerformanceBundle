@@ -16,6 +16,7 @@ use function count;
 use function is_string;
 
 use const PHP_URL_PATH;
+use SortDirection;
 
 /**
  * Repository for RouteDataRecord entities.
@@ -78,7 +79,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->join('r.routeData', 'rd')
             ->where('rd.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.accessedAt', 'ASC');
+            ->orderBy('r.accessedAt', SortDirection::Ascending);
 
         if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
@@ -529,7 +530,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->join('r.routeData', 'rd')
             ->where('rd.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.accessedAt', 'ASC');
+            ->orderBy('r.accessedAt', SortDirection::Ascending);
 
         if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
@@ -639,7 +640,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->join('r.routeData', 'rd')
             ->where('rd.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.accessedAt', 'ASC');
+            ->orderBy('r.accessedAt', SortDirection::Ascending);
 
         if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
@@ -752,7 +753,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->join('r.routeData', 'rd')
             ->where('rd.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.accessedAt', 'ASC');
+            ->orderBy('r.accessedAt', SortDirection::Ascending);
 
         if ($startDate instanceof DateTimeImmutable) {
             $qb->andWhere('r.accessedAt >= :startDate')
@@ -925,7 +926,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             ->addSelect('rd')
             ->where('rd.env = :env')
             ->setParameter('env', $env)
-            ->orderBy('r.accessedAt', 'DESC');
+            ->orderBy('r.accessedAt', SortDirection::Descending);
 
         $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $path, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 

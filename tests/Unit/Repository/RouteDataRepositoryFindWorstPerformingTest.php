@@ -11,6 +11,7 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use SortDirection;
 
 /**
  * Tests for RouteDataRepository::findWorstPerforming() method.
@@ -42,7 +43,7 @@ final class RouteDataRepositoryFindWorstPerformingTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->expects($this->once())->method('where')->with('r.env = :env')->willReturnSelf();
         $qb->expects($this->once())->method('setParameter')->with('env', 'dev')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', 'DESC')->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', SortDirection::DescendingDESC->willReturnSelf();
         $qb->expects($this->once())->method('setMaxResults')->with(10)->willReturnSelf();
         $qb->expects($this->once())->method('getQuery')->willReturn($query);
 

@@ -65,6 +65,7 @@ use const FILTER_VALIDATE_URL;
 use const FNM_NOESCAPE;
 use const JSON_PRETTY_PRINT;
 use const JSON_UNESCAPED_SLASHES;
+use SortDirection;
 
 /**
  * Controller for displaying performance metrics.
@@ -1562,12 +1563,12 @@ class PerformanceController extends AbstractController
             if ($totalRecords > 0) {
                 // Get first and last record dates
                 $firstRecord = $repository->createQueryBuilder('r')
-                    ->orderBy('r.createdAt', 'ASC')
+                    ->orderBy('r.createdAt', SortDirection::Ascending)
                     ->setMaxResults(1)
                     ->getQuery()
                     ->getOneOrNullResult();
                 $lastRecord = $repository->createQueryBuilder('r')
-                    ->orderBy('r.lastAccessedAt', 'DESC')
+                    ->orderBy('r.lastAccessedAt', SortDirection::Descending)
                     ->setMaxResults(1)
                     ->getQuery()
                     ->getOneOrNullResult();
