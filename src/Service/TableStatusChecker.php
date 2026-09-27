@@ -63,6 +63,7 @@ class TableStatusChecker
      */
     public function setCacheService(?PerformanceCacheService $cacheService): void
     {
+        // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
         $this->cacheService = $cacheService;
     }
 

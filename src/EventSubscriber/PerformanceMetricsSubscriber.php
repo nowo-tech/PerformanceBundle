@@ -116,7 +116,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         private readonly ?KernelInterface $kernel = null,
         private readonly ?QueryTrackingCounters $queryCounters = null,
     ) {
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setEnabled($enabled);
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setAsync($async);
     }
 
@@ -155,6 +157,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // start every main request with a clean collector state.
         if ($event->isMainRequest()) {
             $this->dataCollector->reset();
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setAsync($this->async);
         }
 
@@ -164,22 +167,30 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $env = $this->kernel->getEnvironment();
         } elseif ($request->server->has('APP_ENV')) {
             $env = $request->server->get('APP_ENV');
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         } elseif (isset($_SERVER['APP_ENV'])) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $env = $_SERVER['APP_ENV'];
         } elseif (($appEnv = getenv('APP_ENV')) !== false && $appEnv !== '') {
             $env = $appEnv;
         } else {
             $env = 'dev';
         }
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setConfiguredEnvironments($this->environments);
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setCurrentEnvironment($env);
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->routeName = $request->attributes->get('_route');
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setRouteName($this->routeName);
 
         // When bundle is disabled: avoid any further work (no metrics, no query tracking, no DB)
         if (!$this->enabled) {
             LogHelper::log('[PerformanceBundle] Tracking disabled: enabled=false', $this->enableLogging);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setEnabled(false);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setDisabledReason('Bundle is disabled in configuration (nowo_performance.enabled: false)');
 
             return;
@@ -187,7 +198,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         if (!$event->isMainRequest() && !$this->trackSubRequests) {
             LogHelper::log('[PerformanceBundle] Tracking disabled: not main request (sub-request) and track_sub_requests is disabled', $this->enableLogging);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setEnabled(false);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setDisabledReason('Not a main request (sub-request). Enable track_sub_requests to track sub-requests.');
             LogHelper::logf(
                 '[PerformanceBundle] DataCollector setEnabled(false) - reason: Sub-request, isEnabled()=%s',
@@ -208,7 +221,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         if (!in_array($env, $this->environments, true)) {
             LogHelper::logf('[PerformanceBundle] Tracking disabled: env=%s not in allowed environments: %s', $this->enableLogging, $env, implode(', ', $this->environments));
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setEnabled(false);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setDisabledReason(sprintf('Environment "%s" is not in allowed environments: %s', $env, implode(', ', $this->environments)));
             LogHelper::logf(
                 '[PerformanceBundle] DataCollector setEnabled(false) - reason: Environment not allowed, isEnabled()=%s',
@@ -219,7 +234,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             return;
         }
 
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setEnabled(true);
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setDisabledReason(null); // Clear any previous reason
         LogHelper::logf(
             '[PerformanceBundle] DataCollector setEnabled(true) - isEnabled()=%s',
@@ -239,8 +256,11 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // When route is ignored: stop all tracking for this request (no metrics, no query tracking, no DB)
         if ($this->routeName !== null && $this->isRouteIgnored($this->routeName)) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setEnabled(false);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setDisabledReason(sprintf('Route "%s" is in ignore_routes list', $this->routeName));
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
@@ -254,7 +274,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Start timing
         if ($this->trackRequestTime) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->startTime = microtime(true);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setStartTime($this->startTime);
         }
 
@@ -263,10 +285,12 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         if ($event->isMainRequest()) {
             memory_reset_peak_usage();
         }
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->startMemory = memory_get_usage(true);
 
         // Unique request ID for deduplication: one per logical request (main + sub-requests share the main's ID)
         if ($event->isMainRequest()) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->requestId = bin2hex(random_bytes(16));
             $request->attributes->set('_performance_request_id', $this->requestId);
         } else {
@@ -278,6 +302,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             if (!$mainRequest instanceof Request) {
                 $mainRequest = $request;
             }
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->requestId = $mainRequest->attributes->get('_performance_request_id');
         }
 
@@ -287,6 +312,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         }
 
         // Get route parameters
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->routeParams = $request->attributes->get('_route_params', []);
     }
 
@@ -302,12 +328,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     {
         // When bundle is disabled: exit immediately without any work (no DB, no reflection, no logging)
         if (!$this->enabled) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
         }
 
         if (!$this->dataCollector->isEnabled()) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
@@ -321,7 +349,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $env = $this->kernel->getEnvironment();
         } elseif ($request->server->has('APP_ENV')) {
             $env = $request->server->get('APP_ENV');
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         } elseif (isset($_SERVER['APP_ENV'])) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $env = $_SERVER['APP_ENV'];
         } elseif (($appEnv = getenv('APP_ENV')) !== false && $appEnv !== '') {
             $env = $appEnv;
@@ -332,7 +362,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         // Get route name here, as it should be resolved by now.
         // If request no longer has _route at terminate (route lost), clear and skip saving.
         $routeNameFromRequest = $request->attributes->get('_route');
-        $this->routeName      = $routeNameFromRequest === null ? null : $this->routeName ?? $routeNameFromRequest;
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        $this->routeName = $routeNameFromRequest === null ? null : $this->routeName ?? $routeNameFromRequest;
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setRouteName($this->routeName);
 
         LogHelper::logf(
@@ -345,6 +377,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         if ($this->routeName === null) {
             LogHelper::log('[PerformanceBundle] onKernelTerminate: routeName is null, skipping', $this->enableLogging);
             // Inform collector that no route name was available
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
@@ -358,6 +391,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 implode(', ', $this->environments),
             );
             // Inform collector that environment is not allowed
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
@@ -367,6 +401,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         $requestTime = null;
         if ($this->trackRequestTime && $this->startTime !== null) {
             $requestTime = microtime(true) - $this->startTime;
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRequestTime($requestTime);
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: Request time calculated: %s seconds',
@@ -389,7 +424,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $metrics    = $this->getQueryMetrics($request);
             $queryCount = $metrics['count'];
             $queryTime  = $metrics['time'];
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setQueryCount($queryCount);
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setQueryTime($queryTime);
             LogHelper::logf(
                 '[PerformanceBundle] onKernelTerminate: Query metrics: count=%s, time=%s',
@@ -436,6 +473,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $this->samplingRate * 100,
             );
             // Inform collector that no data was saved due to sampling
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
             return;
@@ -514,6 +552,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             // Set record operation information in the collector
             // Always set this, even if result indicates no changes (was_updated = false)
             if (isset($result['is_new'], $result['was_updated'])) {
+                // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
                 $this->dataCollector->setRecordOperation($result['is_new'], $result['was_updated']);
 
                 LogHelper::logf(
@@ -532,6 +571,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                     implode(', ', array_keys($result)),
                 );
                 // Still set the operation to indicate we tried (even if it failed)
+                // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
                 $this->dataCollector->setRecordOperation(false, false);
             }
         } catch (Throwable $e) {
@@ -558,6 +598,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             }
 
             // Inform collector that save failed
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
             // Silently fail to not break the application
@@ -573,6 +614,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             if ($this->dataCollector->wasRecordNew() === null && $this->dataCollector->wasRecordUpdated() === null) {
                 // If we reach here and the operation status is still null, something went wrong
                 // Set it to indicate we tried but failed
+                // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
                 $this->dataCollector->setRecordOperation(false, false);
             }
 

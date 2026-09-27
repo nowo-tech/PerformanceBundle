@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history check-twig-extra
+.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan igor release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history check-twig-extra
 
 # Default target
 help:
@@ -28,8 +28,9 @@ help:
 	@echo "  rector        Apply Rector refactoring"
 	@echo "  rector-dry    Run Rector in dry-run mode"
 	@echo "  phpstan       Run PHPStan static analysis"
+	@echo "  igor          Run Igor worker-state audit (REQ-CS-008)"
 	@echo "  qa            Run all QA checks (cs-check + test)"
-	@echo "  release-check Pre-release: cs-fix, cs-check, rector-dry, phpstan, test-coverage, demo healthchecks"
+	@echo "  release-check Pre-release: cs-fix, cs-check, rector-dry, phpstan, igor, test-coverage, demo healthchecks"
 	@echo "  demo-smoke    REQ-TEST-011: boot demo + HTTP 200"
 	@echo "  composer-sync Validate composer.json and align composer.lock"
 	@echo "  clean         Remove vendor and cache"
@@ -134,6 +135,10 @@ rector-dry: ensure-up
 phpstan: ensure-up
 	$(COMPOSE) exec -T php composer phpstan
 
+# Run Igor worker-state audit (REQ-CS-008)
+igor: ensure-up
+	$(COMPOSE) exec -T php composer igor
+
 # Run all QA
 qa: ensure-up
 	$(COMPOSE) exec -T php composer qa
@@ -154,7 +159,7 @@ validate: ensure-up
 check-twig-extra:
 	@chmod +x .scripts/check-twig-extra.sh
 	@./.scripts/check-twig-extra.sh
-release-check: check-no-cursor-coauthor check-twig-extra-since-release ensure-up composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
+release-check: check-no-cursor-coauthor check-twig-extra-since-release ensure-up composer-sync cs-fix cs-check rector-dry phpstan igor test-coverage release-check-demos
 
 release-check-demos:
 	@$(MAKE) -C demo release-check

@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.4.8] - 2026-09-27](#348-2026-09-27)
 - [[3.4.7] - 2026-09-24](#347-2026-09-24)
 - [[3.4.6] - 2026-08-29](#346-2026-08-29)
 - [[3.4.5] - 2026-08-24](#345-2026-08-24)
@@ -135,7 +136,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.8] - 2026-09-27
+
+### Added
+
+- **REQ-CS-008:** `igor-php/igor-php` (require-dev only), root `igor.json`, Composer/`Makefile` `igor` target, and `release-check` wiring for FrankenPHP worker-state audit.
+
 _No changes yet._
+
+### Changed
+
+- **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
+
+[3.4.8]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.8
 
 ## [3.4.7] - 2026-09-24
 

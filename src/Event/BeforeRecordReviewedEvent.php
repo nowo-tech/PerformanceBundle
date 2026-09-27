@@ -47,6 +47,7 @@ final class BeforeRecordReviewedEvent extends Event
 
     public function setQueriesImproved(?bool $queriesImproved): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->queriesImproved = $queriesImproved;
     }
 
@@ -57,6 +58,7 @@ final class BeforeRecordReviewedEvent extends Event
 
     public function setTimeImproved(?bool $timeImproved): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->timeImproved = $timeImproved;
     }
 
@@ -67,6 +69,7 @@ final class BeforeRecordReviewedEvent extends Event
 
     public function setReviewedBy(?string $reviewedBy): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->reviewedBy = $reviewedBy;
     }
 
@@ -75,6 +78,7 @@ final class BeforeRecordReviewedEvent extends Event
      */
     public function preventReview(): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->reviewPrevented = true;
     }
 

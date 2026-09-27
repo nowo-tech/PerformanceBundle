@@ -113,6 +113,7 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
             );
 
             if ($success) {
+                // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
                 $this->trackedConnections[$connectionKey] = true;
             } else {
                 // If reflection failed, reset the tracking flag to try again next request

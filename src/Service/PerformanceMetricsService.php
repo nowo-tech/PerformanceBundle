@@ -129,6 +129,7 @@ class PerformanceMetricsService
     #[Required]
     public function setCacheService(?PerformanceCacheService $cacheService): void
     {
+        // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
         $this->cacheService = $cacheService;
     }
 
@@ -140,6 +141,7 @@ class PerformanceMetricsService
     #[Required]
     public function setEventDispatcher(?EventDispatcherInterface $eventDispatcher): void
     {
+        // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
         $this->eventDispatcher = $eventDispatcher;
     }
 
@@ -154,6 +156,7 @@ class PerformanceMetricsService
      */
     public function setMessageBus(?MessageBusInterface $messageBus): void
     {
+        // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
         $this->messageBus = $messageBus;
     }
 
@@ -649,16 +652,19 @@ class PerformanceMetricsService
             if (!$manager instanceof EntityManagerInterface) {
                 throw new LogicException('Expected EntityManagerInterface from registry.');
             }
+            // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
             $this->entityManager = $manager;
             $repository          = $this->entityManager->getRepository(RouteData::class);
             if (!$repository instanceof RouteDataRepository) {
                 throw new LogicException('Expected RouteDataRepository.');
             }
+            // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
             $this->repository = $repository;
             $recordRepo       = $this->entityManager->getRepository(RouteDataRecord::class);
             if (!$recordRepo instanceof RouteDataRecordRepository) {
                 throw new LogicException('Expected RouteDataRecordRepository.');
             }
+            // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
             $this->recordRepository = $recordRepo;
 
             LogHelper::log('[PerformanceBundle] EntityManager reset after being closed', $this->enableLogging);

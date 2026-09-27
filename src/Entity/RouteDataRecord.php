@@ -156,6 +156,7 @@ class RouteDataRecord
      */
     public function setRouteData(?RouteData $routeData): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->routeData = $routeData;
 
         return $this;
@@ -178,6 +179,7 @@ class RouteDataRecord
      */
     public function setAccessedAt(DateTimeImmutable $accessedAt): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->accessedAt = $accessedAt;
 
         return $this;
@@ -200,6 +202,7 @@ class RouteDataRecord
      */
     public function setStatusCode(?int $statusCode): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->statusCode = $statusCode;
 
         return $this;
@@ -222,6 +225,7 @@ class RouteDataRecord
      */
     public function setResponseTime(?float $responseTime): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->responseTime = $responseTime;
 
         return $this;
@@ -244,6 +248,7 @@ class RouteDataRecord
      */
     public function setTotalQueries(?int $totalQueries): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->totalQueries = $totalQueries;
 
         return $this;
@@ -266,6 +271,7 @@ class RouteDataRecord
      */
     public function setQueryTime(?float $queryTime): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->queryTime = $queryTime;
 
         return $this;
@@ -288,6 +294,7 @@ class RouteDataRecord
      */
     public function setMemoryUsage(?int $memoryUsage): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->memoryUsage = $memoryUsage;
 
         return $this;
@@ -310,6 +317,7 @@ class RouteDataRecord
      */
     public function setRequestId(?string $requestId): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->requestId = $requestId;
 
         return $this;
@@ -332,6 +340,7 @@ class RouteDataRecord
      */
     public function setReferer(?string $referer): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->referer = $referer !== null && strlen($referer) > 2048 ? substr($referer, 0, 2048) : $referer;
 
         return $this;
@@ -354,6 +363,7 @@ class RouteDataRecord
      */
     public function setUserIdentifier(?string $userIdentifier): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->userIdentifier = $userIdentifier !== null && strlen($userIdentifier) > 255 ? substr($userIdentifier, 0, 255) : $userIdentifier;
 
         return $this;
@@ -376,6 +386,7 @@ class RouteDataRecord
      */
     public function setUserId(?string $userId): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->userId = $userId !== null && strlen($userId) > 64 ? substr($userId, 0, 64) : $userId;
 
         return $this;
@@ -398,6 +409,7 @@ class RouteDataRecord
      */
     public function setRouteParams(?array $routeParams): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->routeParams = $routeParams;
 
         return $this;
@@ -420,6 +432,7 @@ class RouteDataRecord
      */
     public function setRoutePath(?string $routePath): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->routePath = $routePath !== null && strlen($routePath) > 2048 ? substr($routePath, 0, 2048) : $routePath;
 
         return $this;

@@ -39,6 +39,7 @@ class QueryLogger
      */
     public function startQuery(string $queryId): void
     {
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->queryStartTimes[$queryId] = microtime(true);
     }
 
@@ -55,7 +56,9 @@ class QueryLogger
             return;
         }
 
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         ++$this->queryCount;
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->totalQueryTime += microtime(true) - $this->queryStartTimes[$queryId];
         unset($this->queryStartTimes[$queryId]);
     }

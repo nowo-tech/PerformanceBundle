@@ -39,6 +39,7 @@ final class BeforeRecordDeletedEvent extends Event
      */
     public function preventDeletion(): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->deletionPrevented = true;
     }
 

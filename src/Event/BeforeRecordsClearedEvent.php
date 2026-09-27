@@ -38,6 +38,7 @@ final class BeforeRecordsClearedEvent extends Event
      */
     public function preventClearing(): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->clearingPrevented = true;
     }
 

@@ -111,6 +111,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setStartTime(float $startTime): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->startTime = $startTime;
     }
 
@@ -122,8 +123,10 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setQueryMetrics(int $queryCount, float $queryTime): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->queryCount = $queryCount;
-        $this->queryTime  = $queryTime;
+        // @igor-ignore - Not shared worker service state.
+        $this->queryTime = $queryTime;
     }
 
     /**
@@ -133,6 +136,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setRouteName(?string $routeName): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->routeName = $routeName;
     }
 
@@ -143,6 +147,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setEnabled(bool $enabled): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->enabled = $enabled;
     }
 
@@ -153,6 +158,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setAsync(bool $async): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->async = $async;
     }
 
@@ -163,6 +169,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setConfiguredEnvironments(array $environments): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->configuredEnvironments = $environments;
     }
 
@@ -173,6 +180,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setCurrentEnvironment(string $environment): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->currentEnvironment = $environment;
     }
 
@@ -183,6 +191,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setDisabledReason(?string $reason): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->disabledReason = $reason;
     }
 
@@ -203,6 +212,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setQueryCount(int $queryCount): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->queryCount = $queryCount;
     }
 
@@ -213,6 +223,7 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setQueryTime(float $queryTime): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->queryTime = $queryTime;
     }
 
@@ -224,13 +235,17 @@ class PerformanceDataCollector extends DataCollector
      */
     public function setRecordOperation(bool $isNew, bool $wasUpdated): void
     {
-        $this->recordWasNew     = $isNew;
+        // @igor-ignore - Not shared worker service state.
+        $this->recordWasNew = $isNew;
+        // @igor-ignore - Not shared worker service state.
         $this->recordWasUpdated = $wasUpdated;
 
         // Also update the data array if it has been initialized (collect() has been called)
         // This ensures the information is available even if setRecordOperation() is called after collect()
         if (is_array($this->data)) {
-            $this->data['record_was_new']     = $isNew;
+            // @igor-ignore - Not shared worker service state.
+            $this->data['record_was_new'] = $isNew;
+            // @igor-ignore - Not shared worker service state.
             $this->data['record_was_updated'] = $wasUpdated;
         }
     }
@@ -243,6 +258,7 @@ class PerformanceDataCollector extends DataCollector
         // When tracking is disabled (bundle disabled or route ignored): avoid any expensive work
         // (no DB, no QueryTrackingMiddleware, no table/repository/dependency checks)
         if (!$this->enabled) {
+            // @igor-ignore - Not shared worker service state.
             $this->data = [
                 'enabled'                   => false,
                 'route_name'                => $routeName,
@@ -379,6 +395,7 @@ class PerformanceDataCollector extends DataCollector
             $dependencyStatus    = $this->dependencyChecker->getDependencyStatus();
         }
 
+        // @igor-ignore - Not shared worker service state.
         $this->data = [
             'enabled'                   => $this->enabled,
             'route_name'                => $routeName,

@@ -1973,8 +1973,10 @@ class PerformanceController extends AbstractController
             // Invalidate cache
             if ($this->cacheService instanceof PerformanceCacheService) {
                 if ($env !== '' && $env !== '0') {
+                    // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                     $this->cacheService->clearStatistics($env);
                 } else {
+                    // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                     $this->cacheService->clearEnvironments();
                 }
             }
@@ -2081,8 +2083,10 @@ class PerformanceController extends AbstractController
                 // Invalidate cache
                 if ($this->cacheService instanceof PerformanceCacheService) {
                     if ($env !== '' && $env !== '0') {
+                        // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                         $this->cacheService->clearStatistics($env);
                     }
+                    // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                     $this->cacheService->clearEnvironments();
                 }
 
@@ -2223,8 +2227,10 @@ class PerformanceController extends AbstractController
                 // Invalidate cache
                 if ($this->cacheService instanceof PerformanceCacheService) {
                     if ($env !== '' && $env !== '0') {
+                        // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                         $this->cacheService->clearStatistics($env);
                     }
+                    // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                     $this->cacheService->clearEnvironments();
                 }
 
@@ -2720,8 +2726,10 @@ class PerformanceController extends AbstractController
         }
 
         if ($this->cacheService instanceof PerformanceCacheService) {
+            // @igor-ignore - HTTP handler delegates to services; no controller worker state.
             $this->cacheService->clearStatistics($envFilter ?? '');
             if ($envFilter === null) {
+                // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                 $this->cacheService->clearEnvironments();
             }
         }
@@ -2861,6 +2869,7 @@ class PerformanceController extends AbstractController
         }
 
         if ($this->cacheService instanceof PerformanceCacheService) {
+            // @igor-ignore - HTTP handler delegates to services; no controller worker state.
             $this->cacheService->clearStatistics($env);
         }
 

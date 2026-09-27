@@ -156,6 +156,7 @@ class RouteData implements Stringable
      */
     public function setEnv(?string $env): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->env = $env;
 
         return $this;
@@ -178,6 +179,7 @@ class RouteData implements Stringable
      */
     public function setName(?string $name): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->name = $name;
 
         return $this;
@@ -200,6 +202,7 @@ class RouteData implements Stringable
      */
     public function setHttpMethod(?string $httpMethod): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->httpMethod = $httpMethod;
 
         return $this;
@@ -222,6 +225,7 @@ class RouteData implements Stringable
      */
     public function setParams(?array $params): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->params = $params;
 
         return $this;
@@ -244,6 +248,7 @@ class RouteData implements Stringable
      */
     public function setCreatedAt(?DateTimeImmutable $createdAt): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->createdAt = $createdAt;
 
         return $this;
@@ -266,6 +271,7 @@ class RouteData implements Stringable
      */
     public function setLastAccessedAt(?DateTimeImmutable $lastAccessedAt): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->lastAccessedAt = $lastAccessedAt;
 
         return $this;
@@ -288,6 +294,7 @@ class RouteData implements Stringable
      */
     public function setReviewed(bool $reviewed): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->reviewed = $reviewed;
 
         return $this;
@@ -310,6 +317,7 @@ class RouteData implements Stringable
      */
     public function setReviewedAt(?DateTimeImmutable $reviewedAt): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->reviewedAt = $reviewedAt;
 
         return $this;
@@ -332,6 +340,7 @@ class RouteData implements Stringable
      */
     public function setQueriesImproved(?bool $queriesImproved): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->queriesImproved = $queriesImproved;
 
         return $this;
@@ -354,6 +363,7 @@ class RouteData implements Stringable
      */
     public function setTimeImproved(?bool $timeImproved): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->timeImproved = $timeImproved;
 
         return $this;
@@ -368,18 +378,23 @@ class RouteData implements Stringable
      */
     public function markAsReviewed(?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null): self
     {
-        $this->reviewed   = true;
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
+        $this->reviewed = true;
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->reviewedAt = new DateTimeImmutable();
 
         if ($queriesImproved !== null) {
+            // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
             $this->queriesImproved = $queriesImproved;
         }
 
         if ($timeImproved !== null) {
+            // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
             $this->timeImproved = $timeImproved;
         }
 
         if ($reviewedBy !== null) {
+            // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
             $this->reviewedBy = $reviewedBy;
         }
 
@@ -403,6 +418,7 @@ class RouteData implements Stringable
      */
     public function setReviewedBy(?string $reviewedBy): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->reviewedBy = $reviewedBy;
 
         return $this;
@@ -502,6 +518,7 @@ class RouteData implements Stringable
      */
     public function setSaveAccessRecords(bool $saveAccessRecords): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->saveAccessRecords = $saveAccessRecords;
 
         return $this;

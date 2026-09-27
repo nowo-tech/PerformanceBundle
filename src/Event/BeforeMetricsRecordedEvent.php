@@ -55,6 +55,7 @@ final class BeforeMetricsRecordedEvent extends Event
 
     public function setRequestTime(?float $requestTime): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->requestTime = $requestTime;
     }
 
@@ -65,6 +66,7 @@ final class BeforeMetricsRecordedEvent extends Event
 
     public function setTotalQueries(?int $totalQueries): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->totalQueries = $totalQueries;
     }
 
@@ -75,6 +77,7 @@ final class BeforeMetricsRecordedEvent extends Event
 
     public function setQueryTime(?float $queryTime): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->queryTime = $queryTime;
     }
 
@@ -91,6 +94,7 @@ final class BeforeMetricsRecordedEvent extends Event
      */
     public function setParams(?array $params): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->params = $params;
     }
 
@@ -101,6 +105,7 @@ final class BeforeMetricsRecordedEvent extends Event
 
     public function setMemoryUsage(?int $memoryUsage): void
     {
+        // @igor-ignore - Request-scoped Event DTO; not a shared worker service.
         $this->memoryUsage = $memoryUsage;
     }
 }
