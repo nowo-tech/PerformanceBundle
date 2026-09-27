@@ -183,7 +183,7 @@ class RouteDataRepository extends ServiceEntityRepository
         // Sort only by entity fields (metrics come from aggregates; use getRoutesWithAggregates for metric sort)
         $allowedSortFields = ['name', 'createdAt', 'lastAccessedAt'];
         $sortField         = in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'lastAccessedAt';
-        $sortOrder         = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
+        $sortOrder         = strtoupper($order) === 'ASC' ? SortDirection::Ascending : SortDirection::Descending;
 
         $qb->orderBy('r.' . $sortField, $sortOrder);
 

@@ -852,7 +852,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
             'memory_usage'  => 'r.memoryUsage',
         ];
         $sortField = $sortFieldMap[$sortBy ?? ''] ?? 'r.accessedAt';
-        $sortOrder = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
+        $sortOrder = strtoupper($order) === 'ASC' ? SortDirection::Ascending : SortDirection::Descending;
 
         $qb = $this->createQueryBuilder('r')
             ->join('r.routeData', 'rd')
