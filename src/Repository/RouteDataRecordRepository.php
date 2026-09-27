@@ -11,12 +11,12 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use SortDirection;
 
 use function count;
 use function is_string;
 
 use const PHP_URL_PATH;
-use SortDirection;
 
 /**
  * Repository for RouteDataRecord entities.

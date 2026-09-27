@@ -9,13 +9,13 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use SortDirection;
 
 use function in_array;
 use function is_array;
 use function is_string;
 
 use const PHP_URL_PATH;
-use SortDirection;
 
 /**
  * Repository for RouteData entity.

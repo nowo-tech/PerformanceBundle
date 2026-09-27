@@ -41,6 +41,7 @@ use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use SortDirection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -65,7 +66,6 @@ use const FILTER_VALIDATE_URL;
 use const FNM_NOESCAPE;
 use const JSON_PRETTY_PRINT;
 use const JSON_UNESCAPED_SLASHES;
-use SortDirection;
 
 /**
  * Controller for displaying performance metrics.
