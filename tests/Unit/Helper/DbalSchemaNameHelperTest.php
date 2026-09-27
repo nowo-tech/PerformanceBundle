@@ -9,7 +9,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\MySQL80Platform;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Name;
-use Doctrine\DBAL\Types\StringType;
+use Doctrine\DBAL\Types\Type;
 use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -32,7 +32,7 @@ final class DbalSchemaNameHelperTest extends TestCase
 
     public function testGetLogicalNameWithRealColumn(): void
     {
-        $column = new Column('my_column', new StringType());
+        $column = new Column('my_column', Type::getType('string'));
         $this->assertSame('my_column', DbalSchemaNameHelper::getLogicalName($column));
     }
 
@@ -94,7 +94,7 @@ final class DbalSchemaNameHelperTest extends TestCase
     /** Covers reflection fallback when name property holds a Name instance (lines 60-61). */
     public function testGetLogicalNameWithReflectionNameProperty(): void
     {
-        $column  = new Column('real_col', new StringType());
+        $column  = new Column('real_col', Type::getType('string'));
         $nameObj = $column->getObjectName(); // Doctrine\DBAL\Schema\Name instance
 
         $asset = new class($nameObj) {
@@ -138,7 +138,7 @@ final class DbalSchemaNameHelperTest extends TestCase
     /** Covers getQuotedName with a real Column and Platform (lines 75,77,79,81,82,83). */
     public function testGetQuotedNameWithRealColumnAndPlatform(): void
     {
-        $column   = new Column('my_col', new StringType());
+        $column   = new Column('my_col', Type::getType('string'));
         $platform = new MySQL80Platform();
 
         $quoted = DbalSchemaNameHelper::getQuotedName($column, $platform);
@@ -153,7 +153,7 @@ final class DbalSchemaNameHelperTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->method('getDatabasePlatform')->willReturn($platform);
 
-        $column = new Column('conn_col', new StringType());
+        $column = new Column('conn_col', Type::getType('string'));
         $quoted = DbalSchemaNameHelper::getQuotedName($column, $connection);
 
         $this->assertStringContainsString('conn_col', $quoted);
