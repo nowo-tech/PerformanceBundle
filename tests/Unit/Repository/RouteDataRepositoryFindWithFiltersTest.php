@@ -42,7 +42,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->expects($this->once())->method('where')->with('r.env = :env')->willReturnSelf();
         $qb->expects($this->once())->method('setParameter')->with('env', 'dev')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', SortDirection::DescendingDESC->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', SortDirection::Descending)->willReturnSelf();
         $qb->expects($this->never())->method('setMaxResults');
         $qb->expects($this->once())->method('getQuery')->willReturn($query);
 
@@ -114,7 +114,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.name', SortDirection::AscendingASC->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.name', SortDirection::Ascending)->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
         $repository->method('createQueryBuilder')->willReturn($qb);
@@ -135,7 +135,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', SortDirection::DescendingDESC->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', SortDirection::Descending)->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
         $repository->method('createQueryBuilder')->willReturn($qb);
@@ -282,7 +282,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.createdAt', SortDirection::AscendingASC->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.createdAt', SortDirection::Ascending)->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
         $repository->method('createQueryBuilder')->willReturn($qb);
@@ -303,7 +303,7 @@ final class RouteDataRepositoryFindWithFiltersTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.name', SortDirection::AscendingASC->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.name', SortDirection::Ascending)->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
         $repository->method('createQueryBuilder')->willReturn($qb);

@@ -43,7 +43,7 @@ final class RouteDataRepositoryFindByEnvironmentTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->expects($this->once())->method('where')->with('r.env = :env')->willReturnSelf();
         $qb->expects($this->once())->method('setParameter')->with('env', 'dev')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', SortDirection::DescendingDESC->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.lastAccessedAt', SortDirection::Descending)->willReturnSelf();
         $qb->expects($this->once())->method('getQuery')->willReturn($query);
 
         $repository->expects($this->once())->method('createQueryBuilder')->with('r')->willReturn($qb);

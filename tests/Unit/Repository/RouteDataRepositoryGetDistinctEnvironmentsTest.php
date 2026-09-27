@@ -39,7 +39,7 @@ final class RouteDataRepositoryGetDistinctEnvironmentsTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $qb->expects($this->once())->method('select')->with('DISTINCT r.env')->willReturnSelf();
         $qb->expects($this->once())->method('where')->with('r.env IS NOT NULL')->willReturnSelf();
-        $qb->expects($this->once())->method('orderBy')->with('r.env', SortDirection::AscendingASC->willReturnSelf();
+        $qb->expects($this->once())->method('orderBy')->with('r.env', SortDirection::Ascending)->willReturnSelf();
         $qb->expects($this->once())->method('getQuery')->willReturn($query);
 
         $repository->expects($this->once())->method('createQueryBuilder')->with('r')->willReturn($qb);
