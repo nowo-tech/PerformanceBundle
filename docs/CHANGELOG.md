@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.5.0] - 2026-09-28](#350-2026-09-28)
 - [[3.4.8] - 2026-09-27](#348-2026-09-27)
 - [[3.4.7] - 2026-09-24](#347-2026-09-24)
 - [[3.4.6] - 2026-08-29](#346-2026-08-29)
@@ -136,10 +137,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-09-28
+
+### Security
+
+- Webhook channel only POSTs to `https://` public hosts (blocks http, localhost, private/reserved IPs).
+- Route CSV/JSON exports are capped by `export.max_rows` (default **5000**, max **50000**).
+
 ### Changed
 
 - **Doctrine ORM SortDirection:** replace string `'ASC'`/`'DESC'` in `#[ORM\OrderBy]` and QueryBuilder `orderBy`/`addOrderBy` with `SortDirection::Ascending`/`Descending` (doctrine/orm deprecation, https://github.com/doctrine/orm/issues/11313); require `doctrine/orm` `^3.7` where applicable.
-
 
 ## [3.4.8] - 2026-09-27
 
@@ -147,12 +154,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **REQ-CS-008:** `igor-php/igor-php` (require-dev only), root `igor.json`, Composer/`Makefile` `igor` target, and `release-check` wiring for FrankenPHP worker-state audit.
 
-_No changes yet._
-
 ### Changed
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.5.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.0
 [3.4.8]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.8
 
 ## [3.4.7] - 2026-09-24

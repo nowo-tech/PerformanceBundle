@@ -12,7 +12,17 @@ use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+use function filter_var;
+use function is_array;
+use function is_string;
+use function parse_url;
 use function sprintf;
+use function str_ends_with;
+use function strtolower;
+
+use const FILTER_FLAG_NO_PRIV_RANGE;
+use const FILTER_FLAG_NO_RES_RANGE;
+use const FILTER_VALIDATE_IP;
 
 /**
  * Generic webhook notification channel.
@@ -51,6 +61,12 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
         }
 
         try {
+            if (!$this->isSafeWebhookUrl($this->webhookUrl)) {
+                LogHelper::logf('Blocked webhook notification to unsafe URL (https public hosts only).');
+
+                return false;
+            }
+
             $payload = $this->buildPayload($alert, $context);
             $headers = array_merge(['Content-Type' => 'application/json'], $this->headers);
             $timeout = max(0.1, $this->timeout);
@@ -79,6 +95,30 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
     public function getName(): string
     {
         return 'webhook';
+    }
+
+    /**
+     * Only https:// URLs to non-private hosts (SSRF mitigation for operator-configured webhooks).
+     */
+    private function isSafeWebhookUrl(string $url): bool
+    {
+        $parts = parse_url($url);
+        if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https') {
+            return false;
+        }
+        $host = $parts['host'] ?? '';
+        if (!is_string($host) || $host === '') {
+            return false;
+        }
+        $lower = strtolower($host);
+        if ($lower === 'localhost' || str_ends_with($lower, '.localhost') || str_ends_with($lower, '.local')) {
+            return false;
+        }
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        return true;
     }
 
     /**

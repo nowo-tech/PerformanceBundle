@@ -964,7 +964,13 @@ class PerformanceController extends AbstractController
             ]);
 
             try {
-                $routes = $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, 'requestTime', 'DESC');
+                $routes = $this->metricsService->getRoutesWithAggregatesFiltered(
+                    $env,
+                    $filters,
+                    'requestTime',
+                    'DESC',
+                    $this->exportMaxRows,
+                );
             } catch (Exception) {
                 $routes = [];
             }
@@ -1022,7 +1028,13 @@ class PerformanceController extends AbstractController
         $filters = $this->buildFiltersFromRequest($request);
 
         try {
-            $routes = $this->metricsService->getRoutesWithAggregatesFiltered($env, $filters, 'requestTime', 'DESC');
+            $routes = $this->metricsService->getRoutesWithAggregatesFiltered(
+                $env,
+                $filters,
+                'requestTime',
+                'DESC',
+                $this->exportMaxRows,
+            );
         } catch (Exception) {
             $routes = [];
         }

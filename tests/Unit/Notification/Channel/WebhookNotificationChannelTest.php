@@ -90,6 +90,22 @@ final class WebhookNotificationChannelTest extends TestCase
         $this->assertTrue($channel->send($alert, $route));
     }
 
+    public function testSendBlocksHttpAndPrivateHosts(): void
+    {
+        $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $client->expects($this->never())->method('request');
+
+        $alert = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'msg');
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+
+        $http = new WebhookNotificationChannel($client, 'http://hooks.example.com', 'json', [], true);
+        $this->assertFalse($http->send($alert, $route));
+
+        $loopback = new WebhookNotificationChannel($client, 'https://127.0.0.1/hooks', 'json', [], true);
+        $this->assertFalse($loopback->send($alert, $route));
+    }
+
     public function testSendWithAfterMetricsRecordedEventContext(): void
     {
         if (!interface_exists(self::RESPONSE_INTERFACE) && !class_exists(self::RESPONSE_INTERFACE)) {

@@ -3,6 +3,19 @@
 
 ## Unreleased
 
+## To 3.5.0
+
+From **3.4.8** — export row cap + webhook SSRF hardening; Doctrine `SortDirection`.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
+- Exports are capped by `export.max_rows` (default **5000**). Raise only if needed (max **50000**).
+- Webhook URLs must be public `https://` (http / localhost / private IPs rejected).
+- Ensure `doctrine/orm` is `^3.7` (SortDirection).
+
 ## To 3.4.8
 
 From **3.4.7** — REQ-CS-008 Igor FrankenPHP worker audit (igor-php require-dev, igor.json, make igor).

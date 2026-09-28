@@ -19,7 +19,8 @@ This Symfony bundle **tracks route performance metrics** (timing, database query
 | SQL injection | Use Doctrine parameterized queries; validate sort/filter parameters. |
 | SSRF via webhook URLs | Only allow webhook URLs from trusted configuration (env), not from end-user POST bodies. |
 | Information leakage in exports | Restrict export actions to trusted roles; avoid exporting secrets from request attributes. |
-| DoS via large exports or queries | Access-record exports capped by `export.max_rows` (default **5000**, max **50000** for BC); use pagination and infrastructure timeouts. |
+| DoS via large exports or queries | Route and access-record exports capped by `export.max_rows` (default **5000**, max **50000** for BC); use pagination and infrastructure timeouts. |
+| SSRF via notification webhooks | `WebhookNotificationChannel` allows HTTPS only and rejects localhost / private / link-local destinations. |
 
 ## Admin UI guard (REQ-UI-002)
 
