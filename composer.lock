@@ -1043,16 +1043,16 @@
         },
         {
             "name": "nowo-tech/ui-kit-bundle",
-            "version": "v1.8.3",
+            "version": "v1.8.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nowo-tech/UiKitBundle.git",
-                "reference": "204998927aa3c864c43c145e7f46c1452f8031ca"
+                "reference": "8e107639f8dca2657e6f9df0d45f58e39acc8175"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nowo-tech/UiKitBundle/zipball/204998927aa3c864c43c145e7f46c1452f8031ca",
-                "reference": "204998927aa3c864c43c145e7f46c1452f8031ca",
+                "url": "https://api.github.com/repos/nowo-tech/UiKitBundle/zipball/8e107639f8dca2657e6f9df0d45f58e39acc8175",
+                "reference": "8e107639f8dca2657e6f9df0d45f58e39acc8175",
                 "shasum": ""
             },
             "require": {
@@ -1123,7 +1123,7 @@
                 "issues": "https://github.com/nowo-tech/UiKitBundle/issues",
                 "source": "https://github.com/nowo-tech/UiKitBundle"
             },
-            "time": "2026-08-24T16:03:11+00:00"
+            "time": "2026-09-25T06:17:28+00:00"
         },
         {
             "name": "psr/cache",
