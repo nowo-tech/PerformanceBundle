@@ -27,6 +27,7 @@ final class QueryTrackingMiddlewareTest extends TestCase
     public function testReset(): void
     {
         $this->counters->startQuery('query1');
+        usleep(1000);
         $this->counters->stopQuery('query1');
 
         $this->assertSame(1, $this->counters->getQueryCount());
@@ -43,6 +44,7 @@ final class QueryTrackingMiddlewareTest extends TestCase
         $queryId = 'test_query_1';
         $this->counters->startQuery($queryId);
         $this->assertSame(0, $this->counters->getQueryCount());
+        usleep(1000);
         $this->counters->stopQuery($queryId);
         $this->assertSame(1, $this->counters->getQueryCount());
         $this->assertGreaterThan(0, $this->counters->getTotalQueryTime());
@@ -105,6 +107,7 @@ final class QueryTrackingMiddlewareTest extends TestCase
 
         $trackingConnection = new QueryTrackingConnection($connection, $this->counters);
         $preparedStatement  = $trackingConnection->prepare('SELECT * FROM users');
+        usleep(1000);
         $preparedStatement->execute();
 
         $this->assertSame(1, $this->counters->getQueryCount());
