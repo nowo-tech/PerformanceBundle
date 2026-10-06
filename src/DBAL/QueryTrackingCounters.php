@@ -49,7 +49,7 @@ final class QueryTrackingCounters implements ResetInterface
 
     public function startQuery(string $queryId): void
     {
-        $this->queryStartTimes[$queryId] = microtime(true);
+        $this->queryStartTimes[$queryId] = (float) hrtime(true);
     }
 
     public function stopQuery(string $queryId): void
@@ -59,7 +59,7 @@ final class QueryTrackingCounters implements ResetInterface
         }
 
         ++$this->queryCount;
-        $this->totalQueryTime += microtime(true) - $this->queryStartTimes[$queryId];
+        $this->totalQueryTime += ((float) hrtime(true) - $this->queryStartTimes[$queryId]) / 1e9;
         unset($this->queryStartTimes[$queryId]);
     }
 }
