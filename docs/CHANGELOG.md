@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.5.1] - 2026-10-09](#351-2026-10-09)
 - [[3.5.0] - 2026-09-28](#350-2026-09-28)
 - [[3.4.8] - 2026-09-27](#348-2026-09-27)
 - [[3.4.7] - 2026-09-24](#347-2026-09-24)
@@ -137,6 +138,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.1] - 2026-10-09
+
+### Fixed
+
+- **Query timing:** `QueryTrackingCounters` and `QueryLogger` measure query duration with `hrtime()` instead of `microtime()`, so very fast queries no longer report `0` seconds (seen on PHP 8.5 CI).
+- **Query metrics fallbacks:** `PerformanceMetricsSubscriber` now imports `Exception`; the unqualified `catch (Exception)` previously referred to a non-existent class in the bundle namespace, so errors from the query counters, profiler collector or stopwatch escaped instead of falling back silently.
+
+### Changed
+
+- Dependencies (Dependabot + lock refresh): `doctrine/orm` 3.7.4, FormKitBundle 2.6.1, UiKitBundle 1.9.1; dev PHPStan 2.3.1 (+ phpunit/symfony extensions 2.1), PHPUnit 10.5.66, PHP-CS-Fixer 3.95.27, Rector 2.7.0, `igor-php/igor-php` 0.10.1, `nowo-tech/phpstan-frankenphp` 1.2.3.
+- Demo (Symfony 8): `doctrine/orm` 3.7.4, `doctrine/dbal` 4.5.0, Twig 3.30.0, HotReloadBundle 1.5.5, TwigInspectorBundle 1.1.7; regenerated `config/reference.php`.
+
 ## [3.5.0] - 2026-09-28
 
 ### Security
@@ -158,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.5.1]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.1
 [3.5.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.0
 [3.4.8]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.8
 

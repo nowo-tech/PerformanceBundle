@@ -3,6 +3,15 @@
 
 ## Unreleased
 
+## To 3.5.1
+
+From **3.5.0** — query timing precision (`hrtime`), query-metrics fallback fix, dependency refresh. No breaking changes. No application upgrade steps.
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
 ## To 3.5.0
 
 From **3.4.8** — export row cap + webhook SSRF hardening; Doctrine `SortDirection`.
@@ -33,6 +42,9 @@ This guide helps you upgrade between versions of the Performance Bundle.
 ## Table of contents
 
 
+- [To 3.5.1](#to-351)
+- [To 3.5.0](#to-350)
+- [To 3.4.8](#to-348)
 - [From 3.4.6 to 3.4.7](#from-346-to-347)
 - [From 3.4.5 to 3.4.6](#from-345-to-346)
 - [From 3.4.4 to 3.4.5](#from-344-to-345)
