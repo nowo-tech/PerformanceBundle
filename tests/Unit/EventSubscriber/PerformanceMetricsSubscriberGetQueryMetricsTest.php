@@ -9,6 +9,7 @@ use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
+use RuntimeException;
 use Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -48,6 +49,27 @@ final class PerformanceMetricsSubscriberGetQueryMetricsTest extends TestCase
 
         self::assertSame(4, $result['count']);
         self::assertEqualsWithDelta(2.5, $result['time'], 0.001);
+    }
+
+    public function testGetQueryMetricsSwallowsProfilerExceptionAndFallsBack(): void
+    {
+        $profile = new class {
+            public function get(string $name): never
+            {
+                throw new RuntimeException('profiler unavailable');
+            }
+        };
+
+        $request = Request::create('/');
+        $request->attributes->set('_profiler', $profile);
+
+        $subscriber = $this->createMinimalSubscriber();
+        $m          = new ReflectionMethod(PerformanceMetricsSubscriber::class, 'getQueryMetrics');
+
+        $result = $m->invoke($subscriber, $request);
+
+        self::assertSame(0, $result['count']);
+        self::assertSame(0.0, $result['time']);
     }
 
     public function testGetQueryMetricsUsesGetCollectorWhenGetReturnsNull(): void

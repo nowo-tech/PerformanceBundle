@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\EventSubscriber;
 
 use Doctrine\DBAL\Logging\Middleware;
+use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
 use Nowo\PerformanceBundle\Helper\LogHelper;
