@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+  - [Changed](#changed)
 - [[3.5.1] - 2026-10-09](#351-2026-10-09)
 - [[3.5.0] - 2026-09-28](#350-2026-09-28)
 - [[3.4.8] - 2026-09-27](#348-2026-09-27)
@@ -137,6 +138,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+
+- Development: `composer.json` pins `config.platform.php` to 8.2.0 so the committed lock stays installable on the minimum PHP; CI overrides the platform per matrix cell.
 
 ## [3.5.1] - 2026-10-09
 
