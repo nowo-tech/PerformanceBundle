@@ -10,10 +10,21 @@ const outDir = process.env.SCREENSHOT_DIR
   ? resolve(process.env.SCREENSHOT_DIR)
   : resolve(__dirname, '../../../../docs/images/demo');
 
-/** Generate some tracked traffic so the dashboard has data to show. */
+/**
+ * Generate tracked traffic (several routes, repeated visits) so the dashboard tables, charts and
+ * access statistics have data to show. Metrics are recorded in the default FrankenPHP worker mode.
+ */
 async function warmUp(page: Page): Promise<void> {
-  for (const path of ['/', '/product/', '/product/new', '/', '/product/', '/']) {
-    await page.goto(path);
+  await page.goto('/product/');
+  const productLinks = await page
+    .locator('a[href^="/product/"]')
+    .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).getAttribute('href') ?? ''));
+  const productPages = [...new Set(productLinks.filter((href) => /^\/product\/\d+(\/edit)?$/.test(href)))].slice(0, 6);
+  const paths = ['/', '/product/', '/product/new', '/performance', ...productPages];
+  for (let round = 0; round < 6; round++) {
+    for (const path of paths.slice(0, 3 + ((round * 2) % paths.length))) {
+      await page.goto(path);
+    }
   }
 }
 
