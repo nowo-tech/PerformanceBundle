@@ -242,7 +242,7 @@ The bundle provides a web dashboard to monitor and analyze route performance. Be
 
 The main dashboard shows KPIs (total routes, records, average/max queries and request time), top routes by usage and by latency, filters (environment, sort, limit), an optional “Optional Dependencies Missing” alert with `composer require` hints, a **Performance Trends** chart (average and max request time over days), and a **Routes** table with columns: route name, HTTP method, status codes, access count, environment, request time, query time, total queries, memory usage, last accessed at, access records link, and review status.
 
-![Performance Metrics Dashboard](docs/images/dashboard-main.png)
+![Performance Metrics Dashboard](docs/images/demo/dashboard-main.webp)
 
 *Access: dashboard path configured in `nowo_performance.dashboard.path` (e.g. `/performance`). Use **Diagnose**, **Advanced Statistics**, **Export CSV/JSON**, **Access Statistics by Hour**, and **Clear All Records** from the toolbar.*
 
@@ -250,7 +250,7 @@ The main dashboard shows KPIs (total routes, records, average/max queries and re
 
 This view provides statistical analysis to find optimization targets: **Performance Recommendations** (e.g. high average query count, request time outliers), **Correlation Analysis** (request time vs query time, query time vs query count, memory vs request time), **Efficiency Analysis** (query time ratio), **Traffic Distribution** and hot/bad routes, **Routes Needing Attention** (high request time or query count by percentile), and detailed **Request Time**, **Query Time**, **Query Count**, **Memory Usage**, and **Access Count** sections with min/mean/median/max, percentiles, and distribution histograms.
 
-![Advanced Performance Statistics](docs/images/dashboard-advanced-statistics.png)
+![Advanced Performance Statistics](docs/images/demo/dashboard-advanced-statistics.webp)
 
 *Access: **Advanced Statistics** button from the main dashboard. Requires enough route data for meaningful stats.*
 
@@ -258,7 +258,7 @@ This view provides statistical analysis to find optimization targets: **Performa
 
 When **temporal access records** are enabled (`enable_access_records: true`), this page shows access patterns over time: filters (date range, environment, route, status code), **Total Accesses** and period, **Statistics by Hour of Day** (line chart: access count and average response time), **Statistics by Day of Week** and **by Month** (bar charts), **Access Heatmap** (day of week vs hour), and a detailed table by hour with access count, average response time, and status code breakdown. You can **Delete records matching filter** from here.
 
-![Access Statistics by Hour](docs/images/dashboard-access-statistics.png)
+![Access Statistics by Hour](docs/images/demo/dashboard-access-statistics.webp)
 
 *Access: **Access Statistics by Hour** from the main dashboard. Requires `enable_access_records: true` and the `routes_data_records` table (see [Configuration](docs/CONFIGURATION.md#enable_access_records)).*
 
