@@ -122,7 +122,7 @@ final class Configuration implements ConfigurationInterface
                     ->info('Deprecated and ignored: never had any effect. Every query is counted and timed. Remove it from your configuration.')
                     ->defaultValue(0)
                     ->min(0)
-                    ->setDeprecated('nowo-tech/performance-bundle', '3.5.3', 'The "%node%" option at path "%path%" is deprecated and ignored: it never had any effect (every query is counted and timed). Remove it from your configuration.')
+                    ->setDeprecated('nowo-tech/performance-bundle', '3.6.0', 'The "%node%" option at path "%path%" is deprecated and ignored: it never had any effect (every query is counted and timed). Remove it from your configuration.')
                 ->end()
                 ->booleanNode('enable_access_records')
                     ->info('Enable temporal access records tracking. Creates individual records for each route access with timestamp, status code, and response time. Useful for analyzing access patterns by time of day.')
