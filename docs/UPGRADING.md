@@ -1,7 +1,16 @@
 # Upgrading Guide
 
-
 ## Unreleased
+
+## To 3.5.2
+
+From **3.5.1** — dependency refresh and repository maintenance.
+
+```bash
+composer update nowo-tech/performance-bundle
+```
+
+- No breaking changes. No application upgrade steps.
 
 ## To 3.5.1
 
@@ -38,10 +47,9 @@ php bin/console cache:clear
 
 This guide helps you upgrade between versions of the Performance Bundle.
 
-
 ## Table of contents
 
-
+- [To 3.5.2](#to-352)
 - [To 3.5.1](#to-351)
 - [To 3.5.0](#to-350)
 - [To 3.4.8](#to-348)
@@ -240,7 +248,6 @@ and enable `Twig\Extra\TwigExtraBundle\TwigExtraBundle`. Flex recipes usually re
 ### Twig-CS-Fixer (maintainers)
 
 Package maintainers: `composer twig:lint` / `composer twig:fix` use `.twig-cs-fixer.php` over `src/` (and `templates/` when present).
-
 
 ## Upgrading to 3.3.1 (2026-08-03)
 

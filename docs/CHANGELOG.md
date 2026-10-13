@@ -2,11 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
   - [Changed](#changed)
+- [[3.5.2] - 2026-10-13](#352-2026-10-13)
 - [[3.5.1] - 2026-10-09](#351-2026-10-09)
 - [[3.5.0] - 2026-09-28](#350-2026-09-28)
 - [[3.4.8] - 2026-09-27](#348-2026-09-27)
@@ -139,9 +139,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.2] - 2026-10-13
+
 ### Changed
 
 - Development: `composer.json` pins `config.platform.php` to 8.2.0 so the committed lock stays installable on the minimum PHP; CI overrides the platform per matrix cell.
+- Repository: `.twig-cs-fixer.cache` is now git-ignored.
+
+### Dependencies
+
+- `nowo-tech/form-kit-bundle` 2.6.1 → 2.7.1 (development lock; #59).
+- `doctrine/orm` 3.7.4 → 3.7.5 (development lock; #60).
+- `nowo-tech/ui-kit-bundle` 1.9.1 → 1.11.0 (development lock; #61).
 
 ## [3.5.1] - 2026-10-09
 
@@ -176,6 +185,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.5.2]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.2
 [3.5.1]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.1
 [3.5.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.0
 [3.4.8]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.4.8
