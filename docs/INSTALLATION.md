@@ -22,7 +22,7 @@
 - **FormKitBundle** (`nowo-tech/form-kit-bundle` ^2.0) — dashboard/admin Symfony forms (`FormOptionsTrait`, profile `performance`). Register `NowoFormKitBundle` in `config/bundles.php` (Flex / demo). Optional host YAML: `config/packages/nowo_form_kit.yaml`.
 
 - PHP >= 8.2, < 8.6
-- Symfony >= 7.0 || >= 8.0
+- Symfony >= 7.4 || >= 8.0
 - Doctrine ORM >= 2.13 || >= 3.0
 - Doctrine Bundle >= 2.8 || >= 3.0 (Symfony 7: 2.x from PHP 8.2; Symfony 8: **3.2+** from **PHP 8.4**)
 - `symfony/ux-icons` (required for `ux_icon()` in dashboard templates)

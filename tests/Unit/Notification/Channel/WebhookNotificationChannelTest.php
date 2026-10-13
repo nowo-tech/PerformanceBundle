@@ -90,6 +90,24 @@ final class WebhookNotificationChannelTest extends TestCase
         $this->assertTrue($channel->send($alert, $route));
     }
 
+    public function testSendDisablesRedirects(): void
+    {
+        $response = $this->createMock(self::RESPONSE_INTERFACE);
+        $client   = $this->createMock(self::HTTP_CLIENT_INTERFACE);
+        $client->expects($this->once())
+            ->method('request')
+            ->with('POST', 'https://hooks.example.com', $this->callback(static fn (array $opts): bool => ($opts['max_redirects'] ?? null) === 0))
+            ->willReturn($response);
+
+        $channel = new WebhookNotificationChannel($client, 'https://hooks.example.com', 'json', [], true);
+        $alert   = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'Test');
+
+        $route = new RouteData();
+        $route->setName('app_home')->setEnv('dev');
+
+        $this->assertTrue($channel->send($alert, $route));
+    }
+
     public function testSendBlocksHttpAndPrivateHosts(): void
     {
         $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);

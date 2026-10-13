@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Requirements:** Symfony **7.4** or **8.x** is now required (`^7.4 || ^8.0`, was `^7.0 || ^8.0`). Apps on Symfony 7.0–7.3 must upgrade to 7.4 LTS first (`composer update "symfony/*" --with-all-dependencies`).
+- **Webhook notifications:** redirects are no longer followed. If your webhook endpoint answers with a 3xx redirect, configure the final URL directly.
+
 ## To 3.6.0
 
 From **3.5.2** — security and fixes - same-host redirects, JS-escaped confirms, correct sub-request metrics, complete locales.

@@ -1,4 +1,4 @@
-# CI: tests on PHP 8.2–8.5 × Symfony 7.0, 7.4, 8.0, 8.1.
+# CI: tests on PHP 8.2–8.5 × Symfony 7.4, 8.0, 8.1 (+ PHPStan).
 # Coverage with PCOV; release updated via release.yml on tag push.
 name: CI
 
@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4', '8.5']
-        symfony: ['7.0', '7.4', '8.0', '8.1']
+        symfony: ['7.4', '8.0', '8.1']
         exclude:
           # doctrine/doctrine-bundle 3.x (required for Symfony 8) needs PHP ^8.4
           - php: '8.2'
@@ -139,8 +139,8 @@ jobs:
           fi
           echo "✅ All tests passed successfully"
 
-      - name: Run tests with coverage (PHP 8.2 + Symfony 7.0 only)
-        if: matrix.php == '8.2' && matrix.symfony == '7.0'
+      - name: Run tests with coverage (PHP 8.2 + Symfony 7.4 only)
+        if: matrix.php == '8.2' && matrix.symfony == '7.4'
         run: |
           echo "📊 Generating coverage report..."
           composer test-coverage
@@ -151,6 +151,28 @@ jobs:
 
           echo "✅ All tests passed, validating coverage (minimum 80%)..."
           php scripts/check-coverage.php coverage.xml --min-percent=80
+
+  static-analysis:
+    name: PHPStan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: json, pdo, pdo_mysql, pdo_pgsql
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: PHPStan
+        run: composer phpstan
 
   code-style:
     name: Code Style
@@ -233,29 +255,29 @@ jobs:
           coverage: pcov
           tools: composer:v2
 
-      - name: Install dependencies (Symfony 7.0)
+      - name: Install dependencies (Symfony 7.4)
         run: |
           composer require \
-            symfony/config:^7.0 \
-            symfony/console:^7.0 \
-            symfony/dependency-injection:^7.0 \
-            symfony/framework-bundle:^7.0 \
-            symfony/form:^7.0 \
-            symfony/http-kernel:^7.0 \
-            symfony/yaml:^7.0 \
-            symfony/security-bundle:^7.0 \
-            symfony/stopwatch:^7.0 \
-            symfony/translation:^7.0 \
-            symfony/twig-bundle:^7.0 \
-            symfony/var-exporter:^7.0 \
+            symfony/config:^7.4 \
+            symfony/console:^7.4 \
+            symfony/dependency-injection:^7.4 \
+            symfony/framework-bundle:^7.4 \
+            symfony/form:^7.4 \
+            symfony/http-kernel:^7.4 \
+            symfony/yaml:^7.4 \
+            symfony/security-bundle:^7.4 \
+            symfony/stopwatch:^7.4 \
+            symfony/translation:^7.4 \
+            symfony/twig-bundle:^7.4 \
+            symfony/var-exporter:^7.4 \
             doctrine/doctrine-bundle:^2.18 \
             --no-interaction --no-update
           composer require --dev \
-            symfony/browser-kit:^7.0 \
-            symfony/dom-crawler:^7.0 \
-            symfony/http-client:^7.0 \
-            symfony/mailer:^7.0 \
-            symfony/mime:^7.0 \
+            symfony/browser-kit:^7.4 \
+            symfony/dom-crawler:^7.4 \
+            symfony/http-client:^7.4 \
+            symfony/mailer:^7.4 \
+            symfony/mime:^7.4 \
             --no-interaction --no-update
           composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
 

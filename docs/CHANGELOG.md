@@ -142,6 +142,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Webhook notifications:** the HTTP request now sets `max_redirects: 0`, so a redirect from the (validated, https/public) webhook URL can no longer forward the alert payload to an `http://` or private/internal host.
+
+### Fixed
+
+- **Records filters (path, referer, user):** `LIKE` patterns now escape `\` (first), `%` and `_` and use an explicit `ESCAPE '\'` clause. Previously a backslash in the filter was not escaped, and on SQLite (no default escape character) `%`/`_` in the filter matched nothing; the escape literal is quoted by the DBAL platform, so the clause is portable across MySQL/MariaDB, PostgreSQL and SQLite.
+
+### Changed
+
+- **Requirements:** Symfony floor raised from `^7.0` to `^7.4` (`^7.4 || ^8.0`), matching what CI actually tests; the redundant Symfony `7.0` CI matrix cell (which resolved to the latest 7.x anyway) was removed and the coverage runs now target 7.4. README/INSTALLATION updated.
+- **CI:** new `PHPStan` job runs `composer phpstan` (level 8) on every push/PR.
+
 ## [3.6.0] - 2026-10-13
 
 ### Security

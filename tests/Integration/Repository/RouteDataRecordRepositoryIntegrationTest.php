@@ -369,6 +369,57 @@ final class RouteDataRecordRepositoryIntegrationTest extends TestCase
         $repo->deleteByEnvironment('test');
     }
 
+    /**
+     * LIKE filters must treat `%`, `_` and `\` as literals (ESCAPE '\' clause), including on SQLite,
+     * which has no default LIKE escape character.
+     */
+    public function testLikeFiltersEscapeWildcardsAndBackslashOnSqlite(): void
+    {
+        $application = new Application($this->kernel);
+        $application->setAutoExit(false);
+        (new CommandTester($application->find('nowo:performance:create-table')))->execute([]);
+        (new CommandTester($application->find('nowo:performance:create-records-table')))->execute([]);
+        $service = $this->kernel->getContainer()->get(PerformanceMetricsService::class);
+
+        $rows = [
+            ['like_underscore', '/a_b', 'us_r', 'https://ref.test/a_b'],
+            ['like_any_char', '/axb', 'usxr', 'https://ref.test/axb'],
+            ['like_percent', '/50%off', 'u%1', 'https://ref.test/50%off'],
+            ['like_no_percent', '/50xoff', 'ux1', 'https://ref.test/50xoff'],
+            ['like_backslash', '/dir\\sub', 'dom\\joe', 'https://ref.test/dir\\sub'],
+            ['like_no_backslash', '/dirsub', 'domjoe', 'https://ref.test/dirsub'],
+        ];
+        foreach ($rows as $i => [$route, $path, $user, $referer]) {
+            $service->recordMetrics($route, 'test', 0.1, 1, 0.01, null, 1024, 'GET', 200, [200], 'like-req-' . $i, $referer, $user, null, $path);
+        }
+
+        $repo  = $this->getRepository();
+        $paths = static function (array $result): array {
+            $out = array_map(static fn (RouteDataRecord $r): ?string => $r->getRoutePath(), $result['records']);
+            sort($out);
+
+            return $out;
+        };
+        $page = static fn (?string $path, ?string $referer = null, ?string $user = null): array => $repo->getPaginatedRecords('test', 1, 50, null, null, null, $path, null, null, null, null, null, $referer, $user);
+
+        self::assertSame(['/a_b'], $paths($page('/a_b')));
+        self::assertSame(['/50%off'], $paths($page('/50%')));
+        self::assertSame(['/dir\\sub'], $paths($page('/dir\\s')));
+
+        self::assertSame(['/a_b'], $paths($page(null, null, 'us_r')));
+        self::assertSame(['/50%off'], $paths($page(null, null, 'u%')));
+        self::assertSame(['/dir\\sub'], $paths($page(null, null, 'dom\\')));
+
+        self::assertSame(['/a_b'], $paths($page(null, '/a_b')));
+        self::assertSame(['/dir\\sub'], $paths($page(null, 'dir\\s')));
+
+        $export = $repo->getRecordsForExport('test', null, null, null, '/a_b');
+        self::assertSame(1, $export['total']);
+
+        $hour = $repo->getStatisticsByHour('test', null, null, null, '/50%');
+        self::assertSame(1, array_sum(array_column($hour, 'count')));
+    }
+
     private function getRepository(): RouteDataRecordRepository
     {
         $em   = $this->kernel->getContainer()->get('doctrine')->getManager();

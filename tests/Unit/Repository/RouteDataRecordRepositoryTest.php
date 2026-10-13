@@ -491,7 +491,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $qb->expects($this->atLeastOnce())->method('setParameter')->willReturnSelf();
         $qb->expects($this->once())
             ->method('andWhere')
-            ->with('r.routePath LIKE :pathFilter')
+            ->with("r.routePath LIKE :pathFilter ESCAPE '\\'")
             ->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
@@ -547,7 +547,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $qb->method('join')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
-        $qb->expects($this->once())->method('andWhere')->with('r.routePath LIKE :pathFilter')->willReturnSelf();
+        $qb->expects($this->once())->method('andWhere')->with("r.routePath LIKE :pathFilter ESCAPE '\\'")->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
         $repository->method('createQueryBuilder')->willReturn($qb);
@@ -599,7 +599,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $qb->method('join')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
-        $qb->expects($this->once())->method('andWhere')->with('r.routePath LIKE :pathFilter')->willReturnSelf();
+        $qb->expects($this->once())->method('andWhere')->with("r.routePath LIKE :pathFilter ESCAPE '\\'")->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
         $repository->method('createQueryBuilder')->willReturn($qb);

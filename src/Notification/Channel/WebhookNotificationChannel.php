@@ -76,6 +76,9 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
                 'json'         => $payload,
                 'timeout'      => $timeout,
                 'max_duration' => $timeout,
+                // Never follow redirects: the URL safety check above only covers the configured URL,
+                // so a redirect could otherwise send the payload to an http:// or private/internal host.
+                'max_redirects' => 0,
             ]);
 
             return true;

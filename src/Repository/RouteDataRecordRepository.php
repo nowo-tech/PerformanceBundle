@@ -28,6 +28,9 @@ use const PHP_URL_PATH;
  */
 class RouteDataRecordRepository extends ServiceEntityRepository
 {
+    /** DQL string literal for the LIKE escape character (a single backslash), see {@see $this->likeContains()}. */
+    private const LIKE_ESCAPE_DQL = "'\\'";
+
     /**
      * Creates a new instance.
      *
@@ -98,8 +101,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         $pathNorm = $this->normalizePathForFilter($path);
         if ($pathNorm !== null && $pathNorm !== '') {
-            $qb->andWhere('r.routePath LIKE :pathFilter')
-                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+            $qb->andWhere('r.routePath LIKE :pathFilter ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('pathFilter', $this->likeContains($pathNorm));
         }
 
         if ($statusCode !== null) {
@@ -200,8 +203,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         $pathNorm = $this->normalizePathForFilter($path);
         if ($pathNorm !== null && $pathNorm !== '') {
-            $qb->andWhere('r.routePath LIKE :pathFilter')
-                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+            $qb->andWhere('r.routePath LIKE :pathFilter ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('pathFilter', $this->likeContains($pathNorm));
         }
 
         if ($statusCode !== null) {
@@ -462,8 +465,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         $pathNorm = $this->normalizePathForFilter($path);
         if ($pathNorm !== null && $pathNorm !== '') {
-            $qb->andWhere('r.routePath LIKE :pathFilter')
-                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+            $qb->andWhere('r.routePath LIKE :pathFilter ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('pathFilter', $this->likeContains($pathNorm));
         }
 
         if ($statusCode !== null) {
@@ -492,14 +495,13 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         }
 
         if ($referer !== null && $referer !== '') {
-            $qb->andWhere('r.referer LIKE :referer')
-                ->setParameter('referer', '%' . addcslashes($referer, '%_') . '%');
+            $qb->andWhere('r.referer LIKE :referer ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('referer', $this->likeContains($referer));
         }
 
         if ($user !== null && $user !== '') {
-            $userPattern = '%' . addcslashes($user, '%_') . '%';
-            $qb->andWhere('r.userIdentifier LIKE :userFilter OR r.userId LIKE :userFilter')
-                ->setParameter('userFilter', $userPattern);
+            $qb->andWhere('r.userIdentifier LIKE :userFilter ESCAPE ' . self::LIKE_ESCAPE_DQL . ' OR r.userId LIKE :userFilter ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('userFilter', $this->likeContains($user));
         }
     }
 
@@ -549,8 +551,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         $pathNorm = $this->normalizePathForFilter($path);
         if ($pathNorm !== null && $pathNorm !== '') {
-            $qb->andWhere('r.routePath LIKE :pathFilter')
-                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+            $qb->andWhere('r.routePath LIKE :pathFilter ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('pathFilter', $this->likeContains($pathNorm));
         }
 
         if ($statusCode !== null) {
@@ -659,8 +661,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         $pathNorm = $this->normalizePathForFilter($path);
         if ($pathNorm !== null && $pathNorm !== '') {
-            $qb->andWhere('r.routePath LIKE :pathFilter')
-                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+            $qb->andWhere('r.routePath LIKE :pathFilter ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('pathFilter', $this->likeContains($pathNorm));
         }
 
         if ($statusCode !== null) {
@@ -772,8 +774,8 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         $pathNorm = $this->normalizePathForFilter($path);
         if ($pathNorm !== null && $pathNorm !== '') {
-            $qb->andWhere('r.routePath LIKE :pathFilter')
-                ->setParameter('pathFilter', '%' . addcslashes($pathNorm, '%_') . '%');
+            $qb->andWhere('r.routePath LIKE :pathFilter ESCAPE ' . self::LIKE_ESCAPE_DQL)
+                ->setParameter('pathFilter', $this->likeContains($pathNorm));
         }
 
         if ($statusCode !== null) {
@@ -989,6 +991,17 @@ class RouteDataRecordRepository extends ServiceEntityRepository
         }
 
         return $aggregates;
+    }
+
+    /**
+     * Builds a "contains" LIKE pattern with `\`, `%` and `_` escaped (backslash first), to be used with
+     * `ESCAPE '\'` ({@see self::LIKE_ESCAPE_DQL}). The ESCAPE clause makes the escaping work on SQLite too
+     * (no default escape character); the escape literal is quoted by the DBAL platform, so it is portable
+     * across MySQL/MariaDB, PostgreSQL and SQLite.
+     */
+    private function likeContains(string $value): string
+    {
+        return '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value) . '%';
     }
 
     /**
