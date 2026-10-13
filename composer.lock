@@ -937,21 +937,22 @@
         },
         {
             "name": "nowo-tech/form-kit-bundle",
-            "version": "v2.6.1",
+            "version": "v2.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nowo-tech/FormKitBundle.git",
-                "reference": "babcfabf614f0ae2876df4fb16db9e94b9a27506"
+                "reference": "13bfdc852d023a656ff6fc5d82bb0cf883ae259b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nowo-tech/FormKitBundle/zipball/babcfabf614f0ae2876df4fb16db9e94b9a27506",
-                "reference": "babcfabf614f0ae2876df4fb16db9e94b9a27506",
+                "url": "https://api.github.com/repos/nowo-tech/FormKitBundle/zipball/13bfdc852d023a656ff6fc5d82bb0cf883ae259b",
+                "reference": "13bfdc852d023a656ff6fc5d82bb0cf883ae259b",
                 "shasum": ""
             },
             "require": {
                 "doctrine/collections": "^2.2",
                 "php": ">=8.2 <8.6",
+                "symfony/asset": "^7.4 || ^8.0",
                 "symfony/config": "^7.4 || ^8.0",
                 "symfony/dependency-injection": "^7.4 || ^8.0",
                 "symfony/form": "^7.4 || ^8.0",
@@ -973,6 +974,7 @@
                 "phpunit/phpunit": "^10.0",
                 "rector/rector": "^2.0",
                 "symfony/framework-bundle": "^7.4 || ^8.0",
+                "symfony/security-csrf": "^7.4 || ^8.0",
                 "vincentlanglet/twig-cs-fixer": "^4.0"
             },
             "suggest": {
@@ -1040,7 +1042,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-09T07:42:29+00:00"
+            "time": "2026-10-09T09:28:37+00:00"
         },
         {
             "name": "nowo-tech/ui-kit-bundle",
