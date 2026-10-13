@@ -565,6 +565,16 @@ nowo_performance:
 
 **Note:** When disabled, the WebProfiler will still show all other performance metrics, but won't display ranking information (e.g., "Rank 5 of 100 routes by request time").
 
+#### Dashboard filters (route name / path)
+
+The **route** and **path** filters of the dashboard (and of its CSV/JSON exports) are passed to the repository as `route_name_pattern` and `route_path_pattern`. They are **SQL `LIKE` patterns**: the value is wrapped as `%value%` (substring match) and is **not escaped**, so:
+
+- `%` matches any sequence of characters and `_` matches exactly one character. For example, the route filter `app_%_show` matches `app_user_show` and `app_post_show`, and `user_list` also matches `userXlist`.
+- To look for a literal `%` or `_`, there is no portable escape: the result depends on the database (MySQL/MariaDB treat `\` as the default `LIKE` escape character, SQLite has none). Prefer a less ambiguous substring.
+- The path filter accepts a full URL (`https://example.com/foo`) or a path; it is normalised to the path before matching.
+
+This differs from the **access-record filters** (path, referer and user on the access records / records management screens): those are matched **literally** as substrings — `%`, `_` and `\` are escaped and the query uses `LIKE … ESCAPE '\'`, portably across MySQL/MariaDB, PostgreSQL and SQLite.
+
 ### `security`
 
 Canonical dashboard access control (REQ-UI-002). Prefer these keys over deprecated `dashboard.roles`.
