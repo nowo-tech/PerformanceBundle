@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.7.2](#to-372)
 - [To 3.7.1](#to-371)
 - [To 3.7.0](#to-370)
 - [To 3.6.0](#to-360)
@@ -119,6 +120,16 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.7.2
+
+From **3.7.1** — dashboard shows only the active advanced-filters toggle label
+
+```bash
+composer update nowo-tech/performance-bundle
+```
+
+- No breaking changes. No application upgrade steps.
 
 ## To 3.7.1
 
