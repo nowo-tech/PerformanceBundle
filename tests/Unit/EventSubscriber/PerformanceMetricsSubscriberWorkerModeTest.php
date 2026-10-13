@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\EventSubscriber;
 
 use Error;
+use ErrorException;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
@@ -18,6 +19,8 @@ use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 use function strlen;
+
+use const E_USER_NOTICE;
 
 /**
  * Long-running worker (FrankenPHP) without kernel.reset: the same subscriber and collector
@@ -162,6 +165,97 @@ final class PerformanceMetricsSubscriberWorkerModeTest extends TestCase
 
         $this->assertSame([1], $levels);
         $this->assertSame(0, $levelAfter);
+    }
+
+    /**
+     * FrankenPHP worker: after the response is sent the output layer is closed and ob_start() emits
+     * "Failed to create buffer"; the debug ErrorHandler turns it into an ErrorException. Metrics must
+     * still be recorded and no buffer may be left behind.
+     */
+    public function testMetricsAreRecordedWhenOutputBufferCannotBeCreated(): void
+    {
+        $this->assertMetricsRecordedWhenObStartFails(static function (int $errno, string $errstr, string $errfile, int $errline): bool {
+            // Symfony ErrorHandler semantics: silenced (@) notices are not thrown.
+            if ((error_reporting() & $errno) === 0) {
+                return true;
+            }
+
+            throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+        });
+    }
+
+    public function testMetricsAreRecordedWhenErrorHandlerThrowsEvenForSilencedNotices(): void
+    {
+        $this->assertMetricsRecordedWhenObStartFails(static function (int $errno, string $errstr, string $errfile, int $errline): bool {
+            throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+        });
+    }
+
+    /**
+     * @param callable(int, string, string, int): bool $errorHandler
+     */
+    private function assertMetricsRecordedWhenObStartFails(callable $errorHandler): void
+    {
+        $collector  = new PerformanceDataCollector();
+        $subscriber = new class($this->metricsService, $collector, true, ['test'], [], false, true, false, false, 1.0, [200, 404, 500, 503], false) extends PerformanceMetricsSubscriber {
+            protected function startOutputBuffer(): bool
+            {
+                trigger_error('ob_start(): Failed to create buffer', E_USER_NOTICE);
+
+                return false;
+            }
+        };
+
+        $routes = [];
+        $this->metricsService->method('recordMetrics')
+            ->willReturnCallback(static function (string $route) use (&$routes): array {
+                $routes[] = $route;
+
+                return ['is_new' => true, 'was_updated' => false];
+            });
+
+        $buffers = [];
+        while (ob_get_level() > 0) {
+            $buffers[] = ob_get_clean();
+        }
+
+        set_error_handler($errorHandler);
+        $errorReportingBefore = error_reporting();
+
+        try {
+            foreach (['first_route', 'second_route'] as $route) {
+                $request = $this->request($route);
+                $subscriber->onKernelRequest($this->requestEvent($request));
+                $subscriber->onKernelTerminate(new TerminateEvent($this->kernel, $request, new Response()));
+                $subscriber->reset();
+            }
+            $levelAfter = ob_get_level();
+        } finally {
+            restore_error_handler();
+            foreach (array_reverse($buffers) as $content) {
+                ob_start();
+                echo $content;
+            }
+        }
+
+        $this->assertSame(['first_route', 'second_route'], $routes);
+        $this->assertSame(0, $levelAfter);
+        $this->assertSame($errorReportingBefore, error_reporting());
+        $this->assertTrue($collector->wasRecordNew());
+    }
+
+    public function testResetClearsPerRequestState(): void
+    {
+        $subscriber = $this->createSubscriber(new PerformanceDataCollector());
+        $request    = $this->request('stateful_route');
+        $subscriber->onKernelRequest($this->requestEvent($request));
+
+        $subscriber->reset();
+
+        foreach (['startTime', 'startMemory', 'routeName', 'routeParams', 'requestId'] as $property) {
+            $this->assertNull((new ReflectionProperty(PerformanceMetricsSubscriber::class, $property))->getValue($subscriber), $property);
+        }
+        $this->assertSame([], (new ReflectionProperty(PerformanceMetricsSubscriber::class, 'pendingSubRequestMetrics'))->getValue($subscriber));
     }
 
     private function createSubscriber(PerformanceDataCollector $collector, bool $async = false): PerformanceMetricsSubscriber

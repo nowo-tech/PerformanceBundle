@@ -6,6 +6,8 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\UX\Icons\Twig\UXIconExtension;
 
 final class DependencyCheckerTest extends TestCase
 {
@@ -30,6 +32,33 @@ final class DependencyCheckerTest extends TestCase
         $result = $this->checker->isIconsAvailable();
 
         $this->assertIsBool($result);
+    }
+
+    /**
+     * Regression: the probe used a non-existent IconExtension class, so the dashboard claimed
+     * "UX Icons required" although symfony/ux-icons (a hard requirement) was installed.
+     */
+    public function testIsIconsAvailableDetectsInstalledUxIcons(): void
+    {
+        $this->assertTrue(class_exists(UXIconExtension::class), 'symfony/ux-icons must be installed for this test');
+        $this->assertTrue($this->checker->isIconsAvailable());
+        $this->assertArrayNotHasKey('icons', $this->checker->getMissingDependencies());
+        $this->assertTrue($this->checker->getDependencyStatus()['icons']['available']);
+    }
+
+    /**
+     * Every optional dependency installed in require-dev must be detected (guards against probing
+     * class names that do not exist in the real packages).
+     */
+    public function testInstalledDevDependenciesAreDetected(): void
+    {
+        $this->assertTrue($this->checker->isTwigComponentAvailable());
+        $this->assertTrue($this->checker->isMailerAvailable());
+        $this->assertTrue($this->checker->isHttpClientAvailable());
+        $this->assertSame(
+            interface_exists(MessageBusInterface::class),
+            $this->checker->isMessengerAvailable(),
+        );
     }
 
     public function testGetMissingDependenciesReturnsArray(): void

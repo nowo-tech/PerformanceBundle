@@ -9,11 +9,13 @@ use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Nowo\PerformanceBundle\Model\RecordFilters;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+use function is_array;
 use function is_int;
 
 /**
@@ -42,11 +44,12 @@ class RecordFiltersType extends AbstractType
         $availableRoutes = array_values(array_unique($availableRoutes));
         sort($availableRoutes);
         $choicesEnv     = array_combine(array_map(strtoupper(...), $environments), $environments);
-        $allRoutesLabel = $options['all_routes_label'];
-        $allStatusLabel = $options['all_status_label'];
-        $choicesRoute   = [$allRoutesLabel => ''] + array_combine($availableRoutes, $availableRoutes);
-        $choicesStatus  = [
-            $allStatusLabel           => '',
+        $allRoutesLabel = (string) $options['all_routes_label'];
+        $allStatusLabel = (string) $options['all_status_label'];
+        // The "all" entries are placeholders (value ""), translated with the field's translation_domain;
+        // the real choices are route names / status codes and stay untranslated.
+        $choicesRoute  = array_combine($availableRoutes, $availableRoutes);
+        $choicesStatus = [
             '200 OK'                  => '200',
             '404 Not Found'           => '404',
             '500 Server Error'        => '500',
@@ -86,13 +89,12 @@ class RecordFiltersType extends AbstractType
             'placeholder'               => false,
             'attr'                      => ['class' => 'form-select'],
         ]);
-        $this->addChoice($builder, 'route', [
+        $this->addChoiceWithEmptyOption($builder, 'route', $allRoutesLabel, [
             'label'                     => 'access_statistics.route',
             'translation_domain'        => 'NowoPerformanceBundle',
             'choices'                   => $choicesRoute,
             'choice_translation_domain' => false,
             'required'                  => false,
-            'placeholder'               => false,
             'attr'                      => ['class' => 'form-select'],
         ]);
         $this->addText($builder, 'path', [
@@ -105,13 +107,12 @@ class RecordFiltersType extends AbstractType
                 'placeholder' => 'access_statistics.path_placeholder',
             ],
         ]);
-        $this->addChoice($builder, 'status_code', [
+        $this->addChoiceWithEmptyOption($builder, 'status_code', $allStatusLabel, [
             'label'                     => 'access_statistics.status_code',
             'translation_domain'        => 'NowoPerformanceBundle',
             'choices'                   => $choicesStatus,
             'choice_translation_domain' => false,
             'required'                  => false,
-            'placeholder'               => false,
             'property_path'             => 'statusCode',
             'attr'                      => ['class' => 'form-select'],
         ]);
@@ -177,6 +178,28 @@ class RecordFiltersType extends AbstractType
             'translation_domain' => 'NowoPerformanceBundle',
             'attr'               => ['class' => 'btn btn-primary'],
         ]);
+    }
+
+    /**
+     * Adds a choice field whose empty option ("all ...", value "") is the given translation key.
+     *
+     * FormKit moves a root "placeholder" option to attr.placeholder (text-input semantics), so the
+     * ChoiceType empty option is set after merging; it is translated with the field's
+     * translation_domain, while the real choices keep choice_translation_domain=false.
+     *
+     * @param FormBuilderInterface<mixed> $builder
+     * @param array<string, mixed> $options
+     */
+    private function addChoiceWithEmptyOption(FormBuilderInterface $builder, string $name, string $emptyLabel, array $options): void
+    {
+        $options['placeholder'] = false;
+        $merged                 = $this->resolveFieldOptions($name, ChoiceType::class, $options);
+        $merged['placeholder']  = $emptyLabel;
+        if (isset($merged['attr']) && is_array($merged['attr'])) {
+            unset($merged['attr']['placeholder']);
+        }
+
+        $builder->add($name, ChoiceType::class, $merged);
     }
 
     /**

@@ -13,6 +13,7 @@ use Symfony\Component\Yaml\Yaml;
 use function count;
 use function dirname;
 use function is_array;
+use function is_string;
 
 /**
  * Every locale must define exactly the keys of the reference locale (en), and every literal
@@ -62,6 +63,63 @@ final class TranslationKeyParityTest extends TestCase
         }
 
         $this->assertSame([], $missing);
+    }
+
+    /**
+     * Translation keys passed as literals by form types and controllers (labels, placeholders,
+     * "all ..." entries) must exist in every locale with a real value, never the key itself.
+     */
+    public function testEveryFormAndControllerKeyIsTranslatedInEveryLocale(): void
+    {
+        $root     = dirname(__DIR__, 3);
+        $sections = array_keys((array) Yaml::parseFile($root . self::DOMAIN_DIR . '/NowoPerformanceBundle.en.yaml'));
+        $pattern  = "/'((?:" . implode('|', array_map(static fn (int|string $s): string => preg_quote((string) $s, '/'), $sections)) . ")\\.[a-z0-9_.]+)'/";
+        $used     = [];
+        foreach (array_merge(glob($root . '/src/Form/*.php') ?: [], glob($root . '/src/Controller/*.php') ?: []) as $file) {
+            preg_match_all($pattern, (string) file_get_contents($file), $matches);
+            foreach ($matches[1] as $key) {
+                $used[$key] = true;
+            }
+        }
+
+        $this->assertArrayHasKey('access_statistics.all_routes', $used);
+        $this->assertArrayHasKey('access_statistics.all_status_codes', $used);
+
+        $missing = [];
+        foreach (glob($root . self::DOMAIN_DIR . '/NowoPerformanceBundle.*.yaml') ?: [] as $file) {
+            $values = $this->values($file);
+            foreach (array_keys($used) as $key) {
+                $value = $values[$key] ?? null;
+                if (!is_string($value) || trim($value) === '' || $value === $key) {
+                    $missing[] = basename($file) . ': ' . $key;
+                }
+            }
+        }
+
+        $this->assertSame([], $missing);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function values(string $file): array
+    {
+        $data = Yaml::parseFile($file);
+        $this->assertIsArray($data, $file);
+        $values = [];
+        $walk   = static function (array $node, string $prefix) use (&$walk, &$values): void {
+            foreach ($node as $key => $value) {
+                $path = $prefix === '' ? (string) $key : $prefix . '.' . $key;
+                if (is_array($value)) {
+                    $walk($value, $path);
+                } else {
+                    $values[$path] = $value;
+                }
+            }
+        };
+        $walk($data, '');
+
+        return $values;
     }
 
     /**

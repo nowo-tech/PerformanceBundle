@@ -130,6 +130,7 @@ final class PerformanceControllerIntegrationTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
         $content = $response->getContent();
         self::assertIsString($content);
+        $this->assertRecordFiltersAreTranslated($content);
     }
 
     public function testAccessRecordsPageRespondsSuccessfully(): void
@@ -138,6 +139,18 @@ final class PerformanceControllerIntegrationTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
         $content = $response->getContent();
         self::assertIsString($content);
+        $this->assertRecordFiltersAreTranslated($content);
+    }
+
+    /**
+     * Regression: the "all routes" / "all status codes" options rendered their raw translation keys.
+     */
+    private function assertRecordFiltersAreTranslated(string $content): void
+    {
+        self::assertStringNotContainsString('access_statistics.all_routes', $content);
+        self::assertStringNotContainsString('access_statistics.all_status_codes', $content);
+        self::assertMatchesRegularExpression('#<option value=""[^>]*>All Routes</option>#', $content);
+        self::assertMatchesRegularExpression('#<option value=""[^>]*>All Status Codes</option>#', $content);
     }
 
     public function testApiChartDataRespondsSuccessfully(): void

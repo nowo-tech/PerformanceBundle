@@ -521,14 +521,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             return;
         }
 
-        // Record metrics - ensure no output is generated.
-        // Use output buffering to catch any potential output
-        // Only start a new buffer if we're not already in one (to avoid closing buffers we didn't open)
-        $obStarted = false;
-        if (ob_get_level() === 0) {
-            ob_start();
-            $obStarted = true;
-        }
+        // Record metrics - ensure no output is generated (best effort, see openOutputBuffer()).
+        $obStarted = $this->openOutputBuffer();
 
         try {
             LogHelper::logf(
@@ -654,6 +648,40 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                 $this->stopQueryTracking();
             }
         }
+    }
+
+    /**
+     * Opens an output buffer to swallow stray output while metrics are recorded, when that is possible.
+     *
+     * Only opens a buffer when none is active (never closes buffers we did not open). After the
+     * response has been sent the output layer may already be shut down (FrankenPHP worker mode):
+     * ob_start() then fails with "Failed to create buffer", a notice that a debug error handler
+     * turns into an exception. That must never prevent the metrics from being recorded, so the
+     * failure is silenced and recording continues without a buffer.
+     *
+     * @return bool True when a buffer was opened (and must be closed by the caller)
+     */
+    private function openOutputBuffer(): bool
+    {
+        if (ob_get_level() !== 0) {
+            return false;
+        }
+
+        try {
+            $started = @$this->startOutputBuffer();
+        } catch (Throwable) {
+            $started = false;
+        }
+
+        return $started && ob_get_level() > 0;
+    }
+
+    /**
+     * Low-level ob_start() call (seam for tests emulating a runtime whose output layer is closed).
+     */
+    protected function startOutputBuffer(): bool
+    {
+        return ob_start();
     }
 
     /**

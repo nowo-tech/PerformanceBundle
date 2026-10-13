@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\UX\Icons\Twig\IconExtension;
+use Symfony\UX\Icons\Twig\UXIconExtension;
+use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
-use Symfony\UX\TwigComponent\ComponentInterface;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
-
-use function function_exists;
 
 /**
  * Service for checking if required dependencies are installed.
@@ -37,7 +35,6 @@ class DependencyChecker
     {
         // Check if bundle classes exist
         $classesExist = class_exists(TwigComponentBundle::class)
-            || interface_exists(ComponentInterface::class)
             || class_exists(AsTwigComponent::class);
 
         // Also verify that the Twig function is available
@@ -49,13 +46,15 @@ class DependencyChecker
     /**
      * Check if Symfony UX Icons is available.
      *
+     * Probes classes that exist in every supported symfony/ux-icons release (2.17+ and 3.x):
+     * the bundle class and the Twig extension registering ux_icon() (UXIconExtension).
+     *
      * @return bool True if available, false otherwise
      */
     public function isIconsAvailable(): bool
     {
-        return function_exists('ux_icon')
-            || class_exists(IconExtension::class)
-            || function_exists('twig_get_function') && twig_get_function('ux_icon') !== null;
+        return class_exists(UXIconsBundle::class)
+            || class_exists(UXIconExtension::class);
     }
 
     /**
@@ -65,8 +64,7 @@ class DependencyChecker
      */
     public function isMessengerAvailable(): bool
     {
-        return interface_exists(MessageBusInterface::class)
-            || class_exists(MessageBusInterface::class);
+        return interface_exists(MessageBusInterface::class);
     }
 
     /**
@@ -86,7 +84,9 @@ class DependencyChecker
      */
     public function isHttpClientAvailable(): bool
     {
-        return interface_exists(HttpClientInterface::class);
+        // HttpClientInterface lives in symfony/http-client-contracts, which is often installed without
+        // an implementation: probe the symfony/http-client component itself.
+        return class_exists(HttpClient::class);
     }
 
     /**

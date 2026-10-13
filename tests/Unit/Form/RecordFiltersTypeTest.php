@@ -115,9 +115,45 @@ final class RecordFiltersTypeTest extends TypeTestCase
         ]);
 
         $this->assertTrue($form->has('route'));
-        $choices = $form->get('route')->getConfig()->getOption('choices');
-        $this->assertArrayHasKey('access_statistics.all_routes', $choices);
-        $this->assertSame('', $choices['access_statistics.all_routes']);
+        $config = $form->get('route')->getConfig();
+        $this->assertSame([], $config->getOption('choices'));
+        $this->assertSame('access_statistics.all_routes', $config->getOption('placeholder'));
+    }
+
+    /**
+     * Regression: the "all" entries were choices with choice_translation_domain=false, so the raw
+     * keys were rendered. They are placeholders translated with the field's translation_domain.
+     */
+    public function testAllEntriesArePlaceholdersTranslatedWithTheBundleDomain(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments'     => ['dev'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $view = $form->createView();
+        foreach (['route' => 'access_statistics.all_routes', 'status_code' => 'access_statistics.all_status_codes'] as $field => $key) {
+            $vars = $view->children[$field]->vars;
+            $this->assertSame($key, $vars['placeholder'], $field);
+            $this->assertSame('NowoPerformanceBundle', $vars['translation_domain'], $field);
+            $this->assertNotContains($key, array_map(static fn ($choice): string => (string) $choice->label, $vars['choices']), $field);
+        }
+        $this->assertSame('', $view->children['route']->vars['value']);
+        $this->assertSame('', $view->children['status_code']->vars['value']);
+    }
+
+    public function testEmptyRouteSubmissionBindsToNull(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments'     => ['dev'],
+            'available_routes' => ['app_home'],
+        ]);
+
+        $form->submit(['env' => 'dev', 'route' => '', 'status_code' => '']);
+
+        $this->assertTrue($form->isValid());
+        $this->assertNull($form->getData()->route);
+        $this->assertNull($form->getData()->statusCode);
     }
 
     public function testFormSubmissionWithStatusCodeTransformsToInt(): void

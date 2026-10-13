@@ -75,6 +75,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **FrankenPHP worker mode: metrics were never saved.** `PerformanceMetricsSubscriber::onKernelTerminate()` called `ob_start()` after the response had been sent; in worker mode the output layer is already closed, so PHP emitted `ob_start(): Failed to create buffer`, the debug error handler turned it into an exception and the request was never recorded (empty dashboard). The output buffer is now best effort: the failure is silenced/caught and recording continues without a buffer; a buffer is still only opened when none is active and always closed in `finally`. Per-request state keeps being cleared by `reset()` (`kernel.reset`).
+- **Dashboard wrongly reported "Symfony UX Icons is required".** `DependencyChecker::isIconsAvailable()` probed `Symfony\UX\Icons\Twig\IconExtension`, which never existed; it now probes `UXIconsBundle` / `UXIconExtension` (present in every symfony/ux-icons 2.17+ and 3.x release). Other probes cleaned up: the non-existent `Symfony\UX\TwigComponent\ComponentInterface` and the legacy `twig_get_function()` checks were removed, and HttpClient availability now probes the `symfony/http-client` component (`HttpClient`) instead of the contracts interface, which can be installed without an implementation.
+- **Access statistics / records filters showed raw keys** `access_statistics.all_routes` and `access_statistics.all_status_codes`. The "all" entries were choices rendered with `choice_translation_domain: false`; they are now the select's empty option, translated with the `NowoPerformanceBundle` domain in every locale. Submitting the empty option still means "all" (`null` route / status code).
+
 ## [3.7.0] - 2026-10-13
 
 ### Security
