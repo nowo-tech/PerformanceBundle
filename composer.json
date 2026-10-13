@@ -113,9 +113,18 @@
     "prefer-stable": true,
     "scripts": {
         "test": "phpunit --colors=always",
-        "test-coverage": "phpunit --colors=always --process-isolation --coverage-text --coverage-html coverage --coverage-clover coverage.xml",
-        "test-coverage-90": "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=90",
-        "test-coverage-100": "@test-coverage && php scripts/check-coverage.php coverage.xml --min-percent=100",
+        "test-coverage": [
+            "Composer\\Config::disableProcessTimeout",
+            "phpunit --colors=always --process-isolation --coverage-text --coverage-html coverage --coverage-clover coverage.xml"
+        ],
+        "test-coverage-90": [
+            "@test-coverage",
+            "php scripts/check-coverage.php coverage.xml --min-percent=90"
+        ],
+        "test-coverage-100": [
+            "@test-coverage",
+            "php scripts/check-coverage.php coverage.xml --min-percent=100"
+        ],
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
         "rector": "rector process",

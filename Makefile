@@ -105,10 +105,9 @@ test-coverage: ensure-up
 test-coverage-90: ensure-up
 	$(COMPOSE) exec php composer test-coverage-90
 
-# Run test-coverage and fail if coverage is below 100% (requires coverage.xml from test-coverage)
+# Run test-coverage and fail if coverage is below 100%
 test-coverage-100: ensure-up
-	$(COMPOSE) exec php composer test-coverage
-	$(COMPOSE) exec -T php php scripts/check-coverage.php coverage.xml --min-percent=100
+	$(COMPOSE) exec php composer test-coverage-100
 
 # Run tests with databases (php + MySQL + PostgreSQL in same compose; §2.2 single $(COMPOSE))
 test-with-db: ensure-up

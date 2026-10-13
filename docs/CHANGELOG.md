@@ -76,6 +76,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dev only — `composer test-coverage-90` / `test-coverage-100`:** the scripts were written as `"@test-coverage && php scripts/check-coverage.php …"`, so Composer appended `&& php … --min-percent=N` as arguments to PHPUnit, which rejected `--min-percent`. They now run PHPUnit with coverage and then `scripts/check-coverage.php` with the threshold as two script steps; `make test-coverage-100` uses the Composer script. `test-coverage` disables Composer's 300 s process timeout (the isolated coverage run takes ~4 min).
+
 ## [3.7.1] - 2026-10-13
 
 ### Fixed
