@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle Demo - Symfony 8
 # Simplifies Docker commands for the demo
 
-.PHONY: help build up down shell install clean setup ensure-up update-bundle test-e2e demo-screenshots
+.PHONY: help build up down restart shell install clean setup ensure-up update-bundle logs test test-coverage test-e2e demo-screenshots db-create db-drop db-reset db-fixtures db-view performance-sync performance-sync-drop
 
 # Default target
 help:
@@ -10,7 +10,6 @@ help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
-	@echo "  build         Build Docker images (without starting)"
 	@echo "  up            Start Docker containers (FrankenPHP, MySQL)"
 	@echo "  down          Stop Docker containers"
 	@echo "  restart       Restart containers (docker compose restart)"
@@ -21,7 +20,6 @@ help:
 	@echo "  setup         Complete setup (install + DB + fixtures)"
 	@echo "  clean         Remove vendor, var, and cache"
 	@echo "  logs          Show container logs"
-	@echo "  update-bundle Update bundle from path repo and clear cache"
 	@echo "  test          Run tests"
 	@echo "  test-coverage Run tests with coverage (console output)"
 	@echo "  test-e2e      Playwright e2e (Docker image)"
@@ -38,12 +36,6 @@ help:
 	@echo "  performance-sync       Sync routes_data + routes_data_records with entities (add/alter)"
 	@echo "  performance-sync-drop  Sync and drop columns no longer in entity (--drop-obsolete)"
 	@echo ""
-
-# Build Docker images (without starting)
-build:
-	@echo "🔨 Building demo images..."
-	$(COMPOSE) build
-	@echo "✅ Build complete!"
 
 # Build and start containers
 up:
@@ -75,14 +67,6 @@ build:
 	@echo "🔨 Rebuilding image (no cache)..."
 	$(COMPOSE) build --no-cache
 	@echo "✅ Image rebuilt!"
-
-# Ensure container is running (start if not). Used by install, shell, setup, update-bundle, etc.
-ensure-up:
-	@if ! $(COMPOSE) exec -T php true 2>/dev/null; then \
-		echo "Starting container..."; \
-		$(COMPOSE) up -d; \
-		sleep 5; \
-	fi
 
 # Open shell in PHP container
 shell: ensure-up
@@ -169,12 +153,6 @@ performance-sync-drop:
 # Show logs
 logs:
 	$(COMPOSE) logs -f
-
-# Update bundle from path repo
-update-bundle: ensure-up
-	$(COMPOSE) exec -T php composer update nowo-tech/performance-bundle --no-interaction
-	$(COMPOSE) exec -T php php bin/console cache:clear
-	@echo "Bundle updated."
 
 test: ensure-up
 	$(COMPOSE) exec -T php composer test 2>/dev/null || $(COMPOSE) exec -T php php bin/console list
