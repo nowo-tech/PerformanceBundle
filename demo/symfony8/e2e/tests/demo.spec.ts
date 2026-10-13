@@ -18,6 +18,22 @@ test.describe('demo happy path', () => {
     await expect(page.locator('table').first()).toBeVisible();
   });
 
+  test('advanced filters toggle shows only the label for the current state', async ({ page }) => {
+    await page.goto('/demo/performance/');
+    const toggle = page.locator('button[data-bs-target="#advancedFilters"]');
+    await expect(toggle.locator('.when-collapsed')).toBeVisible();
+    await expect(toggle.locator('.when-expanded')).toBeHidden();
+
+    await toggle.click();
+    await expect(toggle.locator('.when-expanded')).toBeVisible();
+    await expect(toggle.locator('.when-collapsed')).toBeHidden();
+
+    await page.goto('/demo/performance/?min_request_time=0.001');
+    await expect(toggle.locator('.when-expanded')).toBeVisible();
+    await expect(toggle.locator('.when-collapsed')).toBeHidden();
+    await expect(page.locator('#advancedFilters')).toBeVisible();
+  });
+
   for (const path of ['/demo/performance/statistics', '/demo/performance/access-statistics', '/demo/performance/diagnose']) {
     test(`${path} responds`, async ({ page }) => {
       const response = await page.goto(path);
