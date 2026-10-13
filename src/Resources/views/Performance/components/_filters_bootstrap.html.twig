@@ -2,14 +2,17 @@
 {# This component can be overridden by creating: templates/bundles/NowoPerformanceBundle/Performance/components/_filters_bootstrap.html.twig #}
 {% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
 {% set _perf_css = nowo_performance_css_framework|default('bootstrap5') %}
+{# Advanced filters start expanded when one of them has a value; only the matching toggle label is visible #}
+{% set _adv_open = false %}
+{% for _adv_field in ['min_request_time', 'max_request_time', 'min_query_count', 'max_query_count', 'date_from', 'date_to', 'path'] %}{% if form.children[_adv_field] is defined and form.children[_adv_field].vars.value is not empty %}{% set _adv_open = true %}{% endif %}{% endfor %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ 'filters.title'|trans({}, 'NowoPerformanceBundle') }}</h5>
-                <button class="{{ ui.btn('secondary', 'sm', _perf_css) }}" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                    <span class="when-expanded">{{ 'filters.hide_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
-                    <span class="when-collapsed">{{ 'filters.show_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
+                <button class="{{ ui.btn('secondary', 'sm', _perf_css) }}" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="{{ _adv_open ? 'true' : 'false' }}" aria-controls="advancedFilters">
+                    <span class="when-expanded"{% if not _adv_open %} style="display: none;"{% endif %}>{{ 'filters.hide_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
+                    <span class="when-collapsed"{% if _adv_open %} style="display: none;"{% endif %}>{{ 'filters.show_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
                 </button>
             </div>
             <div class="card-body">
@@ -47,7 +50,7 @@
                     </div>
 
                     {# Advanced Filters (Collapsible) #}
-                    <div class="collapse" id="advancedFilters">
+                    <div class="collapse{{ _adv_open ? ' show' : '' }}" id="advancedFilters">
                         <div class="col-12">
                             <hr class="my-4">
                             <div class="d-flex align-items-center mb-4">
@@ -183,25 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleButton = document.querySelector('[data-bs-target="#advancedFilters"]');
     
     if (collapseElement && toggleButton) {
-        // Check if any advanced filter has a value
-        const hasAdvancedFilters = 
-            document.querySelector('input[name="min_request_time"]')?.value ||
-            document.querySelector('input[name="max_request_time"]')?.value ||
-            document.querySelector('input[name="min_query_count"]')?.value ||
-            document.querySelector('input[name="max_query_count"]')?.value ||
-            document.querySelector('input[name="date_from"]')?.value ||
-            document.querySelector('input[name="date_to"]')?.value ||
-            document.querySelector('input[name="path"]')?.value;
-
-        if (hasAdvancedFilters) {
-            // Auto-expand if filters are active
-            const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
-            bsCollapse.show();
-            toggleButton.setAttribute('aria-expanded', 'true');
-            toggleButton.querySelector('.when-expanded').style.display = 'inline';
-            toggleButton.querySelector('.when-collapsed').style.display = 'none';
-        }
-
         // Toggle button text
         collapseElement.addEventListener('show.bs.collapse', function() {
             toggleButton.querySelector('.when-expanded').style.display = 'inline';

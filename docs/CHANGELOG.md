@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Dev only — `composer test-coverage-90` / `test-coverage-100`:** the scripts were written as `"@test-coverage && php scripts/check-coverage.php …"`, so Composer appended `&& php … --min-percent=N` as arguments to PHPUnit, which rejected `--min-percent`. They now run PHPUnit with coverage and then `scripts/check-coverage.php` with the threshold as two script steps; `make test-coverage-100` uses the Composer script. `test-coverage` disables Composer's 300 s process timeout (the isolated coverage run takes ~4 min).
+- **Dashboard filters — "Show/Hide Advanced Filters" toggle:** the Bootstrap filter card (`nowo_performance.Filters` component and `_filters_bootstrap.html.twig` include) rendered both labels at once because no CSS hid the inactive one until the collapse was toggled. The initial state is now rendered server-side: when no advanced filter has a value the panel is collapsed and only "Show Advanced Filters" is visible; when one is set the panel renders expanded (`.collapse.show`, `aria-expanded="true"`) with only "Hide Advanced Filters". The JS auto-expand on load was removed; the collapse events still swap the labels when toggled.
 
 ## [3.7.1] - 2026-10-13
 

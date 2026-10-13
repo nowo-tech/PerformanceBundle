@@ -3,6 +3,9 @@
 {% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
 {% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
 {% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
+{# Advanced filters start expanded when one of them has a value; only the matching toggle label is visible #}
+{% set _adv_open = false %}
+{% for _adv_field in ['min_request_time', 'max_request_time', 'min_query_count', 'max_query_count', 'date_from', 'date_to'] %}{% if form.children[_adv_field] is defined and form.children[_adv_field].vars.value is not empty %}{% set _adv_open = true %}{% endif %}{% endfor %}
 {% if _is_bootstrap %}
     {# Bootstrap version #}
     <div class="row mb-4">
@@ -10,9 +13,9 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ 'filters.title'|trans({}, 'NowoPerformanceBundle') }}</h5>
-                    <button class="{{ ui.btn('secondary', 'sm', _perf_css) }}" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                        <span class="when-expanded">{{ 'filters.hide_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
-                        <span class="when-collapsed">{{ 'filters.show_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
+                    <button class="{{ ui.btn('secondary', 'sm', _perf_css) }}" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="{{ _adv_open ? 'true' : 'false' }}" aria-controls="advancedFilters">
+                        <span class="when-expanded"{% if not _adv_open %} style="display: none;"{% endif %}>{{ 'filters.hide_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
+                        <span class="when-collapsed"{% if _adv_open %} style="display: none;"{% endif %}>{{ 'filters.show_advanced'|trans({}, 'NowoPerformanceBundle') }}</span>
                     </button>
                 </div>
                 <div class="card-body">
@@ -55,7 +58,7 @@
                         </div>
 
                         {# Advanced Filters (Collapsible) #}
-                        <div class="collapse" id="advancedFilters">
+                        <div class="collapse{{ _adv_open ? ' show' : '' }}" id="advancedFilters">
                             <div class="col-12">
                                 <hr>
                                 <h6 class="mb-3">{{ 'filters.advanced_filters'|trans({}, 'NowoPerformanceBundle') }}</h6>
@@ -122,24 +125,6 @@
         const toggleButton = document.querySelector('[data-bs-target="#advancedFilters"]');
         
         if (collapseElement && toggleButton) {
-            // Check if any advanced filter has a value
-            const hasAdvancedFilters = 
-                document.querySelector('input[name="min_request_time"]')?.value ||
-                document.querySelector('input[name="max_request_time"]')?.value ||
-                document.querySelector('input[name="min_query_count"]')?.value ||
-                document.querySelector('input[name="max_query_count"]')?.value ||
-                document.querySelector('input[name="date_from"]')?.value ||
-                document.querySelector('input[name="date_to"]')?.value;
-
-            if (hasAdvancedFilters) {
-                // Auto-expand if filters are active
-                const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
-                bsCollapse.show();
-                toggleButton.setAttribute('aria-expanded', 'true');
-                toggleButton.querySelector('.when-expanded').style.display = 'inline';
-                toggleButton.querySelector('.when-collapsed').style.display = 'none';
-            }
-
             // Toggle button text
             collapseElement.addEventListener('show.bs.collapse', function() {
                 toggleButton.querySelector('.when-expanded').style.display = 'inline';
