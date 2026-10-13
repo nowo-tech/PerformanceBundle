@@ -92,6 +92,7 @@ services:
     Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber:
         tags:
             - { name: kernel.event_subscriber }
+            - { name: kernel.reset, method: reset }
 
     # Query Tracking Connection Subscriber (applies middleware via reflection)
     # Uses #[AsEventListener] attribute for auto-registration, but explicit registration ensures it works

@@ -36,11 +36,6 @@ nowo_performance:
     # Use this in production environments with high traffic to reduce database write load
     sampling_rate: 1.0
 
-    # Minimum query count to track query execution time
-    # Queries below this threshold are counted but not timed individually
-    # Set to 0 to always track query time, or higher to only time routes with many queries
-    query_tracking_threshold: 0
-
     # Record metrics asynchronously using Symfony Messenger (requires symfony/messenger)
     # When enabled, metrics are dispatched via message bus instead of direct database writes
     # This improves response time but requires Symfony Messenger to be installed and configured

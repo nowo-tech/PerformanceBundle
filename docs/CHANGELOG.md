@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+  - [Security](#security)
+  - [Fixed](#fixed)
   - [Changed](#changed)
 - [[3.5.2] - 2026-10-13](#352-2026-10-13)
 - [[3.5.1] - 2026-10-09](#351-2026-10-09)
@@ -138,6 +140,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Security
+
+- Dashboard POST actions (clear, delete, review, purge) no longer redirect to a foreign `Referer` (open redirect, e.g. from the invalid-CSRF branch): only same-host http(s) referers are followed, anything else falls back to the dashboard.
+- `POST /clear` now requires `dashboard.enable_record_management: true` like the other destructive actions (403 otherwise); the **Clear all records** button is hidden when it is disabled.
+- Confirmation dialogs are JS-escaped (`|e('js')`): translations containing an apostrophe (fr "d'accès") broke the `onsubmit` handler and the purge / delete ran without confirmation.
+
+### Fixed
+
+- Sub-requests (`render(controller())`, ESI, the ErrorListener error page) no longer overwrite the main request's route and disable the collector: main requests that run sub-requests were never recorded, and with `track_sub_requests` the metrics went to the wrong route. Tracked sub-requests are now measured and recorded separately.
+- The query counters are no longer reset by sub-requests, so the main request's query count includes every query.
+- `PerformanceMetricsSubscriber` implements `ResetInterface` (`kernel.reset`) so per-request state never leaks between requests in long-running workers.
+- Translations: added the 17 missing keys to ca, cs, pl, ru and tr; a test now enforces key parity across locales and that every template key exists.
+
+### Changed
+
+- `query_tracking_threshold` is deprecated and ignored: it never had any effect. Setting it triggers a deprecation notice; remove it from your configuration.
+- Removed the unused `Performance/access_statistics_disabled.html.twig` template (never rendered; it referenced non-existent translation keys).
 
 ## [3.5.2] - 2026-10-13
 

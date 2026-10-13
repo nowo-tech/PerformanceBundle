@@ -63,7 +63,6 @@ nowo_performance:
     track_status_codes: [200, 404, 500, 503]
     async: false
     sampling_rate: 1.0
-    query_tracking_threshold: 0
     enable_access_records: false
     access_records_retention_days: null   # null = keep all
     track_user: false
@@ -204,6 +203,8 @@ nowo_performance:
 - Debugging sub-request bottlenecks
 
 **Note:** Enabling this feature will increase database storage requirements as it creates metrics for every sub-request (subject to sampling_rate).
+
+**How sub-requests are measured:** a sub-request never changes the main request's metrics (route, timers, query counters): the main request is always recorded under its own route, also when it renders fragments or fails and Symfony renders the error page in a sub-request. With `track_sub_requests: true`, each routed sub-request gets its own measurement (time, queries executed inside it, status code) and its own access record, written at `kernel.terminate` after the main one's response is sent. Sub-requests without a route (e.g. the error page) and routes in `ignore_routes` are skipped.
 
 ### `enable_access_records`
 
@@ -472,7 +473,7 @@ Override them in: `templates/bundles/NowoPerformanceBundle/Performance/component
 **Type:** `boolean`  
 **Default:** `false`
 
-Enable deletion of individual **access records** (hits) from the dashboard. When enabled, a trash icon appears for each access record in the route's access records view (not in the main routes table).
+Enable destructive record management from the dashboard: deleting individual **access records** (hits), deleting routes, purging access records and the **Clear all records** button / `POST /clear` action. When disabled (default), those buttons are hidden and the actions return 403.
 
 ```yaml
 nowo_performance:
@@ -483,7 +484,7 @@ nowo_performance:
 **Security:**
 - Requires CSRF token validation
 - Respects dashboard role restrictions
-- Delete operations redirect to referer
+- Delete operations redirect back to the referer only when it is on the same host (otherwise to the dashboard)
 
 #### `dashboard.enable_review_system`
 
@@ -629,14 +630,8 @@ nowo_performance:
 ### `query_tracking_threshold`
 
 **Type:** `integer`  
-**Default:** `0`
-
-Minimum query count to track query execution time. Queries below this threshold are counted but not timed individually.
-
-```yaml
-nowo_performance:
-    query_tracking_threshold: 5  # Only time queries if route has 5+ queries
-```
+**Default:** `0`  
+**Deprecated:** ignored. It never had any effect: every query is always counted and timed. Setting it triggers a deprecation notice; remove it from your configuration. It will be removed in the next major version.
 
 ### `thresholds`
 

@@ -242,7 +242,7 @@
                                         <div class="flex space-x-2">
                                             {% if enableRecordManagement is defined and enableRecordManagement and deleteForms[route.id] is defined %}
                                                 {% set deleteForm = deleteForms[route.id] %}
-                                                {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.id}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ ('confirmations.delete_record'|trans({}, 'NowoPerformanceBundle')) ~ "');"}}) }}
+                                                {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.id}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ ('confirmations.delete_record'|trans({}, 'NowoPerformanceBundle')|e('js')) ~ "');"}}) }}
                                                     {{ form_widget(deleteForm._token) }}
                                                     <button type="submit" class="text-red-600 hover:text-red-900" title="{{ 'routes_table.delete'|trans({}, 'NowoPerformanceBundle') }}">
                                                         {{ ux_icon('bi:trash', {class: 'w-4 h-4'}) }}

@@ -161,6 +161,31 @@ class PerformanceController extends AbstractController
     }
 
     /**
+     * Redirects back to the Referer when it points to this same host, otherwise to the dashboard.
+     *
+     * The Referer header is attacker-controllable (e.g. a cross-site form post with an invalid CSRF
+     * token), so only absolute http(s) URLs on the current host are followed: never an open redirect.
+     */
+    private function redirectBack(Request $request): RedirectResponse
+    {
+        $referer = $request->headers->get('referer');
+        if (is_string($referer) && $referer !== '' && filter_var($referer, FILTER_VALIDATE_URL) !== false) {
+            $parts  = parse_url($referer);
+            $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+            $host   = strtolower((string) ($parts['host'] ?? ''));
+            if (in_array($scheme, ['http', 'https'], true)
+                && $host !== ''
+                && $host === strtolower($request->getHost())
+                && !isset($parts['user'])
+                && !isset($parts['pass'])) {
+                return $this->redirect($referer);
+            }
+        }
+
+        return $this->redirectToRoute('nowo_performance.index');
+    }
+
+    /**
      * Normalize env value from request/form to string for type-safe use in models and services.
      */
     private function normalizeEnv(mixed $value): string
@@ -1937,6 +1962,10 @@ class PerformanceController extends AbstractController
             throw $this->createNotFoundException('Performance dashboard is disabled.');
         }
 
+        if (!$this->enableRecordManagement) {
+            throw $this->createAccessDeniedException('Record management is not enabled.');
+        }
+
         $this->assertAccess('You do not have permission to clear performance data.');
 
         $currentEnv = $this->normalizeEnv($this->getParameter('kernel.environment'));
@@ -1945,12 +1974,8 @@ class PerformanceController extends AbstractController
 
         if (!$form->isSubmitted() || !$form->isValid()) {
             $this->addFlash('error', 'Invalid security token. Please try again.');
-            $referer = $request->headers->get('referer');
-            if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                return $this->redirect($referer);
-            }
 
-            return $this->redirectToRoute('nowo_performance.index');
+            return $this->redirectBack($request);
         }
 
         $env = $this->normalizeEnv($form->getData()->env);
@@ -1965,12 +1990,8 @@ class PerformanceController extends AbstractController
 
                 if ($beforeEvent->isClearingPrevented()) {
                     $this->addFlash('warning', 'Clearing was prevented by an event listener.');
-                    $referer = $request->headers->get('referer');
-                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                        return $this->redirect($referer);
-                    }
 
-                    return $this->redirectToRoute('nowo_performance.index');
+                    return $this->redirectBack($request);
                 }
             }
 
@@ -2003,12 +2024,7 @@ class PerformanceController extends AbstractController
             $this->addFlash('error', 'An error occurred while clearing performance data: ' . $e->getMessage());
         }
 
-        $referer = $request->headers->get('referer');
-        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-            return $this->redirect($referer);
-        }
-
-        return $this->redirectToRoute('nowo_performance.index');
+        return $this->redirectBack($request);
     }
 
     /**
@@ -2042,12 +2058,8 @@ class PerformanceController extends AbstractController
 
         if (!$form->isSubmitted() || !$form->isValid()) {
             $this->addFlash('error', 'Invalid security token. Please try again.');
-            $referer = $request->headers->get('referer');
-            if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                return $this->redirect($referer);
-            }
 
-            return $this->redirectToRoute('nowo_performance.index');
+            return $this->redirectBack($request);
         }
 
         try {
@@ -2057,12 +2069,8 @@ class PerformanceController extends AbstractController
 
             if ($routeData === null) {
                 $this->addFlash('error', sprintf('Record with ID %d not found.', $id));
-                $referer = $request->headers->get('referer');
-                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                    return $this->redirect($referer);
-                }
 
-                return $this->redirectToRoute('nowo_performance.index');
+                return $this->redirectBack($request);
             }
 
             $env       = $this->normalizeEnv($routeData->getEnv());
@@ -2075,12 +2083,8 @@ class PerformanceController extends AbstractController
 
                 if ($beforeEvent->isDeletionPrevented()) {
                     $this->addFlash('warning', 'Deletion was prevented by an event listener.');
-                    $referer = $request->headers->get('referer');
-                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                        return $this->redirect($referer);
-                    }
 
-                    return $this->redirectToRoute('nowo_performance.index');
+                    return $this->redirectBack($request);
                 }
             }
 
@@ -2111,12 +2115,7 @@ class PerformanceController extends AbstractController
             $this->addFlash('error', 'An error occurred while deleting the record: ' . $e->getMessage());
         }
 
-        $referer = $request->headers->get('referer');
-        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-            return $this->redirect($referer);
-        }
-
-        return $this->redirectToRoute('nowo_performance.index');
+        return $this->redirectBack($request);
     }
 
     /**
@@ -2150,12 +2149,8 @@ class PerformanceController extends AbstractController
 
             if ($routeData === null) {
                 $this->addFlash('error', sprintf('Record with ID %d not found.', $id));
-                $referer = $request->headers->get('referer');
-                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                    return $this->redirect($referer);
-                }
 
-                return $this->redirectToRoute('nowo_performance.index');
+                return $this->redirectBack($request);
             }
 
             // Create and handle the form
@@ -2166,12 +2161,8 @@ class PerformanceController extends AbstractController
 
             if (!$form->isSubmitted() || !$form->isValid()) {
                 $this->addFlash('error', 'Invalid form data. Please try again.');
-                $referer = $request->headers->get('referer');
-                if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                    return $this->redirect($referer);
-                }
 
-                return $this->redirectToRoute('nowo_performance.index');
+                return $this->redirectBack($request);
             }
 
             $formData        = $form->getData();
@@ -2201,12 +2192,8 @@ class PerformanceController extends AbstractController
 
                 if ($beforeEvent->isReviewPrevented()) {
                     $this->addFlash('warning', 'Review was prevented by an event listener.');
-                    $referer = $request->headers->get('referer');
-                    if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-                        return $this->redirect($referer);
-                    }
 
-                    return $this->redirectToRoute('nowo_performance.index');
+                    return $this->redirectBack($request);
                 }
 
                 // Use modified values from event
@@ -2257,12 +2244,7 @@ class PerformanceController extends AbstractController
             $this->addFlash('error', 'An error occurred while reviewing the record: ' . $e->getMessage());
         }
 
-        $referer = $request->headers->get('referer');
-        if ($referer && filter_var($referer, FILTER_VALIDATE_URL)) {
-            return $this->redirect($referer);
-        }
-
-        return $this->redirectToRoute('nowo_performance.index');
+        return $this->redirectBack($request);
     }
 
     /**

@@ -82,9 +82,11 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
 
         $this->applyMiddlewareToConnection();
 
-        // Reset query tracking AFTER middleware is applied
-        // This ensures queries executed after this point are tracked
-        $this->counters->reset();
+        // Reset query tracking AFTER middleware is applied, on main requests only:
+        // a sub-request (render(controller()), ESI, error page) must not wipe the main request's counters.
+        if ($event->isMainRequest()) {
+            $this->counters->reset();
+        }
     }
 
     /**

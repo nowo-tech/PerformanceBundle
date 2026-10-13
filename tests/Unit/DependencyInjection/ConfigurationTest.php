@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
+use const E_USER_DEPRECATED;
+
 final class ConfigurationTest extends TestCase
 {
     private Processor $processor;
@@ -313,6 +315,27 @@ final class ConfigurationTest extends TestCase
         $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertSame(0, $config['query_tracking_threshold']);
+    }
+
+    public function testQueryTrackingThresholdIsDeprecatedWhenSet(): void
+    {
+        $deprecations = [];
+        set_error_handler(static function (int $errno, string $message) use (&$deprecations): bool {
+            $deprecations[] = $message;
+
+            return true;
+        }, E_USER_DEPRECATED);
+
+        try {
+            $config = $this->processor->processConfiguration(new Configuration(), [['query_tracking_threshold' => 5]]);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame(5, $config['query_tracking_threshold']);
+        $this->assertCount(1, $deprecations);
+        $this->assertStringContainsString('query_tracking_threshold', $deprecations[0]);
+        $this->assertStringContainsString('deprecated and ignored', $deprecations[0]);
     }
 
     public function testNotificationsWebhookDefaults(): void

@@ -41,10 +41,12 @@
                                 {{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}
                             </a>
                         {% endif %}
-                        {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
-                            {{ form_widget(clearForm.env) }}
-                            {{ form_widget(clearForm.submit, {'attr': {'class': ui.btn('danger', null, _perf_css)}}) }}
-                        {{ form_end(clearForm) }}
+                        {% if enableRecordManagement is defined and enableRecordManagement %}
+                            {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
+                                {{ form_widget(clearForm.env) }}
+                                {{ form_widget(clearForm.submit, {'attr': {'class': ui.btn('danger', null, _perf_css)}}) }}
+                            {{ form_end(clearForm) }}
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -78,10 +80,12 @@
                         {{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}
                     </a>
                 {% endif %}
-                {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'class': 'inline', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
-                    {{ form_widget(clearForm.env) }}
-                    {{ form_widget(clearForm.submit, {'attr': {'class': 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'}}) }}
-                {{ form_end(clearForm) }}
+                {% if enableRecordManagement is defined and enableRecordManagement %}
+                    {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'class': 'inline', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
+                        {{ form_widget(clearForm.env) }}
+                        {{ form_widget(clearForm.submit, {'attr': {'class': 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'}}) }}
+                    {{ form_end(clearForm) }}
+                {% endif %}
             </div>
         </div>
     {% endif %}

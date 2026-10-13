@@ -68,7 +68,7 @@
                     </div>
                 {{ form_end(filterForm, {'render_rest': false}) }}
                 {% if enable_record_management|default(false) %}
-                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
+                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
                         {{ form_widget(deleteByFilterForm) }}
                     {{ form_end(deleteByFilterForm) }}
                 {% endif %}
@@ -82,7 +82,7 @@
             </div>
             <div class="card-body">
                 <p class="text-muted small">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
-                {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
+                {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
                     {{ form_widget(purgeForm._token) }}
                     <div class="col-md-2">{{ form_row(purgeForm.purgeType) }}</div>
                     <div class="col-md-2 purge-days-field">{{ form_row(purgeForm.days) }}</div>
@@ -337,7 +337,7 @@
             </div>
         {{ form_end(filterForm, {'render_rest': false}) }}
         {% if enable_record_management|default(false) %}
-            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
+            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
                 {{ form_widget(deleteByFilterForm, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700'}}) }}
             {{ form_end(deleteByFilterForm) }}
         {% endif %}
@@ -347,7 +347,7 @@
     <div class="mt-4 rounded-lg border-2 border-amber-200 bg-amber-50 p-4">
         <h3 class="text-lg font-medium text-amber-900 mb-2">{{ 'access_statistics.purge_records_title'|trans({}, 'NowoPerformanceBundle') }}</h3>
         <p class="text-sm text-amber-800 mb-3">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
-        {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
+        {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
             {{ form_widget(purgeForm._token) }}
             <div class="flex-1 min-w-[140px]">{{ form_row(purgeForm.purgeType, {'attr': {'class': 'form-select'}}) }}</div>
             <div class="flex-1 min-w-[100px] purge-days-field">{{ form_row(purgeForm.days) }}</div>

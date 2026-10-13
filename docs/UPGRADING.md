@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Clear all records** (`POST /clear`) now requires `dashboard.enable_record_management: true`; set it if you use that button (otherwise it is hidden and the action returns 403).
+- Dashboard redirects only follow a same-host `Referer`; other referers fall back to the dashboard.
+- `query_tracking_threshold` is deprecated and ignored (it never had any effect): remove it from `nowo_performance` config to silence the deprecation.
+- If you overrode `Performance/access_statistics_disabled.html.twig`, delete the override: the bundle no longer ships or renders it.
+
 ## To 3.5.2
 
 From **3.5.1** — dependency refresh and repository maintenance.

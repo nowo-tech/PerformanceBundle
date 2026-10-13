@@ -19,6 +19,8 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 use function is_array;
 
+use const PHP_URL_PATH;
+
 final class PerformanceControllerIntegrationTest extends TestCase
 {
     private TestKernel $kernel;
@@ -424,6 +426,28 @@ final class PerformanceControllerIntegrationTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
+    /**
+     * Confirm messages are JS-escaped: the French "d'accès" must not end the confirm('...') string
+     * (which made the onsubmit handler a syntax error and let the purge run without confirmation).
+     */
+    public function testAccessRecordsConfirmMessagesAreJsEscapedInFrench(): void
+    {
+        $this->createTablesAndRecordMetric();
+        $request = Request::create('/performance/access-records?env=test', Request::METHOD_GET);
+        $request->attributes->set('_locale', 'fr');
+        $response = $this->kernel->handle($request, HttpKernelInterface::MAIN_REQUEST, false);
+
+        self::assertSame(200, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        // delete-by-filter + purge forms
+        self::assertGreaterThanOrEqual(2, preg_match_all('/onsubmit="return confirm\(&#039;([^"]*)&#039;\);"/', $content, $matches));
+        foreach ($matches[1] as $message) {
+            // A raw (HTML-encoded) single quote inside the JS string literal would terminate it.
+            self::assertStringNotContainsString('&#039;', $message);
+        }
+        self::assertStringContainsString('d\u0027acc', $content);
+    }
+
     public function testAccessRecordsWithRefererAndUser(): void
     {
         $response = $this->requestGet('/performance/access-records?env=test&referer=https%3A%2F%2Fexample.com&user=testuser');
@@ -682,6 +706,60 @@ final class PerformanceControllerIntegrationTest extends TestCase
         $location = $response->headers->get('Location');
         self::assertNotNull($location);
         self::assertStringContainsString('/performance/statistics', $location);
+    }
+
+    /**
+     * Invalid-CSRF branch must not follow a foreign Referer (open redirect): falls back to the dashboard.
+     *
+     * @dataProvider foreignRefererProvider
+     */
+    public function testClearPostWithForeignRefererDoesNotRedirectOffSite(string $referer): void
+    {
+        $response = $this->requestPost(
+            '/performance/clear',
+            [
+                'clear_performance_data' => [
+                    'env'    => 'test',
+                    '_token' => 'invalid',
+                    'submit' => '',
+                ],
+            ],
+            false,
+            ['HTTP_REFERER' => $referer],
+        );
+        self::assertSame(302, $response->getStatusCode());
+        $location = (string) $response->headers->get('Location');
+        self::assertStringNotContainsString('evil.example', $location);
+        self::assertStringNotContainsString('javascript:', $location);
+        self::assertSame('/performance', rtrim((string) parse_url($location, PHP_URL_PATH), '/'));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function foreignRefererProvider(): iterable
+    {
+        yield 'other host' => ['https://evil.example/phish'];
+        yield 'userinfo trick' => ['http://localhost@evil.example/'];
+        yield 'credentials on same host' => ['http://evil.example:pw@localhost/performance/statistics'];
+        yield 'subdomain suffix' => ['http://localhost.evil.example/performance'];
+        yield 'non-http scheme' => ['ftp://localhost/performance'];
+        yield 'javascript scheme' => ['javascript://localhost/%0Aalert(1)'];
+    }
+
+    /** POST delete with a foreign Referer and invalid token falls back to the dashboard. */
+    public function testDeletePostWithForeignRefererDoesNotRedirectOffSite(): void
+    {
+        $this->createTablesAndRecordMetric();
+        $routeId  = $this->getFirstRouteDataId();
+        $response = $this->requestPost(
+            '/performance/' . $routeId . '/delete',
+            ['delete_record' => ['_token' => 'invalid', 'submit' => '']],
+            false,
+            ['HTTP_REFERER' => 'https://evil.example/performance'],
+        );
+        self::assertSame(302, $response->getStatusCode());
+        self::assertStringNotContainsString('evil.example', (string) $response->headers->get('Location'));
     }
 
     /** POST delete with Referer header hits redirect-to-referer branch. */

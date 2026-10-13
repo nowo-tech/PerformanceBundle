@@ -121,4 +121,26 @@ final class QueryTrackingConnectionSubscriberTest extends TestCase
         $prop = $ref->getProperty('trackedConnections');
         $this->assertEmpty($prop->getValue($subscriber));
     }
+
+    public function testSubRequestDoesNotResetMainRequestQueryCounters(): void
+    {
+        $this->registry->method('getConnection')->with('default')->willReturn(new stdClass());
+
+        $counters   = new QueryTrackingCounters();
+        $subscriber = new QueryTrackingConnectionSubscriber($this->registry, $counters, true, true, 'default');
+        $kernel     = $this->createMock(HttpKernelInterface::class);
+
+        $subscriber->onKernelRequest(new RequestEvent($kernel, new Request(), HttpKernelInterface::MAIN_REQUEST));
+        $queryId = $counters->nextQueryId(new stdClass());
+        $counters->startQuery($queryId);
+        $counters->stopQuery($queryId);
+        $this->assertSame(1, $counters->getQueryCount());
+
+        // e.g. render(controller()) or the ErrorListener 500 page
+        $subscriber->onKernelRequest(new RequestEvent($kernel, new Request(), HttpKernelInterface::SUB_REQUEST));
+        $this->assertSame(1, $counters->getQueryCount());
+
+        $subscriber->onKernelRequest(new RequestEvent($kernel, new Request(), HttpKernelInterface::MAIN_REQUEST));
+        $this->assertSame(0, $counters->getQueryCount());
+    }
 }

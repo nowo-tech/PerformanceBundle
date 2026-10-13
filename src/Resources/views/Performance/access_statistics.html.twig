@@ -41,7 +41,7 @@
                     </div>
                 {{ form_end(filterForm, {'render_rest': false}) }}
                 {% if enable_record_management|default(false) %}
-                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
+                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
                         {{ form_widget(deleteByFilterForm) }}
                     {{ form_end(deleteByFilterForm) }}
                 {% endif %}
@@ -245,7 +245,7 @@
             </div>
         {{ form_end(filterForm, {'render_rest': false}) }}
         {% if enable_record_management|default(false) %}
-            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle') ~ "');"}}) }}
+            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
                 {{ form_widget(deleteByFilterForm, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700'}}) }}
             {{ form_end(deleteByFilterForm) }}
         {% endif %}

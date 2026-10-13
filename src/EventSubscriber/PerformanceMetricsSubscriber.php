@@ -16,16 +16,21 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\Profiler\Profiler;
 use Symfony\Component\Stopwatch\Stopwatch;
+use Symfony\Contracts\Service\ResetInterface;
 use Throwable;
+use WeakMap;
 
 use function in_array;
+use function is_array;
 use function is_object;
 use function is_string;
+use function max;
 use function sprintf;
 
 use const FNM_NOESCAPE;
@@ -36,10 +41,14 @@ use const FNM_NOESCAPE;
  * Listens to kernel request and terminate events to collect and store
  * performance metrics for routes including request time, query count, and query time.
  *
+ * Sub-requests (render(controller()), ESI, the ErrorListener error page) never touch the
+ * main request's state. With track_sub_requests they are measured with their own state
+ * (kernel.response of the sub-request) and recorded at kernel.terminate.
+ *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-class PerformanceMetricsSubscriber implements EventSubscriberInterface
+class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInterface
 {
     /**
      * Request start time for timing calculation.
@@ -67,6 +76,20 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      * Unique request ID for this HTTP request (used to avoid duplicate access records).
      */
     private ?string $requestId = null;
+
+    /**
+     * In-flight sub-request measurements (track_sub_requests), keyed by sub-request.
+     *
+     * @var WeakMap<Request, array{env: string, route: string, params: array<string, mixed>, startTime: float|null, startMemory: int, queryCount: int, queryTime: float}>
+     */
+    private WeakMap $subRequestStates;
+
+    /**
+     * Finished sub-request measurements waiting to be recorded at kernel.terminate.
+     *
+     * @var list<array{route: string, env: string, requestTime: float|null, queryCount: int|null, queryTime: float|null, params: array<string, mixed>, memoryUsage: int, method: string, statusCode: int, referer: string|null, routePath: string}>
+     */
+    private array $pendingSubRequestMetrics = [];
 
     /**
      * Creates a new instance.
@@ -117,6 +140,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
         private readonly ?KernelInterface $kernel = null,
         private readonly ?QueryTrackingCounters $queryCounters = null,
     ) {
+        $this->subRequestStates = new WeakMap();
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setEnabled($enabled);
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
@@ -135,8 +159,23 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::REQUEST   => ['onKernelRequest', 31],
+            KernelEvents::RESPONSE  => ['onKernelResponse', -1024],
             KernelEvents::TERMINATE => ['onKernelTerminate', -1024],
         ];
+    }
+
+    /**
+     * Clears per-request state (kernel.reset) so a long-running worker never carries it over.
+     */
+    public function reset(): void
+    {
+        $this->startTime                = null;
+        $this->startMemory              = null;
+        $this->routeName                = null;
+        $this->routeParams              = null;
+        $this->requestId                = null;
+        $this->subRequestStates         = new WeakMap();
+        $this->pendingSubRequestMetrics = [];
     }
 
     /**
@@ -154,29 +193,26 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     {
         $request = $event->getRequest();
 
-        // Long-running runtimes (FrankenPHP worker) may not reset services between requests:
-        // start every main request with a clean collector state.
-        if ($event->isMainRequest()) {
-            $this->dataCollector->reset();
-            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-            $this->dataCollector->setAsync($this->async);
+        // Sub-requests (render(controller()), ESI, the ErrorListener error page) must not overwrite the
+        // main request's route, timers or collector: return before touching any of that state.
+        if (!$event->isMainRequest()) {
+            $this->startSubRequestTracking($request);
+
+            return;
         }
 
-        // Minimal setup for collector (route + env) so toolbar can show "disabled" with context
-        $env = null;
-        if ($this->kernel instanceof KernelInterface) {
-            $env = $this->kernel->getEnvironment();
-        } elseif ($request->server->has('APP_ENV')) {
-            $env = $request->server->get('APP_ENV');
+        // Long-running runtimes (FrankenPHP worker) may not reset services between requests:
+        // start every main request with a clean collector state.
+        $this->dataCollector->reset();
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-        } elseif (isset($_SERVER['APP_ENV'])) {
-            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-            $env = $_SERVER['APP_ENV'];
-        } elseif (($appEnv = getenv('APP_ENV')) !== false && $appEnv !== '') {
-            $env = $appEnv;
-        } else {
-            $env = 'dev';
-        }
+        $this->dataCollector->setAsync($this->async);
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        $this->subRequestStates = new WeakMap();
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        $this->pendingSubRequestMetrics = [];
+
+        // Minimal setup for collector (route + env) so toolbar can show "disabled" with context
+        $env = $this->detectEnvironment($request);
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setConfiguredEnvironments($this->environments);
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
@@ -193,21 +229,6 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
             $this->dataCollector->setEnabled(false);
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setDisabledReason('Bundle is disabled in configuration (nowo_performance.enabled: false)');
-
-            return;
-        }
-
-        if (!$event->isMainRequest() && !$this->trackSubRequests) {
-            LogHelper::log('[PerformanceBundle] Tracking disabled: not main request (sub-request) and track_sub_requests is disabled', $this->enableLogging);
-            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-            $this->dataCollector->setEnabled(false);
-            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-            $this->dataCollector->setDisabledReason('Not a main request (sub-request). Enable track_sub_requests to track sub-requests.');
-            LogHelper::logf(
-                '[PerformanceBundle] DataCollector setEnabled(false) - reason: Sub-request, isEnabled()=%s',
-                $this->enableLogging,
-                $this->dataCollector->isEnabled() ? 'true' : 'false',
-            );
 
             return;
         }
@@ -269,8 +290,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Only log if route name is available (to reduce noise from asset/profiler routes)
         if ($this->routeName !== null) {
-            $requestType = $event->isMainRequest() ? 'main' : 'sub';
-            LogHelper::logf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=%s', $this->enableLogging, $this->routeName, $env, $requestType);
+            LogHelper::logf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=main', $this->enableLogging, $this->routeName, $env);
         }
 
         // Start timing
@@ -283,29 +303,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         // Track initial memory usage. The peak is process-wide, so it must be reset per main request
         // or a long-running worker would report the highest peak since it started.
-        if ($event->isMainRequest()) {
-            memory_reset_peak_usage();
-        }
+        memory_reset_peak_usage();
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->startMemory = memory_get_usage(true);
 
-        // Unique request ID for deduplication: one per logical request (main + sub-requests share the main's ID)
-        if ($event->isMainRequest()) {
-            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-            $this->requestId = bin2hex(random_bytes(16));
-            $request->attributes->set('_performance_request_id', $this->requestId);
-        } else {
-            $mainRequest = null;
-            if ($this->requestStack instanceof RequestStack) {
-                $mainRequest = $this->requestStack->getMainRequest();
-            }
-            // Request does not have getMainRequest(); only RequestStack does. Use current request if we have no stack.
-            if (!$mainRequest instanceof Request) {
-                $mainRequest = $request;
-            }
-            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-            $this->requestId = $mainRequest->attributes->get('_performance_request_id');
-        }
+        // Unique request ID for deduplication: one access record per main request
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        $this->requestId = bin2hex(random_bytes(16));
+        $request->attributes->set('_performance_request_id', $this->requestId);
 
         // Track queries if enabled
         if ($this->trackQueries) {
@@ -318,6 +323,54 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
     }
 
     /**
+     * Handle the kernel response event: finishes the measurement of a tracked sub-request.
+     *
+     * Main requests are measured at kernel.terminate; this only snapshots sub-requests (their own
+     * timers, query deltas and status code) and queues them for recording at kernel.terminate, so
+     * no database write happens while the main response is being rendered.
+     *
+     * @param ResponseEvent $event The response event
+     */
+    public function onKernelResponse(ResponseEvent $event): void
+    {
+        if ($event->isMainRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+        if (!isset($this->subRequestStates[$request])) {
+            return;
+        }
+
+        $state = $this->subRequestStates[$request];
+        unset($this->subRequestStates[$request]);
+
+        $queryCount = null;
+        $queryTime  = null;
+        if ($this->trackQueries && $this->queryCounters instanceof QueryTrackingCounters) {
+            $queryCount = max(0, $this->queryCounters->getQueryCount() - $state['queryCount']);
+            $queryTime  = max(0.0, $this->queryCounters->getTotalQueryTime() - $state['queryTime']);
+        }
+
+        $queryString = $request->getQueryString();
+
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        $this->pendingSubRequestMetrics[] = [
+            'route'       => $state['route'],
+            'env'         => $state['env'],
+            'requestTime' => $state['startTime'] !== null ? microtime(true) - $state['startTime'] : null,
+            'queryCount'  => $queryCount,
+            'queryTime'   => $queryTime,
+            'params'      => $state['params'],
+            'memoryUsage' => max(0, memory_get_peak_usage(true) - $state['startMemory']),
+            'method'      => $request->getMethod(),
+            'statusCode'  => $event->getResponse()->getStatusCode(),
+            'referer'     => $request->headers->get('Referer'),
+            'routePath'   => $request->getPathInfo() . (is_string($queryString) && $queryString !== '' ? '?' . $queryString : ''),
+        ];
+    }
+
+    /**
      * Handle the kernel terminate event.
      *
      * Calculates final performance metrics and records them to the database.
@@ -327,6 +380,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
      */
     public function onKernelTerminate(TerminateEvent $event): void
     {
+        $this->recordPendingSubRequests();
+
         // When bundle is disabled: exit immediately without any work (no DB, no reflection, no logging)
         if (!$this->enabled) {
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
@@ -344,21 +399,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
 
-        // Try multiple methods to detect environment
-        $env = null;
-        if ($this->kernel instanceof KernelInterface) {
-            $env = $this->kernel->getEnvironment();
-        } elseif ($request->server->has('APP_ENV')) {
-            $env = $request->server->get('APP_ENV');
-        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-        } elseif (isset($_SERVER['APP_ENV'])) {
-            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-            $env = $_SERVER['APP_ENV'];
-        } elseif (($appEnv = getenv('APP_ENV')) !== false && $appEnv !== '') {
-            $env = $appEnv;
-        } else {
-            $env = 'dev'; // Default fallback
-        }
+        $env = $this->detectEnvironment($request);
 
         // Get route name here, as it should be resolved by now.
         // If request no longer has _route at terminate (route lost), clear and skip saving.
@@ -506,18 +547,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
 
             $referer = $request->headers->get('Referer');
 
-            $userIdentifier = null;
-            $userId         = null;
-            if ($this->trackUser && $this->security !== null && method_exists($this->security, 'getUser')) {
-                $user = $this->security->getUser();
-                if ($user !== null && is_object($user)) {
-                    $userIdentifier = method_exists($user, 'getUserIdentifier') ? $user->getUserIdentifier() : null;
-                    if (method_exists($user, 'getId')) {
-                        $id     = $user->getId();
-                        $userId = $id === null ? null : (string) $id;
-                    }
-                }
-            }
+            [$userIdentifier, $userId] = $this->resolveUser();
 
             $pathInfo    = $request->getPathInfo();
             $queryString = $request->getQueryString();
@@ -624,6 +654,140 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface
                 $this->stopQueryTracking();
             }
         }
+    }
+
+    /**
+     * Starts the separate measurement of a sub-request when track_sub_requests is enabled.
+     *
+     * Never touches the main request's fields nor the data collector.
+     */
+    private function startSubRequestTracking(Request $request): void
+    {
+        if (!$this->enabled || !$this->trackSubRequests) {
+            return;
+        }
+
+        $env = $this->detectEnvironment($request);
+        if (!in_array($env, $this->environments, true)) {
+            return;
+        }
+
+        $routeName = $request->attributes->get('_route');
+        if (!is_string($routeName) || $routeName === '' || $this->isRouteIgnored($routeName)) {
+            return;
+        }
+
+        $params = $request->attributes->get('_route_params', []);
+        /** @var array<string, mixed> $routeParams */
+        $routeParams = is_array($params) ? $params : [];
+
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        $this->subRequestStates[$request] = [
+            'env'         => $env,
+            'route'       => $routeName,
+            'params'      => $routeParams,
+            'startTime'   => $this->trackRequestTime ? microtime(true) : null,
+            'startMemory' => memory_get_usage(true),
+            'queryCount'  => $this->queryCounters?->getQueryCount() ?? 0,
+            'queryTime'   => $this->queryCounters?->getTotalQueryTime() ?? 0.0,
+        ];
+
+        LogHelper::logf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=sub', $this->enableLogging, $routeName, $env);
+    }
+
+    /**
+     * Records the sub-request measurements queued during the main request.
+     *
+     * Each sub-request gets its own request ID so its access record never collides with the main one.
+     */
+    private function recordPendingSubRequests(): void
+    {
+        $pending = $this->pendingSubRequestMetrics;
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        $this->pendingSubRequestMetrics = [];
+
+        if ($pending === []) {
+            return;
+        }
+
+        [$userIdentifier, $userId] = $this->resolveUser();
+
+        foreach ($pending as $metrics) {
+            if ($this->samplingRate < 1.0 && mt_rand(1, 10000) / 10000 > $this->samplingRate) {
+                continue;
+            }
+
+            try {
+                @$this->metricsService->recordMetrics(
+                    $metrics['route'],
+                    $metrics['env'],
+                    $metrics['requestTime'],
+                    $metrics['queryCount'],
+                    $metrics['queryTime'],
+                    $metrics['params'],
+                    $metrics['memoryUsage'],
+                    $metrics['method'],
+                    $metrics['statusCode'],
+                    $this->trackStatusCodes,
+                    bin2hex(random_bytes(16)),
+                    $metrics['referer'],
+                    $userIdentifier,
+                    $userId,
+                    $metrics['routePath'],
+                );
+            } catch (Throwable $e) {
+                LogHelper::logf(
+                    '[PerformanceBundle] Error saving sub-request metrics for route %s: %s',
+                    $this->enableLogging,
+                    $metrics['route'],
+                    $e->getMessage(),
+                );
+            }
+        }
+    }
+
+    /**
+     * Resolves the current user's identifier and ID when track_user is enabled.
+     *
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function resolveUser(): array
+    {
+        $userIdentifier = null;
+        $userId         = null;
+        if ($this->trackUser && $this->security !== null && method_exists($this->security, 'getUser')) {
+            $user = $this->security->getUser();
+            if ($user !== null && is_object($user)) {
+                $userIdentifier = method_exists($user, 'getUserIdentifier') ? $user->getUserIdentifier() : null;
+                if (method_exists($user, 'getId')) {
+                    $id     = $user->getId();
+                    $userId = $id === null ? null : (string) $id;
+                }
+            }
+        }
+
+        return [$userIdentifier, $userId];
+    }
+
+    /**
+     * Detects the current environment (kernel, then APP_ENV from request/server/env, then "dev").
+     */
+    private function detectEnvironment(Request $request): string
+    {
+        if ($this->kernel instanceof KernelInterface) {
+            return $this->kernel->getEnvironment();
+        }
+        if ($request->server->has('APP_ENV')) {
+            return (string) $request->server->get('APP_ENV');
+        }
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+        if (isset($_SERVER['APP_ENV'])) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+            return (string) $_SERVER['APP_ENV'];
+        }
+        $appEnv = getenv('APP_ENV');
+
+        return $appEnv !== false && $appEnv !== '' ? $appEnv : 'dev';
     }
 
     /**

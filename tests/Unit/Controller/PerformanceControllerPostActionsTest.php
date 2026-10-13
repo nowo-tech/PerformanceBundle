@@ -117,7 +117,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 $this->cacheService,
                 null,
                 null,
-                false,
+                true,
                 false,
                 $this->eventDispatcher,
                 0.5,
@@ -188,7 +188,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 null,
                 null,
                 null,
-                false,
+                true,
                 false,
                 $this->eventDispatcher,
                 0.5,
@@ -248,7 +248,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 null,
                 null,
                 null,
-                false,
+                true,
                 false,
                 null,
                 0.5,
@@ -310,7 +310,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 null,
                 null,
                 null,
-                false,
+                true,
                 false,
                 $this->eventDispatcher,
                 0.5,
@@ -366,6 +366,14 @@ final class PerformanceControllerPostActionsTest extends TestCase
 
         $this->expectException(AccessDeniedException::class);
         $controller->delete(1, Request::create('/performance/1/delete', 'POST'));
+    }
+
+    public function testClearWhenRecordManagementDisabledThrowsAccessDenied(): void
+    {
+        $controller = $this->createController(enableRecordManagement: false);
+
+        $this->expectException(AccessDeniedException::class);
+        $controller->clear(Request::create('/performance/clear', 'POST'));
     }
 
     public function testReviewWhenDisabledThrowsNotFound(): void
