@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
   - [Security](#security)
   - [Fixed](#fixed)
   - [Changed](#changed)
+- [[3.6.0] - 2026-10-13](#360-2026-10-13)
 - [[3.5.2] - 2026-10-13](#352-2026-10-13)
 - [[3.5.1] - 2026-10-09](#351-2026-10-09)
 - [[3.5.0] - 2026-09-28](#350-2026-09-28)
@@ -141,6 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-10-13
+
 ### Security
 
 - Dashboard POST actions (clear, delete, review, purge) no longer redirect to a foreign `Referer` (open redirect, e.g. from the invalid-CSRF branch): only same-host http(s) referers are followed, anything else falls back to the dashboard.
@@ -205,6 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.6.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.6.0
 [3.5.2]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.2
 [3.5.1]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.1
 [3.5.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.5.0

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## To 3.6.0
+
+From **3.5.2** — security and fixes - same-host redirects, JS-escaped confirms, correct sub-request metrics, complete locales.
+
+```bash
+composer update nowo-tech/performance-bundle
+```
+
 - **Clear all records** (`POST /clear`) now requires `dashboard.enable_record_management: true`; set it if you use that button (otherwise it is hidden and the action returns 403).
 - Dashboard redirects only follow a same-host `Referer`; other referers fall back to the dashboard.
 - `query_tracking_threshold` is deprecated and ignored (it never had any effect): remove it from `nowo_performance` config to silence the deprecation.
@@ -54,6 +62,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
+- [To 3.6.0](#to-360)
 - [To 3.5.2](#to-352)
 - [To 3.5.1](#to-351)
 - [To 3.5.0](#to-350)
