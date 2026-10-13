@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 // This file is auto-generated and is for apps only. Bundles SHOULD NOT rely on its content.
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
@@ -1262,7 +1260,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     track_status_codes?: list<int|Param>,
  *     async?: bool|Param, // Record metrics asynchronously using Symfony Messenger (requires symfony/messenger) // Default: false
  *     sampling_rate?: float|Param, // Sampling rate for high-traffic routes (0.0 to 1.0, where 1.0 = 100% tracking). Reduces database load for frequently accessed routes. // Default: 1.0
- *     query_tracking_threshold?: int|Param, // Minimum query count to track query execution time. Queries below this threshold are counted but not timed individually. // Default: 0
+ *     query_tracking_threshold?: int|Param, // Deprecated: The "query_tracking_threshold" option at path "nowo_performance.query_tracking_threshold" is deprecated and ignored: it never had any effect (every query is counted and timed). Remove it from your configuration. // Deprecated and ignored: never had any effect. Every query is counted and timed. Remove it from your configuration. // Default: 0
  *     enable_access_records?: bool|Param, // Enable temporal access records tracking. Creates individual records for each route access with timestamp, status code, and response time. Useful for analyzing access patterns by time of day. // Default: false
  *     access_records_retention_days?: int|Param, // Retention period for access records in days. Records older than this are eligible for purge. Omit or null = keep all. Use the purge command or UI to clean old records. Example: 30 to keep only the last 30 days. // Default: null
  *     track_user?: bool|Param, // When access records are enabled, store the logged-in user identifier and user ID (if available) on each record. Requires Symfony Security. Disabled by default for privacy. // Default: false
@@ -1340,6 +1338,14 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     icon_set?: "bootstrap-icons"|"tabler-icons"|"ux_icon"|"svg_inline"|"none"|Param, // Icon rendering: bootstrap-icons|tabler-icons|ux_icon|svg_inline|none. // Default: "bootstrap-icons"
  *     row_actions_display?: "icon"|"text"|"icon_text"|Param, // Table/list row actions: icon (glyph only) | text (label only) | icon_text (both). // Default: "icon"
  *     panel_path_rewrites?: array<string, scalar|Param|null>,
+ *     release_check?: array{ // Optional GitHub release-version checker (footer dialog + JSON endpoint). Off by default.
+ *         enabled?: bool|Param, // Register the checker service + controller. Also import @NowoUiKitBundle/Resources/config/routes/release_check.yaml. // Default: false
+ *         github_repo?: scalar|Param|null, // Public GitHub repository "owner/name" whose releases are compared (e.g. nowo-tech/my-app). // Default: ""
+ *         current_version?: scalar|Param|null, // Installed version label, clean semver x.y.z with optional "v" (e.g. "%app.version%"). Non-semver values skip the check. // Default: ""
+ *         cache_ttl?: int|Param, // Seconds to cache the GitHub answer (cache.app). Default 12h. // Default: 43200
+ *         default_branch?: scalar|Param|null, // Branch used as compare target when the installed version is already the latest. // Default: "main"
+ *         user_agent?: scalar|Param|null, // User-Agent sent to api.github.com. // Default: "nowo-ui-kit-release-check"
+ *     },
  * }
  * @psalm-type TwigComponentConfig = array{
  *     defaults?: array<string, Param|string|array{ // Default: ["__deprecated__use_old_naming_behavior"]
@@ -1457,6 +1463,15 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     type_map?: array<string, scalar|Param|null>,
  *     default_profile?: scalar|Param|null, // Name of the profile to use when no profile is specified (key in profiles) // Default: "default"
  *     css_framework?: scalar|Param|null, // CSS framework for CssClassUtilities (column merge + class ordering): bootstrap, tailwind, foundation, none. // Default: "bootstrap"
+ *     stateless_csrf?: array{ // Give selected (usually anonymous/public) form types a stateless CSRF token id so rendering them does not start a session. Off by default.
+ *         enabled?: bool|Param, // Default: false
+ *         token_id?: scalar|Param|null, // csrf_token_id default applied to the listed form types. Must be listed in framework.csrf_protection.stateless_token_ids. // Default: "submit"
+ *         form_types?: list<scalar|Param|null>,
+ *         register_stateless_token_id?: bool|Param, // Prepend token_id to framework.csrf_protection.stateless_token_ids (enables framework CSRF protection if it was not configured). // Default: true
+ *     },
+ *     accessibility?: array{ // Accessibility helpers applied by kit form type extensions.
+ *         unlabelled_choice_aria_label?: bool|Param, // When true (default), non-expanded ChoiceType fields (and subtypes such as EntityType) rendered with label: false and no aria-label/aria-labelledby get aria-label from their translated help, else their placeholder. // Default: true
+ *     },
  *     profiles?: array<string, array{ // Default: []
  *         alias?: scalar|Param|null, // Alias for this profile (e.g. for reference in form types)
  *         translation_domain?: scalar|Param|null, // Default: "messages"
