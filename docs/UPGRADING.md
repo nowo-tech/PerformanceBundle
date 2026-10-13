@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## To 3.7.0
+
+From **3.6.0** — portable LIKE escaping, webhook redirects disabled, PHPStan in CI, Symfony >=7.4.
+
+```bash
+composer update nowo-tech/performance-bundle
+```
+
 - **Requirements:** Symfony **7.4** or **8.x** is now required (`^7.4 || ^8.0`, was `^7.0 || ^8.0`). Apps on Symfony 7.0–7.3 must upgrade to 7.4 LTS first (`composer update "symfony/*" --with-all-dependencies`).
 - **Webhook notifications:** redirects are no longer followed. If your webhook endpoint answers with a 3xx redirect, configure the final URL directly.
 
@@ -65,6 +73,7 @@ This guide helps you upgrade between versions of the Performance Bundle.
 
 ## Table of contents
 
+- [To 3.7.0](#to-370)
 - [To 3.6.0](#to-360)
 - [To 3.5.2](#to-352)
 - [To 3.5.1](#to-351)
