@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.7.3](#to-373)
 - [To 3.7.2](#to-372)
 - [To 3.7.1](#to-371)
 - [To 3.7.0](#to-370)
@@ -120,6 +121,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.7.3
+
+From **3.7.2**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 ## To 3.7.2
 

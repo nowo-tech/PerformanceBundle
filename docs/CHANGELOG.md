@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.7.3] - 2026-10-18](#373---2026-10-18)
 - [[3.7.2] - 2026-10-13](#372---2026-10-13)
 - [[3.7.1] - 2026-10-13](#371---2026-10-13)
 - [[3.7.0] - 2026-10-13](#370---2026-10-13)
@@ -76,6 +77,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[0.0.1] - 2026-01-26](#001---2026-01-26)
 
 ## [Unreleased]
+
+## [3.7.3] - 2026-10-18
+
+Allows nowo-tech/ui-kit-bundle 2.x (^1.4 || ^2.2) so hosts can move to UiKit 2.2. See [UPGRADING](UPGRADING.md#to-373).
 
 ### Changed
 
@@ -177,6 +182,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.7.3]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.7.3
 [3.7.2]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.7.2
 [3.7.1]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.7.1
 [3.7.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.7.0
