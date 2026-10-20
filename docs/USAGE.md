@@ -17,6 +17,7 @@
   - [Overriding Components](#overriding-components)
   - [Overriding the Complete Template](#overriding-the-complete-template)
   - [Available Variables](#available-variables)
+  - [Translation Overrides](#translation-overrides)
 - [Dashboard Features](#dashboard-features)
   - [Data Export](#data-export)
   - [Record Management](#record-management)

@@ -16,6 +16,7 @@
 - [Step 5: Verify Installation](#step-5-verify-installation)
 - [That's It!](#thats-it)
 - [Next Steps](#next-steps)
+- [Twig Extra Bundle (REQ-TWIG-004)](#twig-extra-bundle-req-twig-004)
 
 ## Requirements
 

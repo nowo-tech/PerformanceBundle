@@ -137,6 +137,10 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 - **FR-FORM-001**: Dashboard forms (`PerformanceFiltersType`, `RecordFiltersType`, `StatisticsEnvFilterType`, review/delete/clear/purge types) MUST validate filter payloads bound to model DTOs.
 - **FR-MDL-001**: Filter and request models MUST typehint controller/form bindings (`RecordFilters`, `RouteDataWithAggregates`, etc.).
 
+### Security (dashboard access)
+
+- **FR-SEC-001**: Dashboard routes MUST be guarded by `PerformanceAccessCheckerInterface` (REQ-UI-002): the default `ConfigurablePerformanceAccessChecker` requires `security.access_roles`; `AllowAllPerformanceAccessChecker` is used only when `security.allow_unauthenticated` is true (demo/dev).
+
 ### Web Profiler
 
 - **FR-PROF-001**: `PerformanceDataCollector` MUST expose route ranking, query stats, and table status in `@NowoPerformance/Collector/performance.html.twig`.
@@ -159,6 +163,7 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 ### Twig & UX components
 
 - **FR-TWIG-001**: `ArrayExtension` and `IconExtension` MUST supply dashboard helper functions/filters.
+- **FR-TWIG-003**: `TwigPathsPass` MUST register the `@NowoPerformanceBundle` namespace so application overrides under `templates/bundles/NowoPerformanceBundle/` win over bundle views (REQ-TWIG-001).
 - **FR-TWIG-002**: Optional Symfony UX Twig Components (`ChartsComponent`, `FiltersComponent`, `RoutesTableComponent`, `StatisticsComponent`) and matching templates MUST mirror dashboard functionality when UX is installed.
 
 ### CLI
@@ -182,7 +187,7 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 
 ## Success Criteria
 
-- **SC-001**: 100% of production files in `src/` mapped in [`code-inventory.md`](code-inventory.md) (**111/111**).
+- **SC-001**: 100% of production files in `src/` mapped in [`code-inventory.md`](code-inventory.md) (**120/120**, `git ls-files src`).
 - **SC-002**: Configuration keys in `docs/CONFIGURATION.md` match `Configuration.php`.
 - **SC-003**: PHPUnit and PHPStan pass in CI (`composer qa`).
 - **SC-004**: Dashboard exports produce valid CSV/JSON for filtered datasets.
@@ -215,6 +220,6 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 | Full QA | `composer qa` or `make release-check` |
 | PHP tests | `vendor/bin/phpunit` |
 | Static analysis | `vendor/bin/phpstan analyse` |
-| Code inventory | `find src -type f \| wc -l` must match inventory total (111) |
+| Code inventory | `git ls-files src \| wc -l` must match inventory total (120) |
 
 When changing behavior, update this spec, [`code-inventory.md`](code-inventory.md), tests, and integrator docs.

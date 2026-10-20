@@ -6,10 +6,10 @@ The bundle includes a full notification system for performance alerts, supportin
 ## Table of contents
 
 - [Available Channels](#available-channels)
-  - [📧 Email](#email)
-  - [💬 Slack](#slack)
-  - [👥 Microsoft Teams](#microsoft-teams)
-  - [🔗 Generic Webhooks](#generic-webhooks)
+  - [📧 Email](#-email)
+  - [💬 Slack](#-slack)
+  - [👥 Microsoft Teams](#-microsoft-teams)
+  - [🔗 Generic Webhooks](#-generic-webhooks)
 - [Full Configuration](#full-configuration)
 - [How It Works](#how-it-works)
 - [Creating Custom Channels](#creating-custom-channels)

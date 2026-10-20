@@ -9,6 +9,21 @@
 | **Verdict** | ✅ **Viable under scenario B** (after remediation in 3.4.7) — memory peak is reset per main request, no process-wide `error_reporting`/output-buffer mutation can leak, persisted entities are detached after each write, and the profiler collector is reset per main request. Residual: notifications are still sent synchronously in `kernel.terminate` (W-05, accepted) |
 | Remediation (2026-09-24) | W-01…W-04 resolved in `PerformanceMetricsSubscriber` and `PerformanceMetricsService`; W-05 accepted; invalid YAML in `services_twig_component.yaml` fixed. Regression tests: `tests/Unit/EventSubscriber/PerformanceMetricsSubscriberWorkerModeTest.php`, `tests/Unit/Service/PerformanceMetricsServiceWorkerModeTest.php` |
 
+## Table of contents
+
+- [Execution model assumed](#execution-model-assumed)
+- [Summary](#summary)
+- [Services reviewed](#services-reviewed)
+- [Findings](#findings)
+  - [W-01 — Memory metric uses the worker-lifetime peak (Medium)](#w-01--memory-metric-uses-the-worker-lifetime-peak-medium)
+  - [W-02 — `error_reporting(0)` and an output buffer can leak to later requests on `\Error` (Medium)](#w-02--error_reporting0-and-an-output-buffer-can-leak-to-later-requests-on-error-medium)
+  - [W-03 — Doctrine identity map is never cleared by the bundle (Medium, scenario B only)](#w-03--doctrine-identity-map-is-never-cleared-by-the-bundle-medium-scenario-b-only)
+  - [W-04 — Profiler collector loses `async` after the first reset and can show a stale record status (Low)](#w-04--profiler-collector-loses-async-after-the-first-reset-and-can-show-a-stale-record-status-low)
+  - [W-05 — Notifications block the worker thread in `kernel.terminate` (Low)](#w-05--notifications-block-the-worker-thread-in-kernelterminate-low)
+  - [Info](#info)
+- [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
+- [Re-audit triggers](#re-audit-triggers)
+
 ## Execution model assumed
 
 FrankenPHP worker mode boots the Symfony kernel once per worker and serves many requests with the same container. This audit assumes the **strict** variant: the kernel is **not** rebooted between requests, so every shared service, static property and PHP global survives from one request to the next. Two scenarios are evaluated:

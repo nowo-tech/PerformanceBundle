@@ -1,5 +1,17 @@
 # Security — Performance Bundle
 
+## Table of contents
+
+- [Scope](#scope)
+- [Attack surface](#attack-surface)
+- [Threats and mitigations](#threats-and-mitigations)
+- [Admin UI guard (REQ-UI-002)](#admin-ui-guard-req-ui-002)
+- [Secrets and cryptography](#secrets-and-cryptography)
+- [Logging](#logging)
+- [Dependencies](#dependencies)
+- [Reporting a vulnerability](#reporting-a-vulnerability)
+- [Release security checklist (12.4.1)](#release-security-checklist-1241)
+
 ## Scope
 
 This Symfony bundle **tracks route performance metrics** (timing, database query counts, optional memory and status codes), may persist data to a **database**, and can expose a **dashboard**, **exports**, and **notifications** (e.g. email, Slack, webhooks). It must be configured with appropriate **access control** and used with **least privilege** in production.

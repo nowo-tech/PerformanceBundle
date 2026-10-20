@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/performance-bundle`  
-**Last audited**: 2026-07-07
+**Last audited**: 2026-10-20
 
 This file proves that **every production source artifact** under `src/` is referenced by the baseline specification. Test-only files under `tests/` and demo trees are out of Packagist scope unless promoted in the spec.
 
@@ -16,6 +16,7 @@ This file proves that **every production source artifact** under `src/` is refer
 | `DependencyInjection/Compiler/QueryTrackingMiddlewarePass.php` | DBAL middleware registration | FR-DBAL-001 |
 | `DependencyInjection/Compiler/TableNamePass.php` | Dynamic table name params | FR-DBAL-002 |
 | `DependencyInjection/Compiler/NotificationChannelsPass.php` | Notification channel tagging | FR-NOTIF-001 |
+| `DependencyInjection/Compiler/TwigPathsPass.php` | Twig namespace; app overrides under templates/bundles win (REQ-TWIG-001) | FR-TWIG-003 |
 | `Command/CheckDependenciesCommand.php` | CLI dependency check | FR-CLI-001 |
 | `Command/CreateTableCommand.php` | CLI create aggregates table | FR-CLI-001 |
 | `Command/CreateRecordsTableCommand.php` | CLI create access records table | FR-CLI-001 |
@@ -43,6 +44,9 @@ This file proves that **every production source artifact** under `src/` is refer
 | `EventSubscriber/RouteDataRecordTableNameSubscriber.php` | Records table name | FR-DBAL-002 |
 | `DBAL/QueryTrackingMiddleware.php` | Doctrine query middleware | FR-DBAL-001 |
 | `DBAL/QueryTrackingMiddlewareRegistry.php` | Middleware registry | FR-DBAL-001 |
+| `DBAL/QueryTrackingConnection.php` | Connection wrapper that tracks queries | FR-DBAL-001 |
+| `DBAL/QueryTrackingCounters.php` | Request-scoped query counters (reset via kernel.reset) | FR-DBAL-001, FR-WORKER-001 |
+| `DBAL/QueryTrackingMiddlewareResetter.php` | Clears query counters between requests | FR-DBAL-001, FR-WORKER-001 |
 | `DataCollector/PerformanceDataCollector.php` | Web Profiler panel | FR-PROF-001 |
 | `Message/RecordMetricsMessage.php` | Async metrics message | FR-MSG-001 |
 | `MessageHandler/RecordMetricsMessageHandler.php` | Async metrics handler | FR-MSG-001 |
@@ -76,8 +80,13 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Model/DeleteRecordsByFilterRequest.php` | Delete-by-filter DTO | FR-MDL-001 |
 | `Model/PurgeAccessRecordsRequest.php` | Purge request DTO | FR-MDL-001 |
 | `Helper/LogHelper.php` | Conditional logging | FR-SVC-005 |
+| `Helper/DbalSchemaNameHelper.php` | DBAL schema asset names without deprecated APIs | FR-DBAL-002 |
+| `Security/PerformanceAccessCheckerInterface.php` | Dashboard access control contract (REQ-UI-002) | FR-SEC-001 |
+| `Security/ConfigurablePerformanceAccessChecker.php` | Role-based checker (`security.access_roles`) | FR-SEC-001 |
+| `Security/AllowAllPerformanceAccessChecker.php` | Permissive checker when `security.allow_unauthenticated` is true (demo/dev) | FR-SEC-001 |
 | `Twig/ArrayExtension.php` | Array Twig helpers | FR-TWIG-001 |
 | `Twig/IconExtension.php` | Icon Twig helpers | FR-TWIG-001 |
+| `Twig/PerformanceLayoutExtension.php` | Dashboard layout Twig globals | FR-DASH-002, FR-TWIG-001 |
 | `Twig/Component/ChartsComponent.php` | UX Charts component | FR-TWIG-002 |
 | `Twig/Component/FiltersComponent.php` | UX Filters component | FR-TWIG-002 |
 | `Twig/Component/RoutesTableComponent.php` | UX Routes table component | FR-TWIG-002 |
@@ -97,16 +106,16 @@ This file proves that **every production source artifact** under `src/` is refer
 | --- | --- | --- |
 | `NowoPerformanceBundle.en.yaml` | English catalog | FR-I18N-001 |
 | `NowoPerformanceBundle.es.yaml` | Spanish catalog | FR-I18N-001 |
-| `nowo_performance.ca.yaml` | Catalan catalog | FR-I18N-001 |
-| `nowo_performance.cs.yaml` | Czech catalog | FR-I18N-001 |
-| `nowo_performance.de.yaml` | German catalog | FR-I18N-001 |
-| `nowo_performance.fr.yaml` | French catalog | FR-I18N-001 |
-| `nowo_performance.it.yaml` | Italian catalog | FR-I18N-001 |
-| `nowo_performance.nl.yaml` | Dutch catalog | FR-I18N-001 |
-| `nowo_performance.pl.yaml` | Polish catalog | FR-I18N-001 |
-| `nowo_performance.pt.yaml` | Portuguese catalog | FR-I18N-001 |
-| `nowo_performance.ru.yaml` | Russian catalog | FR-I18N-001 |
-| `nowo_performance.tr.yaml` | Turkish catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.ca.yaml` | Catalan catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.cs.yaml` | Czech catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.de.yaml` | German catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.fr.yaml` | French catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.it.yaml` | Italian catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.nl.yaml` | Dutch catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.pl.yaml` | Polish catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.pt.yaml` | Portuguese catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.ru.yaml` | Russian catalog | FR-I18N-001 |
+| `NowoPerformanceBundle.tr.yaml` | Turkish catalog | FR-I18N-001 |
 
 ## Twig views (`src/Resources/views/`)
 
@@ -118,7 +127,7 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Performance/diagnose.html.twig` | Diagnose page | FR-DASH-002 |
 | `Performance/access_records.html.twig` | Access records list | FR-DASH-002 |
 | `Performance/access_statistics.html.twig` | Temporal statistics | FR-DASH-002 |
-| `Performance/access_statistics_disabled.html.twig` | Disabled access stats notice | FR-DASH-002 |
+| `Performance/layout.html.twig` | Dashboard page layout extended by the views | FR-DASH-002 |
 | `Performance/components/_filters_bootstrap.html.twig` | Bootstrap filters partial | FR-DASH-003 |
 | `Performance/components/_filters_tailwind.html.twig` | Tailwind filters partial | FR-DASH-003 |
 | `Performance/components/_statistics_bootstrap.html.twig` | Bootstrap statistics partial | FR-DASH-003 |
@@ -141,8 +150,10 @@ This file proves that **every production source artifact** under `src/` is refer
 
 | Category | Files | Mapped |
 | --- | ---: | ---: |
-| PHP classes | 72 | 72 |
-| YAML config | 3 | 3 |
-| Translation catalogs | 12 | 12 |
-| Twig views | 24 | 24 |
-| **Total production sources** | **111** | **111** |
+| PHP classes (`src/**/*.php`) | 81 | 81 |
+| Symfony config (`src/Resources/config/`) | 3 | 3 |
+| Translations (`src/Resources/translations/`) | 12 | 12 |
+| Twig views (`src/Resources/views/`) | 24 | 24 |
+| **Total production files (`git ls-files src`)** | **120** | **120** |
+
+Audit: `git ls-files src | wc -l` → **120**.
