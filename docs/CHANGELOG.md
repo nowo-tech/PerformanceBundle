@@ -78,6 +78,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Dependencies refreshed (Composer and pnpm/npm lock files of the bundle and its demos, campaign 2026-10-19).
+- `.php-cs-fixer.dist.php`: `new ParallelConfig(2)` (REQ-CS-001).
+
 ### Documentation
 
 - Documentation: wave-1 REQ compliance — README documentation list order, GitHub stars and Coverage badges, canonical FrankenPHP worker claim, canonical issue templates, per-variable comments in the demo `.env.example`, CONTRIBUTING Cursor Agent settings, TOCs for long docs, Spec Kit inventory refresh (120/120, `NowoPerformanceBundle.*` catalog names, FR-SEC-001 and FR-TWIG-003).
