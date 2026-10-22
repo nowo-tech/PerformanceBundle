@@ -1043,7 +1043,7 @@
         },
         {
             "name": "nowo-tech/performance-bundle",
-            "version": "dev-chore/req-wave2",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "/var/performance-bundle",
