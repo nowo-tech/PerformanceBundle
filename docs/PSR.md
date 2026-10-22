@@ -23,14 +23,14 @@ Others are **N/A** (or already covered by Symfony) so the decision stays auditab
 
 | PSR | Decision | Notes |
 | --- | -------- | ----- |
-| PSR-3 Logger | **N/A** | Logging calls exist but there is no public/injectable logger SPI yet; do not add `psr/log` without type-hints. |
+| PSR-3 Logger | **Adopted** | `PerformanceMetricsSubscriber`, `PerformanceMetricsService`, `NotificationService` and the email / webhook notification channels take an optional `Psr\Log\LoggerInterface` (autowired `logger`); diagnostics go to `debug` (gated by `enable_logging`), delivery failures to `warning`. The static `LogHelper` (`error_log`) is deprecated. `psr/log` in `require`. |
 | PSR-6 Caching | **Adopted** | Uses `Psr\Cache\` contracts where item metadata/tags matter. |
 | PSR-7 / PSR-17 HTTP messages | **N/A** | Symfony HttpFoundation (or no HTTP messages API) is the correct surface; a PSR-7 bridge would not help consumers. |
 | PSR-18 HTTP client | **N/A** | Outbound HTTP uses Symfony `HttpClientInterface` (or a package transport) as the supported SPI instead of PSR-18. |
 | PSR-11 Container | **Adopted (narrow)** | Uses `Psr\Container\ContainerInterface` only as a **closed plugin/strategy registry** (documented service ids), not as a general service locator. |
 | PSR-14 Event dispatcher | **Already satisfied via Symfony** | Uses Symfony `EventDispatcherInterface` / subscribers (PSR-14 compatible). No separate FIG dependency required. |
 | PSR-15 HTTP middleware | **N/A** | Uses Symfony kernel listeners/subscribers (or has no HTTP middleware pipeline). |
-| PSR-20 Clock | **N/A** | Uses `DateTimeImmutable` / system time internally; no injectable clock SPI yet. Re-evaluate if tests need time freezing at the boundary. |
+| PSR-20 Clock | **Deferred** | Re-evaluated 2026-10-21: ~30 call sites (entities, retention purge, statistics windows, repositories) build `DateTimeImmutable` from system time. Adopting a clock means threading `ClockInterface` through repositories and entities — planned for a minor with UPGRADING notes; until then tests pass explicit dates. |
 
 ## Summary
 
@@ -40,4 +40,4 @@ Others are **N/A** (or already covered by Symfony) so the decision stays auditab
 
 ---
 
-_REQ-CS-007 evaluation date: 2026-08-21._
+_REQ-CS-007 evaluation date: 2026-10-21 (PSR-3 adopted, PSR-20 re-evaluated)._

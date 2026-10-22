@@ -1,5 +1,17 @@
 {
 	order mercure after encode
+	# Timeout hierarchy (REQ-RUNTIME-001): webhook notifications http_timeout 10 s
+	# < PHP max_execution_time 30 s < Caddy write timeout 60 s; max_wait_time caps the queue.
+	servers {
+		timeouts {
+			write 60s
+		}
+	}
+	frankenphp {
+		php_ini max_execution_time 30
+		php_ini max_input_time 30
+		max_wait_time 30s
+	}
 	skip_install_trust
 }
 

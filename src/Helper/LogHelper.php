@@ -12,6 +12,9 @@ use function sprintf;
 /**
  * Helper class for logging in the Performance Bundle.
  *
+ * @deprecated since 3.8, the bundle services log through an injected Psr\Log\LoggerInterface (REQ-OBS-001); this
+ *             error_log() helper is no longer used internally and will be removed in 4.0.
+ *
  * Provides a centralized way to check if logging is enabled and perform logging
  * operations that respect the bundle's logging configuration.
  *

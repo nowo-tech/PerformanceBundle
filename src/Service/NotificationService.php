@@ -7,10 +7,12 @@ namespace Nowo\PerformanceBundle\Service;
 use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+
+use function sprintf;
 
 /**
  * Service for sending performance notifications.
@@ -32,6 +34,7 @@ class NotificationService
         private readonly iterable $channels = [],
         #[Autowire('%nowo_performance.notifications.enabled%')]
         private readonly bool $enabled = false,
+        private readonly ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -57,9 +60,9 @@ class NotificationService
                     $results[$channel->getName()] = $channel->send($alert, $context);
                 } catch (Exception $e) {
                     // Log error but don't throw (logging enabled by default for backward compatibility)
-                    LogHelper::logf(
+                    $this->bundleLog(
+                        'warning',
                         'Failed to send notification via channel %s: %s',
-                        null,
                         $channel->getName(),
                         $e->getMessage(),
                     );
@@ -94,5 +97,17 @@ class NotificationService
         }
 
         return $enabled;
+    }
+
+    /**
+     * Logs through the injected PSR-3 logger (REQ-OBS-001 / REQ-DI-001).
+     *
+     * @param string $level PSR-3 level
+     * @param string $format sprintf() format (used verbatim when no arguments are given)
+     * @param mixed ...$args sprintf() arguments
+     */
+    private function bundleLog(string $level, string $format, mixed ...$args): void
+    {
+        $this->logger?->log($level, $args === [] ? $format : sprintf($format, ...$args), ['bundle' => 'performance']);
     }
 }

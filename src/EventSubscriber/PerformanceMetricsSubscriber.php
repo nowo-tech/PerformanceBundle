@@ -8,8 +8,8 @@ use Doctrine\DBAL\Logging\Middleware;
 use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
-use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -139,6 +139,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         #[Autowire(service: '?kernel')]
         private readonly ?KernelInterface $kernel = null,
         private readonly ?QueryTrackingCounters $queryCounters = null,
+        private readonly ?LoggerInterface $logger = null,
     ) {
         $this->subRequestStates = new WeakMap();
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
@@ -224,7 +225,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
 
         // When bundle is disabled: avoid any further work (no metrics, no query tracking, no DB)
         if (!$this->enabled) {
-            LogHelper::log('[PerformanceBundle] Tracking disabled: enabled=false', $this->enableLogging);
+            $this->bundleLog('debug', '[PerformanceBundle] Tracking disabled: enabled=false');
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setEnabled(false);
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
@@ -233,23 +234,23 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             return;
         }
 
-        LogHelper::logf(
+        $this->bundleLog(
+            'debug',
             '[PerformanceBundle] Environment detection: kernel=%s, detected_env=%s, allowed=%s',
-            $this->enableLogging,
             $this->kernel instanceof KernelInterface ? $this->kernel->getEnvironment() : 'null',
             $env,
             implode(', ', $this->environments),
         );
 
         if (!in_array($env, $this->environments, true)) {
-            LogHelper::logf('[PerformanceBundle] Tracking disabled: env=%s not in allowed environments: %s', $this->enableLogging, $env, implode(', ', $this->environments));
+            $this->bundleLog('debug', '[PerformanceBundle] Tracking disabled: env=%s not in allowed environments: %s', $env, implode(', ', $this->environments));
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setEnabled(false);
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setDisabledReason(sprintf('Environment "%s" is not in allowed environments: %s', $env, implode(', ', $this->environments)));
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] DataCollector setEnabled(false) - reason: Environment not allowed, isEnabled()=%s',
-                $this->enableLogging,
                 $this->dataCollector->isEnabled() ? 'true' : 'false',
             );
 
@@ -260,15 +261,15 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         $this->dataCollector->setEnabled(true);
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setDisabledReason(null); // Clear any previous reason
-        LogHelper::logf(
+        $this->bundleLog(
+            'debug',
             '[PerformanceBundle] DataCollector setEnabled(true) - isEnabled()=%s',
-            $this->enableLogging,
             $this->dataCollector->isEnabled() ? 'true' : 'false',
         );
 
-        LogHelper::logf(
+        $this->bundleLog(
+            'debug',
             '[PerformanceBundle] onKernelRequest: Collector enabled, route=%s, env=%s, trackQueries=%s, trackRequestTime=%s, trackSubRequests=%s',
-            $this->enableLogging,
             $this->routeName ?? 'null',
             $env,
             $this->trackQueries ? 'true' : 'false',
@@ -290,7 +291,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
 
         // Only log if route name is available (to reduce noise from asset/profiler routes)
         if ($this->routeName !== null) {
-            LogHelper::logf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=main', $this->enableLogging, $this->routeName, $env);
+            $this->bundleLog('debug', '[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=main', $this->routeName, $env);
         }
 
         // Start timing
@@ -409,15 +410,15 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->dataCollector->setRouteName($this->routeName);
 
-        LogHelper::logf(
+        $this->bundleLog(
+            'debug',
             '[PerformanceBundle] onKernelTerminate: Route check - storedRoute=%s, requestRoute=%s',
-            $this->enableLogging,
             $this->routeName ?? 'null',
             $routeNameFromRequest ?? 'null',
         );
 
         if ($this->routeName === null) {
-            LogHelper::log('[PerformanceBundle] onKernelTerminate: routeName is null, skipping', $this->enableLogging);
+            $this->bundleLog('debug', '[PerformanceBundle] onKernelTerminate: routeName is null, skipping');
             // Inform collector that no route name was available
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
@@ -426,9 +427,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         }
 
         if (!in_array($env, $this->environments, true)) {
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] onKernelTerminate: env=%s not in allowed environments (%s), skipping',
-                $this->enableLogging,
                 $env,
                 implode(', ', $this->environments),
             );
@@ -445,15 +446,15 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             $requestTime = microtime(true) - $this->startTime;
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRequestTime($requestTime);
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] onKernelTerminate: Request time calculated: %s seconds',
-                $this->enableLogging,
                 (string) $requestTime,
             );
         } else {
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] onKernelTerminate: Request time not tracked (trackRequestTime=%s, startTime=%s)',
-                $this->enableLogging,
                 $this->trackRequestTime ? 'true' : 'false',
                 $this->startTime !== null ? 'set' : 'null',
             );
@@ -470,14 +471,14 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             $this->dataCollector->setQueryCount($queryCount);
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setQueryTime($queryTime);
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] onKernelTerminate: Query metrics: count=%s, time=%s',
-                $this->enableLogging,
                 (string) $queryCount,
                 (string) $queryTime,
             );
         } else {
-            LogHelper::log('[PerformanceBundle] onKernelTerminate: Query tracking disabled', $this->enableLogging);
+            $this->bundleLog('debug', '[PerformanceBundle] onKernelTerminate: Query tracking disabled');
         }
 
         // Calculate peak memory usage
@@ -489,13 +490,13 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             if ($memoryUsage < 0) {
                 $memoryUsage = $peakMemory;
             }
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] onKernelTerminate: Memory usage: %s bytes',
-                $this->enableLogging,
                 (string) $memoryUsage,
             );
         } else {
-            LogHelper::log('[PerformanceBundle] onKernelTerminate: Memory tracking not started (startMemory is null)', $this->enableLogging);
+            $this->bundleLog('debug', '[PerformanceBundle] onKernelTerminate: Memory tracking not started (startMemory is null)');
         }
 
         // Get HTTP method
@@ -509,9 +510,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         // Apply sampling: skip recording if random value is above sampling rate
         if ($this->samplingRate < 1.0 && mt_rand(1, 10000) / 10000 > $this->samplingRate) {
             // Sampling: skip this request
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] onKernelTerminate: skipping due to sampling (rate=%.2f%%)',
-                $this->enableLogging,
                 $this->samplingRate * 100,
             );
             // Inform collector that no data was saved due to sampling
@@ -525,9 +526,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         $obStarted = $this->openOutputBuffer();
 
         try {
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] Attempting to save metrics: route=%s, env=%s, method=%s, statusCode=%s, requestTime=%s, queryCount=%s, queryTime=%s, memoryUsage=%s, samplingRate=%s',
-                $this->enableLogging,
                 $this->routeName ?? 'null',
                 $env,
                 $httpMethod,
@@ -550,7 +551,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             // "@" silences warnings (no output) and, unlike error_reporting(0), the engine restores the
             // process-wide level even when an exception is thrown, so a long-running worker never keeps it.
             $result = @$this->metricsService->recordMetrics(
-                $this->routeName,
+                (string) $this->routeName, // non-null: checked at the start of onKernelTerminate()
                 $env,
                 $requestTime,
                 $queryCount,
@@ -567,9 +568,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                 $routePath,
             );
 
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] recordMetrics returned: is_new=%s, was_updated=%s',
-                $this->enableLogging,
                 ($result['is_new'] ?? false) ? 'true' : 'false',
                 ($result['was_updated'] ?? false) ? 'true' : 'false',
             );
@@ -580,18 +581,18 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                 // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
                 $this->dataCollector->setRecordOperation($result['is_new'], $result['was_updated']);
 
-                LogHelper::logf(
+                $this->bundleLog(
+                    'debug',
                     '[PerformanceBundle] Metrics saved successfully for route: %s (is_new=%s, was_updated=%s)',
-                    $this->enableLogging,
                     $this->routeName ?? 'null',
                     $result['is_new'] ? 'true' : 'false',
                     $result['was_updated'] ? 'true' : 'false',
                 );
             } else {
                 // If result doesn't have the expected keys, log warning and assume no operation occurred
-                LogHelper::logf(
+                $this->bundleLog(
+                    'debug',
                     '[PerformanceBundle] WARNING: recordMetrics returned unexpected result format for route: %s. Result keys: %s',
-                    $this->enableLogging,
                     $this->routeName ?? 'null',
                     implode(', ', array_keys($result)),
                 );
@@ -601,9 +602,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             }
         } catch (Throwable $e) {
             // Log the error for debugging
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] Error saving metrics for route %s: %s (file: %s, line: %s)',
-                $this->enableLogging,
                 $this->routeName ?? 'null',
                 $e->getMessage(),
                 $e->getFile(),
@@ -616,9 +617,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                 || str_contains($msg, "Field 'id' doesn't have a default value")
                 || str_contains($msg, "doesn't have a default value");
             if ($this->enableLogging && $schemaHint) {
-                LogHelper::logf(
+                $this->bundleLog(
+                    'debug',
                     '[PerformanceBundle] Hint: If routes_data_records has schema issues (missing columns, id without AUTO_INCREMENT), run: php bin/console nowo:performance:sync-schema',
-                    $this->enableLogging,
                 );
             }
 
@@ -720,7 +721,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             'queryTime'   => $this->queryCounters?->getTotalQueryTime() ?? 0.0,
         ];
 
-        LogHelper::logf('[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=sub', $this->enableLogging, $routeName, $env);
+        $this->bundleLog('debug', '[PerformanceBundle] Tracking enabled: route="%s", env=%s, request_type=sub', $routeName, $env);
     }
 
     /**
@@ -764,9 +765,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                     $metrics['routePath'],
                 );
             } catch (Throwable $e) {
-                LogHelper::logf(
+                $this->bundleLog(
+                    'debug',
                     '[PerformanceBundle] Error saving sub-request metrics for route %s: %s',
-                    $this->enableLogging,
                     $metrics['route'],
                     $e->getMessage(),
                 );
@@ -903,9 +904,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                 }
 
                 // Also try _profiler_profile (alternative attribute name)
-                if ($profilerProfile === null) {
-                    $profilerProfile = $request->attributes->get('_profiler_profile');
-                }
+                $profilerProfile ??= $request->attributes->get('_profiler_profile');
 
                 if ($profilerProfile !== null && is_object($profilerProfile)) {
                     // Try to get DoctrineDataCollector
@@ -1017,5 +1016,21 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         }
 
         return false;
+    }
+
+    /**
+     * Logs through the injected PSR-3 logger when bundle logging is enabled (REQ-OBS-001 / REQ-DI-001).
+     *
+     * @param string $level PSR-3 level
+     * @param string $format sprintf() format (used verbatim when no arguments are given)
+     * @param mixed ...$args sprintf() arguments
+     */
+    private function bundleLog(string $level, string $format, mixed ...$args): void
+    {
+        if (!$this->enableLogging) {
+            return;
+        }
+
+        $this->logger?->log($level, $args === [] ? $format : sprintf($format, ...$args), ['bundle' => 'performance']);
     }
 }

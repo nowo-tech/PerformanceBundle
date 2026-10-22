@@ -12,6 +12,7 @@
   - [Command Options](#command-options)
 - [Overriding templates (REQ-TWIG-001)](#overriding-templates-req-twig-001)
 - [Customizing the Dashboard View](#customizing-the-dashboard-view)
+- [Extension points (non-final classes)](#extension-points-non-final-classes)
   - [CSS Framework Selection](#css-framework-selection)
   - [Component Structure](#component-structure)
   - [Overriding Components](#overriding-components)
@@ -621,3 +622,14 @@ nowo_performance:
 nowo_performance:
     connection: 'metrics'
 ```
+
+## Extension points (non-final classes)
+
+New classes are `final` by default (REQ-PHP-001). The classes below stay open on purpose in 3.x:
+
+| Classes | Why they are not final |
+| --- | --- |
+| `Entity\RouteData`, `Entity\RouteDataRecord` | Doctrine ORM lazy-loading proxies extend entity classes. |
+| `Service\PerformanceMetricsService`, `Service\PerformanceCacheService`, `Service\PerformanceAnalysisService`, `Service\NotificationService`, `Service\TableStatusChecker`, `Service\DependencyChecker`, `Repository\RouteDataRepository`, `Repository\RouteDataRecordRepository`, `DataCollector\PerformanceDataCollector` | Public 3.x services that hosts decorate or subclass; prefer service decoration (`#[AsDecorator]`) over inheritance. |
+| `EventSubscriber\*`, `DBAL\*`, `Controller\PerformanceController`, `Command\Create*TableCommand`, `Form\*`, `Twig\ArrayExtension`, `Twig\IconExtension`, `DependencyInjection\Compiler\*` | Registered by class name since 1.x/2.x; making them final is a BC break scheduled for 4.0 (UPGRADING.md will list it). |
+

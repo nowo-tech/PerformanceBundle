@@ -10,10 +10,10 @@ use function call_user_func;
  * Adapter that wraps Symfony Messenger's message bus (when available) for use with PerformanceMetricsService.
  * When Messenger is not installed, the wrapped bus is null and dispatch() is a no-op.
  */
-final class MessengerBusAdapter implements MessageBusInterface
+final readonly class MessengerBusAdapter implements MessageBusInterface
 {
     public function __construct(
-        private readonly ?object $bus = null,
+        private ?object $bus = null,
     ) {
     }
 

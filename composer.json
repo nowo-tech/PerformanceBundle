@@ -16,17 +16,13 @@
         "query-tracking",
         "performance-analysis",
         "doctrine",
-        "doctrine-orm",
-        "orm",
-        "database",
-        "mysql",
-        "postgresql",
-        "sqlite"
+        "doctrine-orm"
     ],
     "homepage": "https://github.com/nowo-tech/PerformanceBundle",
     "support": {
         "issues": "https://github.com/nowo-tech/PerformanceBundle/issues",
-        "source": "https://github.com/nowo-tech/PerformanceBundle"
+        "source": "https://github.com/nowo-tech/PerformanceBundle",
+        "docs": "https://github.com/nowo-tech/PerformanceBundle/blob/main/README.md"
     },
     "authors": [
         {
@@ -47,6 +43,7 @@
         "nowo-tech/form-kit-bundle": "^2.2",
         "nowo-tech/ui-kit-bundle": "^1.4 || ^2.2",
         "php": ">=8.2 <8.6",
+        "psr/log": "^1.1 || ^2.0 || ^3.0",
         "symfony/form": "^7.4 || ^8.0",
         "symfony/framework-bundle": "^7.4 || ^8.0",
         "symfony/security-bundle": "^7.4 || ^8.0",

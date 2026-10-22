@@ -457,8 +457,6 @@ final class PerformanceDataCollectorTest extends TestCase
 
     /**
      * When TableStatusChecker::getMainTableStatus() throws, collect() catches and continues (silent fail).
-     *
-     * @covers \Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector::collect
      */
     public function testCollectSwallowsExceptionWhenTableStatusCheckerThrows(): void
     {
@@ -544,8 +542,6 @@ final class PerformanceDataCollectorTest extends TestCase
 
     /**
      * When repository throws (e.g. table missing), collect() catches and continues (silent fail).
-     *
-     * @covers \Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector::collect
      */
     public function testCollectSwallowsExceptionWhenRepositoryThrows(): void
     {
@@ -569,8 +565,6 @@ final class PerformanceDataCollectorTest extends TestCase
 
     /**
      * When repository returns RouteData but recordRepository is null, accessCount is null (ternary else branch).
-     *
-     * @covers \Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector::collect
      */
     public function testCollectWithRepositoryWithoutRecordRepositorySetsAccessCountNull(): void
     {

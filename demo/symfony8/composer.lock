@@ -1043,11 +1043,11 @@
         },
         {
             "name": "nowo-tech/performance-bundle",
-            "version": "dev-main",
+            "version": "dev-chore/req-wave2",
             "dist": {
                 "type": "path",
                 "url": "/var/performance-bundle",
-                "reference": "e95198a62ed334fc3d5f1489d362088427f9ef90"
+                "reference": "c9e36a39391d860a9e85c1b41cc411c31c7388b5"
             },
             "require": {
                 "doctrine/dbal": "^3.8.2 || ^4.0",
@@ -1056,6 +1056,7 @@
                 "nowo-tech/form-kit-bundle": "^2.2",
                 "nowo-tech/ui-kit-bundle": "^1.4 || ^2.2",
                 "php": ">=8.2 <8.6",
+                "psr/log": "^1.1 || ^2.0 || ^3.0",
                 "symfony/form": "^7.4 || ^8.0",
                 "symfony/framework-bundle": "^7.4 || ^8.0",
                 "symfony/security-bundle": "^7.4 || ^8.0",
@@ -1185,27 +1186,23 @@
             "homepage": "https://github.com/nowo-tech/PerformanceBundle",
             "keywords": [
                 "bundle",
-                "database",
                 "doctrine",
                 "doctrine-orm",
                 "metrics",
                 "monitoring",
-                "mysql",
-                "orm",
                 "performance",
                 "performance-analysis",
                 "php",
-                "postgresql",
                 "profiling",
                 "query-tracking",
                 "route-performance",
-                "sqlite",
                 "symfony",
                 "symfony-bundle"
             ],
             "support": {
                 "issues": "https://github.com/nowo-tech/PerformanceBundle/issues",
-                "source": "https://github.com/nowo-tech/PerformanceBundle"
+                "source": "https://github.com/nowo-tech/PerformanceBundle",
+                "docs": "https://github.com/nowo-tech/PerformanceBundle/blob/main/README.md"
             },
             "transport-options": {
                 "relative": false

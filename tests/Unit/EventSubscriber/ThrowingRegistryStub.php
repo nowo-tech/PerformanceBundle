@@ -14,10 +14,10 @@ use Exception;
  * Stub ManagerRegistry that throws from getConnection() to trigger the subscriber's catch block.
  * Implements only the methods used by QueryTrackingMiddlewareRegistry::applyMiddleware (getConnection).
  */
-final class ThrowingRegistryStub implements ManagerRegistry
+final readonly class ThrowingRegistryStub implements ManagerRegistry
 {
     public function __construct(
-        private readonly string $message = 'connection error',
+        private string $message = 'connection error',
     ) {
     }
 

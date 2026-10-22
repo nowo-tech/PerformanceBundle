@@ -9,10 +9,10 @@ use Symfony\Contracts\Service\ResetInterface;
 /**
  * Clears query-tracking counters between requests (FrankenPHP worker / long-lived FPM).
  */
-final class QueryTrackingMiddlewareResetter implements ResetInterface
+final readonly class QueryTrackingMiddlewareResetter implements ResetInterface
 {
     public function __construct(
-        private readonly QueryTrackingCounters $counters,
+        private QueryTrackingCounters $counters,
     ) {
     }
 

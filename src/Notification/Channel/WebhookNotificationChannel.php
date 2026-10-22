@@ -7,9 +7,9 @@ namespace Nowo\PerformanceBundle\Notification\Channel;
 use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 use function filter_var;
@@ -32,7 +32,7 @@ use const FILTER_VALIDATE_IP;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-final class WebhookNotificationChannel implements NotificationChannelInterface
+final readonly class WebhookNotificationChannel implements NotificationChannelInterface
 {
     /**
      * Creates a new instance.
@@ -45,12 +45,13 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
      * @param float $timeout HTTP timeout in seconds (from nowo_performance.notifications.http_timeout)
      */
     public function __construct(
-        private readonly ?HttpClientInterface $httpClient,
-        private readonly string $webhookUrl = '',
-        private readonly string $format = 'json',
-        private readonly array $headers = [],
-        private readonly bool $enabled = false,
-        private readonly float $timeout = 10.0,
+        private ?HttpClientInterface $httpClient,
+        private string $webhookUrl = '',
+        private string $format = 'json',
+        private array $headers = [],
+        private bool $enabled = false,
+        private float $timeout = 10.0,
+        private ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -62,7 +63,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
 
         try {
             if (!$this->isSafeWebhookUrl($this->webhookUrl)) {
-                LogHelper::logf('Blocked webhook notification to unsafe URL (https public hosts only).');
+                $this->bundleLog('warning', 'Blocked webhook notification to unsafe URL (https public hosts only).');
 
                 return false;
             }
@@ -84,7 +85,7 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
             return true;
         } catch (Exception $e) {
             // Log error but don't throw (logging enabled by default for backward compatibility)
-            LogHelper::logf('Failed to send webhook notification: %s', null, $e->getMessage());
+            $this->bundleLog('warning', 'Failed to send webhook notification: %s', $e->getMessage());
 
             return false;
         }
@@ -295,5 +296,17 @@ final class WebhookNotificationChannel implements NotificationChannelInterface
                 ],
             ],
         ];
+    }
+
+    /**
+     * Logs through the injected PSR-3 logger (REQ-OBS-001 / REQ-DI-001).
+     *
+     * @param string $level PSR-3 level
+     * @param string $format sprintf() format (used verbatim when no arguments are given)
+     * @param mixed ...$args sprintf() arguments
+     */
+    private function bundleLog(string $level, string $format, mixed ...$args): void
+    {
+        $this->logger?->log($level, $args === [] ? $format : sprintf($format, ...$args), ['bundle' => 'performance']);
     }
 }

@@ -122,6 +122,10 @@
 
 ## Unreleased
 
+- Bundle logs now go to your Monolog / PSR-3 `logger` instead of `error_log()`: diagnostics at `debug` (only with `nowo_performance.enable_logging: true`), notification failures at `warning`. Route the channel or adjust levels if you relied on the PHP error log.
+- `Helper\LogHelper` is deprecated (removed in 4.0). Services that you construct yourself accept an optional last `?LoggerInterface $logger` argument.
+- The root `docker-compose.yml` (bundle development only) no longer publishes PostgreSQL on host port 5433; use `docker compose exec` to reach it.
+
 ## To 3.7.3
 
 From **3.7.2**:

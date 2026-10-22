@@ -18,14 +18,14 @@ use Stringable;
  *
  * @see docs/ENTITY_NORMALIZATION_PLAN.md
  */
-final class RouteDataWithAggregates implements Stringable
+final readonly class RouteDataWithAggregates implements Stringable
 {
     /**
      * @param array{request_time: float|null, total_queries: int|null, query_time: float|null, memory_usage: int|null, access_count: int, status_codes: array<int, int>} $aggregates
      */
     public function __construct(
-        private readonly RouteData $routeData,
-        private readonly array $aggregates,
+        private RouteData $routeData,
+        private array $aggregates,
     ) {
     }
 

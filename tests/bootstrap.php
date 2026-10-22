@@ -12,4 +12,4 @@ if (!defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS')) {
     define('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS', true);
 }
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';

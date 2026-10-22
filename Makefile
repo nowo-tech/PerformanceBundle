@@ -158,7 +158,31 @@ validate: ensure-up
 check-twig-extra:
 	@chmod +x .scripts/check-twig-extra.sh
 	@./.scripts/check-twig-extra.sh
-release-check: check-no-cursor-coauthor check-twig-extra-since-release ensure-up composer-sync cs-fix cs-check rector-dry phpstan igor test-coverage release-check-demos
+# REQ-MAKE-002: sequential chain, ensure-up first. check-no-raw-html-form is not wired yet: the chart filter
+# partials still render raw <select> controls (REQ-TWIG-005, scheduled with the Twig wave).
+release-check:
+	@$(MAKE) ensure-up
+	@$(MAKE) check-no-cursor-coauthor
+	@$(MAKE) check-open-prs
+	@$(MAKE) check-twig-extra
+	@$(MAKE) composer-sync
+	@$(MAKE) cs-fix
+	@$(MAKE) cs-check
+	@$(MAKE) rector-dry
+	@$(MAKE) phpstan
+	@$(MAKE) igor
+	@$(MAKE) validate-translations
+	@$(MAKE) test-coverage
+	@$(MAKE) release-check-demos
+
+# REQ-REL-003: fail on unresolved open pull requests.
+check-open-prs:
+	@chmod +x .scripts/check-open-prs.sh
+	@GH_REPO=nowo-tech/PerformanceBundle ./.scripts/check-open-prs.sh
+
+# REQ-MAKE-001: remove local artifacts.
+clean:
+	rm -rf vendor coverage coverage.xml coverage-php.txt .phpunit.cache .php-cs-fixer.cache
 
 release-check-demos:
 	@$(MAKE) -C demo release-check
@@ -172,6 +196,7 @@ assets:
 
 # Validate YAML translation files (duplicate keys, syntax if ext-yaml available). Starts PHP container if needed.
 validate-translations: ensure-up
+	python3 .scripts/check-translation-key-parity.py
 	$(COMPOSE) exec -T php php scripts/validate-translations-yaml.php src/Resources/translations
 
 # Setup git hooks for pre-commit checks

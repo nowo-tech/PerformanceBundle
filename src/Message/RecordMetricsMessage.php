@@ -13,7 +13,7 @@ namespace Nowo\PerformanceBundle\Message;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-final class RecordMetricsMessage
+final readonly class RecordMetricsMessage
 {
     /**
      * Creates a new record metrics message for async processing.
@@ -34,20 +34,20 @@ final class RecordMetricsMessage
      * @param string|null $routePath Request path including query string (e.g. /user/123?page=2) for access records
      */
     public function __construct(
-        private readonly string $routeName,
-        private readonly string $env,
-        private readonly ?float $requestTime = null,
-        private readonly ?int $totalQueries = null,
-        private readonly ?float $queryTime = null,
-        private readonly ?array $params = null,
-        private readonly ?int $memoryUsage = null,
-        private readonly ?string $httpMethod = null,
-        private readonly ?int $statusCode = null,
-        private readonly ?string $requestId = null,
-        private readonly ?string $referer = null,
-        private readonly ?string $userIdentifier = null,
-        private readonly ?string $userId = null,
-        private readonly ?string $routePath = null,
+        private string $routeName,
+        private string $env,
+        private ?float $requestTime = null,
+        private ?int $totalQueries = null,
+        private ?float $queryTime = null,
+        private ?array $params = null,
+        private ?int $memoryUsage = null,
+        private ?string $httpMethod = null,
+        private ?int $statusCode = null,
+        private ?string $requestId = null,
+        private ?string $referer = null,
+        private ?string $userIdentifier = null,
+        private ?string $userId = null,
+        private ?string $routePath = null,
     ) {
     }
 

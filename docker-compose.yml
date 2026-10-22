@@ -44,8 +44,6 @@ services:
     environment:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=performance_test
-    ports:
-      - "5433:5432"
     networks:
       - performance-bundle-network
     healthcheck:

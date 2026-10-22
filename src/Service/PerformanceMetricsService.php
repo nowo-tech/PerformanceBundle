@@ -14,17 +14,18 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Event\BeforeMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Message\RecordMetricsMessage;
 use Nowo\PerformanceBundle\MessageBus\MessageBusInterface;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 
 use function in_array;
+use function sprintf;
 
 /**
  * Service for managing route performance metrics.
@@ -87,6 +88,7 @@ class PerformanceMetricsService
          */
         #[Autowire('%nowo_performance.enable_logging%')]
         private readonly bool $enableLogging = true,
+        private readonly ?LoggerInterface $logger = null,
     ) {
         $manager = $this->registry->getManager($this->connectionName);
         if (!$manager instanceof EntityManagerInterface) {
@@ -198,9 +200,9 @@ class PerformanceMetricsService
         ?string $userId = null,
         ?string $routePath = null,
     ): array {
-        LogHelper::logf(
+        $this->bundleLog(
+            'debug',
             '[PerformanceBundle] recordMetrics: START - route=%s, env=%s, async=%s, requestTime=%s, totalQueries=%s',
-            $this->enableLogging,
             $routeName,
             $env,
             $this->async ? 'true' : 'false',
@@ -231,8 +233,9 @@ class PerformanceMetricsService
         }
 
         // If async mode is enabled and message bus is available, dispatch message
-        if ($this->async && $this->messageBus instanceof MessageBusInterface) {
-            LogHelper::log('[PerformanceBundle] recordMetrics: Dispatching async message', $this->enableLogging);
+        $messageBus = $this->messageBus;
+        if ($this->async && $messageBus instanceof MessageBusInterface) {
+            $this->bundleLog('debug', '[PerformanceBundle] recordMetrics: Dispatching async message');
             $message = new RecordMetricsMessage(
                 $routeName,
                 $env,
@@ -249,14 +252,14 @@ class PerformanceMetricsService
                 $userId,
                 $routePath,
             );
-            $this->messageBus->dispatch($message);
+            $messageBus->dispatch($message);
 
             // In async mode, we can't know if it was new or updated until the message is processed
             return ['is_new' => false, 'was_updated' => false];
         }
 
         // Otherwise, record synchronously
-        LogHelper::log('[PerformanceBundle] recordMetrics: Recording synchronously', $this->enableLogging);
+        $this->bundleLog('debug', '[PerformanceBundle] recordMetrics: Recording synchronously');
 
         return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $requestId, $referer, $userIdentifier, $userId, $routePath);
     }
@@ -301,9 +304,9 @@ class PerformanceMetricsService
         $wasUpdated   = false;
         $accessRecord = null;
 
-        LogHelper::logf(
+        $this->bundleLog(
+            'debug',
             '[PerformanceBundle] recordMetricsSync: Looking for existing record - route=%s, env=%s',
-            $this->enableLogging,
             $routeName,
             $env,
         );
@@ -311,9 +314,9 @@ class PerformanceMetricsService
         $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
 
         if (!$routeData instanceof RouteData) {
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] recordMetricsSync: No existing record found, creating new - route=%s, env=%s',
-                $this->enableLogging,
                 $routeName,
                 $env,
             );
@@ -328,9 +331,9 @@ class PerformanceMetricsService
             $this->entityManager->persist($routeData);
             $isNew = true;
         } else {
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] recordMetricsSync: Existing record found - route=%s, env=%s',
-                $this->enableLogging,
                 $routeName,
                 $env,
             );
@@ -339,9 +342,9 @@ class PerformanceMetricsService
         }
 
         try {
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s, entityManagerOpen=%s',
-                $this->enableLogging,
                 $routeName,
                 $env,
                 $isNew ? 'true' : 'false',
@@ -406,9 +409,9 @@ class PerformanceMetricsService
             // Suppress any potential output from Doctrine ("@" is restored by the engine even on exceptions)
             @$this->entityManager->flush();
 
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
-                $this->enableLogging,
                 $routeName,
                 $env,
                 $isNew ? 'true' : 'false',
@@ -431,9 +434,9 @@ class PerformanceMetricsService
             }
             $this->entityManager->detach($routeData);
 
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] recordMetricsSync: SUCCESS - route=%s, env=%s, isNew=%s, wasUpdated=%s',
-                $this->enableLogging,
                 $routeName,
                 $env,
                 $isNew ? 'true' : 'false',
@@ -442,9 +445,9 @@ class PerformanceMetricsService
 
             return ['is_new' => $isNew, 'was_updated' => $wasUpdated];
         } catch (Exception $e) {
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, exception=%s, message=%s',
-                $this->enableLogging,
                 $routeName,
                 $env,
                 $e::class,
@@ -456,9 +459,9 @@ class PerformanceMetricsService
             $this->resetEntityManager();
 
             // Log the error for debugging
-            LogHelper::logf(
+            $this->bundleLog(
+                'debug',
                 '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s, entityManagerOpen=%s',
-                $this->enableLogging,
                 $routeName,
                 $env,
                 $e->getMessage(),
@@ -667,7 +670,23 @@ class PerformanceMetricsService
             // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
             $this->recordRepository = $recordRepo;
 
-            LogHelper::log('[PerformanceBundle] EntityManager reset after being closed', $this->enableLogging);
+            $this->bundleLog('debug', '[PerformanceBundle] EntityManager reset after being closed');
         }
+    }
+
+    /**
+     * Logs through the injected PSR-3 logger when bundle logging is enabled (REQ-OBS-001 / REQ-DI-001).
+     *
+     * @param string $level PSR-3 level
+     * @param string $format sprintf() format (used verbatim when no arguments are given)
+     * @param mixed ...$args sprintf() arguments
+     */
+    private function bundleLog(string $level, string $format, mixed ...$args): void
+    {
+        if (!$this->enableLogging) {
+            return;
+        }
+
+        $this->logger?->log($level, $args === [] ? $format : sprintf($format, ...$args), ['bundle' => 'performance']);
     }
 }

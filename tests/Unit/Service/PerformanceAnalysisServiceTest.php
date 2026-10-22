@@ -117,9 +117,6 @@ final class PerformanceAnalysisServiceTest extends TestCase
 
     /**
      * When a metric contains NAN, correlation for that pair is non-finite and calculateCorrelation returns null (line 127).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceAnalysisService::analyzeCorrelations
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceAnalysisService::calculateCorrelation
      */
     public function testAnalyzeCorrelationsWithNanInMetricReturnsNullForAffectedCorrelation(): void
     {

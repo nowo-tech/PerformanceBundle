@@ -2,7 +2,7 @@
 # Permite levantar cualquier demo individual o todas las demos
 
 .PHONY: help list build-all up-all down-all setup-all clean-all logs-all
-.PHONY: build-symfony8 up-symfony8 down-symfony8 setup-symfony8 clean-symfony8 logs-symfony8 shell-symfony8 update-bundle-symfony8 performance-sync-symfony8
+.PHONY: update-bundle-all build-symfony8 up-symfony8 down-symfony8 setup-symfony8 clean-symfony8 logs-symfony8 shell-symfony8 update-bundle-symfony8 performance-sync-symfony8
 .PHONY: performance-sync-all
 
 # Detectar demos disponibles (carpetas que contienen un Makefile)
@@ -89,7 +89,11 @@ up-all:
 test-coverage-all:
 	@for demo in $(DEMOS); do $(MAKE) -C $$demo test-coverage || exit 1; done
 	@echo "test-coverage-all done."
-release-check: test-coverage-all release-verify
+# REQ-DEMO-007: refresh the bundle in the demo before testing it.
+update-bundle-all:
+	@$(MAKE) up-symfony8 && $(MAKE) -C symfony8 update-bundle
+
+release-check: update-bundle-all test-coverage-all release-verify
 	@echo "✅ All demos passed release-check."
 
 # Release verify: for each demo, up → sleep → healthcheck (HTTP 200) → down
@@ -115,7 +119,7 @@ demo-smoke:
 	echo "Demo smoke: symfony8 (http://127.0.0.1:$$PORT)"; \
 	$(MAKE) up-symfony8 || exit 1; \
 	sleep 12; \
-	code=$$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$$PORT" 2>/dev/null || echo "000"); \
+	code=$$(curl -sL -o /dev/null -w "%{http_code}" "http://127.0.0.1:$$PORT/" 2>/dev/null || echo "000"); \
 	$(MAKE) down-symfony8 2>/dev/null || true; \
 	if [ "$$code" != "200" ]; then echo "symfony8 failed with HTTP $$code"; exit 1; fi; \
 	echo "symfony8 OK (HTTP $$code)"

@@ -8,9 +8,9 @@ use DateTimeImmutable;
 use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Helper\LogHelper;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 
@@ -24,7 +24,7 @@ use function sprintf;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-final class EmailNotificationChannel implements NotificationChannelInterface
+final readonly class EmailNotificationChannel implements NotificationChannelInterface
 {
     /**
      * Creates a new instance.
@@ -35,10 +35,11 @@ final class EmailNotificationChannel implements NotificationChannelInterface
      * @param bool $enabled Whether this channel is enabled
      */
     public function __construct(
-        private readonly ?MailerInterface $mailer,
-        private readonly string $fromEmail = 'noreply@example.com',
-        private readonly array $toEmails = [],
-        private readonly bool $enabled = false,
+        private ?MailerInterface $mailer,
+        private string $fromEmail = 'noreply@example.com',
+        private array $toEmails = [],
+        private bool $enabled = false,
+        private ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -72,7 +73,7 @@ final class EmailNotificationChannel implements NotificationChannelInterface
             return true;
         } catch (Exception $e) {
             // Log error but don't throw (logging enabled by default for backward compatibility)
-            LogHelper::logf('Failed to send email notification: %s', null, $e->getMessage());
+            $this->bundleLog('warning', 'Failed to send email notification: %s', $e->getMessage());
 
             return false;
         }
@@ -162,5 +163,17 @@ final class EmailNotificationChannel implements NotificationChannelInterface
 </body>
 </html>
 HTML;
+    }
+
+    /**
+     * Logs through the injected PSR-3 logger (REQ-OBS-001 / REQ-DI-001).
+     *
+     * @param string $level PSR-3 level
+     * @param string $format sprintf() format (used verbatim when no arguments are given)
+     * @param mixed ...$args sprintf() arguments
+     */
+    private function bundleLog(string $level, string $format, mixed ...$args): void
+    {
+        $this->logger?->log($level, $args === [] ? $format : sprintf($format, ...$args), ['bundle' => 'performance']);
     }
 }

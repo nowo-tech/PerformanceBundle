@@ -13,6 +13,7 @@ The bundle supports asynchronous storage of performance metrics using Symfony Me
 - [How It Works](#how-it-works)
   - [Synchronous mode (default)](#synchronous-mode-default)
   - [Asynchronous mode](#asynchronous-mode)
+  - [Retries and failures (REQ-MSG-001)](#retries-and-failures-req-msg-001)
 - [Benefits of Asynchronous Mode](#benefits-of-asynchronous-mode)
 - [Full Configuration Example](#full-configuration-example)
   - [Development (synchronous for debugging)](#development-synchronous-for-debugging)
@@ -94,6 +95,28 @@ When `async: true` and Messenger is available:
 5. `RecordMetricsMessageHandler` calls `PerformanceMetricsService::recordMetricsSync()` to persist metrics in the background (synchronously or asynchronously depending on your transport)
 
 > **Upgrading from versions before 3.1.2:** drain the Messenger queue before deploy if you use a queued transport. See [UPGRADING.md](UPGRADING.md#upgrading-to-312-2026-07-14).
+
+### Retries and failures (REQ-MSG-001)
+
+`RecordMetricsMessageHandler` is idempotent per message (it records one sample) and lets exceptions bubble so Messenger applies the transport retry strategy. Recommended production setup:
+
+```yaml
+framework:
+    messenger:
+        failure_transport: failed
+        transports:
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+            failed: 'doctrine://default?queue_name=failed'
+        routing:
+            Nowo\PerformanceBundle\Message\RecordMetricsMessage: async
+```
+
+Metrics are best-effort telemetry: a message that still fails after the retries lands in the failure transport (`messenger:failed:show` / `messenger:failed:retry`) and never affects the HTTP response that produced it.
 
 ## Benefits of Asynchronous Mode
 

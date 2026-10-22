@@ -82,6 +82,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dependencies refreshed (Composer and pnpm/npm lock files of the bundle and its demos, campaign 2026-10-19).
 - `.php-cs-fixer.dist.php`: `new ParallelConfig(2)` (REQ-CS-001).
+- Logging goes through an injected PSR-3 `logger` (`PerformanceMetricsSubscriber`, `PerformanceMetricsService`, `NotificationService`, e-mail and webhook channels): diagnostics at `debug` (still gated by `enable_logging`), delivery failures at `warning`. `Helper\LogHelper` (`error_log`) is deprecated; `psr/log` is required (REQ-DI-001 / REQ-OBS-001).
+- `release-check` is sequential and starts with `ensure-up`; the misspelled `check-twig-extra-since-release` prerequisite is replaced by `check-twig-extra`, and `check-open-prs` and `validate-translations` (now with key parity across the 12 shipped locales) are added; new `clean` target (REQ-MAKE-001 / REQ-MAKE-002 / REQ-MAKE-004).
+- CI: coverage gate raised from 80% to 99%; `git-hygiene` checks the whole history (Claude trailers before the baseline stay grandfathered); new `Demo smoke` workflow (REQ-TEST-003 / REQ-GIT-001 / REQ-TEST-011).
+- Rector targets the PHP 8.2 floor (`withPhpSets(php82: true)`) and its safe suggestions are applied (readonly classes, `??=`); rules that broke runtime contracts (empty Doctrine listener method, `#[Required]` optional properties, reflection-read test properties) are skipped in `rector.php` (REQ-CS-003); PHPUnit `@covers` / `@dataProvider` docblocks replaced (REQ-TEST-010); Twig extensions rely on autoconfigure (REQ-SF-003).
+- Demo: `release-check` refreshes the bundle first (REQ-DEMO-007), Makefile uses `$(COMPOSE)` everywhere (REQ-MAKE-010), Caddyfiles set the timeout stack (REQ-RUNTIME-001), smoke follows redirects; the root dev PostgreSQL no longer publishes host port 5433 (REQ-DEMO-006).
+- `composer.json`: keyword list trimmed, `support.docs` added (REQ-PKG-004).
+- Docs: PSR evaluation (PSR-3 adopted, PSR-20 re-evaluated), SECURITY logging policy, CSRF section and AI-audit checklist row, Messenger retry/failure transport policy, demo timeout hierarchy, extension points of the non-final classes (REQ-CS-007, REQ-SEC-002/005, REQ-MSG-001, REQ-PHP-001).
+
+### Fixed
+
+- Webhook notification timeouts are covered by tests (timeout options, clamped minimum, logged failure) (REQ-RUNTIME-001).
+- `.scripts/check-no-cursor-coauthor.sh` also runs inside git worktrees (`.git` file instead of directory).
+- Demo `make test-coverage` called a non-existent `composer test` script (the demo has no PHPUnit suite): it now checks that the demo kernel boots, so the demo `release-check` runs end to end.
+- Demo `make up` installs Composer dependencies in a one-off container before FrankenPHP starts: a fresh checkout crash-looped the worker on the missing `vendor/` and `up` failed ("service php is not running").
 
 ### Documentation
 

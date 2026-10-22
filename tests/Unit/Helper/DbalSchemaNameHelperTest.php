@@ -98,7 +98,7 @@ final class DbalSchemaNameHelperTest extends TestCase
         $nameObj = $column->getObjectName(); // Doctrine\DBAL\Schema\Name instance
 
         $asset = new class($nameObj) {
-            public function __construct(private Name $name)
+            public function __construct(private readonly Name $name)
             {
             }
         };

@@ -40,10 +40,11 @@ help:
 # Build and start containers
 up:
 	@if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
+	@echo "Installing dependencies (one-off container: the worker-mode server needs vendor/ before it starts)..."
+	@$(COMPOSE) run --rm -T --no-deps --entrypoint composer -e COMPOSER_MEMORY_LIMIT=-1 php install --no-interaction --no-scripts
 	$(COMPOSE) up -d
 	@echo "Waiting for container to be ready..."
 	@sleep 5
-	@echo "Installing dependencies..."
 	@$(COMPOSE) exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@$(COMPOSE) exec -T php composer require symfony/ux-icons --no-interaction || echo "⚠️  ux-icons already installed or error occurred"
 	@echo "Creating database, schema and loading fixtures..."
@@ -98,15 +99,15 @@ setup: ensure-up
 	@echo "Waiting for MySQL to be ready..."
 	@sleep 3
 	@echo "Installing dependencies..."
-	-docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction --ignore-platform-reqs 2>/dev/null || $(COMPOSE) exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
+	-$(COMPOSE) exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction --ignore-platform-reqs 2>/dev/null || $(COMPOSE) exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction
 	@echo "Creating database..."
-	-docker-compose exec -T php php bin/console doctrine:database:create --if-not-exists --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:database:create --if-not-exists --no-interaction
 	@echo "Creating schema..."
-	-docker-compose exec -T php php bin/console doctrine:schema:create --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:schema:create --no-interaction
 	@echo "Syncing Performance Bundle tables (routes_data + routes_data_records)..."
-	-docker-compose exec -T php php bin/console nowo:performance:sync-schema --no-interaction
+	-$(COMPOSE) exec -T php php bin/console nowo:performance:sync-schema --no-interaction
 	@echo "Loading fixtures..."
-	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Demo setup complete!"
 	@echo ""
 	@echo "Access the application at: http://localhost:8001 (HTTP on port 80, §2.4)"
@@ -114,24 +115,24 @@ setup: ensure-up
 # Database commands
 db-create:
 	@echo "📦 Creating database..."
-	-docker-compose exec -T php php bin/console doctrine:database:create --if-not-exists --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:database:create --if-not-exists --no-interaction
 
 db-drop:
 	@echo "🗑️  Dropping database..."
-	-docker-compose exec -T php php bin/console doctrine:database:drop --force --if-exists --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:database:drop --force --if-exists --no-interaction
 
 db-reset: db-drop db-create
 	@echo "🔄 Resetting database schema..."
-	-docker-compose exec -T php php bin/console doctrine:schema:create --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:schema:create --no-interaction
 	@echo "🔄 Syncing Performance Bundle tables..."
-	-docker-compose exec -T php php bin/console nowo:performance:sync-schema --no-interaction
+	-$(COMPOSE) exec -T php php bin/console nowo:performance:sync-schema --no-interaction
 	@echo "📥 Loading fixtures..."
-	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Database reset complete!"
 
 db-fixtures:
 	@echo "📥 Loading fixtures..."
-	-docker-compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
+	-$(COMPOSE) exec -T php php bin/console doctrine:fixtures:load --no-interaction
 	@echo "✅ Fixtures loaded!"
 
 db-view:
@@ -157,8 +158,9 @@ logs:
 test: ensure-up
 	$(COMPOSE) exec -T php composer test 2>/dev/null || $(COMPOSE) exec -T php php bin/console list
 
+# The demo has no PHPUnit suite (it is covered by the e2e suite and the bundle tests): boot the kernel instead.
 test-coverage: ensure-up
-	$(COMPOSE) exec -T php composer test-coverage 2>/dev/null || $(COMPOSE) exec -T php composer test
+	$(COMPOSE) exec -T php php bin/console about --env=test >/dev/null && echo "Demo kernel boots (no demo PHPUnit suite; see e2e/ for browser tests)."
 
 # Clean vendor and cache
 clean:

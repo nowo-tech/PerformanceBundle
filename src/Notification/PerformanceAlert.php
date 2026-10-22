@@ -10,7 +10,7 @@ namespace Nowo\PerformanceBundle\Notification;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-final class PerformanceAlert
+final readonly class PerformanceAlert
 {
     /**
      * Alert severity levels.
@@ -36,10 +36,10 @@ final class PerformanceAlert
      * @param array<string, mixed> $context Additional context data
      */
     public function __construct(
-        private readonly string $type,
-        private readonly string $severity,
-        private readonly string $message,
-        private readonly array $context = [],
+        private string $type,
+        private string $severity,
+        private string $message,
+        private array $context = [],
     ) {
     }
 

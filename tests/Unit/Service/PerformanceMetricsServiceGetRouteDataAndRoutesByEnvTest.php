@@ -57,7 +57,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
         $this->service = new PerformanceMetricsService($this->registry, 'default');
     }
 
-    /** @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::__construct */
     public function testConstructThrowsWhenRegistryReturnsNonEntityManager(): void
     {
         $registry = $this->createMock(ManagerRegistry::class);
@@ -69,7 +68,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
         new PerformanceMetricsService($registry, 'default');
     }
 
-    /** @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::__construct */
     public function testConstructThrowsWhenRouteDataRepositoryIsWrongType(): void
     {
         $recordRepo = $this->createMock(RouteDataRecordRepository::class);
@@ -92,7 +90,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
         new PerformanceMetricsService($registry, 'default');
     }
 
-    /** @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::__construct */
     public function testConstructThrowsWhenRouteDataRecordRepositoryIsWrongType(): void
     {
         $routeRepo = $this->createMock(RouteDataRepository::class);
@@ -274,8 +271,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When getAggregatesForRouteDataIds omits an id, that route gets default aggregate (nulls, 0, []).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::getRoutesWithAggregates
      */
     public function testGetRoutesWithAggregatesUsesDefaultAggregateWhenIdMissingFromAggregates(): void
     {
@@ -313,8 +308,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When a route has getId() === null, it is skipped in the foreach (line 519).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::getRoutesWithAggregates
      */
     public function testGetRoutesWithAggregatesSkipsRouteWithNullId(): void
     {
@@ -414,8 +407,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When cacheService is set, successful recordMetricsSync invalidates cache for the env.
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
      */
     public function testRecordMetricsSyncInvalidatesCacheWhenCacheServiceSet(): void
     {
@@ -436,9 +427,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
     /**
      * Covers resetEntityManager() when EntityManager is closed before flush:
      * service resets manager and replaces with a fresh one, then flush succeeds.
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::resetEntityManager
      */
     public function testRecordMetricsSyncResetsEntityManagerWhenClosedBeforeFlush(): void
     {
@@ -477,10 +465,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When flush() throws, recordMetricsSync catches, resets EntityManager, and rethrows.
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetricsSync
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::resetEntityManager
      */
     public function testRecordMetricsSyncRethrowsExceptionAfterResetWhenFlushThrows(): void
     {
@@ -519,8 +503,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When enableAccessRecords is true, requestId is set, and no existing record: creates access record and sets referer/userId/params/routePath.
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
      */
     public function testRecordMetricsSyncCreatesAccessRecordWhenEnabledAndRequestIdSet(): void
     {
@@ -575,8 +557,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When enableAccessRecords is true but getSaveAccessRecords() is false: skips creating access record (line 373).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
      */
     public function testRecordMetricsSyncSkipsAccessRecordWhenRouteHasSaveAccessRecordsDisabled(): void
     {
@@ -608,8 +588,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When enableAccessRecords is true and findOneByRequestId returns existing record: skips creating duplicate (line 378).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
      */
     public function testRecordMetricsSyncSkipsAccessRecordWhenRequestIdAlreadyRecorded(): void
     {
@@ -643,9 +621,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When resetEntityManager runs and getManager returns non-EntityManagerInterface, LogicException is thrown (line 651).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::resetEntityManager
      */
     public function testRecordMetricsSyncResetThrowsWhenGetManagerReturnsNonEntityManager(): void
     {
@@ -678,9 +653,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When resetEntityManager runs and getRepository(RouteData::class) returns non-RouteDataRepository, LogicException (line 656).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::resetEntityManager
      */
     public function testRecordMetricsSyncResetThrowsWhenRouteRepositoryWrongType(): void
     {
@@ -719,9 +691,6 @@ final class PerformanceMetricsServiceGetRouteDataAndRoutesByEnvTest extends Test
 
     /**
      * When resetEntityManager runs and getRepository(RouteDataRecord::class) returns non-RouteDataRecordRepository, LogicException (line 661).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::recordMetrics
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::resetEntityManager
      */
     public function testRecordMetricsSyncResetThrowsWhenRecordRepositoryWrongType(): void
     {

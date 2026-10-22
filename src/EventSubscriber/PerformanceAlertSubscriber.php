@@ -19,7 +19,7 @@ use function sprintf;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-final class PerformanceAlertSubscriber
+final readonly class PerformanceAlertSubscriber
 {
     /**
      * Creates a new instance.
@@ -34,14 +34,14 @@ final class PerformanceAlertSubscriber
      * @param bool $enabled Whether alerts are enabled
      */
     public function __construct(
-        private readonly ?NotificationService $notificationService,
-        private readonly float $requestTimeWarning = 0.5,
-        private readonly float $requestTimeCritical = 1.0,
-        private readonly int $queryCountWarning = 20,
-        private readonly int $queryCountCritical = 50,
-        private readonly float $memoryUsageWarning = 20.0,
-        private readonly float $memoryUsageCritical = 50.0,
-        private readonly bool $enabled = false,
+        private ?NotificationService $notificationService,
+        private float $requestTimeWarning = 0.5,
+        private float $requestTimeCritical = 1.0,
+        private int $queryCountWarning = 20,
+        private int $queryCountCritical = 50,
+        private float $memoryUsageWarning = 20.0,
+        private float $memoryUsageCritical = 50.0,
+        private bool $enabled = false,
     ) {
     }
 

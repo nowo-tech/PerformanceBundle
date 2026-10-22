@@ -2277,13 +2277,11 @@ class PerformanceController extends AbstractController
         foreach ($routes as $route) {
             $date = $route->getCreatedAt()?->format('Y-m-d') ?? $route->getLastAccessedAt()?->format('Y-m-d') ?? date('Y-m-d');
 
-            if (!isset($groupedData[$date])) {
-                $groupedData[$date] = [
-                    'count' => 0,
-                    'sum'   => 0.0,
-                    'max'   => 0.0,
-                ];
-            }
+            $groupedData[$date] ??= [
+                'count' => 0,
+                'sum'   => 0.0,
+                'max'   => 0.0,
+            ];
 
             $value = match ($metric) {
                 'requestTime'  => $route->getRequestTime() ?? 0.0,

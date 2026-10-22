@@ -323,7 +323,9 @@ composer test-coverage
 ## Tests and coverage
 
 - Tests: PHPUnit (PHP)
-- PHP: **99.4%** lines (`make test-coverage`; 4 orchestration files excluded in `phpunit.xml.dist`)
+- PHP: **99.4%** lines (`make test-coverage`; 4 orchestration files excluded in `phpunit.xml.dist`; CI fails below 99%)
+- TS/JS: N/A (no TypeScript sources)
+- Python: N/A
 
 ## License
 

@@ -24,7 +24,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * @phpstan-ignore attribute.notFound (optional symfony/messenger)
  */
 #[AsMessageHandler]
-final class RecordMetricsMessageHandler
+final readonly class RecordMetricsMessageHandler
 {
     /**
      * Creates a new instance.
@@ -32,7 +32,7 @@ final class RecordMetricsMessageHandler
      * @param PerformanceMetricsService $metricsService The metrics service
      */
     public function __construct(
-        private readonly PerformanceMetricsService $metricsService,
+        private PerformanceMetricsService $metricsService,
     ) {
     }
 

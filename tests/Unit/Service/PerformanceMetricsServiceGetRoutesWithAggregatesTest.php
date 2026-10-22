@@ -229,8 +229,6 @@ final class PerformanceMetricsServiceGetRoutesWithAggregatesTest extends TestCas
 
     /**
      * When all routes have getId() === null, $ids is empty and method returns [] (line 568).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::getRoutesWithAggregatesFiltered
      */
     public function testGetRoutesWithAggregatesFilteredReturnsEmptyWhenAllRouteIdsNull(): void
     {
@@ -254,8 +252,6 @@ final class PerformanceMetricsServiceGetRoutesWithAggregatesTest extends TestCas
 
     /**
      * When sortBy is not in entitySortFields and not a metric name, match uses default => 0 (lines 575, 593).
-     *
-     * @covers \Nowo\PerformanceBundle\Service\PerformanceMetricsService::getRoutesWithAggregatesFiltered
      */
     public function testGetRoutesWithAggregatesFilteredSortByUnknownUsesDefaultInMatch(): void
     {

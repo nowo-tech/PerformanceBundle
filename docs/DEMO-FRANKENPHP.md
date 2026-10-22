@@ -14,6 +14,7 @@ This document describes how the bundle's demo applications run under **FrankenPH
   - [5. Start the demo (development)](#5-start-the-demo-development)
 - [Production configuration](#production-configuration)
 - [Switching classic vs worker (`FRANKENPHP_MODE`)](#switching-classic-vs-worker-frankenphp_mode)
+- [Timeout hierarchy (REQ-RUNTIME-001)](#timeout-hierarchy-req-runtime-001)
 - [Reproducing in another bundle](#reproducing-in-another-bundle)
 - [Troubleshooting](#troubleshooting)
 
@@ -123,6 +124,19 @@ Recreate the container after changing `.env` (`docker compose up -d`).
 After changing env or Caddyfile, restart: `docker-compose restart` or `make -C demo/symfony8 restart`.
 
 ---
+
+## Timeout hierarchy (REQ-RUNTIME-001)
+
+The bundle's only outbound blocking call is the Slack / Teams / generic webhook notification (`notifications.http_timeout`, default **10 s**, used as idle and total deadline). Both demo Caddyfiles keep the outer layers above it:
+
+| Layer | Demo value |
+| --- | --- |
+| Webhook HttpClient (`timeout` + `max_duration`) | 10 s |
+| PHP `max_execution_time` / `max_input_time` (`frankenphp { php_ini … }`) | 30 s |
+| Caddy `servers { timeouts { write } }` | 60 s |
+| FrankenPHP `max_wait_time` | 30 s |
+
+E-mail notifications go through the host Symfony Mailer: bound them with the transport DSN timeout (or send them through Messenger). When you raise `http_timeout`, raise the PHP and Caddy deadlines in the same change.
 
 ## Reproducing in another bundle
 

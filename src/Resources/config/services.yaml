@@ -35,20 +35,15 @@ services:
         public: true
 
     # Twig Extensions
-    Nowo\PerformanceBundle\Twig\IconExtension:
-        tags:
-            - { name: twig.extension }
-    
-    Nowo\PerformanceBundle\Twig\ArrayExtension:
-        tags:
-            - { name: twig.extension }
+    # Tagged twig.extension by autoconfigure (REQ-SF-003).
+    Nowo\PerformanceBundle\Twig\IconExtension: ~
+
+    Nowo\PerformanceBundle\Twig\ArrayExtension: ~
 
     Nowo\PerformanceBundle\Twig\PerformanceLayoutExtension:
         arguments:
             $layoutTemplate: '%nowo_performance.dashboard.layout_template%'
             $cssFramework: '%nowo_performance.dashboard.css_framework%'
-        tags:
-            - { name: twig.extension }
 
     # Twig UX components: see services_twig_component.yaml (loaded only when symfony/ux-twig-component is installed).
 
@@ -78,6 +73,8 @@ services:
         tags:
             - { name: data_collector, template: '@NowoPerformanceBundle/Collector/performance.html.twig', id: 'performance', priority: 300 }
 
+    # Doctrine event subscribers keep an explicit tag: DoctrineBundle does not autoconfigure the Doctrine
+    # EventSubscriber interface (REQ-SF-003 justified exception until they move to #[AsDoctrineListener]).
     # Doctrine Event Subscriber for table name (uses Autowire attribute)
     Nowo\PerformanceBundle\EventSubscriber\TableNameSubscriber:
         tags:

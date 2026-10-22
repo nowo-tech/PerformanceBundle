@@ -137,9 +137,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
             if ($record->getStatusCode() !== null) {
                 $code = $record->getStatusCode();
-                if (!isset($statistics[$hour]['status_codes'][$code])) {
-                    $statistics[$hour]['status_codes'][$code] = 0;
-                }
+                $statistics[$hour]['status_codes'][$code] ??= 0;
                 ++$statistics[$hour]['status_codes'][$code];
             }
         }
@@ -591,9 +589,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
             if ($record->getStatusCode() !== null) {
                 $code = $record->getStatusCode();
-                if (!isset($statistics[$day]['status_codes'][$code])) {
-                    $statistics[$day]['status_codes'][$code] = 0;
-                }
+                $statistics[$day]['status_codes'][$code] ??= 0;
                 ++$statistics[$day]['status_codes'][$code];
             }
         }
@@ -704,9 +700,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
             if ($record->getStatusCode() !== null) {
                 $code = $record->getStatusCode();
-                if (!isset($statistics[$month]['status_codes'][$code])) {
-                    $statistics[$month]['status_codes'][$code] = 0;
-                }
+                $statistics[$month]['status_codes'][$code] ??= 0;
                 ++$statistics[$month]['status_codes'][$code];
             }
         }

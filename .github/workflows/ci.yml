@@ -21,15 +21,8 @@ jobs:
       - name: Check for Cursor co-author trailers (REQ-GIT-001)
         run: |
           chmod +x .scripts/check-no-cursor-coauthor.sh
-          # Enforce on commits introduced by this push/PR only (legacy trailers
-          # remain until maintainers run make strip-cursor-coauthor-from-history).
-          BEFORE="${{ github.event.before }}"
-          SHA="${{ github.sha }}"
-          if [ -z "${BEFORE}" ] || [ "${BEFORE}" = "0000000000000000000000000000000000000000" ]; then
-            ./.scripts/check-no-cursor-coauthor.sh "${SHA}"
-          else
-            ./.scripts/check-no-cursor-coauthor.sh "${BEFORE}..${SHA}"
-          fi
+          # Whole history (REQ-GIT-001): Claude trailers before .scripts/claude-coauthor-baseline are grandfathered by the script.
+          ./.scripts/check-no-cursor-coauthor.sh HEAD
 
   test:
     name: PHP ${{ matrix.php }} - Symfony ${{ matrix.symfony }}
@@ -149,8 +142,8 @@ jobs:
             exit 1
           fi
 
-          echo "✅ All tests passed, validating coverage (minimum 80%)..."
-          php scripts/check-coverage.php coverage.xml --min-percent=80
+          echo "✅ All tests passed, validating coverage (minimum 99%)..."
+          php scripts/check-coverage.php coverage.xml --min-percent=99
 
   static-analysis:
     name: PHPStan
@@ -292,10 +285,10 @@ jobs:
           fi
           echo "✅ All tests passed successfully"
 
-      - name: Validate coverage (minimum 80%)
+      - name: Validate coverage (minimum 99%)
         run: |
-          echo "📊 Validating coverage (minimum 80%)..."
-          php scripts/check-coverage.php coverage.xml --min-percent=80
+          echo "📊 Validating coverage (minimum 99%)..."
+          php scripts/check-coverage.php coverage.xml --min-percent=99
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7

@@ -10,6 +10,7 @@ use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -723,9 +724,8 @@ final class PerformanceControllerIntegrationTest extends TestCase
 
     /**
      * Invalid-CSRF branch must not follow a foreign Referer (open redirect): falls back to the dashboard.
-     *
-     * @dataProvider foreignRefererProvider
      */
+    #[DataProvider('foreignRefererProvider')]
     public function testClearPostWithForeignRefererDoesNotRedirectOffSite(string $referer): void
     {
         $response = $this->requestPost(

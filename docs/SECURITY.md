@@ -8,6 +8,7 @@
 - [Admin UI guard (REQ-UI-002)](#admin-ui-guard-req-ui-002)
 - [Secrets and cryptography](#secrets-and-cryptography)
 - [Logging](#logging)
+- [CSRF (REQ-SEC-005)](#csrf-req-sec-005)
 - [Dependencies](#dependencies)
 - [Reporting a vulnerability](#reporting-a-vulnerability)
 - [Release security checklist (12.4.1)](#release-security-checklist-1241)
@@ -73,6 +74,11 @@ Setting `allow_unauthenticated: true` is supported for local demos only.
 ## Logging
 
 - Log performance events without storing **passwords**, **session IDs**, or **full credit card** data in metric tables.
+- Bundle diagnostics use the injected PSR-3 `logger` (REQ-OBS-001): tracking decisions and metric recording at `debug` (only when `enable_logging: true`), notification delivery failures and blocked webhook URLs at `warning`. Messages carry route names, environments, timings and exception messages (an HttpClient or mailer error message may name the target host) — never request bodies, headers, cookies, session ids or credentials; keep secrets out of webhook URLs (use headers).
+
+## CSRF (REQ-SEC-005)
+
+Every state-changing dashboard action (`clear`, `{id}/delete`, `{id}/review`, `purge-records`, `delete-records-by-filter`) is a POST route backed by a Symfony FormType, so the form CSRF token is validated by the Form component; an invalid token aborts the action and redirects to the dashboard without following a foreign `Referer`. Read-only pages and exports (dashboard, statistics, access records, chart data, CSV/JSON exports, diagnose) are GET and change nothing.
 
 ## Dependencies
 
@@ -102,5 +108,6 @@ Before tagging a release, confirm:
 | **Cryptography** | HTTPS/TLS for outbound calls is the deployer’s responsibility; document. |
 | **Permissions / exposure** | Dashboard and export routes require `access_roles` or custom checker; `allow_unauthenticated` is `false` by default. |
 | **Limits / DoS** | `export.max_rows` defaults to 5000 (configurable up to 50000). |
+| **AI security audit (REQ-SEC-004)** | Latest recorded grade in the nowo-tech bundles security analysis catalog (`BUNDLES_SECURITY_ANALYSIS.md`); re-run when the dashboard, exports or notification channels change. |
 
 Record confirmation in the release PR or tag notes.

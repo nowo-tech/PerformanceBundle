@@ -71,10 +71,8 @@ final class NowoPerformanceBundle extends Bundle
 
     public function getContainerExtension(): ?ExtensionInterface
     {
-        if ($this->extension === null) {
-            // @igor-ignore - Boot-time Symfony Bundle extension cache (not request state).
-            $this->extension = new PerformanceExtension();
-        }
+        // @igor-ignore - Boot-time Symfony Bundle extension cache (not request state).
+        $this->extension ??= new PerformanceExtension();
 
         return $this->extension instanceof ExtensionInterface ? $this->extension : null;
     }
