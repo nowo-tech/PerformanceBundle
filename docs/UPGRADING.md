@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.8.0](#to-380)
 - [To 3.7.3](#to-373)
 - [To 3.7.2](#to-372)
 - [To 3.7.1](#to-371)
@@ -121,6 +122,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.8.0
+
+From **3.7.3**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 - Bundle logs now go to your Monolog / PSR-3 `logger` instead of `error_log()`: diagnostics at `debug` (only with `nowo_performance.enable_logging: true`), notification failures at `warning`. Route the channel or adjust levels if you relied on the PHP error log.
 - `Helper\LogHelper` is deprecated (removed in 4.0). Services that you construct yourself accept an optional last `?LoggerInterface $logger` argument.
