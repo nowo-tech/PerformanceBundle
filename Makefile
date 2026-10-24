@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan igor release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history check-twig-extra
+.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan igor release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history check-twig-extra check-no-raw-html-form
 
 # Default target
 help:
@@ -158,8 +158,9 @@ validate: ensure-up
 check-twig-extra:
 	@chmod +x .scripts/check-twig-extra.sh
 	@./.scripts/check-twig-extra.sh
-# REQ-MAKE-002: sequential chain, ensure-up first. check-no-raw-html-form is not wired yet: the chart filter
-# partials still render raw <select> controls (REQ-TWIG-005, scheduled with the Twig wave).
+
+# REQ-MAKE-002: sequential chain, ensure-up first.
+# check-no-raw-html-form (REQ-TWIG-005) is wired once the remaining raw form markup is migrated
 release-check:
 	@$(MAKE) ensure-up
 	@$(MAKE) check-no-cursor-coauthor
@@ -174,6 +175,10 @@ release-check:
 	@$(MAKE) validate-translations
 	@$(MAKE) test-coverage
 	@$(MAKE) release-check-demos
+
+# Fail on raw <form>/<input>/<textarea>/<select> in Twig (REQ-TWIG-005)
+check-no-raw-html-form:
+	@bash .scripts/check-no-raw-html-form.sh
 
 # REQ-REL-003: fail on unresolved open pull requests.
 check-open-prs:
