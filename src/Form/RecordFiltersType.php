@@ -35,7 +35,7 @@ class RecordFiltersType extends AbstractType
      * Builds the filter form (start/end date, env, route, status code, query time and memory filters).
      *
      * @param FormBuilderInterface<mixed> $builder The form builder
-     * @param array<string, mixed> $options Options (environments, available_routes, all_routes_label, all_status_label)
+     * @param array<string, mixed> $options Options (environments, available_routes, all_routes_label, all_status_label, record_fields)
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -116,6 +116,34 @@ class RecordFiltersType extends AbstractType
             'property_path'             => 'statusCode',
             'attr'                      => ['class' => 'form-select'],
         ]);
+        if ($options['record_fields']) {
+            $this->addRecordFields($builder, $options);
+        }
+        $builder->get('status_code')->addModelTransformer(new CallbackTransformer(
+            static fn (?int $value): string => $value !== null ? (string) $value : '',
+            static function (mixed $value): ?int {
+                if ($value === null || $value === '') {
+                    return null;
+                }
+
+                return is_int($value) ? $value : (int) $value;
+            },
+        ));
+        $this->addWithDefaults($builder, 'filter', SubmitType::class, [
+            'label'              => 'access_statistics.filter',
+            'translation_domain' => 'NowoPerformanceBundle',
+            'attr'               => ['class' => 'btn btn-primary'],
+        ]);
+    }
+
+    /**
+     * Adds the per-record filters (query time, memory, referer, user) used by the access records page.
+     *
+     * @param FormBuilderInterface<mixed> $builder The form builder
+     * @param array<string, mixed> $options Form options
+     */
+    private function addRecordFields(FormBuilderInterface $builder, array $options): void
+    {
         $this->addNumber($builder, 'min_query_time', [
             'label'              => 'access_statistics.min_query_time',
             'translation_domain' => 'NowoPerformanceBundle',
@@ -161,22 +189,6 @@ class RecordFiltersType extends AbstractType
             'translation_domain' => 'NowoPerformanceBundle',
             'required'           => false,
             'attr'               => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
-        ])
-        ;
-        $builder->get('status_code')->addModelTransformer(new CallbackTransformer(
-            static fn (?int $value): string => $value !== null ? (string) $value : '',
-            static function (mixed $value): ?int {
-                if ($value === null || $value === '') {
-                    return null;
-                }
-
-                return is_int($value) ? $value : (int) $value;
-            },
-        ));
-        $this->addWithDefaults($builder, 'filter', SubmitType::class, [
-            'label'              => 'access_statistics.filter',
-            'translation_domain' => 'NowoPerformanceBundle',
-            'attr'               => ['class' => 'btn btn-primary'],
         ]);
     }
 
@@ -217,8 +229,11 @@ class RecordFiltersType extends AbstractType
             'available_routes' => [],
             'all_routes_label' => 'access_statistics.all_routes',
             'all_status_label' => 'access_statistics.all_status_codes',
+            // false: only the date/env/route/path/status filters (access statistics page)
+            'record_fields' => true,
         ]);
         $resolver->setAllowedTypes('environments', 'array');
+        $resolver->setAllowedTypes('record_fields', 'bool');
         $resolver->setAllowedTypes('available_routes', 'array');
     }
 

@@ -206,7 +206,8 @@
                                                         {% if enableRecordManagement and (deleteForms|default({}))[route.getId()] is defined %}
                                                             {% set deleteForm = deleteForms[route.getId()] %}
                                                             {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.getId()}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ ('routes_table.confirm_delete'|trans({}, 'NowoPerformanceBundle')|e('js')) ~ "');"}}) }}
-                                                                {{ form_widget(deleteForm._token) }}
+                                                                {# REQ-TWIG-003: child loop (CSRF token) #}
+                                                                {% for child in deleteForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
                                                                 <button type="submit" class="{{ ui.btn('danger', 'sm', _perf_css) }} nowo-ui-action-delete" title="{{ 'routes_table.delete'|trans({}, 'NowoPerformanceBundle') }}">
                                                                     {{ ux_icon('bi:trash', {style: 'width: 14px; height: 14px;'}) }}
                                                                 </button>
@@ -246,10 +247,13 @@
                                                                                 {{ form_errors(reviewForm.save_access_records) }}
                                                                             </div>
                                                                             {% endif %}
+                                                                            {# REQ-TWIG-003: child loop for the remaining children; the submit is captured first so it stays in the actions row #}
+                                                                            {% set _review_submit %}{{ form_widget(reviewForm.submit) }}{% endset %}
+                                                                            {% for child in reviewForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
                                                                         </div>
                                                                         <div class="modal-footer">
                                                                             <button type="button" class="{{ ui.btn('secondary', null, _perf_css) }}" data-bs-dismiss="modal">{{ 'routes_table.cancel'|trans({}, 'NowoPerformanceBundle') }}</button>
-                                                                            {{ form_widget(reviewForm.submit) }}
+                                                                            {{ _review_submit }}
                                                                         </div>
                                                                     {{ form_end(reviewForm) }}
                                                                 </div>
@@ -482,7 +486,8 @@
                                                 {% if enableRecordManagement and (deleteForms|default({}))[route.getId()] is defined %}
                                                     {% set deleteForm = deleteForms[route.getId()] %}
                                                     {{ form_start(deleteForm, {'action': path('nowo_performance.delete', {id: route.getId()}), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ ('routes_table.confirm_delete'|trans({}, 'NowoPerformanceBundle')|e('js')) ~ "');"}}) }}
-                                                        {{ form_widget(deleteForm._token) }}
+                                                        {# REQ-TWIG-003: child loop (CSRF token) #}
+                                                        {% for child in deleteForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
                                                         <button type="submit" class="text-red-600 hover:text-red-900" title="{{ 'routes_table.delete'|trans({}, 'NowoPerformanceBundle') }}">
                                                             {{ ux_icon('bi:trash', {class: 'w-4 h-4'}) }}
                                                         </button>
@@ -521,9 +526,12 @@
                                                                             {{ form_errors(reviewForm.save_access_records) }}
                                                                         </div>
                                                                         {% endif %}
+                                                                        {# REQ-TWIG-003: child loop for the remaining children; the submit is captured first so it stays in the actions row #}
+                                                                        {% set _review_submit %}{{ form_widget(reviewForm.submit, {attr: {class: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'}}) }}{% endset %}
+                                                                        {% for child in reviewForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
                                                                         <div class="flex justify-end space-x-2">
                                                                             <button type="button" onclick="document.getElementById('reviewModal{{ route.getId() }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">{{ 'routes_table.cancel'|trans({}, 'NowoPerformanceBundle') }}</button>
-                                                                            {{ form_widget(reviewForm.submit, {'attr': {'class': 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'}}) }}
+                                                                            {{ _review_submit }}
                                                                         </div>
                                                                     {{ form_end(reviewForm) }}
                                                                 </div>

@@ -6,7 +6,12 @@
     <h1>Edit Product #{{ product.id }}</h1>
 
     {{ form_start(form) }}
-        {{ form_widget(form) }}
+        {# REQ-TWIG-003: child loop #}
+        {% for child in form %}
+            {% if not child.rendered %}
+                {{ form_row(child) }}
+            {% endif %}
+        {% endfor %}
         <button type="submit" class="btn btn-primary">Update</button>
         <a href="{{ path('product_index') }}" class="btn btn-secondary">Cancel</a>
     {{ form_end(form) }}

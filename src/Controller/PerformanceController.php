@@ -767,6 +767,7 @@ class PerformanceController extends AbstractController
         $envForm   = $this->createForm(StatisticsEnvFilterType::class, $envFilter, [
             'environments' => $environments,
             'attr_class'   => $this->template === 'tailwind' ? 'mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500' : 'form-select',
+            'attr_extra'   => ['onchange' => 'this.form.submit()'],
         ]);
         $envForm->handleRequest($request);
         $env = $this->normalizeEnv($envForm->getData()->env ?? $this->getParameter('kernel.environment'));
@@ -2407,6 +2408,7 @@ class PerformanceController extends AbstractController
             'available_routes' => $availableRoutes,
             'all_routes_label' => 'access_statistics.all_routes',
             'all_status_label' => 'access_statistics.all_status_codes',
+            'record_fields'    => false,
         ]);
         $filterForm->handleRequest($request);
         $filterData = $filterForm->getData();

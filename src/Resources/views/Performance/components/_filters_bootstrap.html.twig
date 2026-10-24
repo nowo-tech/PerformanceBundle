@@ -168,10 +168,15 @@
                         </div>
                     </div>
 
-                    <div class="col-12">
-                        {% if not form.submit.isRendered %}
-                            {{ form_widget(form.submit) }}
+                    {# REQ-TWIG-003: grouped custom layout above (rule 3); the loop renders any remaining child. The submit is captured first so it stays in the actions row. #}
+                    {% set _filters_submit %}{{ form_widget(form.submit) }}{% endset %}
+                    {% for child in form %}
+                        {% if not child.rendered %}
+                            <div class="col-md-2">{{ form_row(child) }}</div>
                         {% endif %}
+                    {% endfor %}
+                    <div class="col-12">
+                        {{ _filters_submit }}
                         <a href="{{ path('nowo_performance.index') }}" class="{{ ui.btn('secondary', null, _perf_css) }}">Reset</a>
                     </div>
                 {{ form_end(form, {'render_rest': false}) }}

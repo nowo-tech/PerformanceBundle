@@ -29,14 +29,16 @@
             </div>
             <div class="card-body">
                 {{ form_start(filterForm, {'action': path('nowo_performance.access_statistics'), 'attr': {'class': 'row g-3'}}) }}
-                    <div class="col-md-3">{{ form_row(filterForm.start_date) }}</div>
-                    <div class="col-md-3">{{ form_row(filterForm.end_date) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.env) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.route) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.path) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.status_code) }}</div>
+                    {# REQ-TWIG-003: child loop; the submit is captured first so it stays in the actions row #}
+                    {% set _filter_cols = {start_date: 'col-md-3', end_date: 'col-md-3'} %}
+                    {% set _filter_submit %}{{ form_widget(filterForm.filter) }}{% endset %}
+                    {% for child in filterForm %}
+                        {% if not child.rendered %}
+                            <div class="{{ _filter_cols[child.vars.name]|default('col-md-2') }}">{{ form_row(child) }}</div>
+                        {% endif %}
+                    {% endfor %}
                     <div class="col-md-12">
-                        {{ form_widget(filterForm.filter) }}
+                        {{ _filter_submit }}
                         <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
                     </div>
                 {{ form_end(filterForm, {'render_rest': false}) }}
@@ -212,35 +214,21 @@
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h2>
         {{ form_start(filterForm, {'action': path('nowo_performance.access_statistics'), 'attr': {'class': 'space-y-4'}}) }}
+            {# REQ-TWIG-003: child loop; the submit is captured first so it stays in the actions row #}
+            {% set _filter_submit %}{{ form_widget(filterForm.filter, {attr: {class: 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}{% endset %}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <div>
-                    {{ form_label(filterForm.start_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.start_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.start_date) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.end_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.end_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.end_date) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.env, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.env, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.env) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.route, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.route, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.route) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.status_code, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.status_code, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.status_code) }}
-                </div>
+                {% for child in filterForm %}
+                    {% if not child.rendered %}
+                        <div>
+                            {{ form_label(child, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                            {{ form_widget(child, {attr: child.vars.attr|merge({class: 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'})}) }}
+                            {{ form_errors(child) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
             <div class="flex flex-wrap items-center gap-2 pt-2">
-                {{ form_widget(filterForm.filter, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}
+                {{ _filter_submit }}
                 <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
             </div>
         {{ form_end(filterForm, {'render_rest': false}) }}

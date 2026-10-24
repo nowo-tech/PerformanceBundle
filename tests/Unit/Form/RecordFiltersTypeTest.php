@@ -50,6 +50,19 @@ final class RecordFiltersTypeTest extends TypeTestCase
         $this->assertTrue($form->has('filter'));
     }
 
+    public function testRecordFieldsFalseBuildsOnlyTheStatisticsFilters(): void
+    {
+        $form = $this->factory->create(RecordFiltersType::class, new RecordFilters(), [
+            'environments'  => ['dev'],
+            'record_fields' => false,
+        ]);
+
+        $this->assertSame(
+            ['start_date', 'end_date', 'env', 'route', 'path', 'status_code', 'filter'],
+            array_keys($form->all()),
+        );
+    }
+
     public function testConfigureOptionsSetsDefaults(): void
     {
         $resolver = $this->createMock(OptionsResolver::class);
@@ -64,8 +77,9 @@ final class RecordFiltersTypeTest extends TypeTestCase
                 && isset($defaults['environments'])
                 && isset($defaults['available_routes'])
                 && isset($defaults['all_routes_label'])
-                && isset($defaults['all_status_label'])));
-        $resolver->expects($this->exactly(2))->method('setAllowedTypes');
+                && isset($defaults['all_status_label'])
+                && ($defaults['record_fields'] ?? null) === true));
+        $resolver->expects($this->exactly(3))->method('setAllowedTypes');
 
         $this->formType->configureOptions($resolver);
     }

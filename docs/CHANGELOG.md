@@ -79,6 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bundle views render their Symfony forms through the child loop (`{% for child in form %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}`): access records / access statistics filters and the purge form, the dashboard clear-data form, the delete and review forms of the routes tables (both partials and the `RoutesTable` component), the statistics environment selector and the dashboard filters (`Filters` component and `_filters_*` partials keep their grouped custom layout and add the loop for the remaining children). Submit buttons are captured before the loop so they stay in their action rows. Fields that the FormType had but the template skipped are now rendered (`path` in the Tailwind access statistics and in the `Filters` component). `RecordFiltersType` gains a `record_fields` option (default `true`); the access statistics page sets it to `false`, so it keeps its six filters. The statistics environment selector gets its auto-submit `onchange` from the FormType `attr_extra` option instead of the template, so its `attr_class` is no longer dropped (REQ-TWIG-003).
+- Demo: product create/edit forms use the child loop instead of `form_widget(form)` (REQ-TWIG-003).
+
 ## [3.8.0] - 2026-10-22
 
 PSR-3 logger instead of error_log, release-check chain and CI gates, Rector PHP 8.2, demo fixes, dependency refresh. See [UPGRADING](UPGRADING.md#to-380).

@@ -50,20 +50,16 @@
             </div>
             <div class="card-body">
                 {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'row g-3'}}) }}
-                    <div class="col-md-3">{{ form_row(filterForm.start_date) }}</div>
-                    <div class="col-md-3">{{ form_row(filterForm.end_date) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.env) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.route) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.path) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.status_code) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.min_query_time) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.max_query_time) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.min_memory_mb) }}</div>
-                    <div class="col-md-2">{{ form_row(filterForm.max_memory_mb) }}</div>
-                    <div class="col-md-3">{{ form_row(filterForm.referer) }}</div>
-                    <div class="col-md-3">{{ form_row(filterForm.user) }}</div>
+                    {# REQ-TWIG-003: child loop; the submit is captured first so it stays in the actions row #}
+                    {% set _filter_cols = {start_date: 'col-md-3', end_date: 'col-md-3', referer: 'col-md-3', user: 'col-md-3'} %}
+                    {% set _filter_submit %}{{ form_widget(filterForm.filter) }}{% endset %}
+                    {% for child in filterForm %}
+                        {% if not child.rendered %}
+                            <div class="{{ _filter_cols[child.vars.name]|default('col-md-2') }}">{{ form_row(child) }}</div>
+                        {% endif %}
+                    {% endfor %}
                     <div class="col-md-12">
-                        {{ form_widget(filterForm.filter) }}
+                        {{ _filter_submit }}
                         <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
                     </div>
                 {{ form_end(filterForm, {'render_rest': false}) }}
@@ -84,10 +80,12 @@
                 <p class="text-muted small">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
                 {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
                     {{ form_widget(purgeForm._token) }}
-                    <div class="col-md-2">{{ form_row(purgeForm.purgeType) }}</div>
-                    <div class="col-md-2 purge-days-field">{{ form_row(purgeForm.days) }}</div>
-                    <div class="col-md-2">{{ form_row(purgeForm.env) }}</div>
-                    <div class="col-md-2">{{ form_row(purgeForm.submit) }}</div>
+                    {# REQ-TWIG-003: child loop (the CSRF token is rendered above, outside the column grid) #}
+                    {% for child in purgeForm %}
+                        {% if not child.rendered %}
+                            <div class="col-md-2{{ child.vars.name == 'days' ? ' purge-days-field' : '' }}">{{ form_row(child) }}</div>
+                        {% endif %}
+                    {% endfor %}
                 {{ form_end(purgeForm, {'render_rest': false}) }}
             </div>
         </div>
@@ -274,65 +272,21 @@
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h2>
         {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'space-y-4'}}) }}
+            {# REQ-TWIG-003: child loop; the submit is captured first so it stays in the actions row #}
+            {% set _filter_submit %}{{ form_widget(filterForm.filter, {attr: {class: 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}{% endset %}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                    {{ form_label(filterForm.start_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.start_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.start_date) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.end_date, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.end_date, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.end_date) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.env, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.env, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.env) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.route, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.route, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.route) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.status_code, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.status_code, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
-                    {{ form_errors(filterForm.status_code) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.min_query_time, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.min_query_time, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '0.001'}}) }}
-                    {{ form_errors(filterForm.min_query_time) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.max_query_time, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.max_query_time, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '5'}}) }}
-                    {{ form_errors(filterForm.max_query_time) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.min_memory_mb, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.min_memory_mb, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '0'}}) }}
-                    {{ form_errors(filterForm.min_memory_mb) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.max_memory_mb, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.max_memory_mb, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': '100'}}) }}
-                    {{ form_errors(filterForm.max_memory_mb) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.referer, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.referer, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'example.com'}}) }}
-                    {{ form_errors(filterForm.referer) }}
-                </div>
-                <div>
-                    {{ form_label(filterForm.user, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                    {{ form_widget(filterForm.user, {'attr': {'class': 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'username@example.com'}}) }}
-                    {{ form_errors(filterForm.user) }}
-                </div>
+                {% for child in filterForm %}
+                    {% if not child.rendered %}
+                        <div>
+                            {{ form_label(child, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                            {{ form_widget(child, {attr: child.vars.attr|merge({class: 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'})}) }}
+                            {{ form_errors(child) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
             <div class="flex flex-wrap items-center gap-2 pt-2">
-                {{ form_widget(filterForm.filter, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}
+                {{ _filter_submit }}
                 <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
             </div>
         {{ form_end(filterForm, {'render_rest': false}) }}
@@ -349,10 +303,14 @@
         <p class="text-sm text-amber-800 mb-3">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
         {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
             {{ form_widget(purgeForm._token) }}
-            <div class="flex-1 min-w-[140px]">{{ form_row(purgeForm.purgeType, {'attr': {'class': 'form-select'}}) }}</div>
-            <div class="flex-1 min-w-[100px] purge-days-field">{{ form_row(purgeForm.days) }}</div>
-            <div class="flex-1 min-w-[120px]">{{ form_row(purgeForm.env) }}</div>
-            <div>{{ form_row(purgeForm.submit, {'attr': {'class': 'px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700'}}) }}</div>
+            {# REQ-TWIG-003: child loop (the CSRF token is rendered above); wrapper classes and attr overrides by child name #}
+            {% set _purge_wrap = {purgeType: 'flex-1 min-w-[140px]', days: 'flex-1 min-w-[100px] purge-days-field', env: 'flex-1 min-w-[120px]'} %}
+            {% set _purge_attr = {purgeType: {class: 'form-select'}, submit: {class: 'px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700'}} %}
+            {% for child in purgeForm %}
+                {% if not child.rendered %}
+                    <div{% if _purge_wrap[child.vars.name] is defined %} class="{{ _purge_wrap[child.vars.name] }}"{% endif %}>{{ _purge_attr[child.vars.name] is defined ? form_row(child, {attr: _purge_attr[child.vars.name]}) : form_row(child) }}</div>
+                {% endif %}
+            {% endfor %}
         {{ form_end(purgeForm, {'render_rest': false}) }}
     </div>
     {% endif %}

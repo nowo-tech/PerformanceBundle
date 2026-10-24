@@ -38,7 +38,8 @@
                 <div class="card">
                     <div class="card-body">
                         {{ form_start(envForm, {'action': path('nowo_performance.statistics'), 'attr': {'style': 'max-width: 200px;'}}) }}
-                            {{ form_row(envForm.env, {'attr': {'onchange': 'this.form.submit()'}}) }}
+                            {# REQ-TWIG-003: child loop (the env select's onchange auto-submit comes from the FormType attr_extra option) #}
+                            {% for child in envForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
                         {{ form_end(envForm) }}
                     </div>
                 </div>
@@ -487,7 +488,8 @@
         {# Environment selector – FormType (StatisticsEnvFilterType) #}
         <div class="mb-6 bg-white shadow rounded-lg p-6">
             {{ form_start(envForm, {'action': path('nowo_performance.statistics')}) }}
-                {{ form_row(envForm.env, {'attr': {'onchange': 'this.form.submit()'}}) }}
+                {# REQ-TWIG-003: child loop (the env select's onchange auto-submit comes from the FormType attr_extra option) #}
+                {% for child in envForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
             {{ form_end(envForm) }}
         </div>
 
