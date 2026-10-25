@@ -17,6 +17,7 @@ use Nowo\PerformanceBundle\Event\BeforeRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
 use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
+use Nowo\PerformanceBundle\Form\ChartFiltersType;
 use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
 use Nowo\PerformanceBundle\Form\DeleteRecordType;
@@ -452,6 +453,9 @@ class PerformanceController extends AbstractController
         $formForView->handleRequest($request);
         $formView = $formForView->createView();
 
+        // Client-side chart selects (unmapped, ids kept for the chart script; empty block prefix) — REQ-TWIG-005
+        $chartFiltersForm = $this->createForm(ChartFiltersType::class)->createView();
+
         return $this->render('@NowoPerformanceBundle/Performance/index.html.twig', [
             'routes'                 => $routes,
             'stats'                  => $stats,
@@ -469,6 +473,7 @@ class PerformanceController extends AbstractController
             'reviewForms'            => $reviewForms,
             'clearForm'              => $clearFormView,
             'deleteForms'            => $deleteForms,
+            'chartFiltersForm'       => $chartFiltersForm,
             'useComponents'          => $useComponents,
             'missingDependencies'    => $missingDependencies,
             'dependencyStatus'       => $dependencyStatus,

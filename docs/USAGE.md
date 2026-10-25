@@ -304,6 +304,22 @@ All components receive the same variables from the controller:
 - `order` - Current sort order (ASC/DESC)
 - `limit` - Current result limit
 - `environments` - Array of available environments
+- `chartFiltersForm` - FormView of `ChartFiltersType` (unmapped `metric` / `days` selects with ids `chart-metric` / `chart-days`, read by the chart script; used by the `_charts_*` partials). The `nowo_performance.Charts` Twig component builds the same form itself (`this.filtersForm`).
+
+#### Forms (REQ-TWIG-005)
+
+Every control of the dashboard is a Symfony Form rendered with `form_start`, the child loop and `form_end`: filters (`PerformanceFiltersType`), clear data, delete record, review, and the chart selects (`ChartFiltersType`, never submitted — the chart script reads them by id). Overrides of the dashboard templates and the demos must not reintroduce raw `<form>` / `<input>` / `<select>` / `<textarea>` markup; `make check-no-raw-html-form` (part of `make release-check`) fails when they do. Pattern:
+
+```twig
+{{ form_start(chartFiltersForm) }}
+    {{ form_label(chartFiltersForm.metric) }} {{ form_widget(chartFiltersForm.metric) }}
+    {% for child in chartFiltersForm %}
+        {% if not child.rendered %}
+            {{ form_row(child) }}
+        {% endif %}
+    {% endfor %}
+{{ form_end(chartFiltersForm) }}
+```
 
 ### Translation Overrides
 

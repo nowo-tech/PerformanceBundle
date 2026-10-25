@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Twig\Component;
 
 use Nowo\PerformanceBundle\Twig\Component\ChartsComponent;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Form\Forms;
 
 final class ChartsComponentTest extends TestCase
 {
@@ -67,5 +68,21 @@ final class ChartsComponentTest extends TestCase
         $component->environment = 'test';
 
         $this->assertSame('test', $component->environment);
+    }
+
+    public function testFiltersFormIsBuiltOnceWithChartIds(): void
+    {
+        $component = new ChartsComponent(Forms::createFormFactory());
+
+        $view = $component->getFiltersForm();
+
+        $this->assertSame($view, $component->getFiltersForm());
+        $this->assertSame('chart-metric', $view->children['metric']->vars['id']);
+        $this->assertSame('chart-days', $view->children['days']->vars['id']);
+    }
+
+    public function testFiltersFormFallsBackToStandaloneFactory(): void
+    {
+        $this->assertArrayHasKey('metric', (new ChartsComponent())->getFiltersForm()->children);
     }
 }

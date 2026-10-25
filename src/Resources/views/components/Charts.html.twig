@@ -11,19 +11,17 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="chart-metric" class="form-label">Metric:</label>
-                        <select id="chart-metric" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                            <option value="requestTime">Request Time</option>
-                            <option value="queryTime">Query Time</option>
-                            <option value="totalQueries">Total Queries</option>
-                            <option value="memoryUsage">Memory Usage</option>
-                        </select>
-                        <label for="chart-days" class="form-label ms-3">Days:</label>
-                        <select id="chart-days" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                            <option value="7">Last 7 days</option>
-                            <option value="14">Last 14 days</option>
-                            <option value="30">Last 30 days</option>
-                        </select>
+                        {{ form_start(this.filtersForm) }}
+                            {{ form_label(this.filtersForm.metric, null, {label_attr: {class: 'form-label'}}) }}
+                            {{ form_widget(this.filtersForm.metric, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
+                            {{ form_label(this.filtersForm.days, null, {label_attr: {class: 'form-label ms-3'}}) }}
+                            {{ form_widget(this.filtersForm.days, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
+                            {% for child in this.filtersForm %}
+                                {% if not child.rendered %}
+                                    {{ form_row(child) }}
+                                {% endif %}
+                            {% endfor %}
+                        {{ form_end(this.filtersForm) }}
                     </div>
                     <canvas id="performanceChart" style="max-height: 400px;"></canvas>
                 </div>
@@ -37,25 +35,21 @@
                 <h3 class="text-lg font-medium text-gray-900">Performance Trends</h3>
             </div>
             <div class="p-6">
-                <div class="mb-4 flex items-center gap-4">
+                {{ form_start(this.filtersForm, {attr: this.filtersForm.vars.attr|merge({class: 'mb-4 flex items-center gap-4'})}) }}
                     <div>
-                        <label for="chart-metric" class="block text-sm font-medium text-gray-700 mb-1">Metric:</label>
-                        <select id="chart-metric" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="requestTime">Request Time</option>
-                            <option value="queryTime">Query Time</option>
-                            <option value="totalQueries">Total Queries</option>
-                            <option value="memoryUsage">Memory Usage</option>
-                        </select>
+                        {{ form_label(this.filtersForm.metric, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                        {{ form_widget(this.filtersForm.metric, {attr: {class: 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                     </div>
                     <div>
-                        <label for="chart-days" class="block text-sm font-medium text-gray-700 mb-1">Days:</label>
-                        <select id="chart-days" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="7">Last 7 days</option>
-                            <option value="14">Last 14 days</option>
-                            <option value="30">Last 30 days</option>
-                        </select>
+                        {{ form_label(this.filtersForm.days, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                        {{ form_widget(this.filtersForm.days, {attr: {class: 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                     </div>
-                </div>
+                    {% for child in this.filtersForm %}
+                        {% if not child.rendered %}
+                            {{ form_row(child) }}
+                        {% endif %}
+                    {% endfor %}
+                {{ form_end(this.filtersForm) }}
                 <div class="relative" style="height: 400px;">
                     <canvas id="performanceChart"></canvas>
                 </div>

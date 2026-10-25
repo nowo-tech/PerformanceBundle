@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Twig\Component;
 
+use Nowo\PerformanceBundle\Form\ChartFiltersType;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\Forms;
+use Symfony\Component\Form\FormView;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /**
@@ -34,4 +38,21 @@ final class ChartsComponent
      * Template framework (bootstrap or tailwind).
      */
     public string $template = 'bootstrap';
+
+    private ?FormView $filtersForm = null;
+
+    public function __construct(
+        private readonly ?FormFactoryInterface $formFactory = null,
+    ) {
+    }
+
+    /**
+     * Unmapped metric/days selects read by the chart script (REQ-TWIG-005); `this.filtersForm` in the template.
+     */
+    public function getFiltersForm(): FormView
+    {
+        return $this->filtersForm ??= ($this->formFactory ?? Forms::createFormFactory())
+            ->createNamed('', ChartFiltersType::class)
+            ->createView();
+    }
 }

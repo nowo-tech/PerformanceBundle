@@ -160,12 +160,12 @@ check-twig-extra:
 	@./.scripts/check-twig-extra.sh
 
 # REQ-MAKE-002: sequential chain, ensure-up first.
-# check-no-raw-html-form (REQ-TWIG-005) is wired once the remaining raw form markup is migrated
 release-check:
 	@$(MAKE) ensure-up
 	@$(MAKE) check-no-cursor-coauthor
 	@$(MAKE) check-open-prs
 	@$(MAKE) check-twig-extra
+	@$(MAKE) check-no-raw-html-form
 	@$(MAKE) composer-sync
 	@$(MAKE) cs-fix
 	@$(MAKE) cs-check

@@ -6,19 +6,17 @@
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <label for="chart-metric" class="form-label">Metric:</label>
-                    <select id="chart-metric" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                        <option value="requestTime">Request Time</option>
-                        <option value="queryTime">Query Time</option>
-                        <option value="totalQueries">Total Queries</option>
-                        <option value="memoryUsage">Memory Usage</option>
-                    </select>
-                    <label for="chart-days" class="form-label ms-3">Days:</label>
-                    <select id="chart-days" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                        <option value="7">Last 7 days</option>
-                        <option value="14">Last 14 days</option>
-                        <option value="30">Last 30 days</option>
-                    </select>
+                    {{ form_start(chartFiltersForm) }}
+                        {{ form_label(chartFiltersForm.metric, null, {label_attr: {class: 'form-label'}}) }}
+                        {{ form_widget(chartFiltersForm.metric, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
+                        {{ form_label(chartFiltersForm.days, null, {label_attr: {class: 'form-label ms-3'}}) }}
+                        {{ form_widget(chartFiltersForm.days, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
+                        {% for child in chartFiltersForm %}
+                            {% if not child.rendered %}
+                                {{ form_row(child) }}
+                            {% endif %}
+                        {% endfor %}
+                    {{ form_end(chartFiltersForm) }}
                 </div>
                 <canvas id="performanceChart" style="max-height: 400px;"></canvas>
             </div>

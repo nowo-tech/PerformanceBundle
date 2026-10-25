@@ -82,7 +82,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Developer tooling (REQ-MAKE-002):** `make release-check` runs the full REQ-MAKE-002 chain in order (ensure-up, co-author and open-PR gates, check-twig-extra, composer-sync, cs-fix, cs-check, rector-dry, phpstan, igor, validate-translations, test-coverage, demo release-check). New `make check-no-raw-html-form` target (`.scripts/check-no-raw-html-form.sh`, REQ-TWIG-005); it joins the chain once the chart filter partials and the demo stop rendering raw form controls.
+- **Developer tooling (REQ-MAKE-002):** `make release-check` runs the full REQ-MAKE-002 chain in order (ensure-up, co-author and open-PR gates, check-twig-extra, composer-sync, cs-fix, cs-check, rector-dry, phpstan, igor, validate-translations, test-coverage, demo release-check). `make check-no-raw-html-form` (`.scripts/check-no-raw-html-form.sh`, REQ-TWIG-005) now runs in the chain.
+- **Dashboard charts (REQ-TWIG-005):** the metric / days selects of the "Performance Trends" chart are rendered from the new unmapped `ChartFiltersType` form (`form_start` / `form_label` / `form_widget` / child loop / `form_end`) in `_charts_bootstrap`, `_charts_tailwind` and the `Charts` Twig component; the controller passes `chartFiltersForm`, the component exposes `filtersForm`. Same ids and values for the chart script. See [UPGRADING](UPGRADING.md#unreleased).
+- Demo: the product list delete button posts through a `CsrfOnlyType` Symfony Form (`form_start` / `form_end`, `handleRequest` + `isValid()`) instead of a raw `<form>` with a hand-rolled `_token` (REQ-TWIG-005).
 
 ## [3.9.0] - 2026-10-24
 

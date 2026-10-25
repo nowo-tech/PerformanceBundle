@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Product;
+use App\Form\CsrfOnlyType;
 use App\Form\ProductType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -25,8 +28,14 @@ class ProductController extends AbstractController
     {
         $products = $this->entityManager->getRepository(Product::class)->findAll();
 
+        $deleteForms = [];
+        foreach ($products as $product) {
+            $deleteForms[$product->getId()] = $this->createDeleteForm((int) $product->getId())->createView();
+        }
+
         return $this->render('product/index.html.twig', [
-            'products' => $products,
+            'products'     => $products,
+            'delete_forms' => $deleteForms,
         ]);
     }
 
@@ -101,7 +110,10 @@ class ProductController extends AbstractController
             throw $this->createNotFoundException('Product not found');
         }
 
-        if ($this->isCsrfTokenValid('delete' . $product->getId(), $request->request->get('_token'))) {
+        $form = $this->createDeleteForm((int) $product->getId());
+        // Root-less CSRF-only form: submit the POST body explicitly (handleRequest() needs a child field in the payload).
+        $form->submit($request->request->all());
+        if ($form->isValid()) {
             $this->entityManager->remove($product);
             $this->entityManager->flush();
 
@@ -109,5 +121,19 @@ class ProductController extends AbstractController
         }
 
         return $this->redirectToRoute('product_index');
+    }
+
+    /**
+     * @return FormInterface<null>
+     */
+    private function createDeleteForm(int $id): FormInterface
+    {
+        /** @var FormFactoryInterface $factory */
+        $factory = $this->container->get('form.factory');
+
+        return $factory->createNamed('', CsrfOnlyType::class, null, [
+            'action'        => $this->generateUrl('product_delete', ['id' => $id]),
+            'csrf_token_id' => 'delete' . $id,
+        ]);
     }
 }
