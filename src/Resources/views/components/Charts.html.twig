@@ -2,6 +2,8 @@
 {% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
 {% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
 {% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
+{# REQ-TWIG-005: chart selects from ChartFiltersType (read once: the component builds a new view per call). #}
+{% set _filters = this.filtersForm %}
 {% if _is_bootstrap %}
     <div class="row mb-4">
         <div class="col-12">
@@ -11,17 +13,17 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        {{ form_start(this.filtersForm) }}
-                            {{ form_label(this.filtersForm.metric, null, {label_attr: {class: 'form-label'}}) }}
-                            {{ form_widget(this.filtersForm.metric, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
-                            {{ form_label(this.filtersForm.days, null, {label_attr: {class: 'form-label ms-3'}}) }}
-                            {{ form_widget(this.filtersForm.days, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
-                            {% for child in this.filtersForm %}
+                        {{ form_start(_filters) }}
+                            {{ form_label(_filters.metric, null, {label_attr: {class: 'form-label'}}) }}
+                            {{ form_widget(_filters.metric, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
+                            {{ form_label(_filters.days, null, {label_attr: {class: 'form-label ms-3'}}) }}
+                            {{ form_widget(_filters.days, {attr: {class: 'form-select form-select-sm', style: 'width: auto; display: inline-block;'}}) }}
+                            {% for child in _filters %}
                                 {% if not child.rendered %}
                                     {{ form_row(child) }}
                                 {% endif %}
                             {% endfor %}
-                        {{ form_end(this.filtersForm) }}
+                        {{ form_end(_filters) }}
                     </div>
                     <canvas id="performanceChart" style="max-height: 400px;"></canvas>
                 </div>
@@ -35,21 +37,21 @@
                 <h3 class="text-lg font-medium text-gray-900">Performance Trends</h3>
             </div>
             <div class="p-6">
-                {{ form_start(this.filtersForm, {attr: this.filtersForm.vars.attr|merge({class: 'mb-4 flex items-center gap-4'})}) }}
+                {{ form_start(_filters, {attr: _filters.vars.attr|merge({class: 'mb-4 flex items-center gap-4'})}) }}
                     <div>
-                        {{ form_label(this.filtersForm.metric, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                        {{ form_widget(this.filtersForm.metric, {attr: {class: 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                        {{ form_label(_filters.metric, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                        {{ form_widget(_filters.metric, {attr: {class: 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                     </div>
                     <div>
-                        {{ form_label(this.filtersForm.days, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                        {{ form_widget(this.filtersForm.days, {attr: {class: 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
+                        {{ form_label(_filters.days, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                        {{ form_widget(_filters.days, {attr: {class: 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}}) }}
                     </div>
-                    {% for child in this.filtersForm %}
+                    {% for child in _filters %}
                         {% if not child.rendered %}
                             {{ form_row(child) }}
                         {% endif %}
                     {% endfor %}
-                {{ form_end(this.filtersForm) }}
+                {{ form_end(_filters) }}
                 <div class="relative" style="height: 400px;">
                     <canvas id="performanceChart"></canvas>
                 </div>

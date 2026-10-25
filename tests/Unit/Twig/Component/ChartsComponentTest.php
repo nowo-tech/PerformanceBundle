@@ -70,13 +70,13 @@ final class ChartsComponentTest extends TestCase
         $this->assertSame('test', $component->environment);
     }
 
-    public function testFiltersFormIsBuiltOnceWithChartIds(): void
+    public function testFiltersFormIsStatelessWithChartIds(): void
     {
         $component = new ChartsComponent(Forms::createFormFactory());
 
         $view = $component->getFiltersForm();
 
-        $this->assertSame($view, $component->getFiltersForm());
+        $this->assertNotSame($view, $component->getFiltersForm());
         $this->assertSame('chart-metric', $view->children['metric']->vars['id']);
         $this->assertSame('chart-days', $view->children['days']->vars['id']);
     }

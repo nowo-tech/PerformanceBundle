@@ -39,19 +39,18 @@ final class ChartsComponent
      */
     public string $template = 'bootstrap';
 
-    private ?FormView $filtersForm = null;
-
     public function __construct(
         private readonly ?FormFactoryInterface $formFactory = null,
     ) {
     }
 
     /**
-     * Unmapped metric/days selects read by the chart script (REQ-TWIG-005); `this.filtersForm` in the template.
+     * Unmapped metric/days selects read by the chart script (REQ-TWIG-005). Stateless (worker mode): every call builds
+     * a new view, so the template reads `this.filtersForm` once into a variable.
      */
     public function getFiltersForm(): FormView
     {
-        return $this->filtersForm ??= ($this->formFactory ?? Forms::createFormFactory())
+        return ($this->formFactory ?? Forms::createFormFactory())
             ->createNamed('', ChartFiltersType::class)
             ->createView();
     }
