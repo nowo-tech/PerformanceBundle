@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.10.0] - 2026-10-26](#3100---2026-10-26)
 - [[3.9.0] - 2026-10-24](#390---2026-10-24)
 - [[3.8.0] - 2026-10-22](#380---2026-10-22)
 - [[3.7.3] - 2026-10-18](#373---2026-10-18)
@@ -79,6 +80,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[0.0.1] - 2026-01-26](#001---2026-01-26)
 
 ## [Unreleased]
+
+## [3.10.0] - 2026-10-26
+
+Forms in the bundle views are Symfony Form Types rendered with form_start / child loop / form_end, no raw form controls (REQ-TWIG-005). See [UPGRADING](UPGRADING.md#to-3100).
 
 ### Changed
 
@@ -226,6 +231,7 @@ Allows nowo-tech/ui-kit-bundle 2.x (^1.4 || ^2.2) so hosts can move to UiKit 2.2
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.10.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.10.0
 [3.9.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.9.0
 [3.8.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.8.0
 [3.7.3]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.7.3

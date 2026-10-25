@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.10.0](#to-3100)
 - [To 3.9.0](#to-390)
 - [To 3.8.0](#to-380)
 - [To 3.7.3](#to-373)
@@ -123,6 +124,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.10.0
+
+From **3.9.0**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 - **Template override (REQ-TWIG-005):** the chart filter selects (`chart-metric`, `chart-days`) in `Performance/components/_charts_bootstrap.html.twig`, `_charts_tailwind.html.twig` and `components/Charts.html.twig` are now rendered from the unmapped `ChartFiltersType` form instead of raw `<select>` markup. `PerformanceController::index()` always passes the new `chartFiltersForm` variable; `ChartsComponent` exposes `filtersForm` (it now takes an optional `FormFactoryInterface` constructor argument, autowired). Ids, option values and the chart script are unchanged, so existing overrides keep working; migrate them to `form_start` / `form_widget` / `form_end` when you touch them.
 
