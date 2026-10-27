@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle;
 
+use Nowo\PerformanceBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\TwigPathsPass;
@@ -81,6 +82,7 @@ final class NowoPerformanceBundle extends Bundle
     {
         parent::build($container);
 
+        $container->addCompilerPass(new CsrfProtectionPass());
         $container->addCompilerPass(new NotificationChannelsPass());
         $container->addCompilerPass(new QueryTrackingMiddlewarePass());
         $container->addCompilerPass(new TwigPathsPass());

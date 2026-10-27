@@ -36,13 +36,13 @@ final class ConfigurablePerformanceAccessCheckerTest extends TestCase
         self::assertFalse($checker->canAccess(null));
     }
 
-    public function testCanAccessReturnsTrueWhenAccessRolesAreEmpty(): void
+    public function testCanAccessDeniesWhenAccessRolesAreEmpty(): void
     {
         $authorizationChecker = $this->createMock(AuthorizationCheckerInterface::class);
         $authorizationChecker->expects(self::never())->method('isGranted');
 
         $checker = new ConfigurablePerformanceAccessChecker($authorizationChecker, []);
 
-        self::assertTrue($checker->canAccess(null));
+        self::assertFalse($checker->canAccess(null));
     }
 }

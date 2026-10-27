@@ -29,6 +29,8 @@ This Symfony bundle **tracks route performance metrics** (timing, database query
 | Threat | Mitigation |
 |--------|------------|
 | Unauthorized dashboard access | `security.access_roles` / custom `PerformanceAccessCheckerInterface`; Symfony `access_control`; never expose anonymously in production (`allow_unauthenticated: false`). |
+| Misconfigured empty role list opens the dashboard | An empty `access_roles` / `dashboard.roles` list denies (`ConfigurablePerformanceAccessChecker`, controller fallback); with the dashboard enabled, `PerformanceExtension` refuses to compile it unless `access_checker` / `allow_unauthenticated` is set. |
+| CSRF on dashboard mutations when the host disables form CSRF | `CsrfProtectionPass` fails compilation (fail closed) when the dashboard is enabled without `security.csrf.token_manager` / `form.type_extension.csrf` or with `framework.form.csrf_protection: false`. |
 | SQL injection | Use Doctrine parameterized queries; validate sort/filter parameters. |
 | SSRF via webhook URLs | Only allow webhook URLs from trusted configuration (env), not from end-user POST bodies. |
 | Information leakage in exports | Restrict export actions to trusted roles; avoid exporting secrets from request attributes. |
@@ -78,7 +80,7 @@ Setting `allow_unauthenticated: true` is supported for local demos only.
 
 ## CSRF (REQ-SEC-005)
 
-Every state-changing dashboard action (`clear`, `{id}/delete`, `{id}/review`, `purge-records`, `delete-records-by-filter`) is a POST route backed by a Symfony FormType, so the form CSRF token is validated by the Form component; an invalid token aborts the action and redirects to the dashboard without following a foreign `Referer`. Read-only pages and exports (dashboard, statistics, access records, chart data, CSV/JSON exports, diagnose) are GET and change nothing.
+Every state-changing dashboard action (`clear`, `{id}/delete`, `{id}/review`, `purge-records`, `delete-records-by-filter`) is a POST route backed by a Symfony FormType, so the form CSRF token is validated by the Form component; an invalid token aborts the action and redirects to the dashboard without following a foreign `Referer`. Because those form types define their own CSRF options, a host without the form CSRF extension would silently skip the check, so `DependencyInjection\Compiler\CsrfProtectionPass` refuses to compile the container when `dashboard.enabled` is true and `security.csrf.token_manager` / `form.type_extension.csrf` is missing or `framework.form.csrf_protection` is false (`symfony/security-csrf` is a hard dependency). Read-only pages and exports (dashboard, statistics, access records, chart data, CSV/JSON exports, diagnose) are GET and change nothing.
 
 ## Dependencies
 

@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -64,6 +65,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
             1.0,
             true,   // checkTableStatus
             true,   // accessRecordsRetentionDays
+            accessChecker: new AllowAllPerformanceAccessChecker(),
         );
     }
 
@@ -312,6 +314,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -361,6 +364,7 @@ final class PerformanceControllerHelperMethodsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();

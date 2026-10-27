@@ -81,6 +81,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Empty role lists deny (P1):** `ConfigurablePerformanceAccessChecker` and the controller's BC fallback no longer treat
+  an empty `security.access_roles` (or deprecated `dashboard.roles`, mapped into it) as "no role check": an empty list
+  grants nothing. With `dashboard.enabled: true`, `PerformanceExtension` throws a `LogicException` at compile time
+  when the list is empty and neither `security.access_checker` nor `security.allow_unauthenticated` is set.
+- **CSRF fails closed (P2):** new `CsrfProtectionPass` refuses to compile when the dashboard is enabled without
+  `security.csrf.token_manager` and `form.type_extension.csrf`, or with `framework.form.csrf_protection: false`. Before,
+  clear / delete / review / purge / delete-by-filter accepted forged POSTs on such hosts. `symfony/security-csrf` is now
+  a required dependency. See [UPGRADING](UPGRADING.md#unreleased).
+
+### Fixed
+
+- The dashboard no longer throws "The SecurityBundle is not registered" with `security.allow_unauthenticated: true` and
+  no SecurityBundle: the access check passes a null user when no token storage exists.
+- Demo (`demo/symfony8`) opens its login-less dashboard with `security.allow_unauthenticated: true` instead of an empty
+  role list.
+
 ## [3.10.0] - 2026-10-26
 
 Forms in the bundle views are Symfony Form Types rendered with form_start / child loop / form_end, no raw form controls (REQ-TWIG-005). See [UPGRADING](UPGRADING.md#to-3100).

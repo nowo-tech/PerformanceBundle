@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit;
 
+use Nowo\PerformanceBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\TwigPathsPass;
@@ -72,7 +73,7 @@ final class NowoPerformanceBundleTest extends TestCase
         $container  = $this->createMock(ContainerBuilder::class);
         $registered = [];
 
-        $container->expects($this->exactly(3))
+        $container->expects($this->exactly(4))
             ->method('addCompilerPass')
             ->willReturnCallback(static function (object $pass) use (&$registered, $container): ContainerBuilder {
                 $registered[] = $pass;
@@ -82,10 +83,11 @@ final class NowoPerformanceBundleTest extends TestCase
 
         $bundle->build($container);
 
-        $this->assertCount(3, $registered);
-        $this->assertInstanceOf(NotificationChannelsPass::class, $registered[0]);
-        $this->assertInstanceOf(QueryTrackingMiddlewarePass::class, $registered[1]);
-        $this->assertInstanceOf(TwigPathsPass::class, $registered[2]);
+        $this->assertCount(4, $registered);
+        $this->assertInstanceOf(CsrfProtectionPass::class, $registered[0]);
+        $this->assertInstanceOf(NotificationChannelsPass::class, $registered[1]);
+        $this->assertInstanceOf(QueryTrackingMiddlewarePass::class, $registered[2]);
+        $this->assertInstanceOf(TwigPathsPass::class, $registered[3]);
     }
 
     public function testBuildCallsParentBuild(): void
@@ -93,7 +95,7 @@ final class NowoPerformanceBundleTest extends TestCase
         $bundle    = new NowoPerformanceBundle();
         $container = $this->createMock(ContainerBuilder::class);
 
-        $container->expects($this->exactly(3))
+        $container->expects($this->exactly(4))
             ->method('addCompilerPass')
             ->willReturnSelf();
 

@@ -52,6 +52,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Throwable;
 
@@ -200,22 +201,32 @@ class PerformanceController extends AbstractController
     }
 
     /**
+     * Current user, or null when no token storage is available (allow_unauthenticated without SecurityBundle, or a
+     * controller built without its service locator); getUser() would throw a LogicException there.
+     */
+    private function currentUser(): ?UserInterface
+    {
+        if (!isset($this->container) || !$this->container->has('security.token_storage')) {
+            return null;
+        }
+
+        return $this->getUser();
+    }
+
+    /**
      * Deny access unless the configured access checker (or legacy roles) allows it.
      */
     private function assertAccess(string $message = 'You do not have permission to access the performance dashboard.'): void
     {
         if ($this->accessChecker instanceof PerformanceAccessCheckerInterface) {
-            if (!$this->accessChecker->canAccess($this->getUser())) {
+            if (!$this->accessChecker->canAccess($this->currentUser())) {
                 throw $this->createAccessDeniedException($message);
             }
 
             return;
         }
 
-        // BC fallback for unit tests / wiring without checker
-        if ($this->requiredRoles === []) {
-            return;
-        }
+        // BC fallback for wiring without checker: an empty role list denies (fail closed).
 
         foreach ($this->requiredRoles as $role) {
             if ($this->isGranted($role)) {

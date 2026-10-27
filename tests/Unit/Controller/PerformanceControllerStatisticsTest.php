@@ -10,6 +10,7 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Form\StatisticsEnvFilterType;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -115,6 +116,7 @@ final class PerformanceControllerStatisticsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -187,6 +189,7 @@ final class PerformanceControllerStatisticsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();

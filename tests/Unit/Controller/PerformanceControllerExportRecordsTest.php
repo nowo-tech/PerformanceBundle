@@ -9,6 +9,7 @@ use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -77,6 +78,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
             1.0,
             true,   // checkTableStatus
             true,   // accessRecordsRetentionDays
+            accessChecker: $requiredRoles === [] ? new AllowAllPerformanceAccessChecker() : null,
         );
     }
 
@@ -213,6 +215,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -288,6 +291,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -363,6 +367,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -422,6 +427,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -489,6 +495,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -581,6 +588,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -654,6 +662,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();
@@ -713,6 +722,7 @@ final class PerformanceControllerExportRecordsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();

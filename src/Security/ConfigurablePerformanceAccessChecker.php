@@ -8,6 +8,8 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
  * Default role-based access checker driven by nowo_performance.security.access_roles.
+ *
+ * An empty role list grants nothing (fail closed); the extension refuses to compile that configuration.
  */
 final readonly class ConfigurablePerformanceAccessChecker implements PerformanceAccessCheckerInterface
 {
@@ -20,10 +22,6 @@ final readonly class ConfigurablePerformanceAccessChecker implements Performance
 
     public function canAccess(?object $user): bool
     {
-        if ($this->accessRoles === []) {
-            return true;
-        }
-
         foreach ($this->accessRoles as $role) {
             if ($this->authorizationChecker->isGranted($role)) {
                 return true;

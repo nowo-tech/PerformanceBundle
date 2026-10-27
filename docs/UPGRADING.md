@@ -125,6 +125,23 @@
 
 ## Unreleased
 
+```bash
+composer update nowo-tech/performance-bundle
+```
+
+**Behaviour changes (security):**
+
+- An empty `nowo_performance.security.access_roles` (or deprecated `dashboard.roles: []` mapped into it) used to
+  disable the role check, opening the dashboard to everyone reaching its path. It now **denies**, and with
+  `dashboard.enabled: true` the container fails to compile. Configure a role, set `security.access_checker`, set
+  `dashboard.enabled: false`, or — dev/demo only — `security.allow_unauthenticated: true`.
+- With `dashboard.enabled: true` the container no longer compiles without form CSRF protection. Keep
+  `framework.csrf_protection` and `framework.form.csrf_protection` enabled. `symfony/security-csrf` is now a required
+  dependency (installed by `composer update`).
+- Code that instantiates `PerformanceController` without an access checker and with an empty role list (tests) now gets
+  `AccessDeniedException`; pass `accessChecker: new AllowAllPerformanceAccessChecker()` or a role list.
+- Default configuration (`ROLE_ADMIN`, CSRF on) is unaffected.
+
 ## To 3.10.0
 
 From **3.9.0**:

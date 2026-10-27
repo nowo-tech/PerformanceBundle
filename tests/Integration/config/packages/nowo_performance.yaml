@@ -16,3 +16,6 @@ nowo_performance:
         template: bootstrap
         enable_record_management: true
         enable_review_system: true
+    # Open test dashboard: an empty role list denies, so the functional tests opt in explicitly.
+    security:
+        allow_unauthenticated: true

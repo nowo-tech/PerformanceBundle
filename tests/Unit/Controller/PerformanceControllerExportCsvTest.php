@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 use Exception;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -72,6 +73,7 @@ final class PerformanceControllerExportCsvTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();

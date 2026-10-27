@@ -136,6 +136,36 @@ final class PerformanceExtensionTest extends TestCase
         ]], $container);
     }
 
+    public function testLoadRejectsEmptyAccessRolesWhenDashboardEnabled(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('security.access_roles (or the deprecated dashboard.roles) is empty');
+
+        $this->extension->load([['security' => ['access_roles' => []]]], $this->container);
+    }
+
+    public function testLoadRejectsEmptyDeprecatedDashboardRoles(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('security.access_roles (or the deprecated dashboard.roles) is empty');
+
+        $this->extension->load([['dashboard' => ['roles' => []]]], $this->container);
+    }
+
+    public function testLoadAcceptsEmptyAccessRolesWhenDashboardDisabled(): void
+    {
+        $this->extension->load([['dashboard' => ['enabled' => false], 'security' => ['access_roles' => []]]], $this->container);
+
+        self::assertSame([], $this->container->getParameter('nowo_performance.security.access_roles'));
+    }
+
+    public function testLoadAcceptsEmptyAccessRolesWithCustomChecker(): void
+    {
+        $this->extension->load([['security' => ['access_roles' => [], 'access_checker' => 'app.performance_checker']]], $this->container);
+
+        self::assertSame('app.performance_checker', (string) $this->container->getAlias(PerformanceAccessCheckerInterface::class));
+    }
+
     public function testLoadUsesAllowAllCheckerWhenUnauthenticatedAccessIsEnabled(): void
     {
         $container = new ContainerBuilder();

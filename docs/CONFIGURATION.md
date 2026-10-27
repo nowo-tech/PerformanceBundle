@@ -387,7 +387,7 @@ nowo_performance:
 **Default:** `['ROLE_ADMIN']`  
 **Status:** Deprecated — prefer [`security.access_roles`](#security).
 
-Kept for backward compatibility. When `security.access_roles` is not set explicitly, `dashboard.roles` is mapped into `security.access_roles`. Empty disables role checks (not recommended in production).
+Kept for backward compatibility. When `security.access_roles` is not set explicitly, `dashboard.roles` is mapped into `security.access_roles`. An empty list **denies**; with the dashboard enabled it fails container compilation unless `security.access_checker` or `security.allow_unauthenticated` is set.
 
 ```yaml
 nowo_performance:
@@ -581,7 +581,7 @@ Canonical dashboard access control (REQ-UI-002). Prefer these keys over deprecat
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `access_roles` | `[ROLE_ADMIN]` | Any matching role grants dashboard access (OR logic). Empty disables role checks. |
+| `access_roles` | `[ROLE_ADMIN]` | Any matching role grants dashboard access (OR logic). An empty list **denies** (never "everyone"); with `dashboard.enabled: true` it fails container compilation unless `access_checker` or `allow_unauthenticated` is set. |
 | `access_checker` | `null` | Optional service id implementing `PerformanceAccessCheckerInterface`. |
 | `allow_unauthenticated` | `false` | When `true`, skips the SecurityBundle requirement (demo/dev only). |
 
@@ -767,18 +767,17 @@ nowo_performance:
         allow_unauthenticated: true  # Not for production
 ```
 
-Or empty roles (disables bundle-level checks; still configure firewalls):
+An empty role list does **not** open the dashboard: `access_roles: []` (or the deprecated `dashboard.roles: []`) denies
+everyone, and with `dashboard.enabled: true` the container refuses to compile unless `security.access_checker` or
+`security.allow_unauthenticated` is set. Use `allow_unauthenticated: true` (above) for an open local dashboard.
 
-```yaml
-nowo_performance:
-    security:
-        access_roles: []
-```
+The dashboard also requires form CSRF protection: with `dashboard.enabled: true` the container refuses to compile
+without `security.csrf.token_manager` and `form.type_extension.csrf`, or with `framework.form.csrf_protection: false`.
 
 ### Security Considerations
 
 - **Production**: keep `allow_unauthenticated: false` and install SecurityBundle; default `ROLE_ADMIN` applies when roles are omitted
-- **Development**: you may use `allow_unauthenticated: true` or empty `access_roles` locally
+- **Development**: you may use `allow_unauthenticated: true` locally (an empty `access_roles` list denies)
 - **Role hierarchy**: Symfony's role hierarchy is respected (e.g., `ROLE_ADMIN` includes `ROLE_USER`)
 
 ### Example: Admin-Only Dashboard

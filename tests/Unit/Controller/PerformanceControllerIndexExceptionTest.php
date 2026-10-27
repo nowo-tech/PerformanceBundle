@@ -15,6 +15,7 @@ use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
@@ -106,6 +107,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -154,6 +156,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 $this->metricsService, null, true, [], 'bootstrap', null, null, null, false, false, null,
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -240,6 +243,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -300,6 +304,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 $this->metricsService, null, true, [], 'bootstrap', $cacheService, null, null, false, false, null,
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -343,6 +348,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 $this->metricsService, null, true, [], 'bootstrap', null, $dependencyChecker, null, false, false, null,
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -389,6 +395,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 null,
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -450,6 +457,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 $this->metricsService, null, true, [], 'bootstrap', null, null, null, false, false, null,
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503],
                 $recordRepository, true, true, ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();

@@ -20,6 +20,7 @@ use Nowo\PerformanceBundle\Model\DeleteRecordsByFilterRequest;
 use Nowo\PerformanceBundle\Model\PurgeAccessRecordsRequest;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -93,6 +94,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
             1.0,
             true,
             true,
+            accessChecker: new AllowAllPerformanceAccessChecker(),
         );
     }
 
@@ -144,6 +146,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -215,6 +218,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -275,6 +279,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -337,6 +342,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -444,6 +450,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -516,6 +523,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -579,6 +587,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -639,6 +648,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -714,6 +724,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getUser', 'addFlash', 'redirectToRoute'])
             ->addMethods(['trans'])
@@ -781,6 +792,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -849,6 +861,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -909,6 +922,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -969,6 +983,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -1045,6 +1060,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -1099,6 +1115,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
             1.0,
             true,
             true,
+            accessChecker: new AllowAllPerformanceAccessChecker(),
         );
 
         $this->expectException(NotFoundHttpException::class);
@@ -1142,6 +1159,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
             1.0,
             true,
             true,
+            accessChecker: new AllowAllPerformanceAccessChecker(),
         );
 
         $this->expectException(AccessDeniedException::class);
@@ -1190,6 +1208,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();

@@ -143,7 +143,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $exportConfig = $config['export'] ?? [];
         $container->setParameter(Configuration::ALIAS . '.export.max_rows', $exportConfig['max_rows'] ?? 5000);
 
-        $this->registerAccessChecker($container, $securityConfig);
+        $this->registerAccessChecker($container, $securityConfig, (bool) ($dashboardConfig['enabled'] ?? true));
 
         // Notifications configuration
         $notificationsConfig = $config['notifications'] ?? [];
@@ -192,7 +192,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
     /**
      * @param array{access_checker?: ?string, access_roles?: list<string>, allow_unauthenticated?: bool} $security
      */
-    private function registerAccessChecker(ContainerBuilder $container, array $security): void
+    private function registerAccessChecker(ContainerBuilder $container, array $security, bool $dashboardEnabled): void
     {
         if ($security['allow_unauthenticated'] ?? false) {
             $accessCheckerId = 'nowo_performance.access_checker.allow_all';
@@ -207,6 +207,10 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
             $container->setAlias(PerformanceAccessCheckerInterface::class, $accessCheckerId);
 
             return;
+        }
+
+        if (($security['access_roles'] ?? ['ROLE_ADMIN']) === [] && $dashboardEnabled) {
+            throw new LogicException('NowoPerformanceBundle: security.access_roles (or the deprecated dashboard.roles) is empty, so nobody could use the dashboard (an empty list denies). Configure at least one role, set security.access_checker, set dashboard.enabled: false, or set security.allow_unauthenticated: true (demo/dev only).');
         }
 
         $hasAuthorizationChecker = $container->hasDefinition('security.authorization_checker')

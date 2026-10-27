@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 use Exception;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -80,6 +81,7 @@ final class PerformanceControllerGetAvailableEnvironmentsTest extends TestCase
                 true,   // checkTableStatus
                 true,   // enableLogging
                 null,   // accessRecordsRetentionDays
+                'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods($mockGetParameter ? ['getParameter'] : [])
             ->getMock();

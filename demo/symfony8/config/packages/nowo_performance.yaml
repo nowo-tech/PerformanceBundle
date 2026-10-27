@@ -95,7 +95,7 @@ nowo_performance:
         prefix: '/demo'
 
         # Required roles to access the dashboard (users must have at least one)
-        # Deprecated BC: prefer security.access_roles. Empty = no bundle-level role checks.
+        # Deprecated BC: prefer security.access_roles. An empty list denies (fails compilation unless allow_unauthenticated).
         # roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
         roles: []
 
@@ -131,10 +131,11 @@ nowo_performance:
         enable_ranking_queries: true
 
     security:
-        # Canonical access (REQ-UI-002). Empty access_roles keeps the open demo dashboard.
+        # Canonical access (REQ-UI-002). An empty access_roles list denies; the demo has no login, so it opens the
+        # dashboard explicitly with allow_unauthenticated (demo/dev only — never in production).
         access_roles: []
         access_checker: null
-        allow_unauthenticated: false
+        allow_unauthenticated: true
 
     # Enable or disable bundle logging
     # When disabled, no error_log() calls will be made by the bundle
