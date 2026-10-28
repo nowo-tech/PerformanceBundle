@@ -20,6 +20,7 @@ use Symfony\UX\TwigComponent\ComponentInterface;
 use function array_key_exists;
 use function is_array;
 use function is_string;
+use function str_starts_with;
 
 /**
  * Extension for loading the bundle configuration.
@@ -195,6 +196,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
     private function registerAccessChecker(ContainerBuilder $container, array $security, bool $dashboardEnabled): void
     {
         if ($security['allow_unauthenticated'] ?? false) {
+            $this->refuseAllowUnauthenticatedInProduction($container);
             $accessCheckerId = 'nowo_performance.access_checker.allow_all';
             $container->setDefinition($accessCheckerId, new Definition(AllowAllPerformanceAccessChecker::class));
             $container->setAlias(PerformanceAccessCheckerInterface::class, $accessCheckerId);
@@ -394,6 +396,21 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
 
         if ($defaults !== []) {
             $container->prependExtensionConfig('nowo_ui_kit', $defaults);
+        }
+    }
+
+    /**
+     * `allow_unauthenticated` opens the performance dashboard to anonymous users: a dev / demo switch, refused in the prod environment and in
+     * any non-debug kernel outside the test environments (test*), as in ContactFormBundle.
+     */
+    private function refuseAllowUnauthenticatedInProduction(ContainerBuilder $container): void
+    {
+        $environment = $container->hasParameter('kernel.environment') ? $container->getParameter('kernel.environment') : '';
+        $environment = is_string($environment) ? $environment : '';
+        $debug       = $container->hasParameter('kernel.debug') ? (bool) $container->getParameter('kernel.debug') : true;
+
+        if ($environment === 'prod' || (!$debug && !str_starts_with($environment, 'test'))) {
+            throw new LogicException('nowo_performance.security.allow_unauthenticated is a dev/demo switch: it opens the performance dashboard to anonymous users and is refused in the prod environment and in non-debug kernels (test* environments excepted).');
         }
     }
 }

@@ -166,6 +166,27 @@ final class PerformanceExtensionTest extends TestCase
         self::assertSame('app.performance_checker', (string) $this->container->getAlias(PerformanceAccessCheckerInterface::class));
     }
 
+    public function testAllowUnauthenticatedIsRefusedInProduction(): void
+    {
+        foreach ([['prod', true], ['staging', false]] as [$environment, $debug]) {
+            $container = new ContainerBuilder();
+            $container->setParameter('kernel.environment', $environment);
+            $container->setParameter('kernel.debug', $debug);
+            try {
+                (new PerformanceExtension())->load([['security' => ['allow_unauthenticated' => true]]], $container);
+                self::fail($environment . ': allow_unauthenticated must be refused');
+            } catch (LogicException $e) {
+                self::assertStringContainsString('dev/demo switch', $e->getMessage());
+            }
+        }
+
+        $container = new ContainerBuilder();
+        $container->setParameter('kernel.environment', 'test');
+        $container->setParameter('kernel.debug', false);
+        (new PerformanceExtension())->load([['security' => ['allow_unauthenticated' => true]]], $container);
+        self::assertTrue($container->hasDefinition('nowo_performance.access_checker.allow_all'));
+    }
+
     public function testLoadUsesAllowAllCheckerWhenUnauthenticatedAccessIsEnabled(): void
     {
         $container = new ContainerBuilder();

@@ -197,3 +197,10 @@ nowo_performance:
             format: 'json'
             # Additional HTTP headers (key-value pairs)
             headers: []
+
+# Production mode (DEMO-FRANKENPHP): allow_unauthenticated is refused outside dev/test, so the dashboard needs a role.
+when@prod:
+    nowo_performance:
+        security:
+            allow_unauthenticated: false
+            access_roles: [ROLE_ADMIN]

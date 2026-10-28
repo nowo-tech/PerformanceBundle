@@ -82,6 +82,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **`allow_unauthenticated` refused in production.** The switch opens the performance dashboard to anonymous users; the
+  container now refuses to compile with it in the `prod` environment or in any non-debug kernel outside `test*`
+  environments (as ContactFormBundle). The demo keeps it in `dev` and requires `ROLE_ADMIN` in its production mode
+  (`when@prod`).
+
 ## [3.11.0] - 2026-10-28
 
 Security: empty role lists deny instead of granting everyone; CSRF fails closed without form CSRF protection. See [UPGRADING](UPGRADING.md#to-3110).
