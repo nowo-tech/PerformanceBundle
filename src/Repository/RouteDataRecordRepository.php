@@ -13,8 +13,11 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use SortDirection;
 
+use function ceil;
 use function count;
 use function is_string;
+use function max;
+use function min;
 
 use const PHP_URL_PATH;
 
@@ -28,6 +31,9 @@ use const PHP_URL_PATH;
  */
 class RouteDataRecordRepository extends ServiceEntityRepository
 {
+    /** Access records the dashboard list counts and paginates at most (deeper results: narrow the filters). */
+    public const MAX_LISTED = 10000;
+
     /** DQL string literal for the LIKE escape character (a single backslash), see {@see $this->likeContains()}. */
     private const LIKE_ESCAPE_DQL = "'\\'";
 
@@ -817,7 +823,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
      * @param string|null $referer Optional referer filter (partial match)
      * @param string|null $user Optional user filter (partial match on user_identifier or user_id)
      *
-     * @return array{records: list<RouteDataRecord>, total: int, page: int, per_page: int, total_pages: int}
+     * @return array{records: list<RouteDataRecord>, total: int, total_capped: bool, page: int, per_page: int, total_pages: int}
      */
     public function getPaginatedRecords(
         string $env,
@@ -859,27 +865,28 @@ class RouteDataRecordRepository extends ServiceEntityRepository
 
         $this->applyRecordFilters($qb, $startDate, $endDate, $routeName, $path, $statusCode, $minQueryTime, $maxQueryTime, $minMemoryUsage, $maxMemoryUsage, $referer, $user);
 
-        // Get total count
-        $totalQb = clone $qb;
-        $total   = (int) $totalQb->select('COUNT(r.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        // Bounded count: at most MAX_LISTED matching records are counted and paginated (no full COUNT / deep OFFSET
+        // on the growing records table for every page view; narrow the filters to reach older records).
+        $perPage    = max(1, $perPage);
+        $countQb    = clone $qb;
+        $matched    = count($countQb->select('r.id')->resetDQLPart('orderBy')->setMaxResults(self::MAX_LISTED + 1)->getQuery()->getScalarResult());
+        $total      = min($matched, self::MAX_LISTED);
+        $totalPages = (int) ceil($total / $perPage);
+        $page       = min(max(1, $page), max(1, $totalPages));
 
-        // Get paginated results
         $offset  = ($page - 1) * $perPage;
         $records = $qb->setFirstResult($offset)
-            ->setMaxResults($perPage)
+            ->setMaxResults(max(1, min($perPage, $total - $offset)))
             ->getQuery()
             ->getResult();
 
-        $totalPages = (int) ceil($total / $perPage);
-
         return [
-            'records'     => $records,
-            'total'       => $total,
-            'page'        => $page,
-            'per_page'    => $perPage,
-            'total_pages' => $totalPages,
+            'records'      => $records,
+            'total'        => $total,
+            'total_capped' => $matched > self::MAX_LISTED,
+            'page'         => $page,
+            'per_page'     => $perPage,
+            'total_pages'  => $totalPages,
         ];
     }
 

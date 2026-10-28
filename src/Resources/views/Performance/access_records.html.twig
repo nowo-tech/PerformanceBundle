@@ -95,7 +95,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ 'access_statistics.records'|trans({}, 'NowoPerformanceBundle') }}</h5>
                 <span class="badge bg-primary">
-                    {{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}
+                    {{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}
                 </span>
             </div>
             <div class="card-body">
@@ -245,7 +245,7 @@
                                 {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - 
                                 {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }}
                                 {{ 'access_statistics.of'|trans({}, 'NowoPerformanceBundle') }} 
-                                {{ paginated_data.total|number_format }}
+                                {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}
                             </small>
                         </div>
                     {% endif %}
@@ -318,7 +318,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.records'|trans({}, 'NowoPerformanceBundle') }}</h2>
-            <span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">{{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}</span>
+            <span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">{{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}</span>
         </div>
         <div class="overflow-x-auto">
             {% if paginated_data.records|length > 0 %}
@@ -390,7 +390,7 @@
                 {% set pagination_params = _base_params %}
                 <nav class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
                     <p class="text-sm text-gray-600">
-                        {{ 'access_statistics.showing'|trans({}, 'NowoPerformanceBundle') }} {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }} {{ 'access_statistics.of'|trans({}, 'NowoPerformanceBundle') }} {{ paginated_data.total|number_format }}
+                        {{ 'access_statistics.showing'|trans({}, 'NowoPerformanceBundle') }} {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }} {{ 'access_statistics.of'|trans({}, 'NowoPerformanceBundle') }} {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}
                     </p>
                     <div class="flex gap-2">
                         {% if paginated_data.page > 1 %}

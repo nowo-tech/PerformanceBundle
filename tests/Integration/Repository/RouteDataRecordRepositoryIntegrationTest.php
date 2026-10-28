@@ -118,6 +118,21 @@ final class RouteDataRecordRepositoryIntegrationTest extends TestCase
         self::assertGreaterThanOrEqual(0, $count);
     }
 
+    public function testGetPaginatedRecordsClampsOutOfRangePagesAndReportsTheCap(): void
+    {
+        $this->createTablesAndRecordMetrics();
+        $repo = $this->getRepository();
+
+        $all     = $repo->getPaginatedRecords('test', 1, 1);
+        $clamped = $repo->getPaginatedRecords('test', 999, 1);
+
+        self::assertFalse($all['total_capped']);
+        self::assertGreaterThan(0, $all['total']);
+        self::assertSame($all['total_pages'], $clamped['page'], 'out-of-range page lands on the last page');
+        self::assertCount(1, $clamped['records']);
+        self::assertSame(10000, RouteDataRecordRepository::MAX_LISTED);
+    }
+
     public function testGetPaginatedRecordsReturnsPaginatedStructure(): void
     {
         $this->createTablesAndRecordMetrics();

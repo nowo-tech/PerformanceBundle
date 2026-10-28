@@ -919,7 +919,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
             ->getMock();
 
         $countQuery = $this->createMock(Query::class);
-        $countQuery->method('getSingleScalarResult')->willReturn(0);
+        $countQuery->method('getScalarResult')->willReturn([]);
         $recordsQuery = $this->createMock(Query::class);
         $recordsQuery->method('getResult')->willReturn([]);
 
@@ -933,6 +933,7 @@ final class RouteDataRecordRepositoryTest extends TestCase
         $qb->method('select')->willReturnSelf();
         $qb->method('setFirstResult')->willReturnSelf();
         $qb->method('setMaxResults')->willReturnSelf();
+        $qb->method('resetDQLPart')->willReturnSelf();
         $getQueryCallCount = 0;
         $qb->method('getQuery')->willReturnCallback(static function () use (&$getQueryCallCount, $countQuery, $recordsQuery): MockObject {
             ++$getQueryCallCount;

@@ -83,6 +83,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance
+
+- **Bounded access-records list.** Every page of the access records ran a full `COUNT` and an unbounded `OFFSET` on
+  the growing records table. The list now counts and paginates at most 10 000 matching records
+  (`RouteDataRecordRepository::MAX_LISTED`, totals shown as "10,000+"; narrow the filters to reach older records)
+  and clamps out-of-range pages to the last one.
+
 ## [3.12.0] - 2026-10-28
 
 Security: allow_unauthenticated is refused in production (prod or non-debug kernels). See [UPGRADING](UPGRADING.md#to-3120).
