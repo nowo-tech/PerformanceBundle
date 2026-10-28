@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.13.0] - 2026-10-28](#3130---2026-10-28)
 - [[3.12.0] - 2026-10-28](#3120---2026-10-28)
 - [[3.11.0] - 2026-10-28](#3110---2026-10-28)
 - [[3.10.0] - 2026-10-26](#3100---2026-10-26)
@@ -82,6 +83,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[0.0.1] - 2026-01-26](#001---2026-01-26)
 
 ## [Unreleased]
+
+## [3.13.0] - 2026-10-28
+
+Performance: the access-records list counts and paginates at most 10 000 records and clamps out-of-range pages. See [UPGRADING](UPGRADING.md#to-3130).
 
 ### Performance
 
@@ -273,6 +278,7 @@ Allows nowo-tech/ui-kit-bundle 2.x (^1.4 || ^2.2) so hosts can move to UiKit 2.2
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.13.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.13.0
 [3.12.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.12.0
 [3.11.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.11.0
 [3.10.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.10.0
