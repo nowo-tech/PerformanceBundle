@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.12.0] - 2026-10-28](#3120---2026-10-28)
 - [[3.11.0] - 2026-10-28](#3110---2026-10-28)
 - [[3.10.0] - 2026-10-26](#3100---2026-10-26)
 - [[3.9.0] - 2026-10-24](#390---2026-10-24)
@@ -81,6 +82,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[0.0.1] - 2026-01-26](#001---2026-01-26)
 
 ## [Unreleased]
+
+## [3.12.0] - 2026-10-28
+
+Security: allow_unauthenticated is refused in production (prod or non-debug kernels). See [UPGRADING](UPGRADING.md#to-3120).
 
 ### Security
 
@@ -261,6 +266,7 @@ Allows nowo-tech/ui-kit-bundle 2.x (^1.4 || ^2.2) so hosts can move to UiKit 2.2
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.12.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.12.0
 [3.11.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.11.0
 [3.10.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.10.0
 [3.9.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.9.0
