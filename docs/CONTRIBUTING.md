@@ -21,6 +21,7 @@ This project follows the [Contributor Covenant Code of Conduct](../CODE_OF_CONDU
 - [Running Tests](#running-tests)
   - [With Docker](#with-docker)
   - [Without Docker](#without-docker-1)
+- [End-to-end tests and screenshots (REQ-DEMO-013)](#end-to-end-tests-and-screenshots-req-demo-013)
 - [Available Make Commands](#available-make-commands)
 - [Reporting Issues](#reporting-issues)
 - [Contact](#contact)
@@ -168,6 +169,17 @@ composer cs-check
 # Fix code style
 composer cs-fix
 ```
+
+## End-to-end tests and screenshots (REQ-DEMO-013)
+
+The Symfony 8 demo ships a Playwright suite in `demo/symfony8/e2e/` (official Playwright image, nothing to install on the host):
+
+```bash
+make -C demo/symfony8 test-e2e          # starts the demo if needed, runs the happy-path specs
+make -C demo/symfony8 demo-screenshots  # recaptures docs/images/demo/*.webp (PNG → WebP via sharp)
+```
+
+Refresh the screenshots when the dashboard changes and commit only the `.webp` files.
 
 ## Available Make Commands
 

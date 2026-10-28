@@ -14,6 +14,21 @@ This bundle is **FrankenPHP worker mode friendly**.
 
 This also holds when the kernel is not reset between requests; see [docs/FRANKENPHP-WORKER-AUDIT.md](docs/FRANKENPHP-WORKER-AUDIT.md).
 
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/images/demo/dashboard-main.webp" alt="Performance dashboard: KPIs, trends chart and routes table" />
+      <br /><sub>Dashboard — KPIs, trends and slowest routes</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/images/demo/dashboard-advanced-statistics.webp" alt="Advanced statistics: recommendations, correlations and distributions" />
+      <br /><sub>Advanced statistics — recommendations and correlations</sub>
+    </td>
+  </tr>
+</table>
+
+More views (access statistics by hour) in [Screenshots](#screenshots).
+
 ## What is this?
 
 This bundle helps you **track and analyze route performance** in your Symfony applications:
@@ -244,15 +259,11 @@ The bundle provides a web dashboard to monitor and analyze route performance. Be
 
 The main dashboard shows KPIs (total routes, records, average/max queries and request time), top routes by usage and by latency, filters (environment, sort, limit), an optional “Optional Dependencies Missing” alert with `composer require` hints, a **Performance Trends** chart (average and max request time over days), and a **Routes** table with columns: route name, HTTP method, status codes, access count, environment, request time, query time, total queries, memory usage, last accessed at, access records link, and review status.
 
-![Performance Metrics Dashboard](docs/images/demo/dashboard-main.webp)
-
 *Access: dashboard path configured in `nowo_performance.dashboard.path` (e.g. `/performance`). Use **Diagnose**, **Advanced Statistics**, **Export CSV/JSON**, **Access Statistics by Hour**, and **Clear All Records** from the toolbar.*
 
 ### Advanced Performance Statistics
 
 This view provides statistical analysis to find optimization targets: **Performance Recommendations** (e.g. high average query count, request time outliers), **Correlation Analysis** (request time vs query time, query time vs query count, memory vs request time), **Efficiency Analysis** (query time ratio), **Traffic Distribution** and hot/bad routes, **Routes Needing Attention** (high request time or query count by percentile), and detailed **Request Time**, **Query Time**, **Query Count**, **Memory Usage**, and **Access Count** sections with min/mean/median/max, percentiles, and distribution histograms.
-
-![Advanced Performance Statistics](docs/images/demo/dashboard-advanced-statistics.webp)
 
 *Access: **Advanced Statistics** button from the main dashboard. Requires enough route data for meaningful stats.*
 
@@ -319,6 +330,8 @@ composer test
 # Run with coverage
 composer test-coverage
 ```
+
+Demo (Symfony 8, FrankenPHP): Playwright e2e with `make -C demo/symfony8 test-e2e`; refresh the screenshots above with `make -C demo/symfony8 demo-screenshots` (see [CONTRIBUTING](docs/CONTRIBUTING.md#end-to-end-tests-and-screenshots-req-demo-013)).
 
 ## Tests and coverage
 
