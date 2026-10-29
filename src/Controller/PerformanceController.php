@@ -1018,7 +1018,7 @@ class PerformanceController extends AbstractController
             }
 
             foreach ($routes as $route) {
-                fputcsv($handle, [
+                fputcsv($handle, array_map(self::csvCell(...), [
                     $route->getName() ?? '',
                     $route->getHttpMethod() ?? '',
                     $route->getEnv() ?? '',
@@ -1030,7 +1030,7 @@ class PerformanceController extends AbstractController
                     $route->getLastAccessedAt()?->format('Y-m-d H:i:s') ?? '',
                     $route->getCreatedAt()?->format('Y-m-d H:i:s') ?? '',
                     $route->getLastAccessedAt()?->format('Y-m-d H:i:s') ?? '',
-                ]);
+                ]));
             }
 
             fclose($handle);
@@ -1210,7 +1210,7 @@ class PerformanceController extends AbstractController
             foreach ($records as $r) {
                 $rd     = $r->getRouteData();
                 $params = $r->getRouteParams();
-                fputcsv($handle, [
+                fputcsv($handle, array_map(self::csvCell(...), [
                     $r->getId() ?? '',
                     $rd?->getName() ?? '',
                     $r->getRoutePath() ?? '',
@@ -1225,7 +1225,7 @@ class PerformanceController extends AbstractController
                     $r->getReferer() ?? '',
                     $r->getUserIdentifier() ?? '',
                     $r->getUserId() ?? '',
-                ]);
+                ]));
             }
             fclose($handle);
         });
@@ -1426,8 +1426,9 @@ class PerformanceController extends AbstractController
 
         $env       = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
         $routeName = $request->query->get('route');
-        $days      = (int) $request->query->get('days', 7);
-        $metric    = $request->query->get('metric', 'requestTime'); // requestTime, queryTime, totalQueries, memoryUsage
+        // Bounded window: the chart aggregates per day in PHP (SEC-004 L4).
+        $days   = max(1, min(365, (int) $request->query->get('days', 7)));
+        $metric = $request->query->get('metric', 'requestTime'); // requestTime, queryTime, totalQueries, memoryUsage
 
         try {
             $data = $this->getChartData($env, $routeName, $days, $metric);
@@ -2262,6 +2263,19 @@ class PerformanceController extends AbstractController
         }
 
         return $this->redirectBack($request);
+    }
+
+    /**
+     * CSV formula-injection guard (OWASP): a cell starting with =, +, -, @, TAB or CR is prefixed with a quote so
+     * spreadsheets treat it as text (referers and user identifiers are attacker-controlled).
+     */
+    private static function csvCell(mixed $value): mixed
+    {
+        if (is_string($value) && $value !== '' && str_contains("=+-@\t\r", $value[0])) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 
     /**

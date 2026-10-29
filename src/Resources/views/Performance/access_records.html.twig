@@ -185,7 +185,11 @@
                                         </td>
                                         <td>
                                             {% if record.referer %}
+                                                {% if record.referer starts with 'http://' or record.referer starts with 'https://' %}
                                                 <a href="{{ record.referer }}" target="_blank" rel="noopener noreferrer" class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record.referer }}">{{ record.referer }}</a>
+                                                {% else %}
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record.referer }}">{{ record.referer }}</span>
+                                                {% endif %}
                                             {% else %}
                                                 <span class="text-muted">—</span>
                                             {% endif %}
@@ -373,7 +377,11 @@
                         </td>
                         <td class="px-4 py-3 text-sm">
                             {% if record.referer %}
+                                {% if record.referer starts with 'http://' or record.referer starts with 'https://' %}
                                 <a href="{{ record.referer }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 truncate max-w-xs inline-block" title="{{ record.referer }}">{{ record.referer }}</a>
+                                {% else %}
+                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record.referer }}">{{ record.referer }}</span>
+                                {% endif %}
                             {% else %}<span class="text-gray-400">—</span>{% endif %}
                         </td>
                         <td class="px-4 py-3 text-sm">

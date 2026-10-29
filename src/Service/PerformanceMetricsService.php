@@ -325,7 +325,7 @@ class PerformanceMetricsService
             $routeData->setName($routeName);
             $routeData->setEnv($env);
             $routeData->setHttpMethod($httpMethod);
-            $routeData->setParams($params);
+            $routeData->setParams($params !== null ? SensitiveDataRedactor::redactParams($params) : null);
             $routeData->setLastAccessedAt(new DateTimeImmutable());
 
             $this->entityManager->persist($routeData);
@@ -382,7 +382,7 @@ class PerformanceMetricsService
                         $accessRecord->setRequestId($requestId);
                     }
                     if ($referer !== null && $referer !== '') {
-                        $accessRecord->setReferer($referer);
+                        $accessRecord->setReferer(SensitiveDataRedactor::redactUrl($referer));
                     }
                     if ($userIdentifier !== null && $userIdentifier !== '') {
                         $accessRecord->setUserIdentifier($userIdentifier);
@@ -391,10 +391,10 @@ class PerformanceMetricsService
                         $accessRecord->setUserId($userId);
                     }
                     if ($params !== null && $params !== []) {
-                        $accessRecord->setRouteParams($params);
+                        $accessRecord->setRouteParams(SensitiveDataRedactor::redactParams($params));
                     }
                     if ($routePath !== null && $routePath !== '') {
-                        $accessRecord->setRoutePath($routePath);
+                        $accessRecord->setRoutePath(SensitiveDataRedactor::redactUrl($routePath));
                     }
 
                     $this->entityManager->persist($accessRecord);

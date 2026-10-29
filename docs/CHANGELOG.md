@@ -84,6 +84,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security (SEC-004 re-audit 2026-10-29, Low)
+
+- **No secrets in access records.** The stored route path, referer and route parameters kept full query strings, so
+  reset / OAuth / signed-URL tokens ended up in the database, the dashboard and the exports. Values of sensitive keys
+  (`token`, `code`, `state`, `signature`, `password`, `secret`, `key`, `hash`, `expires`, `jwt`, `otp`, `session`, …)
+  are stored as `[redacted]` (`Service\SensitiveDataRedactor`); fragments are dropped.
+- **CSV formula injection.** Cells starting with `=`, `+`, `-`, `@`, TAB or CR are prefixed with `'` in the routes and
+  access-records CSV exports (the referer is attacker-controlled).
+- **Referer links.** The access-records pages link the referer only when it is an `http(s)://` URL; anything else is
+  printed as text.
+- **Bounded chart window.** `api/chart-data` clamps `days` to 1–365.
+
 ## [3.13.0] - 2026-10-28
 
 Performance: the access-records list counts and paginates at most 10 000 records and clamps out-of-range pages. See [UPGRADING](UPGRADING.md#to-3130).
