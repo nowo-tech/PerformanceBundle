@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.15.0] - 2026-10-30](#3150---2026-10-30)
 - [[3.14.1] - 2026-10-30](#3141---2026-10-30)
 - [[3.14.0] - 2026-10-29](#3140---2026-10-29)
 - [[3.13.0] - 2026-10-28](#3130---2026-10-28)
@@ -85,6 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[0.0.1] - 2026-01-26](#001---2026-01-26)
 
 ## [Unreleased]
+
+## [3.15.0] - 2026-10-30
+
+Performance: UiKit page contract (scaffolds, dialogs, server-side SVG charts), PSR-20 clock, 100% coverage; review/Twig components/DDL fixes; SEC-004 BP: literal-boolean switches, bad dates ignored, export-ignore See [UPGRADING](UPGRADING.md#to-3150).
 
 Performance: dashboard on the UiKit page contract (REQ-UI-003), canonical `web_ui` keys, PSR-20 clock. See
 [UPGRADING](UPGRADING.md#unreleased).
@@ -411,6 +416,7 @@ Allows nowo-tech/ui-kit-bundle 2.x (^1.4 || ^2.2) so hosts can move to UiKit 2.2
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.15.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.15.0
 [3.14.1]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.14.1
 [3.14.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.14.0
 [3.13.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.13.0

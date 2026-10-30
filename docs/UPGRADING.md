@@ -3,6 +3,11 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.15.0](#to-3150)
+  - [Template contract (REQ-UI-003)](#template-contract-req-ui-003)
+  - [Configuration](#configuration)
+  - [Literal booleans (security)](#literal-booleans-security)
+  - [Other](#other)
 - [To 3.14.1](#to-3141)
 - [To 3.14.0](#to-3140)
 - [To 3.13.0](#to-3130)
@@ -129,6 +134,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.15.0
+
+From **3.14.1**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 From **3.14.1**:
 
