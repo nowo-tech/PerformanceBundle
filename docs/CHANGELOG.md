@@ -85,6 +85,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`track_user` and kernel environment detection never worked:** `PerformanceMetricsSubscriber` used
+  `#[Autowire(service: '?security.helper')]` / `'?kernel'` / `'?stopwatch'`, which are not optional references (the
+  attribute keeps `?` in the service id) and, the arguments being nullable, compiled to `null`. Access records never
+  stored the logged-in user and the `environments` filter fell back to `APP_ENV` instead of the kernel environment.
+  The security helper is now wired in `services.yaml` (`@?security.helper`, still optional without SecurityBundle) and
+  the kernel is autowired by type. The stopwatch stays unwired on purpose (the query-time fallback resets it, so it must
+  not be the profiler's debug stopwatch); behaviour unchanged. Kernel test: `PerformanceMetricsSubscriberWiringTest`.
+
 ## [3.14.0] - 2026-10-29
 
 Performance: tokens redacted in stored referers/route params; CSV formula guard See [UPGRADING](UPGRADING.md#to-3140).

@@ -87,6 +87,11 @@ services:
 
     # Event Subscriber (EventSubscriberInterface / getSubscribedEvents only — no #[AsEventListener])
     Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber:
+        arguments:
+            # Optional services: an `#[Autowire(service: '?…')]` attribute is not an optional reference and compiled to null.
+            $security: '@?security.helper'
+            # The query-time fallback resets the stopwatch: never hand it the shared debug stopwatch (profiler timeline).
+            $stopwatch: null
         tags:
             - { name: kernel.event_subscriber }
             - { name: kernel.reset, method: reset }

@@ -126,17 +126,19 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         #[Autowire('%nowo_performance.track_user%')]
         private readonly bool $trackUser = false,
         private readonly ?RequestStack $requestStack = null,
-        #[Autowire(service: '?security.helper')]
+        /**
+         * Security helper (`security.helper`, optional), wired in services.yaml: `#[Autowire(service: '?…')]` is not an
+         * optional reference (the id keeps the `?`) and compiled to null.
+         */
         private readonly ?object $security = null,
         /**
-         * Stopwatch instance for tracking query execution time.
+         * Stopwatch for the query-time fallback. Not wired by the bundle (services.yaml passes null): the fallback
+         * resets it, so it must never be the shared debug stopwatch of the profiler.
          */
-        #[Autowire(service: '?stopwatch')]
         private readonly ?Stopwatch $stopwatch = null,
         /**
-         * Kernel interface for getting environment.
+         * Kernel interface for getting environment (autowired by type).
          */
-        #[Autowire(service: '?kernel')]
         private readonly ?KernelInterface $kernel = null,
         private readonly ?QueryTrackingCounters $queryCounters = null,
         private readonly ?LoggerInterface $logger = null,
