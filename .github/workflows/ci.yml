@@ -27,6 +27,28 @@ jobs:
   test:
     name: PHP ${{ matrix.php }} - Symfony ${{ matrix.symfony }}
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: performance_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword" --health-interval=5s --health-timeout=3s --health-retries=20
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: performance_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=5s --health-timeout=3s --health-retries=20
+    # The table-command database tests (tests/Integration/Command) run on MySQL, PostgreSQL and SQLite (REQ-TEST-003).
+    env:
+      DATABASE_URL: mysql://root:password@127.0.0.1:3306/performance_test?serverVersion=8.0
+      DATABASE_URL_PG: postgresql://postgres:password@127.0.0.1:5432/performance_test?serverVersion=15
+
 
     strategy:
       fail-fast: false
@@ -235,6 +257,28 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: performance_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword" --health-interval=5s --health-timeout=3s --health-retries=20
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: performance_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=5s --health-timeout=3s --health-retries=20
+    # The table-command database tests (tests/Integration/Command) run on MySQL, PostgreSQL and SQLite (REQ-TEST-003).
+    env:
+      DATABASE_URL: mysql://root:password@127.0.0.1:3306/performance_test?serverVersion=8.0
+      DATABASE_URL_PG: postgresql://postgres:password@127.0.0.1:5432/performance_test?serverVersion=15
+
 
     steps:
       - name: Checkout code

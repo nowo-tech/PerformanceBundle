@@ -32,6 +32,7 @@ use function is_string;
 use function preg_match;
 
 use const CASE_LOWER;
+use const PHP_VERSION_ID;
 
 /**
  * Real-database plumbing for the create-table command tests (REQ-TEST-003): a dedicated database per driver
@@ -127,6 +128,10 @@ trait CommandDatabaseTrait
         if ($this->realEntityManager === null) {
             $config = ORMSetup::createAttributeMetadataConfiguration([dirname(__DIR__, 3) . '/src/Entity'], true);
             $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER, true));
+            // ORM 3.6+ needs native lazy objects on PHP 8.4+ (symfony/var-exporter 8 dropped LazyGhost)
+            if (PHP_VERSION_ID >= 80400 && method_exists($config, 'enableNativeLazyObjects')) {
+                $config->enableNativeLazyObjects(true);
+            }
             if ($this->realConnection === null) {
                 throw new RuntimeException('connect() first.');
             }

@@ -112,7 +112,7 @@ final class NowoPerformanceBundleTest extends TestCase
     /** REQ-DI-001: the bundle no longer overrides boot() (no kernel lookup in the container, no global VarDumper handler). */
     public function testBundleDoesNotOverrideBoot(): void
     {
-        self::assertSame(Bundle::class, (new ReflectionMethod(NowoPerformanceBundle::class, 'boot'))->getDeclaringClass()->getName());
+        self::assertNotSame(NowoPerformanceBundle::class, (new ReflectionMethod(NowoPerformanceBundle::class, 'boot'))->getDeclaringClass()->getName());
     }
 
     public function testBuildReceivesContainerBuilder(): void
