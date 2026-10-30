@@ -135,6 +135,8 @@
 
 ## Unreleased
 
+No action needed when you import `@NowoPerformanceBundle/Resources/config/routes.yaml` (as documented). If the dashboard only appeared through Symfony's default `controllers: { resource: routing.controllers }` (Symfony >= 7.3, without `web_ui.path_prefix`), add that import: the bundle controller is no longer registered there (REQ-SF-004 rule 7).
+
 ## To 3.15.0
 
 From **3.14.1**:
