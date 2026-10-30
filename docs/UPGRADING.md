@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.15.2](#to-3152)
 - [To 3.15.1](#to-3151)
 - [To 3.15.0](#to-3150)
   - [Template contract (REQ-UI-003)](#template-contract-req-ui-003)
@@ -135,6 +136,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.15.2
+
+From **3.15.1**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 Forms: no action needed. The deprecated `ChartFiltersType` is now a FormKit Type bound to the `performance` profile
 (REQ-TWIG-005 rule 11); its fields, ids and markup are unchanged. `nowo-tech/form-kit-bundle` was already a required
