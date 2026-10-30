@@ -219,7 +219,8 @@ removed in 4.0 — the dashboard pages no longer use them.
 
 #### Forms (REQ-TWIG-005)
 
-Every control of the dashboard is a Symfony Form rendered with `form_start`, the child loop and `form_end`: filters
+Every control of the dashboard is a Symfony Form whose type is a FormKit Type (profile `performance`, see
+[CONFIGURATION](CONFIGURATION.md#formkit-profile-performance)) rendered with `form_start`, the child loop and `form_end`: filters
 (`PerformanceFiltersType`, `RecordFiltersType`, `StatisticsEnvFilterType`), clear data, delete record, delete by
 filter, purge and review. The form types carry no framework classes (the host form theme / UiKit slots style them);
 `with_submit: false` (filters, clear data, delete by filter) leaves the submit button to the page (UiKit list filters

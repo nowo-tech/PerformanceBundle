@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Form;
 
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -25,8 +27,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
+#[FormKitConfig('performance')]
 final class ChartFiltersType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /** HTML ids the chart script relies on. */
     public const FIELD_IDS = [
         'metric' => 'chart-metric',
