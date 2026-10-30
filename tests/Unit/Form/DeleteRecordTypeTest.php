@@ -9,6 +9,8 @@ use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+use function array_key_exists;
+
 final class DeleteRecordTypeTest extends TypeTestCase
 {
     private DeleteRecordType $formType;
@@ -50,7 +52,9 @@ final class DeleteRecordTypeTest extends TypeTestCase
                 && isset($defaults['csrf_protection']) && $defaults['csrf_protection'] === true
                 && isset($defaults['csrf_field_name']) && $defaults['csrf_field_name'] === '_token'
                 && isset($defaults['csrf_token_id']) && $defaults['csrf_token_id'] === 'delete_performance_record'
-                && isset($defaults['submit_attr_class']) && $defaults['submit_attr_class'] === 'btn btn-danger btn-sm'));
+                && array_key_exists('submit_attr_class', $defaults) && $defaults['submit_attr_class'] === null));
+        $resolver->expects($this->once())->method('setAllowedTypes')->with('submit_attr_class', ['string', 'null']);
+        $resolver->expects($this->once())->method('setDeprecated')->with('submit_attr_class', 'nowo-tech/performance-bundle', '3.15.0', $this->isType('string'));
         $resolver->expects($this->once())
             ->method('setRequired')
             ->with('csrf_token_id');

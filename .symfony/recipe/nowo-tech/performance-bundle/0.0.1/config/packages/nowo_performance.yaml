@@ -114,29 +114,21 @@ nowo_performance:
     cache:                            # Cache configuration (dedicated pool by default)
         pool: 'nowo_performance.cache'
         
-    # Dashboard configuration
-    dashboard:
-        # Enable or disable the performance dashboard
+    # Dashboard pages (REQ-UI-003): they extend the UiKit page scaffolds; the layout, CSS stack and theme come from
+    # nowo_ui_kit (layouts.admin, css_framework, theme). See docs/CONFIGURATION.md#web_ui and docs/TEMPLATES.md.
+    web_ui:
         enabled: true
+        # URL prefix of the dashboard routes (e.g. /admin/performance)
+        path_prefix: '/performance'
+        # null = nowo_ui_kit.layouts.admin
+        layout_template: null
 
-        # Route path for the dashboard (e.g., /performance, /metrics)
-        # The full route will be: {prefix}{path}
-        path: '/performance'
+    # Who may open the dashboard (an empty list denies)
+    security:
+        access_roles: ['ROLE_ADMIN']
 
-        # Optional route prefix for the dashboard (e.g., /admin, /monitoring)
-        # Combined with path, the full route will be: {prefix}{path}
-        # Leave empty for no prefix
-        prefix: ''
-
-        # Required roles to access the dashboard (users must have at least one)
-        # Empty array = no role restriction (accessible to all authenticated users)
-        # Example: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
-        roles: []
-
-        # CSS framework to use for the dashboard interface
-        # Options: 'bootstrap' or 'tailwind'
-        template: 'bootstrap'
-
+    # Dashboard behaviour
+    dashboard:
         # Enable individual record deletion from dashboard
         # When enabled, a delete button appears for each record in the routes table
         enable_record_management: false

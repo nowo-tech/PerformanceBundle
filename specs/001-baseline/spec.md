@@ -44,7 +44,7 @@ As an operator, I open the configured dashboard path to filter, sort, export, re
 **Acceptance Scenarios**:
 
 1. **Given** dashboard `path` and `role`, **When** authorized user visits index, **Then** `PerformanceController` renders KPIs, trends chart, and routes table.
-2. **Given** `css_framework=bootstrap|tailwind`, **When** components render, **Then** matching partials (`_*_bootstrap` / `_*_tailwind`) are used.
+2. **Given** `nowo_ui_kit.css_framework` and theme, **When** the pages render, **Then** they extend the UiKit scaffolds and every framework class comes from the theme slots (REQ-UI-003, contract test `tests/Integration/Contract/PageContractTest.php`).
 3. **Given** sufficient data, **When** Advanced Statistics is opened, **Then** `PerformanceAnalysisService` outputs recommendations, correlations, and percentile tables.
 
 ---
@@ -164,7 +164,8 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 
 - **FR-TWIG-001**: `ArrayExtension` and `IconExtension` MUST supply dashboard helper functions/filters.
 - **FR-TWIG-003**: `TwigPathsPass` MUST register the `@NowoPerformanceBundle` namespace so application overrides under `templates/bundles/NowoPerformanceBundle/` win over bundle views (REQ-TWIG-001).
-- **FR-TWIG-002**: Optional Symfony UX Twig Components (`ChartsComponent`, `FiltersComponent`, `RoutesTableComponent`, `StatisticsComponent`) and matching templates MUST mirror dashboard functionality when UX is installed.
+- **FR-TWIG-002**: Optional Symfony UX Twig Components (`ChartsComponent`, `FiltersComponent`, `RoutesTableComponent`, `StatisticsComponent`) keep rendering through the slot-based partials; deprecated since 3.15 (removed in 4.0).
+- **FR-UI-003**: Dashboard pages MUST follow the UiKit page contract (REQ-UI-003): scaffolds `page/list` / `page/dashboard` / `page/show`, view models from `PerformancePageFactory`, canonical `web_ui.*` keys, UiKit confirm `<dialog>`, no CDN / inline script; documented in `docs/TEMPLATES.md`.
 
 ### CLI
 
@@ -199,7 +200,7 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 
 - Doctrine ORM/DBAL is available on the configured connection.
 - Dashboard access is protected by Symfony Security using configured role(s).
-- Chart.js and optional UX Twig Components are loaded by the application when those features are used.
+- Charts are server-rendered inline SVG (no chart library); optional UX Twig Components are loaded by the application when used.
 - Messenger is optional and required only when `async=true`.
 - Demos under `demo/` illustrate integration but are not Packagist API.
 

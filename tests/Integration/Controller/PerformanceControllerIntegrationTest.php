@@ -10,6 +10,7 @@ use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
+use Nowo\PerformanceBundle\Ui\PerformancePageFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -441,10 +442,10 @@ final class PerformanceControllerIntegrationTest extends TestCase
     }
 
     /**
-     * Confirm messages are JS-escaped: the French "d'accès" must not end the confirm('...') string
-     * (which made the onsubmit handler a syntax error and let the purge run without confirmation).
+     * REQ-UI-003: destructive actions use the UiKit confirm contract (native <dialog>, no inline onsubmit / confirm()),
+     * and the French texts (with apostrophes) are HTML-escaped inside the dialogs.
      */
-    public function testAccessRecordsConfirmMessagesAreJsEscapedInFrench(): void
+    public function testAccessRecordsConfirmDialogsHaveNoInlineScriptInFrench(): void
     {
         $this->createTablesAndRecordMetric();
         $request = Request::create('/performance/access-records?env=test', Request::METHOD_GET);
@@ -453,13 +454,11 @@ final class PerformanceControllerIntegrationTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
         $content = (string) $response->getContent();
-        // delete-by-filter + purge forms
-        self::assertGreaterThanOrEqual(2, preg_match_all('/onsubmit="return confirm\(&#039;([^"]*)&#039;\);"/', $content, $matches));
-        foreach ($matches[1] as $message) {
-            // A raw (HTML-encoded) single quote inside the JS string literal would terminate it.
-            self::assertStringNotContainsString('&#039;', $message);
-        }
-        self::assertStringContainsString('d\u0027acc', $content);
+        self::assertStringNotContainsString('onsubmit=', $content);
+        self::assertStringNotContainsString('confirm(', $content);
+        self::assertStringContainsString('<dialog', $content);
+        self::assertStringContainsString('id="' . PerformancePageFactory::PURGE_DIALOG_ID . '"', $content);
+        self::assertStringContainsString('d&#039;acc', $content);
     }
 
     public function testAccessRecordsWithRefererAndUser(): void

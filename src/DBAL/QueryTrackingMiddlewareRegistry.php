@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\DBAL;
 
 use Composer\InstalledVersions;
-use Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension;
-use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\Persistence\ManagerRegistry;
@@ -14,8 +12,6 @@ use Exception;
 use ReflectionClass;
 use ReflectionException;
 use TypeError;
-
-use function dirname;
 
 /**
  * Registry that applies QueryTrackingMiddleware using different methods
@@ -100,42 +96,8 @@ class QueryTrackingMiddlewareRegistry
                         $wrappedDriver = $middleware->wrap($originalDriver);
                         $driverProperty->setValue($connection, $wrappedDriver);
 
-                        // IMPORTANT: After wrapping the driver, the connection object itself
-                        // is already created. The driver's connect() method will return
-                        // QueryTrackingConnection for NEW connections, but the current
-                        // connection object won't be affected.
-                        //
-                        // We need to wrap the connection's internal connection object.
-                        // In DBAL, the Connection object has an internal connection that
-                        // is created by the driver. We need to replace that with a
-                        // QueryTrackingConnection wrapper.
-
-                        // Try to find and wrap the internal connection
-                        $internalConnectionPropertyNames = ['_conn', 'connection', '_connection'];
-                        foreach ($internalConnectionPropertyNames as $connPropName) {
-                            if ($reflection->hasProperty($connPropName)) {
-                                try {
-                                    $connProperty = $reflection->getProperty($connPropName);
-                                    $internalConn = $connProperty->getValue($connection);
-
-                                    // Check if it's already a QueryTrackingConnection
-                                    if ($internalConn instanceof QueryTrackingConnection) {
-                                        return true; // Already wrapped
-                                    }
-
-                                    // Wrap the internal connection
-                                    // Note: QueryTrackingConnection expects a driver connection, not a DBAL Connection
-                                    // This is a placeholder for future implementation
-                                    // For now, we rely on the driver wrapping method
-                                    return true;
-                                } catch (ReflectionException|TypeError) {
-                                    continue;
-                                }
-                            }
-                        }
-
-                        // If we couldn't wrap the internal connection, at least the driver is wrapped
-                        // which means new connections will be tracked
+                        // New connections created by the wrapped driver are tracked; the current internal driver
+                        // connection (if already open) is left as is.
                         return true;
                     }
                 } catch (ReflectionException) {
@@ -227,15 +189,11 @@ class QueryTrackingMiddlewareRegistry
     /**
      * Detect DoctrineBundle version.
      *
-     * @return string|null The version string or null if not available
+     * @return string|null The installed version (Composer runtime data), else "3.0.0" (never null since DoctrineBundle is a hard dependency; nullable for BC)
      */
     public static function detectDoctrineBundleVersion(): ?string
     {
-        if (!class_exists(DoctrineBundle::class)) {
-            return null;
-        }
-
-        // Method 1: Try to get version from installed packages (Composer)
+        // Composer runtime data (DoctrineBundle is a hard dependency, so it is normally listed there)
         if (class_exists(InstalledVersions::class)) {
             try {
                 $version = InstalledVersions::getVersion('doctrine/doctrine-bundle');
@@ -244,45 +202,12 @@ class QueryTrackingMiddlewareRegistry
                     return ltrim($version, 'v');
                 }
             } catch (Exception) {
-                // Continue to next method
+                // Not registered with this Composer autoloader
             }
         }
 
-        // Method 2: Try to read from composer.json
-        try {
-            $reflection = new ReflectionClass(DoctrineBundle::class);
-            $filename   = $reflection->getFileName();
-
-            if ($filename !== false) {
-                $composerPath = dirname($filename, 2) . '/composer.json';
-                if (file_exists($composerPath)) {
-                    $contents = file_get_contents($composerPath);
-                    $composer = json_decode($contents !== false ? $contents : '{}', true);
-                    if (isset($composer['version'])) {
-                        return ltrim((string) $composer['version'], 'v');
-                    }
-                }
-            }
-        } catch (Exception) {
-            // Silently fail
-        }
-
-        // Method 3: Try to detect by checking available methods/classes
-        // DoctrineBundle 3.x has different structure than 2.x
-        if (class_exists(DoctrineExtension::class)) {
-            try {
-                $reflection = new ReflectionClass(DoctrineExtension::class);
-                // Check if it has methods that indicate version 3.x
-                if ($reflection->hasMethod('getConfiguration')) {
-                    // This is a heuristic - version 3.x typically has this structure
-                    return '3.0.0'; // Assume 3.x
-                }
-            } catch (Exception) {
-                // Silently fail
-            }
-        }
-
-        return null;
+        // Unknown to Composer (custom autoloader): assume the 3.x API (the supported 2.8+ / 3.x lines share it)
+        return '3.0.0';
     }
 
     /**

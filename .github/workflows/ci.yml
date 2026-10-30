@@ -142,8 +142,8 @@ jobs:
             exit 1
           fi
 
-          echo "✅ All tests passed, validating coverage (minimum 99%)..."
-          php scripts/check-coverage.php coverage.xml --min-percent=99
+          echo "✅ All tests passed, validating coverage (minimum 100%)..."
+          php scripts/check-coverage.php coverage.xml --min-percent=100
 
   static-analysis:
     name: PHPStan
@@ -285,10 +285,10 @@ jobs:
           fi
           echo "✅ All tests passed successfully"
 
-      - name: Validate coverage (minimum 99%)
+      - name: Validate coverage (minimum 100%)
         run: |
-          echo "📊 Validating coverage (minimum 99%)..."
-          php scripts/check-coverage.php coverage.xml --min-percent=99
+          echo "📊 Validating coverage (minimum 100%)..."
+          php scripts/check-coverage.php coverage.xml --min-percent=100
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7

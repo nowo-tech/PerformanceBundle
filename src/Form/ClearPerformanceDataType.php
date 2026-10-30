@@ -37,11 +37,13 @@ class ClearPerformanceDataType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $this->addWithDefaults($builder, 'env', HiddenType::class, []);
-        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
-            'label'              => 'dashboard.clear_all_records',
-            'translation_domain' => 'NowoPerformanceBundle',
-            'attr'               => ['class' => 'btn btn-danger'],
-        ]);
+        // with_submit false: the page (UiKit list filters / Action form) renders its own button (REQ-UI-003)
+        if ($options['with_submit'] ?? true) {
+            $this->addWithDefaults($builder, 'submit', SubmitType::class, [
+                'label'              => 'dashboard.clear_all_records',
+                'translation_domain' => 'NowoPerformanceBundle',
+            ]);
+        }
     }
 
     /**
@@ -52,12 +54,14 @@ class ClearPerformanceDataType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
+            'with_submit'     => true,
             'data_class'      => ClearPerformanceDataRequest::class,
             'method'          => 'POST',
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
             'csrf_token_id'   => 'clear_performance_data',
         ]);
+        $resolver->setAllowedTypes('with_submit', 'bool');
     }
 
     /**

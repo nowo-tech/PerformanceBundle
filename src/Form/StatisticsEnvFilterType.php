@@ -11,6 +11,8 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+use function is_string;
+
 /**
  * Form type for statistics page environment selector (GET).
  *
@@ -36,13 +38,14 @@ class StatisticsEnvFilterType extends AbstractType
         $choices      = array_combine(array_map(strtoupper(...), $environments), $environments);
 
         $this->addChoice($builder, 'env', [
-            'label'                     => 'Environment',
+            'label'                     => 'filters.environment',
+            'translation_domain'        => 'NowoPerformanceBundle',
             'choices'                   => $choices,
             'choice_translation_domain' => false,
             'required'                  => true,
             'placeholder'               => false,
             'attr'                      => array_merge(
-                ['class' => $options['attr_class'] ?? 'form-select'],
+                is_string($options['attr_class'] ?? null) && $options['attr_class'] !== '' ? ['class' => $options['attr_class']] : [],
                 $options['attr_extra'] ?? [],
             ),
         ]);
@@ -60,7 +63,7 @@ class StatisticsEnvFilterType extends AbstractType
             'method'          => 'GET',
             'csrf_protection' => false,
             'environments'    => ['dev', 'test', 'prod'],
-            'attr_class'      => 'form-select',
+            'attr_class'      => null,
             'attr_extra'      => [],
         ]);
         $resolver->setAllowedTypes('environments', 'array');

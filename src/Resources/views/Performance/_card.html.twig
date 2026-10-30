@@ -1,0 +1,18 @@
+{#
+  Card of the dashboard pages through the theme slots (card, card_header, card_title, card_intro, card_body).
+
+  Required:
+    - body: card content (HTML, e.g. a {% set %} capture)
+  Optional:
+    - title (Label|string, translated once), intro (Label|string), id, testid, bundle
+#}
+{% set _b = bundle|default(null) %}
+<section class="{{ nowo_ui_class('card', _b) }}"{% if id|default(null) %} id="{{ id }}"{% endif %}{% if testid|default(null) %} data-testid="{{ testid }}"{% endif %}{{ nowo_ui_attrs('card', _b) }}>
+    {% if title|default(null) %}
+        <header class="{{ nowo_ui_class('card_header', _b) }}">
+            <h2 class="{{ nowo_ui_class('card_title', _b) }}">{{ title|nowo_ui_trans }}</h2>
+            {% if intro|default(null) %}<p class="{{ nowo_ui_class('card_intro', _b) }}">{{ intro|nowo_ui_trans }}</p>{% endif %}
+        </header>
+    {% endif %}
+    <div class="{{ nowo_ui_class('card_body', _b) }}">{{ body|default('') }}</div>
+</section>

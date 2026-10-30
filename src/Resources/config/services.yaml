@@ -40,6 +40,8 @@ services:
 
     Nowo\PerformanceBundle\Twig\ArrayExtension: ~
 
+    # Deprecated Twig globals nowo_performance_layout_template / nowo_performance_css_framework (no bundle page reads
+    # them since 3.15, REQ-UI-003); kept for host templates until 4.0.
     Nowo\PerformanceBundle\Twig\PerformanceLayoutExtension:
         arguments:
             $layoutTemplate: '%nowo_performance.dashboard.layout_template%'
@@ -192,6 +194,18 @@ services:
     # Controllers (uses Route attributes, autoconfigure handles the tag)
     Nowo\PerformanceBundle\Controller\:
         resource: '../../Controller/*'
+
+    # UiKit page contract (REQ-UI-003): layout / per-page template resolution, the page view models and the area
+    # navigation (tagged nowo_ui_kit.area_nav_provider by UiKit autoconfiguration; DashboardMenu can mount it).
+    Nowo\PerformanceBundle\Ui\PerformancePages:
+        arguments:
+            $layoutTemplate: '%nowo_performance.web_ui.layout_template%'
+            $templates: '%nowo_performance.web_ui.templates%'
+            $twig: '@twig'
+
+    Nowo\PerformanceBundle\Ui\PerformanceAreaNav: ~
+
+    Nowo\PerformanceBundle\Ui\PerformancePageFactory: ~
 
     # Message Handler (uses AsMessageHandler attribute if Messenger is installed)
     # The polyfill ensures this works even without Messenger

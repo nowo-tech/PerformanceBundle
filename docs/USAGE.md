@@ -128,7 +128,7 @@ php bin/console nowo:performance:set-route app_user_show \
 
 The bundle registers the Twig namespace **`@NowoPerformanceBundle/`**. **`TwigPathsPass`** maps the Symfony override directory **`templates/bundles/NowoPerformanceBundle/`** to that namespace with **`prependPath()`** when the folder exists, then registers the bundle **`src/Resources/views`** path with **`addPath()`**, so your app copies are tried before the vendor templates. You do not need entries in **`config/packages/twig.yaml`** for this.
 
-**Freeze rule:** a full-file override at `templates/bundles/NowoPerformanceBundle/<subpath>` always wins and will **not** pick up vendor changes for that path until you delete or merge it. Prefer config (`dashboard.layout_template`), surgical partials, or small block overrides when you want to keep receiving UI fixes on package upgrades.
+**Freeze rule:** a full-file override at `templates/bundles/NowoPerformanceBundle/<subpath>` always wins and will **not** pick up vendor changes for that path until you delete or merge it. Prefer config (`nowo_ui_kit.layouts.admin`, `nowo_ui_kit.theme`, `nowo_performance.web_ui.templates.<page>`) or a thin `{% extends '@!NowoPerformanceBundle/…' %}` that overrides one data block when you want to keep receiving UI fixes on package upgrades.
 
 **Procedure (app):**
 
@@ -142,184 +142,89 @@ The bundle registers the Twig namespace **`@NowoPerformanceBundle/`**. **`TwigPa
 templates/bundles/NowoPerformanceBundle/Performance/index.html.twig
 ```
 
-**Templates you can override:**
+**Templates you can override** (REQ-UI-003 page contract since 3.15; full map, data blocks and view models in
+[TEMPLATES.md](TEMPLATES.md)):
 
 | Subpath | Purpose |
 |--------|---------|
-| `Performance/layout.html.twig` | Default demo full HTML shell (CDN CSS/JS). Blocks `title`, `stylesheets`, `body` / `nowo_performance_content`, `javascripts`. |
-| `Performance/base.html.twig` | Intermediate layout: extends configurable `layout_template`, flashes, `parent()` asset stacking, `{% block content %}`. Pages extend this. |
-| `Performance/index.html.twig` | Main dashboard list. |
-| `Performance/statistics.html.twig` | Advanced statistics. |
-| `Performance/diagnose.html.twig` | Diagnose page. |
-| `Performance/access_statistics.html.twig` | Access statistics / seasonality. |
-| `Performance/access_records.html.twig` | Paginated access records. |
-| `Performance/components/_*.html.twig` | Partials (filters, tables, charts, …). |
+| `Performance/index.html.twig` | Routes (dashboard home): `@NowoUiKit/page/list` — KPI tiles, filters, routes table, row actions, pagination, trend + top routes cards, review dialogs. |
+| `Performance/statistics.html.twig` | Advanced statistics: `@NowoUiKit/page/dashboard` — KPI tiles and analysis cards with server-side histograms. |
+| `Performance/access_statistics.html.twig` | Access statistics: `@NowoUiKit/page/dashboard` — by hour (bar chart), heatmap, by weekday, by month. |
+| `Performance/access_records.html.twig` | Access records: `@NowoUiKit/page/list` — filters, sortable columns, pagination, purge dialog. |
+| `Performance/diagnose.html.twig` | Diagnose: `@NowoUiKit/page/show` — findings and one detail section per diagnostic group. |
+| `Performance/_kpis.html.twig`, `_card.html.twig`, `_bar_chart.html.twig`, `_heatmap.html.twig` | Shared slot-based partials (KPI tiles, cards, inline SVG charts — no JavaScript, no CDN). |
+| `Performance/_legacy_layout.html.twig` | Deprecated bridge around a 3.14-style layout (see `web_ui.layout_template`). |
+| `components/*.html.twig` | Deprecated Twig components (`nowo_performance.Statistics`, `.Filters`, `.Charts`, `.RoutesTable`; removed in 4.0). |
 
-**Layout without copying files (REQ-UI-001):** set **`dashboard.layout_template`** to your app layout (e.g. `base.html.twig`). The Twig global **`nowo_performance_layout_template`** mirrors that value. Dashboard pages go through `Performance/base.html.twig`, which `{% extends nowo_performance_layout_template %}` and calls **`{{ parent() }}`** on `stylesheets` / `javascripts`. Your layout should expose those blocks plus **`body`** (or `nowo_performance_content` / `nowo_ui_content`). The default bundle layout is for demos only; when `layout_template` points at the project, demo CDNs are skipped.
+**Layout and theme without copying files (REQ-UI-001 / REQ-UI-003):** the pages extend the UiKit scaffolds, which extend
+`nowo_ui_kit.layouts.admin` — set your project layout (or a one-file bridge rendering the canonical blocks) there,
+once for every Nowo bundle. Theme classes, attributes, partials and tokens are configured once under
+`nowo_ui_kit.theme` (per-bundle exceptions: `nowo_ui_kit.theme.bundles.NowoPerformanceBundle`). Only when the dashboard
+needs a different layout set `nowo_performance.web_ui.layout_template`.
+
+```yaml
+# config/packages/nowo_ui_kit.yaml
+nowo_ui_kit:
+    css_framework: bootstrap5
+    layouts:
+        admin: 'layouts/admin.html.twig'
+```
+
+**One data block instead of a full override** — `web_ui.templates.<page>` points to a thin template:
 
 ```yaml
 # config/packages/nowo_performance.yaml
 nowo_performance:
-    dashboard:
-        layout_template: 'base.html.twig'
+    web_ui:
+        templates:
+            index: 'admin/performance/index.html.twig'
+```
+
+```twig
+{# templates/admin/performance/index.html.twig #}
+{% extends '@!NowoPerformanceBundle/Performance/index.html.twig' %}
+
+{% block nowo_ui_list_after %}
+    {{ parent() }}
+    <p class="{{ nowo_ui_class('muted', page.bundle) }}">Data retention: 30 days.</p>
+{% endblock %}
 ```
 
 ## Customizing the Dashboard View
 
-The performance dashboard is built using reusable Twig components, allowing you to customize specific parts without replacing the entire template.
+### Pages, scaffolds and view models
 
-### CSS Framework Selection
+Each page receives a UiKit view model as `page` (built by `Nowo\PerformanceBundle\Ui\PerformancePageFactory`) and fills
+only data blocks; header, area tabs, actions, filters, table frame, row actions, confirm dialogs, pagination and empty
+states come from the scaffold and the host theme. Destructive actions (clear all, delete route, delete matching
+records) are POST `Action`s with a CSRF `FormView` behind the UiKit confirm `<dialog>`; forms with fields (review,
+purge) open in a UiKit `dialog`. There is no inline JavaScript and no CDN: charts are server-rendered inline SVG painted
+with `currentColor`, auto refresh is a `<meta http-equiv="refresh">`, the statistics environment selector uses UiKit's
+`data-nowo-ui-autosubmit`.
 
-The dashboard supports two CSS frameworks: **Bootstrap** (default) and **Tailwind CSS**. You can choose which one to use via configuration:
+### Available variables
 
-```yaml
-# config/packages/nowo_performance.yaml
-nowo_performance:
-    dashboard:
-        template: 'bootstrap'  # or 'tailwind'
-```
+Besides `page`, the controller keeps passing the 3.14 variables so overrides keep working, e.g. on the routes page:
+`routes`, `stats` (`total_routes`, `avg_request_time`, `max_request_time`, `avg_query_time`, `max_query_time`,
+`avg_queries`, `max_queries`, `total_records`, `top_used_routes`, `top_consumed_routes`), `paginator`, `environment`,
+`environments`, `form`, `clearForm`, `deleteForms`, `reviewForms`, `thresholds`, `dateTimeFormat`, `dateFormat`,
+`autoRefreshInterval`, plus the new `kpis` and `trend`. The same FormViews back the page actions: render each only once.
+`chartFiltersForm` is no longer passed (the client-side chart was removed).
 
-### Component Structure
+### Twig components (deprecated)
 
-The dashboard consists of three main components, available in both Bootstrap and Tailwind versions:
-
-**Bootstrap components:**
-1. **Statistics Component** (`_statistics_bootstrap.html.twig`) - Displays performance statistics cards
-2. **Filters Component** (`_filters_bootstrap.html.twig`) - Contains the filtering form
-3. **Routes Table Component** (`_routes_table_bootstrap.html.twig`) - Shows the routes data table
-
-**Tailwind components:**
-1. **Statistics Component** (`_statistics_tailwind.html.twig`) - Displays performance statistics cards
-2. **Filters Component** (`_filters_tailwind.html.twig`) - Contains the filtering form
-3. **Routes Table Component** (`_routes_table_tailwind.html.twig`) - Shows the routes data table
-
-### Overriding Components
-
-You can override individual components by creating them in your project's template directory:
-
-**Path structure:**
-```
-templates/
-  bundles/
-    NowoPerformanceBundle/
-      Performance/
-        components/
-          _statistics_bootstrap.html.twig    # Override Bootstrap statistics
-          _filters_bootstrap.html.twig       # Override Bootstrap filters
-          _routes_table_bootstrap.html.twig # Override Bootstrap table
-          _statistics_tailwind.html.twig     # Override Tailwind statistics
-          _filters_tailwind.html.twig        # Override Tailwind filters
-          _routes_table_tailwind.html.twig   # Override Tailwind table
-```
-
-**Example: Custom Bootstrap Statistics Component**
-
-```twig
-{# templates/bundles/NowoPerformanceBundle/Performance/components/_statistics_bootstrap.html.twig #}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h5>Custom Statistics</h5>
-                <p>Total Routes: {{ stats.total_routes }}</p>
-                <p>Total Queries: {{ stats.total_queries }}</p>
-            </div>
-        </div>
-    </div>
-</div>
-```
-
-**Example: Custom Tailwind Statistics Component**
-
-```twig
-{# templates/bundles/NowoPerformanceBundle/Performance/components/_statistics_tailwind.html.twig #}
-<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-    <div class="bg-white overflow-hidden shadow rounded-lg p-5">
-        <h5 class="text-lg font-semibold">Custom Statistics</h5>
-        <p>Total Routes: {{ stats.total_routes }}</p>
-        <p>Total Queries: {{ stats.total_queries }}</p>
-    </div>
-</div>
-```
-
-**Example: Custom Routes Table**
-
-```twig
-{# templates/bundles/NowoPerformanceBundle/Performance/components/_routes_table.html.twig #}
-<div class="row">
-    <div class="col-12">
-        <div class="custom-table">
-            {% for route in routes %}
-                <div class="route-item">
-                    <strong>{{ route.name }}</strong>
-                    <span>{{ (route.requestTime * 1000)|number_format(2) }} ms</span>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-```
-
-### Overriding the Complete Template
-
-If you prefer to replace the entire dashboard template, create:
-
-```
-templates/bundles/NowoPerformanceBundle/Performance/index.html.twig
-```
-
-This will completely override the default template. You can still use the components if needed:
-
-```twig
-{# Your custom template #}
-{% extends 'base.html.twig' %}
-
-{% block content %}
-    <h1>My Custom Dashboard</h1>
-    
-    {# Use the default statistics component #}
-    {% include '@NowoPerformanceBundle/Performance/components/_statistics.html.twig' %}
-    
-    {# Or use your custom component #}
-    {% include 'bundles/NowoPerformanceBundle/Performance/components/_statistics.html.twig' %}
-{% endblock %}
-```
-
-### Available Variables
-
-All components receive the same variables from the controller:
-
-- `routes` - Array of RouteData entities
-- `stats` - Statistics array with:
-  - `total_routes` - Total number of routes
-  - `total_queries` - Total number of queries
-  - `avg_request_time` - Average request time (in seconds)
-  - `avg_query_time` - Average query time (in seconds)
-  - `max_request_time` - Maximum request time (in seconds)
-  - `max_query_time` - Maximum query time (in seconds)
-  - `max_queries` - Maximum query count
-- `environment` - Current environment filter
-- `currentRoute` - Current route name filter
-- `sortBy` - Current sort field
-- `order` - Current sort order (ASC/DESC)
-- `limit` - Current result limit
-- `environments` - Array of available environments
-- `chartFiltersForm` - FormView of `ChartFiltersType` (unmapped `metric` / `days` selects with ids `chart-metric` / `chart-days`, read by the chart script; used by the `_charts_*` partials). The `nowo_performance.Charts` Twig component builds the same form itself (`this.filtersForm`).
+With `symfony/ux-twig-component`, `{{ component('nowo_performance.Statistics', {stats: stats}) }}` (and `.Filters`,
+`.Charts`, `.RoutesTable`) still render, now through the same slot-based partials; they are deprecated since 3.15 and
+removed in 4.0 — the dashboard pages no longer use them.
 
 #### Forms (REQ-TWIG-005)
 
-Every control of the dashboard is a Symfony Form rendered with `form_start`, the child loop and `form_end`: filters (`PerformanceFiltersType`), clear data, delete record, review, and the chart selects (`ChartFiltersType`, never submitted — the chart script reads them by id). Overrides of the dashboard templates and the demos must not reintroduce raw `<form>` / `<input>` / `<select>` / `<textarea>` markup; `make check-no-raw-html-form` (part of `make release-check`) fails when they do. Pattern:
-
-```twig
-{{ form_start(chartFiltersForm) }}
-    {{ form_label(chartFiltersForm.metric) }} {{ form_widget(chartFiltersForm.metric) }}
-    {% for child in chartFiltersForm %}
-        {% if not child.rendered %}
-            {{ form_row(child) }}
-        {% endif %}
-    {% endfor %}
-{{ form_end(chartFiltersForm) }}
-```
+Every control of the dashboard is a Symfony Form rendered with `form_start`, the child loop and `form_end`: filters
+(`PerformanceFiltersType`, `RecordFiltersType`, `StatisticsEnvFilterType`), clear data, delete record, delete by
+filter, purge and review. The form types carry no framework classes (the host form theme / UiKit slots style them);
+`with_submit: false` (filters, clear data, delete by filter) leaves the submit button to the page (UiKit list filters
+or Action). Overrides of the dashboard templates and the demos must not reintroduce raw `<form>` / `<input>` /
+`<select>` / `<textarea>` markup; `make check-no-raw-html-form` (part of `make release-check`) fails when they do.
 
 ### Translation Overrides
 

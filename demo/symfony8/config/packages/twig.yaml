@@ -1,5 +1,7 @@
 twig:
     file_name_pattern: '*.twig'
+    # The host owns the form theme (REQ-UI-003): Bootstrap 5, matching nowo_ui_kit.css_framework.
+    form_themes: ['bootstrap_5_layout.html.twig']
 
 when@test:
     twig:

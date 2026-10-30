@@ -163,3 +163,10 @@ make db-view
 - Only routes in configured environments are tracked
 - **500 errors**: FrankenPHP/Caddy may not always show Symfony's exception page for 500s (e.g. empty body or connection reset in some cases). The demo sets `CADDY_SERVER_EXTRA_DIRECTIVES` so Caddy's `handle_errors 5xx` returns at least a minimal response body; for full control use Symfony's error controller and avoid fatal errors before the response is sent.
 - Ignored routes (profiler, debug toolbar) are not tracked
+
+## Demo metrics
+
+`php bin/console app:demo:seed-metrics` seeds a deterministic week of access records for a few `demo_*` routes (env
+`dev`) so the dashboard, statistics, heatmap and access records pages have data; `make test-e2e` and
+`make demo-screenshots` run it first. The dashboard pages render inside `templates/layouts/admin.html.twig`
+(`nowo_ui_kit.layouts.admin`, UiKit page contract).

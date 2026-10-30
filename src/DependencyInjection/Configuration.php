@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\DependencyInjection;
 
+use Nowo\PerformanceBundle\Ui\PerformancePages;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 
+use function array_diff;
 use function array_key_exists;
+use function array_keys;
+use function implode;
 use function is_array;
+use function is_string;
+use function sprintf;
 
 /**
  * Configuration class for the bundle.
@@ -25,7 +32,13 @@ final class Configuration implements ConfigurationInterface
      */
     public const ALIAS = 'nowo_performance';
 
-    /** @var list<string> Host CSS stacks accepted by dashboard.css_framework (REQ-UI-001). */
+    /** Deprecation package of the configuration options. */
+    private const PACKAGE = 'nowo-tech/performance-bundle';
+
+    /** Version that deprecated the dashboard.* UI keys in favour of web_ui.* (REQ-UI-003). */
+    private const WEB_UI_SINCE = '3.15.0';
+
+    /** @var list<string> Host CSS stacks accepted by the deprecated dashboard.css_framework (REQ-UI-001). */
     public const CSS_FRAMEWORKS = [
         'bootstrap',
         'bootstrap4',
@@ -64,7 +77,7 @@ final class Configuration implements ConfigurationInterface
                         $v['security']['access_roles'] = $dashboardRoles;
                     }
 
-                    return $v;
+                    return self::mapDeprecatedDashboardKeys($v);
                 })
             ->end()
             ->children()
@@ -227,16 +240,19 @@ final class Configuration implements ConfigurationInterface
                     ->end()
                     ->children()
                         ->booleanNode('enabled')
-                            ->info('Enable or disable the performance dashboard')
+                            ->info('Deprecated: use web_ui.enabled. Enable or disable the performance dashboard.')
                             ->defaultValue(true)
+                            ->setDeprecated(self::PACKAGE, self::WEB_UI_SINCE, 'The "%path%" option is deprecated, use "nowo_performance.web_ui.enabled" instead (REQ-UI-003).')
                         ->end()
                         ->scalarNode('path')
-                            ->info('Route path for the dashboard (e.g., /performance, /metrics)')
+                            ->info('Deprecated: use web_ui.path_prefix (= prefix + path). Route path for the dashboard (e.g., /performance, /metrics).')
                             ->defaultValue('/performance')
+                            ->setDeprecated(self::PACKAGE, self::WEB_UI_SINCE, 'The "%path%" option is deprecated, use "nowo_performance.web_ui.path_prefix" (prefix + path) instead (REQ-UI-003).')
                         ->end()
                         ->scalarNode('prefix')
-                            ->info('Route prefix for the dashboard (e.g., /admin, /monitoring)')
+                            ->info('Deprecated: use web_ui.path_prefix (= prefix + path). Route prefix for the dashboard (e.g., /admin, /monitoring).')
                             ->defaultValue('')
+                            ->setDeprecated(self::PACKAGE, self::WEB_UI_SINCE, 'The "%path%" option is deprecated, use "nowo_performance.web_ui.path_prefix" (prefix + path) instead (REQ-UI-003).')
                         ->end()
                         ->arrayNode('roles')
                             ->info('Deprecated: use security.access_roles instead. Kept for BC; mapped to security.access_roles when access_roles is not set. An empty list denies; with the dashboard enabled it fails container compilation unless access_checker or allow_unauthenticated is set.')
@@ -245,18 +261,21 @@ final class Configuration implements ConfigurationInterface
                             ->example(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'])
                         ->end()
                         ->enumNode('css_framework')
-                            ->info('Host-chosen CSS stack for the dashboard (REQ-UI-001). Twig global nowo_performance_css_framework. Values: bootstrap (alias of bootstrap5), bootstrap4, bootstrap5, tabler, tailwind, foundation, custom, none. Default bootstrap5 matches the Bootstrap CDN demo. Dual markup ships bootstrap-family and tailwind partials; other values use bootstrap-family markup unless you override Twig.')
+                            ->info('Deprecated (REQ-UI-003): the dashboard inherits the CSS stack from nowo_ui_kit.css_framework; when UiKit has none, this value is copied there. Values: bootstrap (alias of bootstrap5), bootstrap4, bootstrap5, tabler, tailwind, foundation, custom, none.')
                             ->values(self::CSS_FRAMEWORKS)
                             ->defaultValue('bootstrap5')
+                            ->setDeprecated(self::PACKAGE, self::WEB_UI_SINCE, 'The "%path%" option is deprecated, set "nowo_ui_kit.css_framework" instead (REQ-UI-003).')
                         ->end()
                         ->enumNode('template')
-                            ->info('Deprecated: use dashboard.css_framework instead. Kept for BC; mapped to css_framework when css_framework is absent (bootstrap→bootstrap5, tailwind→tailwind). Synced back to bootstrap|tailwind markup family after normalization.')
+                            ->info('Deprecated: use nowo_ui_kit.css_framework. Mapped to css_framework when css_framework is absent (bootstrap→bootstrap5, tailwind→tailwind).')
                             ->values(['bootstrap', 'tailwind'])
                             ->defaultValue('bootstrap')
+                            ->setDeprecated(self::PACKAGE, self::WEB_UI_SINCE, 'The "%path%" option is deprecated, set "nowo_ui_kit.css_framework" instead (REQ-UI-003).')
                         ->end()
                         ->scalarNode('layout_template')
-                            ->info('Twig layout that dashboard pages extend via global nowo_performance_layout_template (e.g. base.html.twig). Default is the bundle demo shell. Host apps should set this to the project layout; the layout must expose blocks body (or nowo_performance_content), stylesheets, and javascripts.')
-                            ->defaultValue('@NowoPerformanceBundle/Performance/layout.html.twig')
+                            ->info('Deprecated: use web_ui.layout_template (null = nowo_ui_kit.layouts.admin).')
+                            ->defaultNull()
+                            ->setDeprecated(self::PACKAGE, self::WEB_UI_SINCE, 'The "%path%" option is deprecated, use "nowo_performance.web_ui.layout_template" instead (REQ-UI-003).')
                         ->end()
                         ->booleanNode('enable_record_management')
                             ->info('Enable individual record deletion from dashboard')
@@ -300,6 +319,40 @@ final class Configuration implements ConfigurationInterface
 
                             return $v;
                         })
+                    ->end()
+                ->end()
+                ->arrayNode('web_ui')
+                    ->info('Dashboard Web UI (REQ-UI-003 canonical keys). The pages extend the UiKit page scaffolds; the CSS stack, icon set and row-action display are inherited from nowo_ui_kit.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')
+                            ->info('Register the dashboard pages (routes stay importable; pages answer 404 when false). Replaces dashboard.enabled.')
+                            ->defaultTrue()
+                        ->end()
+                        ->scalarNode('path_prefix')
+                            ->info('URL prefix of the dashboard pages (e.g. /admin/performance). Replaces dashboard.prefix + dashboard.path.')
+                            ->defaultValue('/performance')
+                            ->cannotBeEmpty()
+                        ->end()
+                        ->scalarNode('layout_template')
+                            ->info('Layout the page scaffolds extend: null (default) = nowo_ui_kit.layouts.admin. A layout that does not render the UiKit canonical blocks (nowo_ui_content, ...) is wrapped in a deprecated bridge mapping them into its body / stylesheets / javascripts blocks. Replaces dashboard.layout_template.')
+                            ->defaultNull()
+                            ->beforeNormalization()
+                                ->ifString()
+                                ->then(static fn (string $v): ?string => $v === '' || $v === PerformancePages::FORMER_DEFAULT_LAYOUT ? null : $v)
+                            ->end()
+                        ->end()
+                        ->arrayNode('templates')
+                            ->info('Per-page template overrides (page id => template): index, statistics, access_statistics, access_records, diagnose. Use a thin template that extends "@!NowoPerformanceBundle/..." and overrides a data block.')
+                            ->useAttributeAsKey('page')
+                            ->scalarPrototype()->cannotBeEmpty()->end()
+                            ->validate()
+                                ->ifTrue(static fn (array $v): bool => array_diff(array_keys($v), array_keys(PerformancePages::TEMPLATES)) !== [])
+                                ->then(static function (array $v): array {
+                                    throw new InvalidConfigurationException(sprintf('Unknown nowo_performance.web_ui.templates page(s) "%s"; known: %s.', implode('", "', array_diff(array_keys($v), array_keys(PerformancePages::TEMPLATES))), implode(', ', array_keys(PerformancePages::TEMPLATES))));
+                                })
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
                 ->arrayNode('security')
@@ -421,5 +474,41 @@ final class Configuration implements ConfigurationInterface
             ->end();
 
         return $treeBuilder;
+    }
+
+    /**
+     * BC (REQ-UI-003): copies the deprecated dashboard UI keys into web_ui when the canonical key is not set —
+     * dashboard.enabled → web_ui.enabled, dashboard.prefix + dashboard.path → web_ui.path_prefix,
+     * dashboard.layout_template → web_ui.layout_template. The deprecated keys stay in place (they trigger their own
+     * deprecation and keep feeding the BC container parameters).
+     *
+     * @param array<mixed> $v raw root configuration
+     *
+     * @return array<mixed>
+     */
+    private static function mapDeprecatedDashboardKeys(array $v): array
+    {
+        $dashboard = $v['dashboard'] ?? null;
+        if (!is_array($dashboard)) {
+            return $v;
+        }
+
+        $webUi = is_array($v['web_ui'] ?? null) ? $v['web_ui'] : [];
+        if (array_key_exists('enabled', $dashboard) && !array_key_exists('enabled', $webUi)) {
+            $webUi['enabled'] = $dashboard['enabled'];
+        }
+        if ((array_key_exists('path', $dashboard) || array_key_exists('prefix', $dashboard)) && !array_key_exists('path_prefix', $webUi)) {
+            $prefix               = is_string($dashboard['prefix'] ?? null) ? $dashboard['prefix'] : '';
+            $path                 = is_string($dashboard['path'] ?? null) ? $dashboard['path'] : '/performance';
+            $webUi['path_prefix'] = $prefix . $path;
+        }
+        if (array_key_exists('layout_template', $dashboard) && !array_key_exists('layout_template', $webUi)) {
+            $webUi['layout_template'] = $dashboard['layout_template'];
+        }
+        if ($webUi !== []) {
+            $v['web_ui'] = $webUi;
+        }
+
+        return $v;
     }
 }

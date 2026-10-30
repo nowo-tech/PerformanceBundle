@@ -59,9 +59,6 @@ class ReviewRouteDataType extends AbstractType
             'required'                  => false,
             'placeholder'               => false,
             'data'                      => $queriesData,
-            'attr'                      => [
-                'class' => 'form-select',
-            ],
         ]);
         $this->addChoice($builder, 'time_improved', [
             'label'              => 'review.time_improved',
@@ -75,9 +72,6 @@ class ReviewRouteDataType extends AbstractType
             'required'                  => false,
             'placeholder'               => false,
             'data'                      => $timeData,
-            'attr'                      => [
-                'class' => 'form-select',
-            ],
         ]);
 
         if ($options['enable_access_records'] ?? false) {
@@ -87,18 +81,12 @@ class ReviewRouteDataType extends AbstractType
                 'translation_domain' => 'NowoPerformanceBundle',
                 'required'           => false,
                 'data'               => $saveAccessRecordsData,
-                'attr'               => [
-                    'class' => 'form-check-input',
-                ],
             ]);
         }
 
         $this->addWithDefaults($builder, 'submit', SubmitType::class, [
             'label'              => $submitLabel,
             'translation_domain' => 'NowoPerformanceBundle',
-            'attr'               => [
-                'class' => 'btn btn-primary',
-            ],
         ]);
     }
 

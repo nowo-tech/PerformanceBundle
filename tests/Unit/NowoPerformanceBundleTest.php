@@ -11,12 +11,11 @@ use Nowo\PerformanceBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Nowo\PerformanceBundle\NowoPerformanceBundle;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
+use ReflectionMethod;
 use ReflectionProperty;
-use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\VarDumper\VarDumper;
 
 /**
@@ -110,6 +109,12 @@ final class NowoPerformanceBundleTest extends TestCase
         $this->assertNotEmpty($path);
     }
 
+    /** REQ-DI-001: the bundle no longer overrides boot() (no kernel lookup in the container, no global VarDumper handler). */
+    public function testBundleDoesNotOverrideBoot(): void
+    {
+        self::assertSame(Bundle::class, (new ReflectionMethod(NowoPerformanceBundle::class, 'boot'))->getDeclaringClass()->getName());
+    }
+
     public function testBuildReceivesContainerBuilder(): void
     {
         $bundle    = new NowoPerformanceBundle();
@@ -118,88 +123,5 @@ final class NowoPerformanceBundleTest extends TestCase
         $bundle->build($container);
 
         $this->addToAssertionCount(1);
-    }
-
-    public function testBootWhenContainerIsNullDoesNotSetVarDumperHandler(): void
-    {
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, null);
-
-        $bundle->boot();
-
-        $this->addToAssertionCount(1);
-    }
-
-    public function testBootWhenKernelIsNotDebugDoesNotSetVarDumperHandler(): void
-    {
-        $container = new ContainerBuilder();
-        $kernel    = $this->createMock(KernelInterface::class);
-        $kernel->method('isDebug')->willReturn(false);
-        $container->set('kernel', $kernel);
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        $bundle->boot();
-
-        $this->addToAssertionCount(1);
-    }
-
-    public function testBootWhenVarDumperClassDoesNotExistDoesNotSetHandler(): void
-    {
-        $container = new ContainerBuilder();
-        $kernel    = $this->createMock(KernelInterface::class);
-        $kernel->method('isDebug')->willReturn(true);
-        $container->set('kernel', $kernel);
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        // Boot with kernel debug but VarDumper may or may not exist; we just ensure no exception
-        $bundle->boot();
-
-        $this->addToAssertionCount(1);
-    }
-
-    /** When container returns non-KernelInterface for 'kernel', boot returns early and does not set handler. */
-    public function testBootWhenKernelServiceIsNotKernelInterfaceDoesNotSetHandler(): void
-    {
-        $container = new ContainerBuilder();
-        $container->set('kernel', new stdClass());
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        $bundle->boot();
-
-        $this->addToAssertionCount(1);
-    }
-
-    /** When all conditions are met (CLI, debug, VarDumper present), boot sets a custom handler. */
-    public function testBootWhenCliAndDebugAndVarDumperPresentSetsHandler(): void
-    {
-        if (!class_exists(VarDumper::class)) {
-            $this->markTestSkipped('VarDumper not available');
-        }
-
-        $container = new ContainerBuilder();
-        $kernel    = $this->createMock(KernelInterface::class);
-        $kernel->method('isDebug')->willReturn(true);
-        $container->set('kernel', $kernel);
-
-        $bundle     = new NowoPerformanceBundle();
-        $reflection = new ReflectionProperty($bundle, 'container');
-        $reflection->setValue($bundle, $container);
-
-        $bundle->boot();
-
-        $vdReflection = new ReflectionClass(VarDumper::class);
-        $handlerProp  = $vdReflection->getProperty('handler');
-        $handler      = $handlerProp->getValue();
-        $this->assertIsCallable($handler);
     }
 }

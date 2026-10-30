@@ -1,0 +1,27 @@
+{#
+  Server-rendered access heatmap (inline SVG, no JavaScript; CSP-safe): rows = days of the week (Sunday first, as the
+  repository returns them), columns = hours 0–23; the cell opacity follows the access count (currentColor). Each cell
+  carries a <title> (day hh:00 — count).
+
+  Required:
+    - heatmap: array<int day, array<int hour, int count>> (RouteDataRecordRepository::getHeatmapData())
+    - days: list of the 7 translated day names (index = day of week)
+    - title: accessible name
+#}
+{% set _max = 0 %}
+{% for _row in heatmap %}{% set _max = max(_max, max(_row|merge([0]))) %}{% endfor %}
+{% set _cell = 18 %}
+{% set _left = 36 %}
+{% set _top = 14 %}
+<svg class="nowo-performance-heatmap" viewBox="0 0 {{ _left + 24 * _cell }} {{ _top + 7 * _cell }}" role="img" aria-label="{{ title }}" width="100%" preserveAspectRatio="xMinYMid meet">
+    {% for _hour in 0..23 %}
+        {% if _hour % 3 == 0 %}<text x="{{ _left + _hour * _cell + _cell / 2 }}" y="10" font-size="8" text-anchor="middle" fill="currentColor" fill-opacity="0.7">{{ '%02d'|format(_hour) }}</text>{% endif %}
+    {% endfor %}
+    {% for _day in 0..6 %}
+        <text x="0" y="{{ _top + _day * _cell + _cell * 0.68 }}" font-size="9" fill="currentColor" fill-opacity="0.8">{{ (days[_day] ?? _day)|slice(0, 3) }}</text>
+        {% for _hour in 0..23 %}
+            {% set _v = heatmap[_day][_hour] ?? 0 %}
+            <rect x="{{ _left + _hour * _cell + 1 }}" y="{{ _top + _day * _cell + 1 }}" width="{{ _cell - 2 }}" height="{{ _cell - 2 }}" rx="2" fill="currentColor" fill-opacity="{{ _max > 0 and _v > 0 ? (0.15 + 0.85 * _v / _max)|round(2) : 0.05 }}"><title>{{ days[_day] ?? _day }} {{ '%02d'|format(_hour) }}:00 — {{ _v }}</title></rect>
+        {% endfor %}
+    {% endfor %}
+</svg>

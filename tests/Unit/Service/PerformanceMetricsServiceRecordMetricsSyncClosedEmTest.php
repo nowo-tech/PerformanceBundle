@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
+use Symfony\Component\Clock\NativeClock;
 
 /**
  * Covers recordMetricsSync when EntityManager is closed before flush (triggers reset beforehand).
@@ -68,6 +69,7 @@ final class PerformanceMetricsServiceRecordMetricsSyncClosedEmTest extends TestC
                 'entityManager'       => $closedEm,
                 'repository'          => $routeRepo,
                 'recordRepository'    => $recordRepo,
+                'clock'               => new NativeClock(),
             ] as $prop => $value
         ) {
             $rp = new ReflectionProperty(PerformanceMetricsService::class, $prop);

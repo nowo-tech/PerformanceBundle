@@ -375,13 +375,14 @@ class RouteData implements Stringable
      * @param bool|null $queriesImproved Whether queries improved
      * @param bool|null $timeImproved Whether time improved
      * @param string|null $reviewedBy The reviewer username
+     * @param DateTimeImmutable|null $reviewedAt Review time (callers pass their clock's now; default: system time)
      */
-    public function markAsReviewed(?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null): self
+    public function markAsReviewed(?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null, ?DateTimeImmutable $reviewedAt = null): self
     {
         // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->reviewed = true;
         // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
-        $this->reviewedAt = new DateTimeImmutable();
+        $this->reviewedAt = $reviewedAt ?? new DateTimeImmutable();
 
         if ($queriesImproved !== null) {
             // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.

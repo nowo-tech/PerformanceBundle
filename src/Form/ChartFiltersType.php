@@ -17,6 +17,9 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * Never submitted: the chart script reads the selects by id (`chart-metric`, `chart-days`)
  * and fetches the chart data API. Both fields are unmapped; ids are kept for the script.
  *
+ * @deprecated since 3.15.0, removed in 4.0: the dashboard renders a server-side trend chart (no chart script); only
+ *             the deprecated nowo_performance.Charts component still builds it
+ *
  * @extends AbstractType<mixed>
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>

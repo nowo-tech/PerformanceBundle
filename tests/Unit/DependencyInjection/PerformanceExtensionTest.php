@@ -57,10 +57,15 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertSame('', $this->container->getParameter('nowo_performance.dashboard.prefix'));
         $this->assertSame(['ROLE_ADMIN'], $this->container->getParameter('nowo_performance.dashboard.roles'));
         $this->assertSame('nowo_performance.cache', $this->container->getParameter('nowo_performance.cache.pool'));
+        // REQ-UI-003: no layout configured = UiKit admin layout (deprecated Twig global value)
         $this->assertSame(
-            '@NowoPerformanceBundle/Performance/layout.html.twig',
+            '@NowoUiKit/layout/admin.html.twig',
             $this->container->getParameter('nowo_performance.dashboard.layout_template'),
         );
+        $this->assertTrue($this->container->getParameter('nowo_performance.web_ui.enabled'));
+        $this->assertSame('/performance', $this->container->getParameter('nowo_performance.web_ui.path_prefix'));
+        $this->assertNull($this->container->getParameter('nowo_performance.web_ui.layout_template'));
+        $this->assertSame([], $this->container->getParameter('nowo_performance.web_ui.templates'));
         $this->assertSame('bootstrap5', $this->container->getParameter('nowo_performance.dashboard.css_framework'));
         $this->assertSame('bootstrap', $this->container->getParameter('nowo_performance.dashboard.template'));
         $this->assertSame(['ROLE_ADMIN'], $this->container->getParameter('nowo_performance.security.access_roles'));
@@ -116,8 +121,11 @@ final class PerformanceExtensionTest extends TestCase
 
         // Dashboard configuration — roles BC maps into security.access_roles and dashboard.roles param
         $this->assertFalse($this->container->getParameter('nowo_performance.dashboard.enabled'));
-        $this->assertSame('/metrics', $this->container->getParameter('nowo_performance.dashboard.path'));
-        $this->assertSame('/admin', $this->container->getParameter('nowo_performance.dashboard.prefix'));
+        // BC: the deprecated dashboard.prefix + dashboard.path become web_ui.path_prefix (dashboard.path carries it all)
+        $this->assertSame('/admin/metrics', $this->container->getParameter('nowo_performance.web_ui.path_prefix'));
+        $this->assertSame('/admin/metrics', $this->container->getParameter('nowo_performance.dashboard.path'));
+        $this->assertSame('', $this->container->getParameter('nowo_performance.dashboard.prefix'));
+        $this->assertFalse($this->container->getParameter('nowo_performance.web_ui.enabled'));
         $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $this->container->getParameter('nowo_performance.dashboard.roles'));
         $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $this->container->getParameter('nowo_performance.security.access_roles'));
     }

@@ -17,7 +17,6 @@ use Nowo\PerformanceBundle\Event\BeforeRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordReviewedEvent;
 use Nowo\PerformanceBundle\Event\BeforeRecordsClearedEvent;
 use Nowo\PerformanceBundle\EventSubscriber\PerformanceMetricsSubscriber;
-use Nowo\PerformanceBundle\Form\ChartFiltersType;
 use Nowo\PerformanceBundle\Form\ClearPerformanceDataType;
 use Nowo\PerformanceBundle\Form\DeleteRecordsByFilterType;
 use Nowo\PerformanceBundle\Form\DeleteRecordType;
@@ -40,20 +39,27 @@ use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
+use Nowo\PerformanceBundle\Ui\PerformanceAreaNav;
+use Nowo\PerformanceBundle\Ui\PerformancePageFactory;
+use Nowo\UiKitBundle\View\Pagination;
+use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use RuntimeException;
 use SortDirection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Throwable;
 
 use function array_slice;
@@ -64,6 +70,7 @@ use function is_object;
 use function is_string;
 use function sprintf;
 
+use const ARRAY_FILTER_USE_BOTH;
 use const FILTER_VALIDATE_URL;
 use const FNM_NOESCAPE;
 use const JSON_PRETTY_PRINT;
@@ -74,8 +81,6 @@ use const JSON_UNESCAPED_SLASHES;
  *
  * This controller provides a web interface to view and filter performance data.
  * The route path and prefix can be configured via bundle configuration.
- *
- * @method string trans(string $id, array<string, mixed> $parameters = [], string|null $domain = null, string|null $locale = null)
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
@@ -159,7 +164,34 @@ class PerformanceController extends AbstractController
         private readonly ?PerformanceAccessCheckerInterface $accessChecker = null,
         #[Autowire('%nowo_performance.export.max_rows%')]
         private readonly int $exportMaxRows = 5000,
+        private readonly ?PerformancePageFactory $pageFactory = null,
+        private readonly ?ClockInterface $clock = null,
+        private readonly ?TranslatorInterface $translator = null,
     ) {
+    }
+
+    /**
+     * Current time from the injected PSR-20 clock (REQ-DI-001; tests freeze it), the system clock otherwise.
+     */
+    private function now(): DateTimeImmutable
+    {
+        return ($this->clock ?? new NativeClock())->now();
+    }
+
+    /**
+     * UiKit page view models (REQ-UI-003). Without the service (a controller built by hand), a factory with the default
+     * page plumbing (UiKit layout, bundle templates) is built from the router of the AbstractController locator.
+     */
+    private function pages(): PerformancePageFactory
+    {
+        if ($this->pageFactory instanceof PerformancePageFactory) {
+            return $this->pageFactory;
+        }
+
+        /** @var UrlGeneratorInterface $router */
+        $router = $this->container->get('router');
+
+        return new PerformancePageFactory($router, new PerformanceAreaNav($router, $this->enableAccessRecords));
     }
 
     /**
@@ -374,12 +406,9 @@ class PerformanceController extends AbstractController
                 $stats = $this->cacheService->getCachedStatistics($env);
             }
             if ($stats === null) {
-                if ($filters === [] && ($limit === null || $limit >= 1000)) {
-                    $allRoutes = $routes;
-                } else {
-                    $allRoutes = $this->metricsService->getRoutesWithAggregates($env);
-                }
-                $stats = $this->calculateStats($allRoutes);
+                // Statistics cover every route of the environment (the page only holds at most 500 routes).
+                $allRoutes = $this->metricsService->getRoutesWithAggregates($env);
+                $stats     = $this->calculateStats($allRoutes);
                 // Add record count and top rankings when access records enabled
                 if ($this->enableAccessRecords && $this->recordRepository instanceof RouteDataRecordRepository) {
                     $stats['total_records']       = $this->recordRepository->getTotalAccessCount($env);
@@ -426,7 +455,7 @@ class PerformanceController extends AbstractController
         }
 
         // Clear performance data form (FormType, no raw inputs)
-        $clearForm     = $this->createForm(ClearPerformanceDataType::class, new ClearPerformanceDataRequest($env));
+        $clearForm     = $this->createForm(ClearPerformanceDataType::class, new ClearPerformanceDataRequest($env), ['with_submit' => false]);
         $clearFormView = $clearForm->createView();
 
         // Delete-record forms per route (FormType with CSRF only)
@@ -436,8 +465,7 @@ class PerformanceController extends AbstractController
                 $routeId = $route instanceof RouteDataWithAggregates ? $route->getId() : $route->getId();
                 if ($routeId !== null) {
                     $deleteForm = $this->createForm(DeleteRecordType::class, null, [
-                        'csrf_token_id'     => 'delete_performance_record_' . $routeId,
-                        'submit_attr_class' => $this->template === 'tailwind' ? 'inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200' : 'btn btn-danger btn-sm',
+                        'csrf_token_id' => 'delete_performance_record_' . $routeId,
                     ]);
                     $deleteForms[$routeId] = $deleteForm->createView();
                 }
@@ -460,14 +488,50 @@ class PerformanceController extends AbstractController
             'current_max_query_count'  => $request->query->get('max_query_count') ? (int) $request->query->get('max_query_count') : null,
             'current_date_from'        => $request->query->get('date_from') ? new DateTimeImmutable($request->query->get('date_from')) : null,
             'current_date_to'          => $request->query->get('date_to') ? new DateTimeImmutable($request->query->get('date_to')) : null,
+            'with_submit'              => false,
         ]);
         $formForView->handleRequest($request);
         $formView = $formForView->createView();
 
-        // Client-side chart selects (unmapped, ids kept for the chart script; empty block prefix) — REQ-TWIG-005
-        $chartFiltersForm = $this->createForm(ChartFiltersType::class)->createView();
+        // Server-side trend of the last 7 days (average request time per day, ms): no chart script (REQ-UI-003)
+        try {
+            $chart = $this->getChartData($env, $routeName, 7, 'requestTime');
+            $trend = [
+                'labels' => $chart['labels'],
+                'values' => array_map(static fn (float|int $v): float => round($v * 1000, 2), $chart['datasets'][0]['data']),
+            ];
+        } catch (Exception) {
+            $trend = ['labels' => [], 'values' => []];
+        }
 
-        return $this->render('@NowoPerformanceBundle/Performance/index.html.twig', [
+        $pages      = $this->pages();
+        $pagination = new Pagination(
+            $paginator['current_page'],
+            $limit,
+            $paginator['total_count'],
+            $paginator['total_pages'],
+            'nowo_performance.index',
+            perPageParam: 'limit',
+        );
+        $page = $pages->index(
+            array_values($routes),
+            $env,
+            $pagination,
+            $formView,
+            $this->enableRecordManagement ? $clearFormView : null,
+            $deleteForms,
+            $reviewForms,
+            $request->query->all(),
+            $this->enableAccessRecords,
+            $this->trackStatusCodes !== [],
+        );
+
+        return $this->render($pages->template('index'), $pages->context([
+            'page'                   => $page,
+            'kpis'                   => $pages->indexKpis($stats, $env, $this->enableAccessRecords),
+            'trend'                  => $trend,
+            'top_used_routes'        => $stats['top_used_routes'] ?? [],
+            'top_consumed_routes'    => $stats['top_consumed_routes'] ?? [],
             'routes'                 => $routes,
             'stats'                  => $stats,
             'paginator'              => $paginator,
@@ -484,7 +548,6 @@ class PerformanceController extends AbstractController
             'reviewForms'            => $reviewForms,
             'clearForm'              => $clearFormView,
             'deleteForms'            => $deleteForms,
-            'chartFiltersForm'       => $chartFiltersForm,
             'useComponents'          => $useComponents,
             'missingDependencies'    => $missingDependencies,
             'dependencyStatus'       => $dependencyStatus,
@@ -509,7 +572,7 @@ class PerformanceController extends AbstractController
             ],
             'autoRefreshInterval' => $this->autoRefreshInterval,
             'trackStatusCodes'    => $this->trackStatusCodes,
-        ]);
+        ]));
     }
 
     /**
@@ -782,8 +845,6 @@ class PerformanceController extends AbstractController
         $envFilter = new StatisticsEnvFilter($this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment')));
         $envForm   = $this->createForm(StatisticsEnvFilterType::class, $envFilter, [
             'environments' => $environments,
-            'attr_class'   => $this->template === 'tailwind' ? 'mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500' : 'form-select',
-            'attr_extra'   => ['onchange' => 'this.form.submit()'],
         ]);
         $envForm->handleRequest($request);
         $env = $this->normalizeEnv($envForm->getData()->env ?? $this->getParameter('kernel.environment'));
@@ -812,7 +873,11 @@ class PerformanceController extends AbstractController
             $trafficDistribution = $this->analysisService->analyzeTrafficDistribution($routes);
         }
 
-        return $this->render('@NowoPerformanceBundle/Performance/statistics.html.twig', [
+        $attention = count($routesNeedingAttention['slow_request_time']) + count($routesNeedingAttention['high_query_count']) + count($routesNeedingAttention['high_memory']);
+        $pages     = $this->pages();
+
+        return $this->render($pages->template('statistics'), $pages->context([
+            'page'                     => $pages->statistics($advancedStats, count($routes), $env, $attention),
             'advanced_stats'           => $advancedStats,
             'routes_needing_attention' => $routesNeedingAttention,
             'correlations'             => $correlations,
@@ -825,7 +890,7 @@ class PerformanceController extends AbstractController
             'template'                 => $this->template,
             'total_routes'             => count($routes),
             'envForm'                  => $envForm->createView(),
-        ]);
+        ]));
     }
 
     /**
@@ -982,10 +1047,7 @@ class PerformanceController extends AbstractController
         $filters = $this->buildFiltersFromRequest($request);
 
         $response = new StreamedResponse(function () use ($env, $filters): void {
-            $handle = fopen('php://output', 'w');
-            if ($handle === false) {
-                return;
-            }
+            $handle = fopen('php://output', 'w') ?: throw new RuntimeException('Cannot open php://output.');
 
             // Add BOM for Excel compatibility
             fprintf($handle, "\xEF\xBB\xBF");
@@ -1186,10 +1248,7 @@ class PerformanceController extends AbstractController
         $records = $result['records'];
 
         $response = new StreamedResponse(static function () use ($records): void {
-            $handle = fopen('php://output', 'w');
-            if ($handle === false) {
-                return;
-            }
+            $handle = fopen('php://output', 'w') ?: throw new RuntimeException('Cannot open php://output.');
             fprintf($handle, "\xEF\xBB\xBF");
             fputcsv($handle, [
                 'ID',
@@ -1558,14 +1617,8 @@ class PerformanceController extends AbstractController
                     ? $metadata->getTableName()
                     : ($metadata->table['name'] ?? 'nowo_performance_records');
                 $connection = $entityManager->getConnection();
-                /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-                if (method_exists($connection, 'createSchemaManager')) {
-                    $schemaManager = $connection->createSchemaManager();
-                } else {
-                    /** @var callable $getSchemaManager */
-                    $getSchemaManager = [$connection, 'getSchemaManager'];
-                    $schemaManager    = $getSchemaManager();
-                }
+                // doctrine/dbal ^3.8.2 || ^4.0: Connection::createSchemaManager() always exists
+                $schemaManager                        = $connection->createSchemaManager();
                 $tableStatus['records_table_exists']  = $schemaManager->tablesExist([$recordsTableName]);
                 $tableStatus['records_table_name']    = $recordsTableName;
                 $tableStatus['records_table_checked'] = true;
@@ -1574,10 +1627,7 @@ class PerformanceController extends AbstractController
                     $table           = $schemaManager->introspectTable($recordsTableName);
                     $existingColumns = [];
                     foreach ($table->getColumns() as $column) {
-                        $columnName = $column instanceof Column
-                            ? DbalSchemaNameHelper::getLogicalName($column)
-                            : '';
-                        $existingColumns[strtolower($columnName)] = true;
+                        $existingColumns[strtolower(DbalSchemaNameHelper::getLogicalName($column))] = true;
                     }
                     $expectedRecordsColumns = [];
                     foreach ($metadata->getFieldNames() as $fieldName) {
@@ -1635,8 +1685,7 @@ class PerformanceController extends AbstractController
                     $dataStatus['last_record_date'] = $lastRecord->getLastAccessedAt();
                     // Check if last update was in the last 24 hours
                     if ($dataStatus['last_record_date'] !== null) {
-                        $now                           = new DateTimeImmutable();
-                        $diff                          = $now->diff($dataStatus['last_record_date']);
+                        $diff                          = $this->now()->diff($dataStatus['last_record_date']);
                         $dataStatus['recent_activity'] = $diff->days === 0 && $diff->h < 24;
                     }
                 }
@@ -1738,37 +1787,20 @@ class PerformanceController extends AbstractController
                 }
             }
 
-            // Method 3: Check if subscriber class exists and is properly configured
-            // Since it's explicitly registered in services.yaml with kernel.event_subscriber tag,
-            // if the class exists, it should be registered
-            if (!$subscriberFound && class_exists(PerformanceMetricsSubscriber::class)) {
-                // Verify it implements EventSubscriberInterface
-                $reflection = new ReflectionClass(PerformanceMetricsSubscriber::class);
-                // Check if it has getSubscribedEvents method
-                if ($reflection->implementsInterface(EventSubscriberInterface::class) && $reflection->hasMethod('getSubscribedEvents')) {
-                    $subscriberFound = true;
-                    $detectionMethod = 'Class exists and implements EventSubscriberInterface (assumed registered via services.yaml)';
-                }
+            // Method 3: the bundle registers the subscriber in its services.yaml (kernel.event_subscriber), so when
+            // neither lookup can see it (the controller locator does not expose event_dispatcher or private services;
+            // the debug dispatcher wraps listeners) it is registered by construction.
+            if (!$subscriberFound) {
+                $subscriberFound = true;
+                $detectionMethod = 'Registered by the bundle services.yaml (kernel.event_subscriber); not visible to the controller locator';
             }
 
             $subscriberStatus['subscriber_registered'] = $subscriberFound;
-            if ($detectionMethod !== null) {
-                $subscriberStatus['detection_method'] = $detectionMethod;
-            }
+            $subscriberStatus['detection_method']      = $detectionMethod;
         } catch (Exception $e) {
-            $subscriberStatus['subscriber_error'] = $e->getMessage();
-            // If there's an error but the class exists and implements the interface, assume it's registered
-            if (class_exists(PerformanceMetricsSubscriber::class)) {
-                try {
-                    $reflection = new ReflectionClass(PerformanceMetricsSubscriber::class);
-                    if ($reflection->implementsInterface(EventSubscriberInterface::class)) {
-                        $subscriberStatus['subscriber_registered'] = true;
-                        $subscriberStatus['detection_method']      = 'Fallback: Class exists and implements EventSubscriberInterface';
-                    }
-                } catch (Exception) {
-                    // Ignore reflection errors
-                }
-            }
+            $subscriberStatus['subscriber_error']      = $e->getMessage();
+            $subscriberStatus['subscriber_registered'] = true;
+            $subscriberStatus['detection_method']      = 'Fallback: registered by the bundle services.yaml (kernel.event_subscriber)';
         }
 
         // Check tracking conditions
@@ -1917,10 +1949,6 @@ class PerformanceController extends AbstractController
                 $suggestions[] = 'Condiciones de tracking no cumplidas: ' . implode(', ', $failedConditions);
             }
 
-            if (!$subscriberStatus['subscriber_registered']) {
-                $suggestions[] = 'El subscriber PerformanceMetricsSubscriber no está registrado. Verifica que el bundle esté correctamente instalado y que el cache de Symfony esté limpio (php bin/console cache:clear).';
-            }
-
             if ($this->samplingRate < 1.0) {
                 $suggestions[] = sprintf('El sampling rate está en %.1f%%. Si no hay tráfico suficiente, es posible que ninguna petición haya sido muestreada. Considera aumentar el sampling rate o generar más tráfico.', $this->samplingRate * 100);
             }
@@ -1953,11 +1981,14 @@ class PerformanceController extends AbstractController
         $diagnostic['warnings']    = $warnings;
         $diagnostic['suggestions'] = $suggestions;
 
-        return $this->render('@NowoPerformanceBundle/Performance/diagnose.html.twig', [
+        $pages = $this->pages();
+
+        return $this->render($pages->template('diagnose'), $pages->context([
+            'page'        => $pages->diagnose($diagnostic, $this->dateTimeFormat),
             'diagnostic'  => $diagnostic,
             'ui_template' => $this->template,
             'template'    => $this->template,
-        ]);
+        ]));
     }
 
     /**
@@ -2069,8 +2100,7 @@ class PerformanceController extends AbstractController
         $this->assertAccess('You do not have permission to delete performance records.');
 
         $form = $this->createForm(DeleteRecordType::class, null, [
-            'csrf_token_id'     => 'delete_performance_record_' . $id,
-            'submit_attr_class' => 'btn btn-danger btn-sm',
+            'csrf_token_id' => 'delete_performance_record_' . $id,
         ]);
         $form->handleRequest($request);
 
@@ -2172,8 +2202,12 @@ class PerformanceController extends AbstractController
             }
 
             // Create and handle the form
+            // Same options as the dashboard dialog: with access records the form has the save_access_records field
+            // (otherwise its value is an extra field and the review is rejected).
             $form = $this->createForm(ReviewRouteDataType::class, null, [
-                'csrf_token_id' => 'review_performance_record_' . $id,
+                'csrf_token_id'         => 'review_performance_record_' . $id,
+                'route_data'            => $routeData,
+                'enable_access_records' => $this->enableAccessRecords,
             ]);
             $form->handleRequest($request);
 
@@ -2221,7 +2255,7 @@ class PerformanceController extends AbstractController
             }
 
             $wasAlreadyReviewed = $routeData->isReviewed();
-            $updated            = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy);
+            $updated            = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $this->now());
 
             // Update save_access_records per route when access records are enabled
             if ($this->enableAccessRecords && isset($formData['save_access_records'])) {
@@ -2252,9 +2286,8 @@ class PerformanceController extends AbstractController
                     $this->cacheService->clearEnvironments();
                 }
 
-                $this->addFlash('success', $wasAlreadyReviewed
-                    ? $this->trans('flash.review_updated', [], 'NowoPerformanceBundle')
-                    : $this->trans('flash.record_reviewed', [], 'NowoPerformanceBundle'));
+                $key = $wasAlreadyReviewed ? 'flash.review_updated' : 'flash.record_reviewed';
+                $this->addFlash('success', $this->translator?->trans($key, [], 'NowoPerformanceBundle') ?? $key);
             } else {
                 $this->addFlash('error', 'Record not found.');
             }
@@ -2290,7 +2323,7 @@ class PerformanceController extends AbstractController
      */
     private function getChartData(string $env, ?string $routeName, int $days, string $metric): array
     {
-        $endDate   = new DateTimeImmutable();
+        $endDate   = $this->now();
         $startDate = $endDate->modify("-{$days} days");
 
         $filters = [
@@ -2338,8 +2371,8 @@ class PerformanceController extends AbstractController
             $labels[] = $currentDate->format('M d');
 
             if (isset($groupedData[$dateKey])) {
-                $avgData[] = round($groupedData[$dateKey]['sum'] / $groupedData[$dateKey]['count'], 2);
-                $maxData[] = round($groupedData[$dateKey]['max'], 2);
+                $avgData[] = round($groupedData[$dateKey]['sum'] / $groupedData[$dateKey]['count'], 4);
+                $maxData[] = round($groupedData[$dateKey]['max'], 4);
             } else {
                 $avgData[] = 0;
                 $maxData[] = 0;
@@ -2426,8 +2459,8 @@ class PerformanceController extends AbstractController
 
         // Filter form (FormType) – GET
         $filterData = new RecordFilters(
-            $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : (new DateTimeImmutable())->modify('-7 days')->setTime(0, 0, 0),
-            $request->query->get('end_date') ? new DateTimeImmutable($request->query->get('end_date')) : new DateTimeImmutable(),
+            $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : $this->now()->modify('-7 days')->setTime(0, 0, 0),
+            $request->query->get('end_date') ? new DateTimeImmutable($request->query->get('end_date')) : $this->now(),
             $env,
             $request->query->get('route'),
             $request->query->get('path') ?: null,
@@ -2442,8 +2475,8 @@ class PerformanceController extends AbstractController
         ]);
         $filterForm->handleRequest($request);
         $filterData = $filterForm->getData();
-        $startDate  = $filterData->startDate ?? (new DateTimeImmutable())->modify('-7 days')->setTime(0, 0, 0);
-        $endDate    = $filterData->endDate ?? new DateTimeImmutable();
+        $startDate  = $filterData->startDate ?? $this->now()->modify('-7 days')->setTime(0, 0, 0);
+        $endDate    = $filterData->endDate ?? $this->now();
         $env        = $this->normalizeEnv($filterData->env ?? $this->getParameter('kernel.environment'));
         $routeName  = $filterData->route;
         if ($routeName === '' || $routeName === null) {
@@ -2487,10 +2520,30 @@ class PerformanceController extends AbstractController
             $statusCode !== null ? (string) $statusCode : null,
         );
         $deleteByFilterForm = $this->createForm(DeleteRecordsByFilterType::class, $deleteByFilterData, [
-            'from_value' => 'access_statistics',
+            'from_value'  => 'access_statistics',
+            'with_submit' => false,
         ]);
+        $deleteByFilterView = $deleteByFilterForm->createView();
+        $filterQuery        = array_filter([
+            'env'         => $env,
+            'start_date'  => $startDate->format('Y-m-d\TH:i'),
+            'end_date'    => $endDate->format('Y-m-d\TH:i'),
+            'route'       => $routeName,
+            'path'        => $path,
+            'status_code' => $statusCode,
+        ], static fn (mixed $v): bool => $v !== null && $v !== '');
+        $pages = $this->pages();
 
-        return $this->render('@NowoPerformanceBundle/Performance/access_statistics.html.twig', [
+        return $this->render($pages->template('access_statistics'), $pages->context([
+            'page' => $pages->accessStatistics(
+                $totalAccessCount,
+                $startDate,
+                $endDate,
+                $statisticsByHour,
+                $filterQuery,
+                $this->enableRecordManagement ? $deleteByFilterView : null,
+                $this->dateFormat,
+            ),
             'statistics_by_hour'        => $statisticsByHour,
             'statistics_by_day_of_week' => $statisticsByDayOfWeek,
             'statistics_by_month'       => $statisticsByMonth,
@@ -2509,8 +2562,8 @@ class PerformanceController extends AbstractController
             'dateFormat'                => $this->dateFormat,
             'enable_record_management'  => $this->enableRecordManagement,
             'filterForm'                => $filterForm->createView(),
-            'deleteByFilterForm'        => $deleteByFilterForm->createView(),
-        ]);
+            'deleteByFilterForm'        => $deleteByFilterView,
+        ]));
     }
 
     /**
@@ -2537,9 +2590,10 @@ class PerformanceController extends AbstractController
 
         $page    = max(1, (int) $request->query->get('page', 1));
         $perPage = max(10, min(100, (int) $request->query->get('per_page', 50)));
-        $sortBy  = $request->query->get('sort_by', 'accessed_at');
-        $order   = strtoupper($request->query->get('order', 'DESC'));
-        $order   = $order === 'ASC' ? 'ASC' : 'DESC';
+        // UiKit sortable columns send sort (column key) + direction; the 3.14 sort_by / order query keys still work.
+        $sortBy = PerformancePageFactory::recordSortKey($request->query->getString('sort')) ?? $request->query->get('sort_by', 'accessed_at');
+        $order  = strtoupper((string) ($request->query->get('direction') ?? $request->query->get('order', 'DESC')));
+        $order  = $order === 'ASC' ? 'ASC' : 'DESC';
 
         // Get environments and available routes for form
         try {
@@ -2588,6 +2642,7 @@ class PerformanceController extends AbstractController
             'available_routes' => $availableRoutes,
             'all_routes_label' => 'access_statistics.all_routes',
             'all_status_label' => 'access_statistics.all_status_codes',
+            'with_submit'      => false,
         ]);
         $filterForm->handleRequest($request);
         $filterData = $filterForm->getData();
@@ -2655,8 +2710,10 @@ class PerformanceController extends AbstractController
             $filterData->user,
         );
         $deleteByFilterForm = $this->createForm(DeleteRecordsByFilterType::class, $deleteByFilterData, [
-            'from_value' => 'access_records',
+            'from_value'  => 'access_records',
+            'with_submit' => false,
         ]);
+        $deleteByFilterView = $deleteByFilterForm->createView();
 
         $retentionDays = $this->accessRecordsRetentionDays ?? 30;
         $purgeForm     = $this->createForm(PurgeAccessRecordsType::class, new PurgeAccessRecordsRequest($env, PurgeAccessRecordsRequest::PURGE_OLDER_THAN, $retentionDays), [
@@ -2664,7 +2721,27 @@ class PerformanceController extends AbstractController
             'default_days' => $retentionDays,
         ]);
 
-        return $this->render('@NowoPerformanceBundle/Performance/access_records.html.twig', [
+        $pages       = $this->pages();
+        $filterQuery = array_filter($request->query->all(), static fn (mixed $v, int|string $k): bool => !in_array($k, ['page', 'per_page', 'sort', 'direction', 'sort_by', 'order'], true) && $v !== null && $v !== '', ARRAY_FILTER_USE_BOTH);
+        $pagination  = new Pagination(
+            (int) $paginatedData['page'],
+            (int) $paginatedData['per_page'],
+            (int) $paginatedData['total'],
+            max(1, (int) $paginatedData['total_pages']),
+            'nowo_performance.access_records',
+        );
+
+        return $this->render($pages->template('access_records'), $pages->context([
+            'page' => $pages->accessRecords(
+                array_values($paginatedData['records']),
+                $pagination,
+                $filterForm->createView(),
+                $filterQuery,
+                $this->enableRecordManagement ? $deleteByFilterView : null,
+                $this->enableRecordManagement,
+                PerformancePageFactory::recordSortColumn(is_string($sortBy) ? $sortBy : null),
+                strtolower($order),
+            ),
             'paginated_data'           => $paginatedData,
             'environment'              => $env,
             'environments'             => $environments,
@@ -2681,9 +2758,9 @@ class PerformanceController extends AbstractController
             'dateFormat'               => $this->dateFormat,
             'enable_record_management' => $this->enableRecordManagement,
             'filterForm'               => $filterForm->createView(),
-            'deleteByFilterForm'       => $deleteByFilterForm->createView(),
+            'deleteByFilterForm'       => $deleteByFilterView,
             'purgeForm'                => $purgeForm->createView(),
-        ]);
+        ]));
     }
 
     /**
@@ -2742,7 +2819,7 @@ class PerformanceController extends AbstractController
                 if ($days < 1) {
                     $days = 30;
                 }
-                $before  = new DateTimeImmutable('-' . $days . ' days');
+                $before  = $this->now()->modify('-' . $days . ' days');
                 $deleted = $this->recordRepository->deleteOlderThan($before, $envFilter);
                 $this->addFlash('success', sprintf('Purged %d access record(s) older than %d days.', $deleted, $days));
             }

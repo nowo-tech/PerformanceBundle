@@ -16,7 +16,7 @@ Already in the bundle:
 
 - Automatic route metrics (time, queries, memory, access count, HTTP status, optional sub-requests)
 - Doctrine persistence, sampling, cache, ignore lists, multi-connection
-- Dashboard `/performance` (filters, Chart.js, CSV/JSON export, review)
+- Dashboard `/performance` (UiKit page contract, filters, server-side SVG charts, CSV/JSON export, review)
 - Notifications (email / Slack / Teams / webhook)
 - CLI: rebuild aggregates, sync schema, purge access records, diagnose, set metrics, check dependencies, create tables
 - Web Profiler collector

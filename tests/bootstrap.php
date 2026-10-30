@@ -5,11 +5,8 @@ declare(strict_types=1);
 /**
  * PHPUnit bootstrap for Performance Bundle tests.
  *
- * Suppresses [PerformanceBundle] logs (error_log) during test runs to reduce noise.
- * LogHelper checks NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS and skips error_log when set.
+ * The deprecated LogHelper (unused by the bundle services) skips error_log() when the host defines
+ * NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS=true; LogHelperTest covers both cases, so the constant is no longer defined
+ * here (it would make the error_log() path unreachable in every test process).
  */
-if (!defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS')) {
-    define('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS', true);
-}
-
 require __DIR__ . '/../vendor/autoload.php';

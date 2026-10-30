@@ -219,3 +219,108 @@ delete: Verwijderen
 delete_records_by_filter: Records per filter verwijderen
 diagnose: Diagnosticeren
 index: Dashboard
+
+# Dashboard pages (UiKit page contract, REQ-UI-003)
+ui:
+    nav:
+        label: "Prestatieonderdelen"
+        dashboard: "Routes"
+        statistics: "Statistieken"
+        access_statistics: "Toegangsstatistieken"
+        access_records: "Toegangsrecords"
+        diagnose: "Diagnose"
+    confirm:
+        clear_title: "Alle prestatierecords van %env% verwijderen?"
+        delete_route_title: "Het record van %route% verwijderen?"
+    routes:
+        view_records: "Toegangsrecords bekijken"
+    kpi:
+        max: "max. %value%"
+        environment: "omgeving %env%"
+        median_request_time: "Mediane aanvraagtijd"
+        p95: "p95 %value%"
+        mean_queries: "Gemiddeld aantal queries per aanvraag"
+        until: "tot %date%"
+        busiest_hour: "Drukste uur"
+        requests: "%count% aanvragen"
+    access_statistics:
+        intro: "Toegangen per uur, weekdag en maand voor de gekozen periode en filters."
+    access_records:
+        intro: "Alle geregistreerde aanvragen, nieuwste eerst. Filter, sorteer en exporteer ze."
+    diagnose:
+        title: "Diagnose"
+        intro: "Status van configuratie, database, tabellen en registratie van de bundle."
+        issues: "Problemen (%count%)"
+        warnings: "Waarschuwingen (%count%)"
+        suggestions: "Suggesties (%count%)"
+        all_good: "Geen problemen gevonden: de registratie is ingesteld en slaat gegevens op."
+        section:
+            configuration: "Configuratie"
+            environment: "Omgeving"
+            database_connection: "Databaseverbinding"
+            table_status: "Tabellen"
+            data_status: "Geregistreerde gegevens"
+            route_tracking: "Routeregistratie"
+            subscriber_status: "Subscriber"
+    dependencies:
+        title: "Optionele afhankelijkheden ontbreken."
+        intro: "Sommige functies gebruiken een alternatief; installeer deze pakketten voor alle functies:"
+    auto_refresh: "Deze pagina wordt elke %seconds% seconden herladen."
+    trend:
+        title: "Aanvraagtijd, laatste %days% dagen"
+        intro: "Gemiddelde aanvraagtijd per dag (ms)."
+    statistics:
+        recommendations: "Aanbevelingen"
+        priority:
+            high: "Hoog"
+            medium: "Gemiddeld"
+            low: "Laag"
+        recommendation_action: "Actie:"
+        correlations: "Correlaties"
+        correlations_intro: "Van -1 (omgekeerd) tot +1 (direct); waarden dicht bij ±1 wijzen op een sterk verband."
+        correlation:
+            request_time_vs_query_time: "Aanvraagtijd vs querytijd"
+            request_time_vs_query_count: "Aanvraagtijd vs aantal queries"
+            query_time_vs_query_count: "Querytijd vs aantal queries"
+            memory_vs_request_time: "Geheugen vs aanvraagtijd"
+        sample_size: "%count% routes"
+        efficiency: "Efficiëntie"
+        avg_query_ratio: "Queries nemen gemiddeld %ratio%% van de aanvraagtijd in beslag."
+        query_bottlenecks: "Query-knelpunten"
+        query_bottlenecks_intro: "Routes waarbij queries meer dan 80% van de aanvraagtijd innemen."
+        inefficient_routes: "Inefficiënte routes"
+        inefficient_routes_intro: "Routes met een hoge aanvraagtijd of veel queries."
+        queries: "%count% queries"
+        query_ratio: "%ratio%% in queries"
+        traffic: "Verkeersverdeling"
+        traffic_concentration: "%ratio%% van het verkeer gaat naar de top 10% van de routes."
+        hot_paths: "Meest bezochte routes"
+        slow_request_time: "Trage aanvraagtijd (boven p95)"
+        high_query_count: "Veel queries (boven p95)"
+        high_memory: "Hoog geheugengebruik (boven p95)"
+        no_routes: "Geen routes."
+        metric_title: "Statistieken: %metric%"
+        samples: "%count% gemeten routes"
+    weekday:
+        '0': "Zondag"
+        '1': "Maandag"
+        '2': "Dinsdag"
+        '3': "Woensdag"
+        '4': "Donderdag"
+        '5': "Vrijdag"
+        '6': "Zaterdag"
+    month:
+        '1': "Januari"
+        '2': "Februari"
+        '3': "Maart"
+        '4': "April"
+        '5': "Mei"
+        '6': "Juni"
+        '7': "Juli"
+        '8': "Augustus"
+        '9': "September"
+        '10': "Oktober"
+        '11': "November"
+        '12': "December"
+    components:
+        charts_moved: "De trendgrafiek staat op de dashboardpagina; de grafiekgegevens zijn beschikbaar als JSON."

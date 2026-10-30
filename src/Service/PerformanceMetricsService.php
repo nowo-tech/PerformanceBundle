@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
-use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -19,7 +18,9 @@ use Nowo\PerformanceBundle\MessageBus\MessageBusInterface;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -89,6 +90,7 @@ class PerformanceMetricsService
         #[Autowire('%nowo_performance.enable_logging%')]
         private readonly bool $enableLogging = true,
         private readonly ?LoggerInterface $logger = null,
+        private readonly ClockInterface $clock = new NativeClock(),
     ) {
         $manager = $this->registry->getManager($this->connectionName);
         if (!$manager instanceof EntityManagerInterface) {
@@ -326,7 +328,7 @@ class PerformanceMetricsService
             $routeData->setEnv($env);
             $routeData->setHttpMethod($httpMethod);
             $routeData->setParams($params !== null ? SensitiveDataRedactor::redactParams($params) : null);
-            $routeData->setLastAccessedAt(new DateTimeImmutable());
+            $routeData->setLastAccessedAt($this->clock->now());
 
             $this->entityManager->persist($routeData);
             $isNew = true;
@@ -337,7 +339,7 @@ class PerformanceMetricsService
                 $routeName,
                 $env,
             );
-            $routeData->setLastAccessedAt(new DateTimeImmutable());
+            $routeData->setLastAccessedAt($this->clock->now());
             $wasUpdated = true;
         }
 
@@ -368,7 +370,7 @@ class PerformanceMetricsService
                 if (!$skipAccessRecord) {
                     $accessRecord = new RouteDataRecord();
                     $accessRecord->setRouteData($routeData);
-                    $accessRecord->setAccessedAt(new DateTimeImmutable());
+                    $accessRecord->setAccessedAt($this->clock->now());
                     $accessRecord->setStatusCode($statusCode);
 
                     // responseTime in RouteDataRecord is the per-request duration,

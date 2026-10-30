@@ -1,3 +1,7 @@
+# UiKit page contract (REQ-UI-003): one host layout and one theme for every bundle page. The demo admin layout extends
+# base.html.twig (Bootstrap 5 + Bootstrap Icons) to match css_framework / icon_set.
 nowo_ui_kit:
     css_framework: bootstrap5
     icon_set: bootstrap-icons
+    layouts:
+        admin: 'layouts/admin.html.twig'

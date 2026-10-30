@@ -79,7 +79,7 @@ final class RecordFiltersTypeTest extends TypeTestCase
                 && isset($defaults['all_routes_label'])
                 && isset($defaults['all_status_label'])
                 && ($defaults['record_fields'] ?? null) === true));
-        $resolver->expects($this->exactly(3))->method('setAllowedTypes');
+        $resolver->expects($this->exactly(4))->method('setAllowedTypes');
 
         $this->formType->configureOptions($resolver);
     }

@@ -22,7 +22,6 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
 use ReflectionClass;
-use ReflectionException;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -51,6 +50,15 @@ use function sprintf;
 )]
 class CreateTableCommand extends Command
 {
+    /** A column named exactly `id` declared INT / INTEGER (never `route_data_id` & co.). */
+    private const ID_INT_COLUMN = '/(?<![\w`])`?id`?\s+INT/i';
+
+    /** The `id INT ... NOT NULL` declaration (group 1: up to the type options, group 2: NOT NULL). */
+    private const ID_INT_NOT_NULL = '/(?<![\w`])(`?id`?\s+INT(?:EGER)?[^,)]*?)(\s+NOT\s+NULL)(?=\s*[,)]|$)/i';
+
+    /** Zero datetime / date defaults MySQL rejects in strict mode. */
+    private const ZERO_DATE_DEFAULTS = ["/DEFAULT\s+'0000-00-00\s+00:00:00'/i", "/DEFAULT\s+'0000-00-00'/i"];
+
     /**
      * Creates a new instance.
      *
@@ -112,7 +120,7 @@ HELP
     }
 
     /**
-     * Get schema manager from connection (compatible with DBAL 2.x and 3.x).
+     * Schema manager of the connection.
      *
      * @param Connection $connection The database connection
      *
@@ -120,18 +128,8 @@ HELP
      */
     private function getSchemaManager(Connection $connection): AbstractSchemaManager
     {
-        /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-        if (method_exists($connection, 'createSchemaManager')) {
-            return $connection->createSchemaManager();
-        }
-        // DBAL 2.x uses getSchemaManager()
-        if (method_exists($connection, 'getSchemaManager')) {
-            /** @var callable $getSchemaManager */
-            $getSchemaManager = [$connection, 'getSchemaManager'];
-
-            return $getSchemaManager();
-        }
-        throw new RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
+        // createSchemaManager() exists on every supported DBAL (^3.8.2 || ^4.0).
+        return $connection->createSchemaManager();
     }
 
     /**
@@ -271,39 +269,17 @@ HELP
 
         foreach ($sql as $statement) {
             // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
-            $platformClass = $platform::class;
-            $isMySQL       = $platform instanceof MySQLPlatform
-                || str_contains(strtolower($platformClass), 'mysql')
-                || str_contains(strtolower($platformClass), 'mariadb');
+            $isMySQL = $this->isMySQL($platform);
 
             // Check if this is a CREATE TABLE statement and id column exists
-            if ($isMySQL && (preg_match('/CREATE\s+TABLE/i', $statement) && preg_match('/`?id`?\s+INT/i', $statement) && !preg_match('/AUTO_INCREMENT/i', $statement))) {
+            if ($isMySQL && (preg_match('/CREATE\s+TABLE/i', $statement) && preg_match(self::ID_INT_COLUMN, $statement) && !preg_match('/AUTO_INCREMENT/i', $statement))) {
                 // Add AUTO_INCREMENT to the id column - handle both backticked and non-backticked column names
                 // Pattern: id INT or `id` INT followed by NOT NULL
-                $statement = preg_replace(
-                    '/([`]?id[`]?\s+INT(?:EGER)?[^,)]*?)(\s+NOT\s+NULL)(?=\s*[,)]|$)/i',
-                    '$1$2 AUTO_INCREMENT',
-                    $statement,
-                );
+                $statement = (string) preg_replace(self::ID_INT_NOT_NULL, '$1$2 AUTO_INCREMENT', $statement);
             }
 
-            // Fix invalid datetime defaults that MySQL might generate
-            // Remove DEFAULT '0000-00-00 00:00:00' for nullable datetime columns
-            $statement = preg_replace(
-                "/DEFAULT\s+'0000-00-00\s+00:00:00'/i",
-                '',
-                (string) $statement,
-            );
-
-            // Also remove DEFAULT '0000-00-00' for date columns
-            $statement = preg_replace(
-                "/DEFAULT\s+'0000-00-00'/i",
-                '',
-                (string) $statement,
-            );
-            if ($statement === null || $statement === '') {
-                continue;
-            }
+            // Fix invalid zero datetime / date defaults that MySQL might generate
+            $statement = (string) preg_replace(self::ZERO_DATE_DEFAULTS, '', $statement);
 
             $io->text(sprintf('  <comment>%s</comment>', $statement));
             $connection->executeStatement($statement);
@@ -344,11 +320,8 @@ HELP
         }
 
         // Check if id column has AUTO_INCREMENT (MySQL/MariaDB)
-        $platform      = $connection->getDatabasePlatform();
-        $platformClass = $platform::class;
-        $isMySQL       = $platform instanceof MySQLPlatform
-            || str_contains(strtolower($platformClass), 'mysql')
-            || str_contains(strtolower($platformClass), 'mariadb');
+        $platform = $connection->getDatabasePlatform();
+        $isMySQL  = $this->isMySQL($platform);
 
         if ($isMySQL && isset($existingColumnsMap['id'])) {
             $idColumn = $existingColumnsMap['id'];
@@ -460,11 +433,12 @@ HELP
 
         // Columns that exist in DB but not in entity (obsolete) - only when --drop-obsolete
         if ($dropObsolete) {
+            $joinColumns = $this->joinColumnNames($metadata);
             foreach ($table->getColumns() as $column) {
                 $columnName      = $this->getColumnName($column);
                 $columnNameLower = strtolower($columnName);
-                // Never drop primary key column
-                if ($columnNameLower === 'id') {
+                // Never drop the primary key nor an association join column (e.g. route_data_id): they are no fields
+                if ($columnNameLower === 'id' || isset($joinColumns[$columnNameLower])) {
                     continue;
                 }
                 if (!isset($expectedColumns[$columnNameLower])) {
@@ -556,6 +530,12 @@ HELP
 
                 // Special handling for id column with AUTO_INCREMENT when foreign keys exist
                 if (strtolower($columnName) === 'id' && $expected['autoincrement']) {
+                    if (!$this->isMySQL($platform)) {
+                        // The repair statement is MySQL/MariaDB only: never emit it elsewhere
+                        $io->warning(sprintf('  Column %s differs from the entity, but repairing an auto-increment primary key is only supported on MySQL/MariaDB: left unchanged (use Doctrine migrations).', $columnName));
+
+                        continue;
+                    }
                     try {
                         $this->fixAutoIncrementWithForeignKeys(
                             $connection,
@@ -613,7 +593,7 @@ HELP
         }
 
         // Check type
-        $expectedType = $this->getColumnSQLType($expectedInfo, $platform);
+        $expectedType = $this->getColumnSQLType($expectedInfo, $platform, true);
         // Build column array for getSQLDeclaration (compatible with DBAL 2.x and 3.x)
         $columnArray = [
             'length'        => $existingColumn->getLength(),
@@ -671,19 +651,7 @@ HELP
             }
         }
 
-        // Check AUTO_INCREMENT for MySQL/MariaDB
-        $expectedAutoincrement = $expectedInfo['autoincrement'];
-        $existingAutoincrement = $existingColumn->getAutoincrement();
-        if ($expectedAutoincrement !== $existingAutoincrement) {
-            $platformClass = $platform::class;
-            $isMySQL       = $platform instanceof MySQLPlatform
-                || str_contains(strtolower($platformClass), 'mysql')
-                || str_contains(strtolower($platformClass), 'mariadb');
-            // Only check for MySQL/MariaDB as AUTO_INCREMENT is MySQL-specific
-            if ($isMySQL) {
-                return true;
-            }
-        }
+        // AUTO_INCREMENT differences are part of the compared SQL type declaration above
 
         return false;
     }
@@ -715,7 +683,7 @@ HELP
 
         // Check type - compare SQL declarations instead of type names
         // This is more reliable across different Doctrine versions
-        $expectedSQLType = $this->getColumnSQLType($expectedInfo, $platform);
+        $expectedSQLType = $this->getColumnSQLType($expectedInfo, $platform, true);
         // Build column array for getSQLDeclaration (compatible with DBAL 2.x and 3.x)
         $columnArray = [
             'length'        => $existingColumn->getLength(),
@@ -800,38 +768,17 @@ HELP
 
         foreach ($sql as $statement) {
             // Ensure AUTO_INCREMENT is set for id column in MySQL/MariaDB
-            $platformClass = $platform::class;
-            $isMySQL       = $platform instanceof MySQLPlatform
-                || str_contains(strtolower($platformClass), 'mysql')
-                || str_contains(strtolower($platformClass), 'mariadb');
+            $isMySQL = $this->isMySQL($platform);
 
             // Check if this is a CREATE TABLE statement and id column exists
-            if ($isMySQL && (preg_match('/CREATE\s+TABLE/i', $statement) && preg_match('/`?id`?\s+INT/i', $statement) && !preg_match('/AUTO_INCREMENT/i', $statement))) {
+            if ($isMySQL && (preg_match('/CREATE\s+TABLE/i', $statement) && preg_match(self::ID_INT_COLUMN, $statement) && !preg_match('/AUTO_INCREMENT/i', $statement))) {
                 // Add AUTO_INCREMENT to the id column - handle both backticked and non-backticked column names
                 // Pattern: id INT or `id` INT followed by NOT NULL
-                $statement = preg_replace(
-                    '/([`]?id[`]?\s+INT(?:EGER)?[^,)]*?)(\s+NOT\s+NULL)(?=\s*[,)]|$)/i',
-                    '$1$2 AUTO_INCREMENT',
-                    $statement,
-                );
+                $statement = (string) preg_replace(self::ID_INT_NOT_NULL, '$1$2 AUTO_INCREMENT', $statement);
             }
 
-            // Fix invalid datetime defaults that MySQL might generate
-            $statement = preg_replace(
-                "/DEFAULT\s+'0000-00-00\s+00:00:00'/i",
-                '',
-                (string) $statement,
-            );
-
-            // Also remove DEFAULT '0000-00-00' for date columns
-            $statement = preg_replace(
-                "/DEFAULT\s+'0000-00-00'/i",
-                '',
-                (string) $statement,
-            );
-            if ($statement === null || $statement === '') {
-                continue;
-            }
+            // Fix invalid zero datetime / date defaults that MySQL might generate
+            $statement = (string) preg_replace(self::ZERO_DATE_DEFAULTS, '', $statement);
 
             $io->text(sprintf('  <comment>%s</comment>', $statement));
             $connection->executeStatement($statement);
@@ -940,10 +887,12 @@ HELP
         }
 
         if ($dropObsolete) {
+            $joinColumns = $this->joinColumnNames($metadata);
             foreach ($table->getColumns() as $column) {
                 $columnName      = $this->getColumnName($column);
                 $columnNameLower = strtolower($columnName);
-                if ($columnNameLower === 'id') {
+                // Never drop the primary key nor an association join column (e.g. route_data_id): they are no fields
+                if ($columnNameLower === 'id' || isset($joinColumns[$columnNameLower])) {
                     continue;
                 }
                 if (!isset($expectedColumns[$columnNameLower])) {
@@ -1067,19 +1016,14 @@ HELP
             }
         }
 
-        try {
-            $reflection = new ReflectionClass(RouteDataRecord::class);
-            $attributes = $reflection->getAttributes(Index::class);
-            foreach ($attributes as $attribute) {
-                $index     = $attribute->newInstance();
-                $indexName = $index->name ?? null;
-                $columns   = $index->columns ?? [];
-                if ($indexName && !empty($columns)) {
-                    $expectedIndexes[$indexName] = $columns;
-                }
+        $attributes = (new ReflectionClass(RouteDataRecord::class))->getAttributes(Index::class);
+        foreach ($attributes as $attribute) {
+            $index     = $attribute->newInstance();
+            $indexName = $index->name ?? null;
+            $columns   = $index->columns ?? [];
+            if ($indexName && !empty($columns)) {
+                $expectedIndexes[$indexName] = $columns;
             }
-        } catch (ReflectionException) {
-            // Ignore
         }
 
         $existingIndexes = [];
@@ -1116,6 +1060,35 @@ HELP
                 $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
         }
+    }
+
+    /**
+     * Whether the platform is MySQL / MariaDB (AUTO_INCREMENT, MODIFY COLUMN, INFORMATION_SCHEMA checks).
+     */
+    private function isMySQL(AbstractPlatform $platform): bool
+    {
+        return $platform instanceof MySQLPlatform
+            || str_contains(strtolower($platform::class), 'mysql')
+            || str_contains(strtolower($platform::class), 'mariadb');
+    }
+
+    /**
+     * Join columns of the single-column associations of an entity (lower-cased name => true).
+     *
+     * @param ClassMetadata<object> $metadata
+     *
+     * @return array<string, true>
+     */
+    private function joinColumnNames(ClassMetadata $metadata): array
+    {
+        $names = [];
+        foreach ($metadata->getAssociationNames() as $association) {
+            if ($metadata->isAssociationWithSingleJoinColumn($association)) {
+                $names[strtolower($metadata->getSingleAssociationJoinColumnName($association))] = true;
+            }
+        }
+
+        return $names;
     }
 
     /**
@@ -1159,10 +1132,7 @@ HELP
         // Add AUTO_INCREMENT for MySQL/MariaDB if column is autoincremental
         $autoincrement = '';
         if ($isAutoincrement) {
-            $platformClass = $platform::class;
-            $isMySQL       = $platform instanceof MySQLPlatform
-                || str_contains(strtolower($platformClass), 'mysql')
-                || str_contains(strtolower($platformClass), 'mariadb');
+            $isMySQL = $this->isMySQL($platform);
 
             if ($isMySQL) {
                 $autoincrement = ' AUTO_INCREMENT';
@@ -1173,7 +1143,7 @@ HELP
     }
 
     /**
-     * Quote a single identifier (compatible with DBAL 2.x and 3.x).
+     * Quote a single identifier.
      *
      * @param AbstractPlatform $platform The database platform
      * @param string $identifier The identifier to quote
@@ -1182,13 +1152,7 @@ HELP
      */
     private function quoteIdentifier(AbstractPlatform $platform, string $identifier): string
     {
-        /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-        if (method_exists($platform, 'quoteSingleIdentifier')) {
-            return $platform->quoteSingleIdentifier($identifier);
-        }
-
-        // Fallback to quoteIdentifier() for DBAL 2.x
-        return $platform->quoteIdentifier($identifier);
+        return $platform->quoteSingleIdentifier($identifier);
     }
 
     /**
@@ -1225,80 +1189,57 @@ HELP
      *
      * @return string SQL type declaration
      */
-    private function getColumnSQLType(array $columnInfo, AbstractPlatform $platform): string
+    private function getColumnSQLType(array $columnInfo, AbstractPlatform $platform, bool $withAutoincrement = false): string
     {
         $type       = $columnInfo['type'];
         $options    = $columnInfo['options'] ?? [];
         $length     = $columnInfo['length'] ?? null;
         $columnName = $columnInfo['column'] ?? 'column'; // Default fallback name
 
-        // Use Doctrine's type system to get proper SQL type
-        // getTypeRegistry() is available in DBAL 3.x, use Type::getType() for DBAL 2.x compatibility
-        try {
-            $doctrineType = null;
-            /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-            if (method_exists(Type::class, 'getTypeRegistry')) {
-                $typeRegistry = Type::getTypeRegistry();
-                $doctrineType = $typeRegistry->get($type);
-            } elseif (method_exists(Type::class, 'getType')) {
-                // DBAL 2.x method
-                $doctrineType = Type::getType($type);
-            }
-
-            if ($doctrineType instanceof Type) {
-                $column = [];
-                // DBAL 3.x requires 'name' key in the column array (mandatory)
-                $column['name'] = $columnName;
-
-                if ($length !== null) {
-                    $column['length'] = $length;
-                } elseif (isset($options['length'])) {
-                    $column['length'] = $options['length'];
-                }
-                // Add other column properties that might be needed
-                if (isset($columnInfo['nullable'])) {
-                    $column['notnull'] = !$columnInfo['nullable'];
-                }
-                if (isset($columnInfo['precision'])) {
-                    $column['precision'] = $columnInfo['precision'];
-                }
-                if (isset($columnInfo['scale'])) {
-                    $column['scale'] = $columnInfo['scale'];
-                }
-                // Add unsigned if specified
-                if (isset($options['unsigned'])) {
-                    $column['unsigned'] = $options['unsigned'];
-                }
-                // Add fixed if specified (for CHAR vs VARCHAR)
-                if (isset($options['fixed'])) {
-                    $column['fixed'] = $options['fixed'];
-                }
-
-                return $doctrineType->getSQLDeclaration($column, $platform);
-            }
-        } catch (Exception) {
-            // Fall through to fallback mapping
+        // DBAL requires the 'name' key in the column array
+        $column = ['name' => $columnName];
+        if ($length !== null) {
+            $column['length'] = $length;
+        } elseif (isset($options['length'])) {
+            $column['length'] = $options['length'];
+        }
+        if (isset($columnInfo['nullable'])) {
+            $column['notnull'] = !$columnInfo['nullable'];
+        }
+        // Add unsigned if specified
+        if (isset($options['unsigned'])) {
+            $column['unsigned'] = $options['unsigned'];
+        }
+        // Add fixed if specified (for CHAR vs VARCHAR)
+        if (isset($options['fixed'])) {
+            $column['fixed'] = $options['fixed'];
+        }
+        // Comparisons with an introspected column include the platform's auto-increment declaration
+        // (MySQL "INT AUTO_INCREMENT", PostgreSQL identity, SQLite AUTOINCREMENT); DDL appends it itself.
+        if ($withAutoincrement && !empty($columnInfo['autoincrement'])) {
+            $column['autoincrement'] = true;
         }
 
-        // Fallback to manual mapping (used if Type system fails or is not available)
+        try {
+            return Type::getTypeRegistry()->get((string) $type)->getSQLDeclaration($column, $platform);
+        } catch (Exception) {
+            // Unknown type, or a declaration the platform refuses (e.g. MySQL VARCHAR without length): manual mapping
+        }
+
+        if ($type === 'string') {
+            return sprintf('VARCHAR(%d)', $length ?? $options['length'] ?? 255);
+        }
+
         $typeMap = [
             'boolean'            => 'BOOLEAN',
             'integer'            => 'INTEGER',
             'float'              => 'FLOAT',
-            'string'             => 'VARCHAR(255)',
             'datetime_immutable' => 'DATETIME',
             'json'               => 'JSON',
             'bigint'             => 'BIGINT',
         ];
-        $sqlType = $typeMap[strtolower((string) $type)] ?? 'VARCHAR(255)';
 
-        // Handle string length
-        if ($type === 'string') {
-            $finalLength = $length ?? $options['length'] ?? 255;
-            $sqlType     = sprintf('VARCHAR(%d)', $finalLength);
-        }
-
-        return $sqlType;
+        return $typeMap[strtolower((string) $type)] ?? 'VARCHAR(255)';
     }
 
     /**
@@ -1328,19 +1269,14 @@ HELP
             }
         }
 
-        try {
-            $reflection = new ReflectionClass(RouteData::class);
-            $attributes = $reflection->getAttributes(Index::class);
-            foreach ($attributes as $attribute) {
-                $index     = $attribute->newInstance();
-                $indexName = $index->name ?? null;
-                $columns   = $index->columns ?? [];
-                if ($indexName && !empty($columns)) {
-                    $expectedIndexes[$indexName] = $columns;
-                }
+        $attributes = (new ReflectionClass(RouteData::class))->getAttributes(Index::class);
+        foreach ($attributes as $attribute) {
+            $index     = $attribute->newInstance();
+            $indexName = $index->name ?? null;
+            $columns   = $index->columns ?? [];
+            if ($indexName && !empty($columns)) {
+                $expectedIndexes[$indexName] = $columns;
             }
-        } catch (ReflectionException) {
-            // Ignore reflection errors
         }
 
         $existingIndexes = [];
@@ -1398,7 +1334,7 @@ HELP
     }
 
     /**
-     * Fix AUTO_INCREMENT for id column, handling foreign key constraints.
+     * Fix AUTO_INCREMENT for the id column on MySQL/MariaDB, handling foreign key constraints.
      *
      * @param Connection $connection The database connection
      * @param AbstractPlatform $platform The database platform
@@ -1411,23 +1347,6 @@ HELP
         string $tableName,
         SymfonyStyle $io,
     ): void {
-        $platformClass = $platform::class;
-        $isMySQL       = $platform instanceof MySQLPlatform
-            || str_contains(strtolower($platformClass), 'mysql')
-            || str_contains(strtolower($platformClass), 'mariadb');
-
-        if (!$isMySQL) {
-            // Only MySQL/MariaDB need this special handling
-            $alterSql = sprintf(
-                'ALTER TABLE %s MODIFY COLUMN %s INT NOT NULL AUTO_INCREMENT',
-                $this->quoteIdentifier($platform, $tableName),
-                $this->quoteIdentifier($platform, 'id'),
-            );
-            $connection->executeStatement($alterSql);
-
-            return;
-        }
-
         // Get all foreign keys that reference the id column of this table
         $foreignKeysToRestore = [];
 

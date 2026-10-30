@@ -130,6 +130,79 @@
 
 ## Unreleased
 
+From **3.14.1**:
+
+```bash
+composer update nowo-tech/performance-bundle nowo-tech/ui-kit-bundle
+php bin/console assets:install
+```
+
+### Template contract (REQ-UI-003)
+
+The dashboard pages now extend the UiKit page scaffolds and take a view model `page`:
+
+| Page | Template | Scaffold |
+| --- | --- | --- |
+| Routes | `Performance/index.html.twig` | `@NowoUiKit/page/list.html.twig` |
+| Advanced statistics | `Performance/statistics.html.twig` | `@NowoUiKit/page/dashboard.html.twig` |
+| Access statistics | `Performance/access_statistics.html.twig` | `@NowoUiKit/page/dashboard.html.twig` |
+| Access records | `Performance/access_records.html.twig` | `@NowoUiKit/page/list.html.twig` |
+| Diagnose | `Performance/diagnose.html.twig` | `@NowoUiKit/page/show.html.twig` |
+
+Data blocks and view-model fields: [TEMPLATES.md](TEMPLATES.md).
+
+- **Removed templates**: `Performance/base.html.twig`, `Performance/layout.html.twig` and
+  `Performance/components/_*` (`_statistics_*`, `_filters_*`, `_charts_*`, `_routes_table_*`, `_paginator`,
+  `_dependency_modal`). Overrides of these files under `templates/bundles/NowoPerformanceBundle/` are no longer used:
+  delete them and theme UiKit once (`nowo_ui_kit.theme`, `nowo_ui_kit.layouts.admin`), or override one data block with
+  `web_ui.templates.<page>`.
+- **Page overrides** written for 3.14 (`{% block content %}` of `base.html.twig`) must be rewritten: extend
+  `@!NowoPerformanceBundle/Performance/<page>.html.twig` and override a data block (`nowo_ui_list_row`,
+  `nowo_ui_list_after`, `nowo_ui_dashboard_cards`, `nowo_ui_show_sections`, …).
+- **No CDN, no inline JavaScript.** The bundle no longer loads Bootstrap, Tailwind or Chart.js; the host layout loads
+  its CSS framework (and `nowo-ui.css` through UiKit). Charts are inline SVG. Confirmations use the UiKit `<dialog>`
+  (UiKit scripts must be loaded: the UiKit document layout and `_bridge` do it).
+- **Twig components** (`nowo_performance.Statistics`, `.Filters`, `.Charts`, `.RoutesTable`) are deprecated; `.Charts`
+  now links to the chart data JSON instead of drawing a Chart.js chart.
+
+### Configuration
+
+| Before (deprecated) | After |
+| --- | --- |
+| `dashboard.enabled` | `web_ui.enabled` |
+| `dashboard.prefix` + `dashboard.path` (e.g. `/admin` + `/performance`) | `web_ui.path_prefix: '/admin/performance'` |
+| `dashboard.layout_template` | `web_ui.layout_template` (`null` = `nowo_ui_kit.layouts.admin`) |
+| `dashboard.css_framework`, `dashboard.template` | `nowo_ui_kit.css_framework` |
+
+The deprecated keys keep working (with a deprecation) until 4.0. The container parameters
+`nowo_performance.dashboard.path` / `.prefix` now hold `web_ui.path_prefix` / `''` (the route prefix is the same).
+
+- **Layout.** With no layout configured the pages use `nowo_ui_kit.layouts.admin` (instead of the bundle CDN shell). If
+  you set `dashboard.layout_template` / `web_ui.layout_template` to your 3.14 project layout (blocks `stylesheets`,
+  `body`, `javascripts`), it keeps working through the deprecated bridge `Performance/_legacy_layout.html.twig`; move
+  it to `nowo_ui_kit.layouts.admin` (a layout or one-file bridge rendering the UiKit canonical blocks, see UiKit
+  `layout/_bridge.html.twig`) and drop the bundle key.
+- **CSS stack.** The bundle no longer seeds `nowo_ui_kit.css_framework: bootstrap5` / `icon_set: bootstrap-icons` by
+  default; set them in `nowo_ui_kit` (only a host that still sets `dashboard.css_framework` / `dashboard.template`
+  gets that value copied there).
+- **Form classes.** The form types and the FormKit `performance` profile no longer add `form-control`, `form-select`,
+  `btn btn-*` or `mb-2`; your form theme (e.g. `bootstrap_5_layout.html.twig`) adds the framework classes.
+- **`DeleteRecordType` `submit_attr_class`** is deprecated and ignored.
+- **Access records sorting** also accepts the UiKit `sort` (column key) / `direction` query keys; `sort_by` / `order`
+  keep working.
+
+### Other
+
+- `symfony/clock` is now required (PSR-20 clock, REQ-DI-001); no configuration needed.
+- `PerformanceController` takes three new optional constructor arguments at the end (`pageFactory`, `clock`,
+  `translator`); a subclass or a manual definition passing positional arguments keeps working.
+- With `symfony/ux-twig-component` installed, the (deprecated) `nowo_performance.*` Twig components are now really
+  registered (the former check never matched).
+- `nowo:performance:create-table --update` on PostgreSQL / SQLite no longer tries the MySQL-only `MODIFY COLUMN` repair
+  of `id`; use Doctrine migrations there. Other column changes still use MySQL syntax (unchanged).
+- `NowoPerformanceBundle::boot()` no longer replaces the VarDumper handler in CLI debug runs; set your own handler if
+  you relied on dumps going to stderr.
+
 ## To 3.14.1
 
 From **3.14.0**:

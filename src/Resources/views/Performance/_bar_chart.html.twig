@@ -1,0 +1,36 @@
+{#
+  Server-rendered bar chart (inline SVG, no JavaScript, no CDN; CSP-safe): one bar per value, painted with the text
+  colour of the surrounding card (currentColor) so the host theme decides the colour. Each bar carries a <title>
+  (label: value unit) for pointer and screen-reader users; the whole chart is role="img" with `title` as its name.
+
+  Required:
+    - labels: list of strings (x axis)
+    - values: list of numbers (same length)
+    - title: accessible name (string)
+  Optional:
+    - unit: suffix of the values in the bar titles (default '')
+    - decimals: decimals of the values in the bar titles (default 2)
+    - height: viewBox height (default 160); every `label_every` label is printed under the axis (default: all when ≤ 12 bars, else every 3rd)
+    - id, attr: attributes of the <svg>
+#}
+{% set _values = values|default([]) %}
+{% set _count = _values|length %}
+{% set _height = height|default(160) %}
+{% set _max = _count > 0 ? max(_values|merge([0])) : 0 %}
+{% set _bar_w = 24 %}
+{% set _gap = 6 %}
+{% set _plot_h = _height - 22 %}
+{% set _width = max(1, _count) * (_bar_w + _gap) + _gap %}
+{% set _every = label_every|default(_count > 12 ? 3 : 1) %}
+<svg class="nowo-performance-chart" viewBox="0 0 {{ _width }} {{ _height }}" role="img" aria-label="{{ title }}" preserveAspectRatio="xMinYMid meet" width="100%" height="{{ _height }}"{% if id is defined %} id="{{ id }}"{% endif %}{{ nowo_ui_html_attrs(attr|default({})) }}>
+    <line x1="0" y1="{{ _plot_h }}" x2="{{ _width }}" y2="{{ _plot_h }}" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
+    {% for _i, _value in _values %}
+        {% set _h = _max > 0 ? (_value / _max * (_plot_h - 6))|round(1) : 0 %}
+        {% set _x = _gap + _i * (_bar_w + _gap) %}
+        {% set _label = labels[_i] ?? _i %}
+        <rect x="{{ _x }}" y="{{ _plot_h - _h }}" width="{{ _bar_w }}" height="{{ _h }}" rx="2" fill="currentColor" fill-opacity="{{ _value > 0 ? '0.7' : '0.15' }}"><title>{{ _label }}: {{ _value|number_format(decimals|default(2)) }}{{ unit|default('') }}</title></rect>
+        {% if _i % _every == 0 %}
+            <text x="{{ _x + _bar_w / 2 }}" y="{{ _height - 6 }}" font-size="9" text-anchor="middle" fill="currentColor" fill-opacity="0.7">{{ _label }}</text>
+        {% endif %}
+    {% endfor %}
+</svg>

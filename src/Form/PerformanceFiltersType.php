@@ -52,28 +52,18 @@ class PerformanceFiltersType extends AbstractType
             'data'                      => $currentEnv,
             'required'                  => false,
             'placeholder'               => false,
-            'attr'                      => [
-                'class' => 'form-select',
-            ],
         ]);
         $this->addText($builder, 'route', [
             'label'              => 'filters.route_name',
             'translation_domain' => 'NowoPerformanceBundle',
             'required'           => false,
             'data'               => $currentRoute,
-            'attr'               => [
-                'class' => 'form-control',
-            ],
         ]);
         $this->addText($builder, 'path', [
             'label'              => 'filters.path_url',
             'translation_domain' => 'NowoPerformanceBundle',
             'required'           => false,
             'data'               => $options['current_path'] ?? null,
-            'attr'               => [
-                'class'       => 'form-control',
-                'placeholder' => '/path',
-            ],
         ]);
         $this->addChoice($builder, 'sort', [
             'label'              => 'filters.sort_by',
@@ -90,9 +80,6 @@ class PerformanceFiltersType extends AbstractType
             'choice_translation_domain' => 'NowoPerformanceBundle',
             'data'                      => $currentSortBy,
             'required'                  => false,
-            'attr'                      => [
-                'class' => 'form-select',
-            ],
         ]);
         $this->addChoice($builder, 'order', [
             'label'              => 'filters.order',
@@ -104,9 +91,6 @@ class PerformanceFiltersType extends AbstractType
             'choice_translation_domain' => 'NowoPerformanceBundle',
             'data'                      => $currentOrder,
             'required'                  => false,
-            'attr'                      => [
-                'class' => 'form-select',
-            ],
         ]);
         $this->addInteger($builder, 'limit', [
             'label'              => 'filters.limit',
@@ -114,9 +98,8 @@ class PerformanceFiltersType extends AbstractType
             'required'           => false,
             'data'               => $currentLimit,
             'attr'               => [
-                'class' => 'form-control',
-                'min'   => 1,
-                'max'   => 1000,
+                'min' => 1,
+                'max' => 1000,
             ],
         ]);
         $this->addNumber($builder, 'min_request_time', [
@@ -126,8 +109,7 @@ class PerformanceFiltersType extends AbstractType
             'data'               => $options['current_min_request_time'] ?? null,
             'scale'              => 4,
             'attr'               => [
-                'class' => 'form-control',
-                'step'  => '0.0001',
+                'step' => '0.0001',
             ],
         ]);
         $this->addNumber($builder, 'max_request_time', [
@@ -137,8 +119,7 @@ class PerformanceFiltersType extends AbstractType
             'data'               => $options['current_max_request_time'] ?? null,
             'scale'              => 4,
             'attr'               => [
-                'class' => 'form-control',
-                'step'  => '0.0001',
+                'step' => '0.0001',
             ],
         ]);
         $this->addInteger($builder, 'min_query_count', [
@@ -147,8 +128,7 @@ class PerformanceFiltersType extends AbstractType
             'required'           => false,
             'data'               => $options['current_min_query_count'] ?? null,
             'attr'               => [
-                'class' => 'form-control',
-                'min'   => 0,
+                'min' => 0,
             ],
         ]);
         $this->addInteger($builder, 'max_query_count', [
@@ -157,8 +137,7 @@ class PerformanceFiltersType extends AbstractType
             'required'           => false,
             'data'               => $options['current_max_query_count'] ?? null,
             'attr'               => [
-                'class' => 'form-control',
-                'min'   => 0,
+                'min' => 0,
             ],
         ]);
         $this->addWithDefaults($builder, 'date_from', DateType::class, [
@@ -167,9 +146,6 @@ class PerformanceFiltersType extends AbstractType
             'required'           => false,
             'widget'             => 'single_text',
             'data'               => $options['current_date_from'] ?? null,
-            'attr'               => [
-                'class' => 'form-control',
-            ],
         ]);
         $this->addWithDefaults($builder, 'date_to', DateType::class, [
             'label'              => 'filters.date_to',
@@ -177,17 +153,14 @@ class PerformanceFiltersType extends AbstractType
             'required'           => false,
             'widget'             => 'single_text',
             'data'               => $options['current_date_to'] ?? null,
-            'attr'               => [
-                'class' => 'form-control',
-            ],
         ]);
-        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
-            'label'              => 'filters.apply_filters',
-            'translation_domain' => 'NowoPerformanceBundle',
-            'attr'               => [
-                'class' => 'btn btn-primary',
-            ],
-        ]);
+        // with_submit false: the page (UiKit list filters / Action form) renders its own button (REQ-UI-003)
+        if ($options['with_submit'] ?? true) {
+            $this->addWithDefaults($builder, 'submit', SubmitType::class, [
+                'label'              => 'filters.apply_filters',
+                'translation_domain' => 'NowoPerformanceBundle',
+            ]);
+        }
     }
 
     /**
@@ -198,6 +171,7 @@ class PerformanceFiltersType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
+            'with_submit'              => true,
             'method'                   => 'GET',
             'csrf_protection'          => false,
             'environments'             => ['dev', 'test', 'prod'],
@@ -214,6 +188,7 @@ class PerformanceFiltersType extends AbstractType
             'current_date_from'        => null,
             'current_date_to'          => null,
         ]);
+        $resolver->setAllowedTypes('with_submit', 'bool');
 
         $resolver->setAllowedTypes('environments', 'array');
         $resolver->setAllowedTypes('current_env', ['string', 'null']);

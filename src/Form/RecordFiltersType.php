@@ -66,7 +66,6 @@ class RecordFiltersType extends AbstractType
             'property_path' => 'startDate',
             'input'         => 'datetime_immutable',
             'with_seconds'  => false,
-            'attr'          => ['class' => 'form-control'],
         ]);
         $this->addWithDefaults($builder, 'end_date', DateTimeType::class, [
             'label'              => 'access_statistics.end_date',
@@ -78,7 +77,6 @@ class RecordFiltersType extends AbstractType
             'property_path' => 'endDate',
             'input'         => 'datetime_immutable',
             'with_seconds'  => false,
-            'attr'          => ['class' => 'form-control'],
         ]);
         $this->addChoice($builder, 'env', [
             'label'                     => 'access_statistics.environment',
@@ -87,7 +85,6 @@ class RecordFiltersType extends AbstractType
             'choice_translation_domain' => false,
             'required'                  => false,
             'placeholder'               => false,
-            'attr'                      => ['class' => 'form-select'],
         ]);
         $this->addChoiceWithEmptyOption($builder, 'route', $allRoutesLabel, [
             'label'                     => 'access_statistics.route',
@@ -95,7 +92,6 @@ class RecordFiltersType extends AbstractType
             'choices'                   => $choicesRoute,
             'choice_translation_domain' => false,
             'required'                  => false,
-            'attr'                      => ['class' => 'form-select'],
         ]);
         $this->addText($builder, 'path', [
             'label'              => 'access_statistics.path',
@@ -103,7 +99,6 @@ class RecordFiltersType extends AbstractType
             'required'           => false,
             'property_path'      => 'path',
             'attr'               => [
-                'class'       => 'form-control',
                 'placeholder' => 'access_statistics.path_placeholder',
             ],
         ]);
@@ -114,7 +109,6 @@ class RecordFiltersType extends AbstractType
             'choice_translation_domain' => false,
             'required'                  => false,
             'property_path'             => 'statusCode',
-            'attr'                      => ['class' => 'form-select'],
         ]);
         if ($options['record_fields']) {
             $this->addRecordFields($builder, $options);
@@ -129,11 +123,13 @@ class RecordFiltersType extends AbstractType
                 return is_int($value) ? $value : (int) $value;
             },
         ));
-        $this->addWithDefaults($builder, 'filter', SubmitType::class, [
-            'label'              => 'access_statistics.filter',
-            'translation_domain' => 'NowoPerformanceBundle',
-            'attr'               => ['class' => 'btn btn-primary'],
-        ]);
+        // with_submit false: the page (UiKit list filters / Action form) renders its own button (REQ-UI-003)
+        if ($options['with_submit'] ?? true) {
+            $this->addWithDefaults($builder, 'filter', SubmitType::class, [
+                'label'              => 'access_statistics.filter',
+                'translation_domain' => 'NowoPerformanceBundle',
+            ]);
+        }
     }
 
     /**
@@ -150,7 +146,7 @@ class RecordFiltersType extends AbstractType
             'required'           => false,
             'property_path'      => 'minQueryTime',
             'scale'              => 3,
-            'attr'               => ['class' => 'form-control', 'placeholder' => '0.001', 'step' => '0.001'],
+            'attr'               => ['step' => '0.001'],
         ]);
         $this->addNumber($builder, 'max_query_time', [
             'label'              => 'access_statistics.max_query_time',
@@ -158,7 +154,7 @@ class RecordFiltersType extends AbstractType
             'required'           => false,
             'property_path'      => 'maxQueryTime',
             'scale'              => 3,
-            'attr'               => ['class' => 'form-control', 'placeholder' => '5', 'step' => '0.001'],
+            'attr'               => ['step' => '0.001'],
         ]);
         $this->addNumber($builder, 'min_memory_mb', [
             'label'              => 'access_statistics.min_memory_mb',
@@ -167,7 +163,7 @@ class RecordFiltersType extends AbstractType
             'mapped'             => false,
             'data'               => isset($options['data']) && $options['data']->minMemoryUsage !== null
                 ? round($options['data']->minMemoryUsage / 1024 / 1024, 2) : null,
-            'attr' => ['class' => 'form-control', 'placeholder' => '0', 'step' => '0.1'],
+            'attr' => ['step' => '0.1'],
         ]);
         $this->addNumber($builder, 'max_memory_mb', [
             'label'              => 'access_statistics.max_memory_mb',
@@ -176,19 +172,17 @@ class RecordFiltersType extends AbstractType
             'mapped'             => false,
             'data'               => isset($options['data']) && $options['data']->maxMemoryUsage !== null
                 ? round($options['data']->maxMemoryUsage / 1024 / 1024, 2) : null,
-            'attr' => ['class' => 'form-control', 'placeholder' => '100', 'step' => '0.1'],
+            'attr' => ['step' => '0.1'],
         ]);
         $this->addText($builder, 'referer', [
             'label'              => 'access_statistics.referer',
             'translation_domain' => 'NowoPerformanceBundle',
             'required'           => false,
-            'attr'               => ['class' => 'form-control', 'placeholder' => 'example.com'],
         ]);
         $this->addText($builder, 'user', [
             'label'              => 'access_statistics.user',
             'translation_domain' => 'NowoPerformanceBundle',
             'required'           => false,
-            'attr'               => ['class' => 'form-control', 'placeholder' => 'username@example.com'],
         ]);
     }
 
@@ -222,6 +216,7 @@ class RecordFiltersType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
+            'with_submit'      => true,
             'data_class'       => RecordFilters::class,
             'method'           => 'GET',
             'csrf_protection'  => false,
@@ -232,6 +227,7 @@ class RecordFiltersType extends AbstractType
             // false: only the date/env/route/path/status filters (access statistics page)
             'record_fields' => true,
         ]);
+        $resolver->setAllowedTypes('with_submit', 'bool');
         $resolver->setAllowedTypes('environments', 'array');
         $resolver->setAllowedTypes('record_fields', 'bool');
         $resolver->setAllowedTypes('available_routes', 'array');

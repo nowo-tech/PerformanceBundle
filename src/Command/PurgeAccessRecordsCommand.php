@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Command;
 
-use DateTimeImmutable;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
+use Psr\Clock\ClockInterface;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,6 +33,7 @@ final class PurgeAccessRecordsCommand extends Command
     public function __construct(
         private readonly ?RouteDataRecordRepository $recordRepository,
         private readonly ParameterBagInterface $parameterBag,
+        private readonly ClockInterface $clock = new NativeClock(),
     ) {
         parent::__construct();
     }
@@ -119,7 +121,7 @@ HELP
             return Command::FAILURE;
         }
 
-        $before = new DateTimeImmutable('-' . $days . ' days');
+        $before = $this->clock->now()->modify('-' . $days . ' days');
 
         if ($dryRun) {
             $io->warning(sprintf('Dry-run: would delete records older than %s (%d days)' . ($env ? " for env \"{$env}\"" : '') . '.', $before->format('Y-m-d H:i'), $days));

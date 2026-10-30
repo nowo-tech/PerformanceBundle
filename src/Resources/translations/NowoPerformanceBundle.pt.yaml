@@ -219,3 +219,108 @@ delete: Eliminar
 delete_records_by_filter: Eliminar Registos por Filtro
 diagnose: Diagnosticar
 index: Painel
+
+# Dashboard pages (UiKit page contract, REQ-UI-003)
+ui:
+    nav:
+        label: "Secções de desempenho"
+        dashboard: "Rotas"
+        statistics: "Estatísticas"
+        access_statistics: "Estatísticas de acesso"
+        access_records: "Registos de acesso"
+        diagnose: "Diagnóstico"
+    confirm:
+        clear_title: "Eliminar todos os registos de desempenho de %env%?"
+        delete_route_title: "Eliminar o registo de %route%?"
+    routes:
+        view_records: "Ver registos de acesso"
+    kpi:
+        max: "máx. %value%"
+        environment: "ambiente %env%"
+        median_request_time: "Mediana do tempo de pedido"
+        p95: "p95 %value%"
+        mean_queries: "Média de consultas por pedido"
+        until: "até %date%"
+        busiest_hour: "Hora de maior tráfego"
+        requests: "%count% pedidos"
+    access_statistics:
+        intro: "Acessos por hora, dia da semana e mês para o período e os filtros escolhidos."
+    access_records:
+        intro: "Todos os pedidos registados, os mais recentes primeiro. Filtre, ordene e exporte-os."
+    diagnose:
+        title: "Diagnóstico"
+        intro: "Estado da configuração, da base de dados, das tabelas e do registo do bundle."
+        issues: "Problemas (%count%)"
+        warnings: "Avisos (%count%)"
+        suggestions: "Sugestões (%count%)"
+        all_good: "Nenhum problema encontrado: o registo está configurado e a guardar dados."
+        section:
+            configuration: "Configuração"
+            environment: "Ambiente"
+            database_connection: "Ligação à base de dados"
+            table_status: "Tabelas"
+            data_status: "Dados registados"
+            route_tracking: "Seguimento de rotas"
+            subscriber_status: "Subscritor"
+    dependencies:
+        title: "Faltam dependências opcionais."
+        intro: "Algumas funções usam uma alternativa; instale estes pacotes para ter todas as funções:"
+    auto_refresh: "Esta página recarrega a cada %seconds% segundos."
+    trend:
+        title: "Tempo de pedido, últimos %days% dias"
+        intro: "Tempo médio de pedido por dia (ms)."
+    statistics:
+        recommendations: "Recomendações"
+        priority:
+            high: "Alta"
+            medium: "Média"
+            low: "Baixa"
+        recommendation_action: "Ação:"
+        correlations: "Correlações"
+        correlations_intro: "De -1 (inversa) a +1 (direta); valores próximos de ±1 indicam uma relação forte."
+        correlation:
+            request_time_vs_query_time: "Tempo de pedido vs tempo de consultas"
+            request_time_vs_query_count: "Tempo de pedido vs número de consultas"
+            query_time_vs_query_count: "Tempo de consultas vs número de consultas"
+            memory_vs_request_time: "Memória vs tempo de pedido"
+        sample_size: "%count% rotas"
+        efficiency: "Eficiência"
+        avg_query_ratio: "As consultas ocupam em média %ratio%% do tempo de pedido."
+        query_bottlenecks: "Estrangulamentos nas consultas"
+        query_bottlenecks_intro: "Rotas em que as consultas ocupam mais de 80% do tempo de pedido."
+        inefficient_routes: "Rotas ineficientes"
+        inefficient_routes_intro: "Rotas com tempo de pedido ou número de consultas elevado."
+        queries: "%count% consultas"
+        query_ratio: "%ratio%% em consultas"
+        traffic: "Distribuição do tráfego"
+        traffic_concentration: "%ratio%% do tráfego vai para os 10% de rotas mais visitadas."
+        hot_paths: "Rotas mais visitadas"
+        slow_request_time: "Tempo de pedido lento (acima de p95)"
+        high_query_count: "Muitas consultas (acima de p95)"
+        high_memory: "Uso de memória elevado (acima de p95)"
+        no_routes: "Sem rotas."
+        metric_title: "Estatísticas de %metric%"
+        samples: "%count% rotas medidas"
+    weekday:
+        '0': "Domingo"
+        '1': "Segunda-feira"
+        '2': "Terça-feira"
+        '3': "Quarta-feira"
+        '4': "Quinta-feira"
+        '5': "Sexta-feira"
+        '6': "Sábado"
+    month:
+        '1': "Janeiro"
+        '2': "Fevereiro"
+        '3': "Março"
+        '4': "Abril"
+        '5': "Maio"
+        '6': "Junho"
+        '7': "Julho"
+        '8': "Agosto"
+        '9': "Setembro"
+        '10': "Outubro"
+        '11': "Novembro"
+        '12': "Dezembro"
+    components:
+        charts_moved: "O gráfico de tendência é apresentado na página do painel; os dados do gráfico estão disponíveis em JSON."

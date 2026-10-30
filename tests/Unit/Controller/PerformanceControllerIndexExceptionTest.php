@@ -19,6 +19,7 @@ use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Tests\Support\PageFixtures;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -108,6 +109,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 true,
                 null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -157,6 +159,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -244,6 +247,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 true,
                 null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -305,6 +309,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -349,6 +354,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -363,8 +369,8 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    /** Index with template tailwind and enableRecordManagement uses tailwind submit_attr_class for delete forms. */
-    public function testIndexWithTailwindTemplateUsesTailwindClassForDeleteForms(): void
+    /** Index with record management builds CSRF-only delete forms: the button is a UiKit Action (no framework class option). */
+    public function testIndexDeleteFormsCarryNoFrameworkClass(): void
     {
         $routeWithAggregates = $this->createRouteWithAggregates();
         $this->repository->method('countWithFilters')->willReturn(1);
@@ -396,6 +402,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503], null, false, true,
                 ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -409,8 +416,8 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 return $filtersForm;
             }
             if ($type === DeleteRecordType::class) {
-                self::assertArrayHasKey('submit_attr_class', $options);
-                self::assertStringContainsString('inline-flex', $options['submit_attr_class']);
+                // REQ-UI-003: the delete button is a UiKit Action; no framework class reaches the form type.
+                self::assertArrayNotHasKey('submit_attr_class', $options);
 
                 return $deleteForm;
             }
@@ -458,6 +465,7 @@ final class PerformanceControllerIndexExceptionTest extends TestCase
                 0.5, 1.0, 20, 50, 20.0, 50.0, 'Y-m-d H:i:s', 'Y-m-d H:i', 0, [200, 404, 500, 503],
                 $recordRepository, true, true, ['dev', 'test'], 'default', true, true, false, [], false, 1.0, true, true, null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
