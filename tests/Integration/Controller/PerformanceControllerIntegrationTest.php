@@ -461,6 +461,30 @@ final class PerformanceControllerIntegrationTest extends TestCase
         self::assertStringContainsString('d&#039;acc', $content);
     }
 
+    /**
+     * SEC-004 (BP I3): malformed date query parameters are ignored, never a 500.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function malformedDateUrls(): iterable
+    {
+        yield 'index' => ['/performance?date_from=not-a-date&date_to=31/02/x'];
+        yield 'export csv' => ['/performance/export/csv?env=test&date_from=garbage&date_to=%2B%2B'];
+        yield 'access statistics' => ['/performance/access-statistics?env=test&start_date=garbage&end_date=nope'];
+        yield 'access records' => ['/performance/access-records?env=test&start_date=garbage&end_date=nope'];
+        yield 'export records csv' => ['/performance/export/records/csv?env=test&start_date=garbage&end_date=nope'];
+        yield 'export records json' => ['/performance/export/records/json?env=test&start_date=garbage&end_date=nope'];
+    }
+
+    #[DataProvider('malformedDateUrls')]
+    public function testMalformedDateQueryParametersAreIgnored(string $url): void
+    {
+        $this->createTablesAndRecordMetric();
+        $response = $this->requestGet($url);
+
+        self::assertSame(200, $response->getStatusCode(), $url);
+    }
+
     public function testAccessRecordsWithRefererAndUser(): void
     {
         $response = $this->requestGet('/performance/access-records?env=test&referer=https%3A%2F%2Fexample.com&user=testuser');

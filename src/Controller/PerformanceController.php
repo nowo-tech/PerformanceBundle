@@ -220,6 +220,23 @@ class PerformanceController extends AbstractController
     }
 
     /**
+     * A date query parameter, or null when it is absent or malformed (a bad value is ignored, never a 500).
+     */
+    private function queryDate(Request $request, string $name): ?DateTimeImmutable
+    {
+        $value = $request->query->get($name);
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return new DateTimeImmutable($value);
+        } catch (Exception) {
+            return null;
+        }
+    }
+
+    /**
      * Normalize env value from request/form to string for type-safe use in models and services.
      */
     private function normalizeEnv(mixed $value): string
@@ -318,8 +335,8 @@ class PerformanceController extends AbstractController
             'current_max_request_time' => $request->query->get('max_request_time') ? (float) $request->query->get('max_request_time') : null,
             'current_min_query_count'  => $request->query->get('min_query_count') ? (int) $request->query->get('min_query_count') : null,
             'current_max_query_count'  => $request->query->get('max_query_count') ? (int) $request->query->get('max_query_count') : null,
-            'current_date_from'        => $request->query->get('date_from') ? new DateTimeImmutable($request->query->get('date_from')) : null,
-            'current_date_to'          => $request->query->get('date_to') ? new DateTimeImmutable($request->query->get('date_to')) : null,
+            'current_date_from'        => $this->queryDate($request, 'date_from'),
+            'current_date_to'          => $this->queryDate($request, 'date_to'),
         ]);
 
         $form->handleRequest($request);
@@ -486,8 +503,8 @@ class PerformanceController extends AbstractController
             'current_max_request_time' => $request->query->get('max_request_time') ? (float) $request->query->get('max_request_time') : null,
             'current_min_query_count'  => $request->query->get('min_query_count') ? (int) $request->query->get('min_query_count') : null,
             'current_max_query_count'  => $request->query->get('max_query_count') ? (int) $request->query->get('max_query_count') : null,
-            'current_date_from'        => $request->query->get('date_from') ? new DateTimeImmutable($request->query->get('date_from')) : null,
-            'current_date_to'          => $request->query->get('date_to') ? new DateTimeImmutable($request->query->get('date_to')) : null,
+            'current_date_from'        => $this->queryDate($request, 'date_from'),
+            'current_date_to'          => $this->queryDate($request, 'date_to'),
             'with_submit'              => false,
         ]);
         $formForView->handleRequest($request);
@@ -1204,8 +1221,8 @@ class PerformanceController extends AbstractController
         $this->assertAccess('You do not have permission to export access records.');
 
         $env            = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
-        $startDate      = $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : null;
-        $endDate        = $request->query->get('end_date') ? new DateTimeImmutable($request->query->get('end_date')) : null;
+        $startDate      = $this->queryDate($request, 'start_date');
+        $endDate        = $this->queryDate($request, 'end_date');
         $routeName      = $request->query->get('route');
         $routeName      = is_string($routeName) && $routeName !== '' ? $routeName : null;
         $pathParam      = $request->query->get('path');
@@ -1326,8 +1343,8 @@ class PerformanceController extends AbstractController
         $this->assertAccess('You do not have permission to export access records.');
 
         $env            = $this->normalizeEnv($request->query->get('env') ?? $this->getParameter('kernel.environment'));
-        $startDate      = $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : null;
-        $endDate        = $request->query->get('end_date') ? new DateTimeImmutable($request->query->get('end_date')) : null;
+        $startDate      = $this->queryDate($request, 'start_date');
+        $endDate        = $this->queryDate($request, 'end_date');
         $routeName      = $request->query->get('route');
         $routeName      = is_string($routeName) && $routeName !== '' ? $routeName : null;
         $pathParam      = $request->query->get('path');
@@ -1442,20 +1459,14 @@ class PerformanceController extends AbstractController
             $filters['max_query_count'] = (int) $request->query->get('max_query_count');
         }
 
-        if ($request->query->get('date_from')) {
-            try {
-                $filters['date_from'] = new DateTimeImmutable($request->query->get('date_from'));
-            } catch (Exception) {
-                // Ignore invalid date
-            }
+        $dateFrom = $this->queryDate($request, 'date_from');
+        if ($dateFrom instanceof DateTimeImmutable) {
+            $filters['date_from'] = $dateFrom;
         }
 
-        if ($request->query->get('date_to')) {
-            try {
-                $filters['date_to'] = new DateTimeImmutable($request->query->get('date_to'));
-            } catch (Exception) {
-                // Ignore invalid date
-            }
+        $dateTo = $this->queryDate($request, 'date_to');
+        if ($dateTo instanceof DateTimeImmutable) {
+            $filters['date_to'] = $dateTo;
         }
 
         return $filters;
@@ -2459,8 +2470,8 @@ class PerformanceController extends AbstractController
 
         // Filter form (FormType) – GET
         $filterData = new RecordFilters(
-            $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : $this->now()->modify('-7 days')->setTime(0, 0, 0),
-            $request->query->get('end_date') ? new DateTimeImmutable($request->query->get('end_date')) : $this->now(),
+            $this->queryDate($request, 'start_date') ?? $this->now()->modify('-7 days')->setTime(0, 0, 0),
+            $this->queryDate($request, 'end_date') ?? $this->now(),
             $env,
             $request->query->get('route'),
             $request->query->get('path') ?: null,
@@ -2624,8 +2635,8 @@ class PerformanceController extends AbstractController
         $refererParam = $request->query->get('referer');
         $userParam    = $request->query->get('user');
         $filterData   = new RecordFilters(
-            $request->query->get('start_date') ? new DateTimeImmutable($request->query->get('start_date')) : null,
-            $request->query->get('end_date') ? new DateTimeImmutable($request->query->get('end_date')) : null,
+            $this->queryDate($request, 'start_date'),
+            $this->queryDate($request, 'end_date'),
             $env,
             $request->query->get('route'),
             $request->query->get('path') ?: null,

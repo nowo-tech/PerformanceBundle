@@ -191,6 +191,23 @@ The deprecated keys keep working (with a deprecation) until 4.0. The container p
 - **Access records sorting** also accepts the UiKit `sort` (column key) / `direction` query keys; `sort_by` / `order`
   keep working.
 
+### Literal booleans (security)
+
+`nowo_performance.web_ui.enabled` (and the deprecated `dashboard.enabled`) and `security.allow_unauthenticated` must
+be literal `true` / `false`. They decide at container compile time which routes, access checker and CSRF checks are
+registered, so an `%env(bool:…)%` value now fails the build with an `InvalidConfigurationException` (env
+placeholders are no longer accepted for these keys). Switch per environment with `when@prod:` / `when@dev:` blocks instead:
+
+```yaml
+nowo_performance:
+    web_ui:
+        enabled: true
+when@prod:
+    nowo_performance:
+        web_ui:
+            enabled: false
+```
+
 ### Other
 
 - `symfony/clock` is now required (PSR-20 clock, REQ-DI-001); no configuration needed.

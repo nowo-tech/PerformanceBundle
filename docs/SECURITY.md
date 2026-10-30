@@ -10,6 +10,7 @@
 - [Logging](#logging)
 - [CSRF (REQ-SEC-005)](#csrf-req-sec-005)
 - [Dependencies](#dependencies)
+- [Security audits (REQ-SEC-004)](#security-audits-req-sec-004)
 - [Reporting a vulnerability](#reporting-a-vulnerability)
 - [Release security checklist (12.4.1)](#release-security-checklist-1241)
 
@@ -35,6 +36,8 @@ This Symfony bundle **tracks route performance metrics** (timing, database query
 | SSRF via webhook URLs | Only allow webhook URLs from trusted configuration (env), not from end-user POST bodies. |
 | Information leakage in exports | Restrict export actions to trusted roles; avoid exporting secrets from request attributes. |
 | DoS via large exports or queries | Route and access-record exports capped by `export.max_rows` (default **5000**, max **50000** for BC); use pagination and infrastructure timeouts. |
+| Compile-time switches silently enabled by `%env()%` | `web_ui.enabled` (and the deprecated `dashboard.enabled`) and `security.allow_unauthenticated` must be literal booleans; an env placeholder fails the container build (an unresolved placeholder string used to count as `true`). |
+| Malformed query parameters | Malformed date filters (`date_from`, `date_to`, `start_date`, `end_date`) are ignored instead of raising a 500. |
 | SSRF via notification webhooks | `WebhookNotificationChannel` allows HTTPS only and rejects localhost / private / link-local destinations. |
 
 ## Admin UI guard (REQ-UI-002)
@@ -86,6 +89,13 @@ Every state-changing dashboard action (`clear`, `{id}/delete`, `{id}/review`, `p
 
 - Run `composer audit` in consuming applications and when releasing the bundle.
 - Keep Symfony and Doctrine dependencies updated.
+
+## Security audits (REQ-SEC-004)
+
+| Date | Scope | Grade | Reference | Outcome |
+| --- | --- | --- | --- | --- |
+| 2026-10-30 | PR #70 (3.15.0: UiKit page contract, `web_ui` keys, table commands) | Pass (good) / Low | Appendix BP of the nowo-tech bundles security analysis | No request-path regression. L1 (`web_ui.enabled` cast to bool at compile time, so `%env(bool:…)%` could not disable the dashboard) fixed in 3.15.0: literal booleans only, also for `allow_unauthenticated` (I1). Malformed dates no longer 500 (I3). `.gitattributes` keeps demo / tests / tooling out of the dist (I4). Residual: access-record retention is host-owned (`purge-records`). |
+| 2026-10-29 | 3.13.0 | — | Appendix AZ | L1–L4 fixed in 3.14.0 (redaction of tokens in stored referers / params, CSV formula guard, referer links, bounded chart window). |
 
 ## Reporting a vulnerability
 

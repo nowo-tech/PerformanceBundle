@@ -9,6 +9,7 @@ use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Security\ConfigurablePerformanceAccessChecker;
 use Nowo\PerformanceBundle\Security\PerformanceAccessCheckerInterface;
 use Nowo\PerformanceBundle\Ui\PerformancePages;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -20,7 +21,9 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 use function array_key_exists;
 use function is_array;
+use function is_bool;
 use function is_string;
+use function sprintf;
 use function str_starts_with;
 
 /**
@@ -63,6 +66,11 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
             'access_checker'        => null,
             'allow_unauthenticated' => false,
         ];
+
+        // SEC-004 (BP L1 / I1): both switches decide at compile time which routes, access checker and CSRF checks are
+        // registered, so an %env()% placeholder (a truthy string here) is refused instead of silently meaning "true".
+        $this->assertLiteralBoolean($config['web_ui']['enabled'] ?? true, 'web_ui.enabled (or the deprecated dashboard.enabled)');
+        $this->assertLiteralBoolean($securityConfig['allow_unauthenticated'] ?? false, 'security.allow_unauthenticated');
 
         if (
             ($config['web_ui']['enabled'] ?? true)
@@ -111,7 +119,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         // Web UI (REQ-UI-003 canonical keys; the deprecated dashboard.* UI keys are mapped in Configuration)
         $webUiConfig = $config['web_ui'] ?? [];
         $webUiPath   = Configuration::ALIAS . '.web_ui';
-        $uiEnabled   = (bool) ($webUiConfig['enabled'] ?? true);
+        $uiEnabled   = ($webUiConfig['enabled'] ?? true) === true;
         $pathPrefix  = (string) ($webUiConfig['path_prefix'] ?? '/performance');
         $layout      = $webUiConfig['layout_template'] ?? null;
         $container->setParameter($webUiPath . '.enabled', $uiEnabled);
@@ -179,6 +187,16 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($notificationsPath . '.webhook.url', $webhookConfig['url'] ?? '');
         $container->setParameter($notificationsPath . '.webhook.format', $webhookConfig['format'] ?? 'json');
         $container->setParameter($notificationsPath . '.webhook.headers', $webhookConfig['headers'] ?? []);
+    }
+
+    /**
+     * Refuses anything but a literal boolean (e.g. an `%env(bool:...)%` placeholder, resolved only at runtime).
+     */
+    private function assertLiteralBoolean(mixed $value, string $path): void
+    {
+        if (!is_bool($value)) {
+            throw new InvalidConfigurationException(sprintf('nowo_performance.%s must be a literal true or false: it is read at container compile time (routes, access checker, CSRF checks), so environment variables are not supported.', $path));
+        }
     }
 
     /**

@@ -89,6 +89,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Performance: dashboard on the UiKit page contract (REQ-UI-003), canonical `web_ui` keys, PSR-20 clock. See
 [UPGRADING](UPGRADING.md#unreleased).
 
+### Security (SEC-004 re-audit 2026-10-30, Appendix BP: Pass (good) / Low)
+
+- **L1 — `web_ui.enabled` must be a literal boolean.** The 3.15 load-time cast turned an `%env(bool:…)%` placeholder
+  (also through the deprecated `dashboard.enabled`) into `true`, so an environment variable could no longer switch the
+  dashboard off. Anything but `true` / `false` now fails the container build with an `InvalidConfigurationException`.
+- **I1** — the same literal-boolean rule for `security.allow_unauthenticated` (an env placeholder was truthy in dev /
+  test kernels).
+- **I3** — malformed date query parameters (`date_from`, `date_to`, `start_date`, `end_date`) are ignored instead of
+  raising a 500 (routes page, exports, access statistics, access records).
+- **I4** — `.gitattributes` keeps `demo/`, `tests/`, `specs/`, `.specify/`, `.cursor/`, `.scripts/`, `scripts/`,
+  `.githooks/`, `.github/`, `docs/images/` and the tooling configs out of the GitHub / Packagist dist archives.
+
 ### Added
 
 - **UiKit page contract (REQ-UI-003).** The dashboard pages extend the UiKit scaffolds: routes and access records
