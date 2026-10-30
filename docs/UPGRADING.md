@@ -129,6 +129,13 @@
 
 ## Unreleased
 
+- **`track_user` now stores the user:** the security helper used to be injected as `null` (wiring bug), so access
+  records never had `user_identifier` / `user_id` even with `nowo_performance.track_user: true`. If you enabled it,
+  user identifiers are now recorded as configured; set `track_user: false` if you do not want that.
+- **Environment filter uses the kernel environment:** `nowo_performance.environments` is now matched against
+  `kernel.environment` (previously, with the kernel injected as `null`, the request/server `APP_ENV` was used). Both
+  are normally the same; check the list if your front controller sets a different kernel environment.
+
 ## To 3.14.0
 
 From **3.13.0**:
