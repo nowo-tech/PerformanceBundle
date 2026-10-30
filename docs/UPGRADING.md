@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.15.1](#to-3151)
 - [To 3.15.0](#to-3150)
   - [Template contract (REQ-UI-003)](#template-contract-req-ui-003)
   - [Configuration](#configuration)
@@ -134,6 +135,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.15.1
+
+From **3.15.0**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 No action needed when you import `@NowoPerformanceBundle/Resources/config/routes.yaml` (as documented). If the dashboard only appeared through Symfony's default `controllers: { resource: routing.controllers }` (Symfony >= 7.3, without `web_ui.path_prefix`), add that import: the bundle controller is no longer registered there (REQ-SF-004 rule 7).
 
