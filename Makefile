@@ -98,7 +98,7 @@ test: ensure-up
 # No --process-isolation: the UiKit page contract fixtures (view models with closures, FormViews) cannot be
 # serialized into child processes; tests that need isolation declare #[RunInSeparateProcess] themselves.
 test-coverage: ensure-up
-	$(COMPOSE) exec php composer test-coverage | tee coverage-php.txt
+	bash -o pipefail -c '$(COMPOSE) exec php composer test-coverage | tee coverage-php.txt'
 	./.scripts/php-coverage-percent.sh coverage-php.txt
 	$(COMPOSE) exec -T php php scripts/check-coverage.php coverage.xml --min-percent=100
 

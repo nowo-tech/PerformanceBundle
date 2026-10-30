@@ -23,7 +23,7 @@ final class ChartFiltersTypeTest extends TestCase
         $this->assertCount(4, $view->children['metric']->vars['choices']);
         $this->assertCount(3, $view->children['days']->vars['choices']);
         $this->assertSame('GET', $view->vars['method']);
-        $this->assertSame('return false;', $view->vars['attr']['onsubmit']);
+        $this->assertArrayNotHasKey('onsubmit', $view->vars['attr']); // no inline handler (REQ-UI-003)
         $this->assertFalse($form->get('metric')->getConfig()->getMapped());
         $this->assertFalse($form->getConfig()->getOption('csrf_protection'));
     }

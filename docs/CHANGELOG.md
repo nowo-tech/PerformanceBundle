@@ -129,7 +129,11 @@ Performance: dashboard on the UiKit page contract (REQ-UI-003), canonical `web_u
   DoctrineBundle version detection (Composer runtime data only). The CSV export streams throw a `RuntimeException`
   when `php://output` cannot be opened instead of silently returning nothing; diagnose always uses
   `Connection::createSchemaManager()`; `NotificationChannelsPass` builds its tagged iterator with one
-  version-agnostic constructor call; the deprecated `LogHelper` no longer guards `function_exists('error_log')`.
+  version-agnostic constructor call; the deprecated `LogHelper` no longer guards `function_exists('error_log')`. No `@codeCoverageIgnore` is left in `src/`:
+  the DBAL 2 fallback of `TableStatusChecker`, the unreachable outer `catch` of `QueryTrackingConnectionSubscriber`
+  and the pool guard of the statistics cache generation (now a `LogicException` invariant) are gone; the deprecated
+  `ChartFiltersType` no longer sets an inline `onsubmit`. `make test-coverage` now fails on test failures too
+  (`pipefail`) and runs without `--process-isolation` (PHPUnit `memory_limit` 1G).
 
 ### Deprecated
 

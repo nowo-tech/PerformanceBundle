@@ -83,7 +83,6 @@ final class ChartFiltersType extends AbstractType
             'method'             => 'GET',
             'csrf_protection'    => false,
             'translation_domain' => false,
-            'attr'               => ['onsubmit' => 'return false;'],
         ]);
     }
 

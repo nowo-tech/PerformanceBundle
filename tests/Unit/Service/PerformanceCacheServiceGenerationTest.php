@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 
+use LogicException;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -13,10 +14,12 @@ use ReflectionMethod;
  */
 final class PerformanceCacheServiceGenerationTest extends TestCase
 {
-    public function testGenerationIsZeroWithoutPool(): void
+    public function testGenerationNeedsAPool(): void
     {
         $method = new ReflectionMethod(PerformanceCacheService::class, 'getStatisticsGeneration');
 
-        self::assertSame(0, $method->invoke(new PerformanceCacheService(), 'dev'));
+        // Every public caller returns early without a pool; reaching the generation lookup without one is a bug.
+        $this->expectException(LogicException::class);
+        $method->invoke(new PerformanceCacheService(), 'dev');
     }
 }

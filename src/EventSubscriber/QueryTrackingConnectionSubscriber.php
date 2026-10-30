@@ -104,31 +104,23 @@ class QueryTrackingConnectionSubscriber implements EventSubscriberInterface
             return;
         }
 
-        try {
-            $middleware = new QueryTrackingMiddleware($this->counters);
+        // QueryTrackingMiddlewareRegistry::applyMiddleware() catches every Exception of its strategies and returns false.
+        $middleware = new QueryTrackingMiddleware($this->counters);
 
-            // Use the registry to apply middleware with version detection
-            $success = QueryTrackingMiddlewareRegistry::applyMiddleware(
-                $this->registry,
-                $this->connectionName,
-                $middleware,
-            );
+        // Use the registry to apply middleware with version detection
+        $success = QueryTrackingMiddlewareRegistry::applyMiddleware(
+            $this->registry,
+            $this->connectionName,
+            $middleware,
+        );
 
-            if ($success) {
-                // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
-                $this->trackedConnections[$connectionKey] = true;
-            } else {
-                // If reflection failed, reset the tracking flag to try again next request
-                // This handles cases where the connection isn't ready yet
-                unset($this->trackedConnections[$connectionKey]);
-            }
-            // @codeCoverageIgnoreStart
-        } catch (Exception) {
-            // Reset tracking flag on error to retry next request.
-            // In practice applyMiddleware() catches all Exceptions internally and returns false;
-            // this outer catch is a last-resort safety net.
+        if ($success) {
+            // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
+            $this->trackedConnections[$connectionKey] = true;
+        } else {
+            // If reflection failed, reset the tracking flag to try again next request
+            // This handles cases where the connection isn't ready yet
             unset($this->trackedConnections[$connectionKey]);
         }
-        // @codeCoverageIgnoreEnd
     }
 }
