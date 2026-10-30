@@ -87,6 +87,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dashboard routes registered without being imported (REQ-SF-004 rule 7):** on Symfony >= 7.3 the `#[Route]` attributes on `PerformanceController` made the autoconfigured service carry the `routing.controller` tag, so a host with the default `controllers: { resource: routing.controllers }` got the `nowo_performance.*` routes without importing `@NowoPerformanceBundle/Resources/config/routes.yaml` and outside `web_ui.path_prefix` (still behind the dashboard roles). The controller service is no longer autoconfigured (explicit `controller.service_arguments` + `container.service_subscriber` tags); the routes exist only where the host imports them. Regression test with a kernel that only loads `routing.controllers`.
+
 ## [3.15.0] - 2026-10-30
 
 Performance: UiKit page contract (scaffolds, dialogs, server-side SVG charts), PSR-20 clock, 100% coverage; review/Twig components/DDL fixes; SEC-004 BP: literal-boolean switches, bad dates ignored, export-ignore See [UPGRADING](UPGRADING.md#to-3150).

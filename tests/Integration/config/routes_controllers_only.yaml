@@ -1,0 +1,3 @@
+# Symfony's default host routing (config/routes.yaml of a 7.3+ skeleton): no import of the bundle routes.
+controllers:
+    resource: routing.controllers

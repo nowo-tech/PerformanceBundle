@@ -191,9 +191,14 @@ services:
         resource: '../../Command/*'
         tags: ['console.command']
 
-    # Controllers (uses Route attributes, autoconfigure handles the tag)
+    # Controllers: not autoconfigured (REQ-SF-004 rule 7). On Symfony >= 7.3 a #[Route] class is autoconfigured with
+    # the routing.controller tag, and the host's default `routing.controllers` resource would then expose the dashboard
+    # without the host importing routes.yaml (outside web_ui.path_prefix). Routes are opt-in only; the tags
+    # autoconfiguration gave the AbstractController subclass are explicit instead.
     Nowo\PerformanceBundle\Controller\:
         resource: '../../Controller/*'
+        autoconfigure: false
+        tags: ['controller.service_arguments', 'container.service_subscriber']
 
     # UiKit page contract (REQ-UI-003): layout / per-page template resolution, the page view models and the area
     # navigation (tagged nowo_ui_kit.area_nav_provider by UiKit autoconfiguration; DashboardMenu can mount it).
