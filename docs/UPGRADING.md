@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.14.1](#to-3141)
 - [To 3.14.0](#to-3140)
 - [To 3.13.0](#to-3130)
 - [To 3.12.0](#to-3120)
@@ -128,6 +129,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.14.1
+
+From **3.14.0**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 - **`track_user` now stores the user:** the security helper used to be injected as `null` (wiring bug), so access
   records never had `user_identifier` / `user_id` even with `nowo_performance.track_user: true`. If you enabled it,
