@@ -136,6 +136,11 @@
 
 ## Unreleased
 
+Forms: no action needed. The deprecated `ChartFiltersType` is now a FormKit Type bound to the `performance` profile
+(REQ-TWIG-005 rule 11); its fields, ids and markup are unchanged. `nowo-tech/form-kit-bundle` was already a required
+dependency; override the dashboard form options through `nowo_form_kit.profiles.performance` (see
+[CONFIGURATION.md](CONFIGURATION.md#formkit-profile-performance)).
+
 ## To 3.15.1
 
 From **3.15.0**:

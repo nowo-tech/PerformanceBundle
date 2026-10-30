@@ -88,6 +88,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **All page form types are FormKit Types (REQ-TWIG-005 rule 11):** the deprecated `ChartFiltersType` (chart filters of the `nowo_performance.Charts` component) now carries `#[FormKitConfig('performance')]` + `FormOptionsTrait` like the dashboard forms. Field names, ids (`chart-metric`, `chart-days`), GET method and markup are unchanged. A unit test asserts every `src/Form/*Type.php` is bound to the `performance` profile.
+
 ## [3.15.1] - 2026-10-30
 
 Bundle routes are opt-in again: controllers are no longer autoconfigured, so a host's routing.controllers import does not expose them (REQ-SF-004 rule 7). See [UPGRADING](UPGRADING.md#to-3151).

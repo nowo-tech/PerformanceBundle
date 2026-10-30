@@ -30,6 +30,7 @@
   - [`query_tracking_threshold`](#query_tracking_threshold)
   - [`thresholds`](#thresholds)
   - [`notifications`](#notifications)
+- [FormKit profile (`performance`)](#formkit-profile-performance)
 - [Environment-Specific Configuration](#environment-specific-configuration)
 - [Multiple Connections](#multiple-connections)
 - [Dashboard Access Control](#dashboard-access-control)
@@ -638,6 +639,25 @@ nowo_performance:
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `notifications.http_timeout` | float (seconds) | `10.0` | Connect/total timeout for Slack, Teams, and generic webhook HTTP requests. Keep below PHP `max_execution_time` and FrankenPHP/Caddy write timeout. |
+
+## FormKit profile (`performance`)
+
+Every dashboard form type (filters, statistics environment, clear data, delete record, delete by filter, purge, review,
+and the deprecated chart filters of the `nowo_performance.Charts` component) is a FormKit Type:
+`#[FormKitConfig('performance')]` + `FormOptionsTrait` (REQ-TWIG-005 rule 11). The bundle prepends
+`nowo_form_kit.profiles.performance` (translation domain `NowoPerformanceBundle`, `auto_help` / `auto_placeholder` off,
+`defaults.attr.class: nowo-ui-input`, no framework utility classes) and `nowo_form_kit.css_framework: bootstrap` when
+the host has not set them. To override, define the same profile key; host values are never overwritten:
+
+```yaml
+nowo_form_kit:
+    profiles:
+        performance:
+            alias: performance
+            translation_domain: NowoPerformanceBundle
+            defaults:
+                attr: { class: 'form-control' }
+```
 
 ## Environment-Specific Configuration
 
