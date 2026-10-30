@@ -727,10 +727,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
             ])
             ->onlyMethods(['createForm', 'getUser', 'addFlash', 'redirectToRoute'])
-            ->addMethods(['trans'])
             ->getMock();
 
-        $controller->method('trans')->willReturnArgument(0);
         $controller->method('createForm')
             ->with(self::identicalTo(ReviewRouteDataType::class), null, self::anything())
             ->willReturn($form);

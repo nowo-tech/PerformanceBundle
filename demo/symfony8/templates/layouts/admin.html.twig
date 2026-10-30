@@ -1,0 +1,25 @@
+{#
+  Demo host admin layout (REQ-UI-003, nowo_ui_kit.layouts.admin): the demo shell (base.html.twig: masthead, Bootstrap 5)
+  with the UiKit canonical blocks through the UiKit bridge. The performance dashboard pages render here.
+#}
+{% extends 'base.html.twig' %}
+{% use '@NowoUiKit/layout/_bridge.html.twig' %}
+{% set nowo_ui_document_title_suffix = 'Performance Bundle Demo' %}
+
+{% block title %}{{ block('nowo_ui_bridge_title') }}{% endblock %}
+
+{% block stylesheets %}
+    {# Bootstrap comes unlayered from the CDN: the unlayered UiKit stylesheet keeps the kit rules competitive (UiKit PAGE_CONTRACT.md). #}
+    <link rel="stylesheet" href="{{ asset('css/nowo-ui.unlayered.css', 'nowo_ui_kit') }}">
+    {{ nowo_ui_tokens() }}
+    {{ block('nowo_ui_bridge_assets') }}
+{% endblock %}
+
+{% block body %}
+    <div class="container-xl pb-5 perf-demo-admin">{{ block('nowo_ui_bridge_body') }}</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ include(nowo_ui_partial('scripts', nowo_ui_bundle|default(null))) }}
+    {{ block('nowo_ui_bridge_end') }}
+{% endblock %}

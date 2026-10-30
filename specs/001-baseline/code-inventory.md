@@ -86,7 +86,10 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Security/AllowAllPerformanceAccessChecker.php` | Permissive checker when `security.allow_unauthenticated` is true (demo/dev) | FR-SEC-001 |
 | `Twig/ArrayExtension.php` | Array Twig helpers | FR-TWIG-001 |
 | `Twig/IconExtension.php` | Icon Twig helpers | FR-TWIG-001 |
-| `Twig/PerformanceLayoutExtension.php` | Dashboard layout Twig globals | FR-DASH-002, FR-TWIG-001 |
+| `Twig/PerformanceLayoutExtension.php` | Deprecated dashboard layout Twig globals | FR-DASH-002, FR-TWIG-001 |
+| `Ui/PerformancePages.php` | UiKit page plumbing (layout, per-page templates, legacy bridge) | FR-UI-003 |
+| `Ui/PerformancePageFactory.php` | UiKit view models of the dashboard pages | FR-UI-003 |
+| `Ui/PerformanceAreaNav.php` | Area navigation provider (`nowo_ui_area_nav('performance')`) | FR-UI-003 |
 | `Twig/Component/ChartsComponent.php` | UX Charts component | FR-TWIG-002 |
 | `Twig/Component/FiltersComponent.php` | UX Filters component | FR-TWIG-002 |
 | `Twig/Component/RoutesTableComponent.php` | UX Routes table component | FR-TWIG-002 |
@@ -121,24 +124,14 @@ This file proves that **every production source artifact** under `src/` is refer
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
-| `Performance/base.html.twig` | Dashboard layout | FR-DASH-002 |
-| `Performance/index.html.twig` | Main dashboard | FR-DASH-002 |
-| `Performance/statistics.html.twig` | Advanced statistics | FR-DASH-002 |
-| `Performance/diagnose.html.twig` | Diagnose page | FR-DASH-002 |
-| `Performance/access_records.html.twig` | Access records list | FR-DASH-002 |
-| `Performance/access_statistics.html.twig` | Temporal statistics | FR-DASH-002 |
-| `Performance/layout.html.twig` | Dashboard page layout extended by the views | FR-DASH-002 |
-| `Performance/components/_filters_bootstrap.html.twig` | Bootstrap filters partial | FR-DASH-003 |
-| `Performance/components/_filters_tailwind.html.twig` | Tailwind filters partial | FR-DASH-003 |
-| `Performance/components/_statistics_bootstrap.html.twig` | Bootstrap statistics partial | FR-DASH-003 |
-| `Performance/components/_statistics_tailwind.html.twig` | Tailwind statistics partial | FR-DASH-003 |
-| `Performance/components/_charts_bootstrap.html.twig` | Bootstrap charts partial | FR-DASH-003 |
-| `Performance/components/_charts_tailwind.html.twig` | Tailwind charts partial | FR-DASH-003 |
-| `Performance/components/_routes_table_bootstrap.html.twig` | Bootstrap routes table | FR-DASH-003 |
-| `Performance/components/_routes_table_tailwind.html.twig` | Tailwind routes table | FR-DASH-003 |
-| `Performance/components/_paginator.html.twig` | Paginator partial | FR-DASH-003 |
-| `Performance/components/_dependency_modal.html.twig` | Missing deps modal | FR-DASH-003 |
-| `components/Filters.html.twig` | UX Filters template | FR-TWIG-002 |
+| `Performance/index.html.twig` | Main dashboard (UiKit `page/list`) | FR-DASH-002, FR-UI-003 |
+| `Performance/statistics.html.twig` | Advanced statistics (UiKit `page/dashboard`) | FR-DASH-002, FR-UI-003 |
+| `Performance/diagnose.html.twig` | Diagnose page (UiKit `page/show`) | FR-DASH-002, FR-UI-003 |
+| `Performance/access_records.html.twig` | Access records list (UiKit `page/list`) | FR-DASH-002, FR-UI-003 |
+| `Performance/access_statistics.html.twig` | Temporal statistics (UiKit `page/dashboard`) | FR-DASH-002, FR-UI-003 |
+| `Performance/_legacy_layout.html.twig` | Deprecated bridge around a 3.14 layout | FR-UI-003 |
+| `Performance/_kpis.html.twig`, `_card.html.twig`, `_bar_chart.html.twig`, `_heatmap.html.twig` | Slot-based partials (KPI tiles, cards, inline SVG charts) | FR-DASH-003, FR-UI-003 |
+| `components/Filters.html.twig` | UX Filters template (deprecated) | FR-TWIG-002 |
 | `components/Statistics.html.twig` | UX Statistics template | FR-TWIG-002 |
 | `components/Charts.html.twig` | UX Charts template | FR-TWIG-002 |
 | `components/RoutesTable.html.twig` | UX RoutesTable template | FR-TWIG-002 |

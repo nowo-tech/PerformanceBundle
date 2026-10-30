@@ -1,0 +1,30 @@
+{#
+  BC bridge (deprecated since 3.15, removed in 4.0): wraps a 3.14 layout set in nowo_performance.web_ui.layout_template
+  (or the deprecated dashboard.layout_template) — typically the project base.html.twig — that renders the 3.14 blocks
+  `title`, `stylesheets`, `body` (or `nowo_performance_content`) and `javascripts` instead of the UiKit canonical
+  blocks. PerformancePages::layout() selects it when the configured layout does not define nowo_ui_content.
+  Variable: nowo_performance_legacy_layout (the configured layout).
+#}
+{% extends nowo_performance_legacy_layout %}
+{% use '@NowoUiKit/layout/_bridge.html.twig' %}
+
+{% block title %}{{ block('nowo_ui_bridge_title') }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/nowo-ui.css', 'nowo_ui_kit') }}">
+    {{ nowo_ui_tokens() }}
+    {{ block('nowo_ui_bridge_assets') }}
+{% endblock %}
+
+{% block body %}
+    {% block nowo_performance_content %}
+        {{ block('nowo_ui_bridge_body') }}
+        {% block nowo_ui_modals %}{% endblock %}
+    {% endblock %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% block nowo_ui_scripts %}{{ include(nowo_ui_partial('scripts', nowo_ui_bundle|default(null))) }}{% endblock %}
+{% endblock %}

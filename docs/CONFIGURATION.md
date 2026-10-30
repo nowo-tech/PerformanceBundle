@@ -22,6 +22,7 @@
   - [`enable_logging`](#enable_logging)
   - [`check_table_status`](#check_table_status)
   - [`ignore_routes`](#ignore_routes)
+  - [`web_ui`](#web_ui)
   - [`dashboard`](#dashboard)
   - [`security`](#security)
   - [`track_status_codes`](#track_status_codes)
@@ -74,13 +75,14 @@ nowo_performance:
         request_time: { warning: 0.5, critical: 1.0 }
         query_count: { warning: 20, critical: 50 }
         memory_usage: { warning: 20.0, critical: 50.0 }
-    dashboard:
+    web_ui:                                # REQ-UI-003 canonical keys (UiKit page contract)
         enabled: true
-        path: '/performance'
-        prefix: ''
+        path_prefix: '/performance'
+        layout_template: null              # null = nowo_ui_kit.layouts.admin
+        templates: {}                      # per-page overrides: index, statistics, access_statistics, access_records, diagnose
+    dashboard:
+        # enabled / path / prefix / layout_template / css_framework / template: deprecated since 3.15 → web_ui / nowo_ui_kit
         roles: ['ROLE_ADMIN']              # Deprecated BC alias → security.access_roles
-        css_framework: bootstrap5          # REQ-UI-001 (alias: template)
-        # template: 'bootstrap'            # Deprecated BC → css_framework
         enable_record_management: false
         enable_review_system: false
         date_formats: { datetime: 'Y-m-d H:i:s', date: 'Y-m-d H:i' }
@@ -335,51 +337,56 @@ nowo_performance:
         - '*_internal'   # pattern: any route ending with _internal
 ```
 
+### `web_ui`
+
+**Type:** `array` · REQ-UI-003 canonical keys of the dashboard pages (since 3.15).
+
+The dashboard pages extend the [UiKit](https://github.com/nowo-tech/UiKitBundle) page scaffolds (`page/list`,
+`page/dashboard`, `page/show`); the CSS stack, icon set, row-action display, tokens and classes come from
+`nowo_ui_kit` (`css_framework`, `icon_set`, `row_actions_display`, `theme`). Page → scaffold map, data blocks and
+view-model fields: [TEMPLATES.md](TEMPLATES.md).
+
+| Key | Default | Replaces | Description |
+| --- | --- | --- | --- |
+| `web_ui.enabled` | `true` | `dashboard.enabled` | `false`: the pages answer 404 (routes stay importable). |
+| `web_ui.path_prefix` | `'/performance'` | `dashboard.prefix` + `dashboard.path` | URL prefix of every dashboard route (`routes.yaml` uses `%nowo_performance.web_ui.path_prefix%`). |
+| `web_ui.layout_template` | `null` | `dashboard.layout_template` | Layout the scaffolds extend. `null` = `nowo_ui_kit.layouts.admin` (set your host layout or bridge **there**, once for every bundle). A layout that does not define the UiKit canonical blocks (`nowo_ui_content`, …), e.g. a 3.14-style `base.html.twig`, is wrapped in the deprecated bridge `Performance/_legacy_layout.html.twig` (blocks `title`, `stylesheets`, `body`/`nowo_performance_content`, `javascripts`). The former default `@NowoPerformanceBundle/Performance/layout.html.twig` means `null`. |
+| `web_ui.templates.<page>` | `{}` | — | Per-page template (`index`, `statistics`, `access_statistics`, `access_records`, `diagnose`): a thin template that `{% extends '@!NowoPerformanceBundle/Performance/<page>.html.twig' %}` and overrides a data block. Unknown page ids fail the container build. |
+
+```yaml
+# config/packages/nowo_ui_kit.yaml — once for every Nowo bundle
+nowo_ui_kit:
+    css_framework: bootstrap5        # bootstrap5 | bootstrap4 | tailwind | foundation | tabler | custom | none
+    icon_set: bootstrap-icons
+    layouts:
+        admin: 'layouts/admin.html.twig'   # your layout (or a one-file bridge) rendering the canonical blocks
+
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    web_ui:
+        path_prefix: '/admin/performance'
+        # templates:
+        #     index: 'admin/performance/index.html.twig'
+```
+
+The dashboard navigation (Routes · Statistics · Access statistics · Access records · Diagnose) is published to the UiKit
+area-nav registry as `nowo_ui_area_nav('performance')` (DashboardMenu can mount it) and rendered as page-header tabs.
+
 ### `dashboard`
 
 **Type:** `array`  
 **Default:** See below
 
-Performance dashboard configuration.
+Dashboard behaviour (record management, review system, date formats, auto refresh, profiler rankings). The UI keys
+`enabled`, `path`, `prefix`, `layout_template`, `css_framework` and `template` are **deprecated since 3.15** (they trigger
+a deprecation and are mapped to `web_ui.*` / ignored in favour of `nowo_ui_kit`; removed in 4.0):
 
-#### `dashboard.enabled`
-
-**Type:** `boolean`  
-**Default:** `true`
-
-Enable or disable the performance dashboard.
-
-```yaml
-nowo_performance:
-    dashboard:
-        enabled: false  # Disable dashboard
-```
-
-#### `dashboard.path`
-
-**Type:** `string`  
-**Default:** `'/performance'`
-
-Base route path for the performance dashboard.
-
-```yaml
-nowo_performance:
-    dashboard:
-        path: '/metrics'  # Dashboard will be at /metrics
-```
-
-#### `dashboard.prefix`
-
-**Type:** `string`  
-**Default:** `''`
-
-Optional route prefix for the dashboard. Useful for adding admin prefixes.
-
-```yaml
-nowo_performance:
-    dashboard:
-        prefix: '/admin'  # Dashboard will be at /admin/performance
-```
+| Deprecated key | Use instead |
+| --- | --- |
+| `dashboard.enabled` | `web_ui.enabled` |
+| `dashboard.prefix` + `dashboard.path` | `web_ui.path_prefix` (the two values are concatenated) |
+| `dashboard.layout_template` | `web_ui.layout_template` (null = UiKit layout) |
+| `dashboard.css_framework`, `dashboard.template` | `nowo_ui_kit.css_framework` (copied there when `nowo_ui_kit` has none) |
 
 #### `dashboard.roles`
 
@@ -402,71 +409,6 @@ nowo_performance:
     security:
         access_roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
 ```
-
-#### `dashboard.css_framework`
-
-**Type:** `enum`  
-**Default:** `'bootstrap5'`  
-**Options:** `'bootstrap'` (alias of `bootstrap5`), `'bootstrap4'`, `'bootstrap5'`, `'tabler'`, `'tailwind'`, `'foundation'`, `'custom'`, `'none'`
-
-Host-chosen CSS stack for the dashboard (REQ-UI-001). Exposed as Twig global **`nowo_performance_css_framework`**. The demo ships Bootstrap-family and Tailwind markup/partials; non-`tailwind` values use the Bootstrap-family markup unless you override Twig.
-
-```yaml
-nowo_performance:
-    dashboard:
-        css_framework: bootstrap5  # default (Bootstrap 5 CDN demo)
-        # css_framework: tailwind
-        # css_framework: foundation
-        # css_framework: custom
-```
-
-#### `dashboard.template` (deprecated)
-
-**Type:** `string`  
-**Default:** `'bootstrap'` (synced from `css_framework` to markup family `bootstrap`|`tailwind`)  
-**Options:** `'bootstrap'` or `'tailwind'`
-
-Deprecated BC alias for `dashboard.css_framework`. When `css_framework` is absent, `template: bootstrap` maps to `css_framework: bootstrap5` and `template: tailwind` maps to `css_framework: tailwind`. Prefer `css_framework`.
-
-```yaml
-nowo_performance:
-    dashboard:
-        # Deprecated — prefer css_framework:
-        template: 'bootstrap'
-```
-
-#### `dashboard.layout_template`
-
-**Type:** `string`  
-**Default:** `'@NowoPerformanceBundle/Performance/layout.html.twig'`
-
-Twig layout that dashboard pages extend (via `Performance/base.html.twig` and Twig global **`nowo_performance_layout_template`**). Set this to your **project layout** (e.g. `base.html.twig`) so the dashboard uses host chrome; the default is the bundle demo shell only.
-
-```yaml
-nowo_performance:
-    dashboard:
-        layout_template: 'base.html.twig'
-```
-
-The host layout should define blocks **`stylesheets`**, **`javascripts`**, and **`body`** (or `nowo_performance_content`). Bundle `base.html.twig` stacks assets with `{{ parent() }}`.
-
-**Bootstrap family (default)** (`dashboard.css_framework: bootstrap5` / `bootstrap` / `bootstrap4` / `tabler`):
-- Uses Bootstrap 5.3.0 from CDN (demo layout)
-- Traditional grid system and components
-- Includes Bootstrap JavaScript bundle
-
-**Tailwind** (`dashboard.css_framework: tailwind`):
-- Uses Tailwind CSS from CDN
-- Utility-first CSS framework
-- Modern, responsive design
-- No JavaScript dependencies
-
-**Customization:**
-You can override individual components regardless of the selected template:
-- Bootstrap components: `_statistics_bootstrap.html.twig`, `_filters_bootstrap.html.twig`, `_routes_table_bootstrap.html.twig`
-- Tailwind components: `_statistics_tailwind.html.twig`, `_filters_tailwind.html.twig`, `_routes_table_tailwind.html.twig`
-
-Override them in: `templates/bundles/NowoPerformanceBundle/Performance/components/`
 
 #### `dashboard.enable_record_management`
 

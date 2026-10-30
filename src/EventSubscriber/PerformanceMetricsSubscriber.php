@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\EventSubscriber;
 
-use Doctrine\DBAL\Logging\Middleware;
 use Exception;
 use Nowo\PerformanceBundle\DataCollector\PerformanceDataCollector;
 use Nowo\PerformanceBundle\DBAL\QueryTrackingCounters;
@@ -856,92 +855,63 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
      */
     private function getQueryMetrics(?Request $request = null): array
     {
-        $queryCount = 0;
-        $queryTime  = 0.0;
+        // Priority 1: metrics from QueryTrackingMiddleware (most reliable for our use case). Only when it reports 0/0
+        // (it might not be wired) and there is a request, fall back to the profiler / stopwatch below.
+        $queryCount = $this->queryCounters?->getQueryCount() ?? 0;
+        $queryTime  = $this->queryCounters?->getTotalQueryTime() ?? 0.0;
+        if ($queryCount !== 0 || $queryTime !== 0.0 || !$request instanceof Request) {
+            return ['count' => $queryCount, 'time' => $queryTime];
+        }
 
-        // Priority 1: Try to get metrics from QueryTrackingMiddleware (most reliable for our use case)
+        // Priority 2: Doctrine DataCollector of the request profile (request attributes)
         try {
-            $queryCount = $this->queryCounters?->getQueryCount() ?? 0;
-            $queryTime  = $this->queryCounters?->getTotalQueryTime() ?? 0.0;
+            // Try multiple ways to get the profiler from request
+            $profilerProfile = $request->attributes->get('_profiler');
 
-            // Even if count is 0, return it if we got valid data (time might be 0 for very fast queries)
-            // Only fallback if both are 0 AND we have a request to check profiler
-            if ($queryCount > 0 || ($queryTime > 0 && !$request instanceof Request)) {
-                return ['count' => $queryCount, 'time' => $queryTime];
+            // If not in attributes, try to get from parent request (for sub-requests)
+            if ($profilerProfile === null && $this->requestStack instanceof RequestStack) {
+                $parentRequest = $this->requestStack->getParentRequest();
+                if ($parentRequest instanceof Request) {
+                    $profilerProfile = $parentRequest->attributes->get('_profiler');
+                }
             }
 
-            // If middleware returned 0/0, it might not be working, try fallback
-            // But only if we have a request to check profiler
-            if ($queryCount === 0 && $queryTime === 0.0 && $request instanceof Request) {
-                // Continue to fallback methods
-            } else {
-                // Return what we got from middleware
-                return ['count' => $queryCount, 'time' => $queryTime];
+            // Also try _profiler_profile (alternative attribute name)
+            $profilerProfile ??= $request->attributes->get('_profiler_profile');
+
+            if ($profilerProfile !== null && is_object($profilerProfile)) {
+                // Try to get DoctrineDataCollector
+                $doctrineCollector = null;
+
+                // Method 1: Direct get() call
+                if (method_exists($profilerProfile, 'get')) {
+                    $doctrineCollector = $profilerProfile->get('doctrine');
+                }
+
+                // Method 2: getCollector() method
+                if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollector')) {
+                    $doctrineCollector = $profilerProfile->getCollector('doctrine');
+                }
+
+                // Method 3: getCollectors() and find 'db' or 'doctrine'
+                if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollectors')) {
+                    $collectors        = $profilerProfile->getCollectors();
+                    $doctrineCollector = $collectors['db'] ?? $collectors['doctrine'] ?? null;
+                }
+
+                if ($doctrineCollector instanceof DoctrineDataCollector) {
+                    // Get query count and time from Doctrine DataCollector
+                    $queryCount = $doctrineCollector->getQueryCount();
+                    $queryTime  = $doctrineCollector->getTime() / 1000.0; // Convert from milliseconds to seconds
+
+                    // If we got valid data, return it
+                    if ($queryCount > 0 || $queryTime > 0) {
+                        return ['count' => $queryCount, 'time' => $queryTime];
+                    }
+                }
             }
         } catch (Exception) {
-            // Silently fail and try next method
-        }
-
-        // Priority 2: Try to get metrics from Doctrine DataCollector via Profiler service
-        // Note: This requires the Response, which we don't have in this method
-        // So we'll skip this approach and use request attributes instead
-
-        // Priority 3: Try to get from request attributes (fallback)
-        // Use provided request or get from RequestStack
-        if (!$request instanceof Request && $this->requestStack instanceof RequestStack) {
-            $request = $this->requestStack->getMainRequest();
-        }
-
-        if ($request instanceof Request) {
-            try {
-                // Try multiple ways to get the profiler from request
-                $profilerProfile = $request->attributes->get('_profiler');
-
-                // If not in attributes, try to get from parent request (for sub-requests)
-                if ($profilerProfile === null && $this->requestStack instanceof RequestStack) {
-                    $parentRequest = $this->requestStack->getParentRequest();
-                    if ($parentRequest instanceof Request) {
-                        $profilerProfile = $parentRequest->attributes->get('_profiler');
-                    }
-                }
-
-                // Also try _profiler_profile (alternative attribute name)
-                $profilerProfile ??= $request->attributes->get('_profiler_profile');
-
-                if ($profilerProfile !== null && is_object($profilerProfile)) {
-                    // Try to get DoctrineDataCollector
-                    $doctrineCollector = null;
-
-                    // Method 1: Direct get() call
-                    if (method_exists($profilerProfile, 'get')) {
-                        $doctrineCollector = $profilerProfile->get('doctrine');
-                    }
-
-                    // Method 2: getCollector() method
-                    if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollector')) {
-                        $doctrineCollector = $profilerProfile->getCollector('doctrine');
-                    }
-
-                    // Method 3: getCollectors() and find 'db' or 'doctrine'
-                    if ($doctrineCollector === null && method_exists($profilerProfile, 'getCollectors')) {
-                        $collectors        = $profilerProfile->getCollectors();
-                        $doctrineCollector = $collectors['db'] ?? $collectors['doctrine'] ?? null;
-                    }
-
-                    if ($doctrineCollector instanceof DoctrineDataCollector) {
-                        // Get query count and time from Doctrine DataCollector
-                        $queryCount = $doctrineCollector->getQueryCount();
-                        $queryTime  = $doctrineCollector->getTime() / 1000.0; // Convert from milliseconds to seconds
-
-                        // If we got valid data, return it
-                        if ($queryCount > 0 || $queryTime > 0) {
-                            return ['count' => $queryCount, 'time' => $queryTime];
-                        }
-                    }
-                }
-            } catch (Exception) {
-                // Silently fail and try fallback
-            }
+            // Silently fail and try fallback
         }
 
         // Priority 3: Fallback to Stopwatch for time tracking only
@@ -1008,10 +978,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                     continue;
                 }
                 $ig = strtolower($ignored);
+                // (a glob entry matching the route already returned true in the loop above)
                 if ($ig === '_wdt' || str_starts_with($ig, '_wdt') || $ig === '_profiler' || str_starts_with($ig, '_profiler') || str_starts_with($ig, 'web_profiler')) {
-                    return true;
-                }
-                if (str_contains($ignored, '*') && fnmatch($ignored, $routeName, FNM_NOESCAPE)) {
                     return true;
                 }
             }

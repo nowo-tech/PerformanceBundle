@@ -1,748 +1,132 @@
-{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
-{% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
+{#
+  Advanced statistics (REQ-UI-003): UiKit dashboard scaffold. Variable: page (View\DashboardPage from
+  PerformancePageFactory::statistics(): header statistics_page.title with the area tabs; KPI tiles total routes,
+  median request time (p95), mean queries (p95), routes needing attention).
+  Extra variables: envForm (StatisticsEnvFilterType, GET, auto-submit), advanced_stats (metric => detailed
+  statistics), routes_needing_attention, recommendations, correlations, efficiency, traffic_distribution, environment,
+  environments, total_routes.
+  Data block filled: nowo_ui_dashboard_cards (environment, recommendations, correlations, efficiency, traffic, routes
+  needing attention, one card per metric with its histogram).
+#}
+{% extends '@NowoUiKit/page/dashboard.html.twig' %}
+{% trans_default_domain 'NowoPerformanceBundle' %}
 
-{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
-{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
-{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
-{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
-{% block title %}Advanced Performance Statistics{% endblock %}
+{% block nowo_ui_dashboard_cards %}
+    {% set _b = page.bundle %}
+    {% set _card = '@NowoPerformanceBundle/Performance/_card.html.twig' %}
 
-{% block styles %}
-   <style>
-            .stat-card { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
-            .metric-value { font-size: 1.5rem; font-weight: bold; }
-    </style>
-{% endblock %}
-
-{% block content %}
-{% if _is_bootstrap %}
-    <div class="container mt-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1>Advanced Performance Statistics</h1>
-                        <p class="text-muted">Detailed statistical analysis to identify optimization targets</p>
-                    </div>
-                    <div>
-                        <a href="{{ path('nowo_performance.index', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                            ← Back to Dashboard
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {# Environment selector – FormType (StatisticsEnvFilterType) #}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        {{ form_start(envForm, {'action': path('nowo_performance.statistics'), 'attr': {'style': 'max-width: 200px;'}}) }}
-                            {# REQ-TWIG-003: child loop (the env select's onchange auto-submit comes from the FormType attr_extra option) #}
-                            {% for child in envForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
-                        {{ form_end(envForm) }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {# Performance Recommendations #}
-        {% if recommendations is defined and recommendations is not empty %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">💡 Performance Recommendations</h5>
-                    </div>
-                    <div class="card-body">
-                        {% for recommendation in recommendations %}
-                            <div class="alert alert-{{ recommendation.priority == 'high' ? 'danger' : (recommendation.priority == 'medium' ? 'warning' : 'info') }} mb-3">
-                                <div class="d-flex">
-                                    <div class="flex-shrink-0">
-                                        <strong>{{ recommendation.title }}</strong>
-                                    </div>
-                                </div>
-                                <p class="mb-1 mt-2">{{ recommendation.description }}</p>
-                                <p class="mb-0"><strong>Action:</strong> {{ recommendation.action }}</p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {# Correlation Analysis #}
-        {% if correlations is defined and correlations is not empty %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">📊 Correlation Analysis</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Correlation coefficient ranges from -1 (perfect negative) to +1 (perfect positive). Values closer to ±1 indicate stronger relationships.</p>
-                        <div class="row">
-                            {% if correlations.request_time_vs_query_time %}
-                                <div class="col-md-6 mb-3">
-                                    <h6>Request Time vs Query Time</h6>
-                                    <p>
-                                        <strong>Correlation:</strong> 
-                                        <span class="badge bg-{{ correlations.request_time_vs_query_time.coefficient|abs >= 0.7 ? 'danger' : (correlations.request_time_vs_query_time.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
-                                            {{ correlations.request_time_vs_query_time.coefficient }}
-                                        </span>
-                                        <small class="text-muted">({{ correlations.request_time_vs_query_time.interpretation }})</small>
-                                    </p>
-                                    <p class="small text-muted">Sample size: {{ correlations.request_time_vs_query_time.sample_size }} routes</p>
-                                </div>
-                            {% endif %}
-                            {% if correlations.request_time_vs_query_count %}
-                                <div class="col-md-6 mb-3">
-                                    <h6>Request Time vs Query Count</h6>
-                                    <p>
-                                        <strong>Correlation:</strong> 
-                                        <span class="badge bg-{{ correlations.request_time_vs_query_count.coefficient|abs >= 0.7 ? 'danger' : (correlations.request_time_vs_query_count.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
-                                            {{ correlations.request_time_vs_query_count.coefficient }}
-                                        </span>
-                                        <small class="text-muted">({{ correlations.request_time_vs_query_count.interpretation }})</small>
-                                    </p>
-                                    <p class="small text-muted">Sample size: {{ correlations.request_time_vs_query_count.sample_size }} routes</p>
-                                </div>
-                            {% endif %}
-                            {% if correlations.query_time_vs_query_count %}
-                                <div class="col-md-6 mb-3">
-                                    <h6>Query Time vs Query Count</h6>
-                                    <p>
-                                        <strong>Correlation:</strong> 
-                                        <span class="badge bg-{{ correlations.query_time_vs_query_count.coefficient|abs >= 0.7 ? 'danger' : (correlations.query_time_vs_query_count.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
-                                            {{ correlations.query_time_vs_query_count.coefficient }}
-                                        </span>
-                                        <small class="text-muted">({{ correlations.query_time_vs_query_count.interpretation }})</small>
-                                    </p>
-                                    <p class="small text-muted">Sample size: {{ correlations.query_time_vs_query_count.sample_size }} routes</p>
-                                </div>
-                            {% endif %}
-                            {% if correlations.memory_vs_request_time %}
-                                <div class="col-md-6 mb-3">
-                                    <h6>Memory Usage vs Request Time</h6>
-                                    <p>
-                                        <strong>Correlation:</strong> 
-                                        <span class="badge bg-{{ correlations.memory_vs_request_time.coefficient|abs >= 0.7 ? 'danger' : (correlations.memory_vs_request_time.coefficient|abs >= 0.5 ? 'warning' : 'secondary') }}">
-                                            {{ correlations.memory_vs_request_time.coefficient }}
-                                        </span>
-                                        <small class="text-muted">({{ correlations.memory_vs_request_time.interpretation }})</small>
-                                    </p>
-                                    <p class="small text-muted">Sample size: {{ correlations.memory_vs_request_time.sample_size }} routes</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {# Efficiency Analysis #}
-        {% if efficiency is defined and efficiency is not empty %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">⚡ Efficiency Analysis</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if efficiency.avg_query_ratio is not null %}
-                            <p><strong>Average Query Time Ratio:</strong> {{ efficiency.avg_query_ratio }}% of total request time</p>
-                        {% endif %}
-                        <div class="row">
-                            {% if efficiency.query_bottleneck_routes is not empty %}
-                                <div class="col-md-6 mb-3">
-                                    <h6>🚨 Query Bottleneck Routes</h6>
-                                    <p class="small text-muted">Routes where queries take up >80% of request time</p>
-                                    <ul class="list-group">
-                                        {% for item in efficiency.query_bottleneck_routes|slice(0, 5) %}
-                                            <li class="list-group-item">
-                                                <code>{{ item.route.name }}</code>
-                                                <br>
-                                                <small>Query ratio: {{ item.query_ratio }}% | Request: {{ item.request_time|number_format(3) }}s | Queries: {{ item.query_count ?? 'N/A' }}</small>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            {% endif %}
-                            {% if efficiency.inefficient_routes is not empty %}
-                                <div class="col-md-6 mb-3">
-                                    <h6>⚠️ Inefficient Routes</h6>
-                                    <p class="small text-muted">Routes with high request time or query count</p>
-                                    <ul class="list-group">
-                                        {% for item in efficiency.inefficient_routes|slice(0, 5) %}
-                                            <li class="list-group-item">
-                                                <code>{{ item.route.name }}</code>
-                                                <br>
-                                                <small>Request: {{ item.request_time|number_format(3) }}s | Queries: {{ item.query_count ?? 'N/A' }}</small>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {# Traffic Distribution #}
-        {% if traffic_distribution is defined and traffic_distribution is not empty %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-warning">
-                        <h5 class="mb-0">📈 Traffic Distribution</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if traffic_distribution.traffic_concentration is not null %}
-                            <p><strong>Traffic Concentration:</strong> {{ traffic_distribution.traffic_concentration }}% of traffic goes to top 10% of routes</p>
-                        {% endif %}
-                        <p><strong>Total Accesses:</strong> {{ traffic_distribution.total_accesses|number_format }}</p>
-                        {% if traffic_distribution.hot_paths is not empty %}
-                            <h6>🔥 Hot Paths (Most Accessed Routes)</h6>
-                            <ul class="list-group mb-3">
-                                {% for item in traffic_distribution.hot_paths|slice(0, 10) %}
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <code>{{ item.route.name }}</code>
-                                        <div>
-                                            <span class="badge bg-primary">{{ item.access_count|number_format }} accesses</span>
-                                            <span class="badge bg-info">{{ item.percentage }}%</span>
-                                        </div>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {# Routes needing attention #}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-warning">
-                        <h5 class="mb-0">⚠️ Routes Needing Attention</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <h6>Slow Request Time (Top 95th percentile)</h6>
-                                {% if routes_needing_attention.slow_request_time is not empty %}
-                                    <ul class="list-group">
-                                        {% for item in routes_needing_attention.slow_request_time|slice(0, 10) %}
-                                            <li class="list-group-item d-flex justify-content-between">
-                                                <code>{{ item.route.name }}</code>
-                                                <span class="badge bg-danger">{{ item.value|number_format(4) }}s</span>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                {% else %}
-                                    <p class="text-muted">No routes found</p>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <h6>High Query Count (Top 95th percentile)</h6>
-                                {% if routes_needing_attention.high_query_count is not empty %}
-                                    <ul class="list-group">
-                                        {% for item in routes_needing_attention.high_query_count|slice(0, 10) %}
-                                            <li class="list-group-item d-flex justify-content-between">
-                                                <code>{{ item.route.name }}</code>
-                                                <span class="badge bg-danger">{{ item.value }} queries</span>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                {% else %}
-                                    <p class="text-muted">No routes found</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% if routes_needing_attention.high_memory is not empty %}
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <h6>High Memory Usage (Top 95th percentile)</h6>
-                                    <ul class="list-group">
-                                        {% for item in routes_needing_attention.high_memory|slice(0, 10) %}
-                                            <li class="list-group-item d-flex justify-content-between">
-                                                <code>{{ item.route.name }}</code>
-                                                <span class="badge bg-danger">{{ item.value|number_format(2) }} MB</span>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {# Detailed statistics for each metric #}
-        {% for metricKey, stats in advanced_stats %}
-            {% if stats.count > 0 %}
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card stat-card">
-                            <div class="card-header">
-                                <h5 class="mb-0">{{ stats.label }} Statistics</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-light border mb-3">
-                                    <h6 class="alert-heading">
-                                        {{ ux_icon('bi:lightbulb', {height: '16px', width: '16px', class: 'me-2', style: 'width: 16px; height: 16px;'}) }}
-                                        Key Insights from {{ stats.label }} Statistics:
-                                    </h6>
-                                    <ul class="mb-0 small">
-                                        {% if metricKey == 'request_time' %}
-                                            <li><strong>Mean vs Median:</strong> If mean > median, you have slow outliers pulling the average up</li>
-                                            <li><strong>Standard Deviation:</strong> High std dev indicates inconsistent performance across routes</li>
-                                            <li><strong>P95/P99:</strong> Shows worst-case scenarios - focus optimization on routes above P95</li>
-                                            <li><strong>Outliers:</strong> Routes with unusually high request times need immediate attention</li>
-                                        {% elseif metricKey == 'query_time' %}
-                                            <li><strong>Mean vs Median:</strong> Large difference indicates some routes have very slow queries</li>
-                                            <li><strong>Standard Deviation:</strong> High variability suggests inconsistent query performance</li>
-                                            <li><strong>P95/P99:</strong> Identifies routes with the slowest database operations</li>
-                                            <li><strong>Outliers:</strong> Routes with slow queries may need index optimization or query refactoring</li>
-                                        {% elseif metricKey == 'query_count' %}
-                                            <li><strong>Mean vs Median:</strong> If mean >> median, some routes execute excessive queries (N+1 problem)</li>
-                                            <li><strong>Standard Deviation:</strong> High std dev shows inconsistent query efficiency</li>
-                                            <li><strong>P95/P99:</strong> Routes above P95 likely have N+1 queries or missing eager loading</li>
-                                            <li><strong>Outliers:</strong> Routes with 50+ queries should be optimized with eager loading or caching</li>
-                                        {% elseif metricKey == 'memory_usage' %}
-                                            <li><strong>Mean vs Median:</strong> Large difference indicates memory-intensive outliers</li>
-                                            <li><strong>Standard Deviation:</strong> High variability suggests some routes load too much data</li>
-                                            <li><strong>P95/P99:</strong> Routes above P95 may cause memory issues under load</li>
-                                            <li><strong>Outliers:</strong> High memory routes may need pagination or data limiting</li>
-                                        {% elseif metricKey == 'access_count' %}
-                                            <li><strong>Mean vs Median:</strong> If mean >> median, few routes handle most traffic (80/20 rule)</li>
-                                            <li><strong>Standard Deviation:</strong> High std dev indicates uneven traffic distribution</li>
-                                            <li><strong>P95/P99:</strong> These are your hot paths - optimize these routes first for maximum impact</li>
-                                            <li><strong>Outliers:</strong> Frequently accessed routes should be prioritized for optimization</li>
-                                        {% else %}
-                                            <li><strong>Mean:</strong> Average value across all routes</li>
-                                            <li><strong>Median:</strong> Middle value - less affected by outliers than mean</li>
-                                            <li><strong>Mode:</strong> Most common value</li>
-                                            <li><strong>Standard Deviation:</strong> Measure of variability - higher means more inconsistency</li>
-                                        {% endif %}
-                                    </ul>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <div class="text-muted small">Mean (Average)</div>
-                                            <div class="metric-value">{{ stats.mean|number_format(4) }} {{ stats.unit }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <div class="text-muted small">Median</div>
-                                            <div class="metric-value">{{ stats.median|number_format(4) }} {{ stats.unit }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <div class="text-muted small">Mode</div>
-                                            <div class="metric-value">{{ stats.mode|number_format(4) }} {{ stats.unit }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <div class="text-muted small">Std Deviation</div>
-                                            <div class="metric-value">{{ stats.std_dev|number_format(4) }} {{ stats.unit }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-md-2">
-                                        <strong>Min:</strong> {{ stats.min|number_format(4) }} {{ stats.unit }}
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Max:</strong> {{ stats.max|number_format(4) }} {{ stats.unit }}
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Range:</strong> {{ stats.range|number_format(4) }} {{ stats.unit }}
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Count:</strong> {{ stats.count }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <strong>Outliers:</strong> {{ stats.outliers_count }}
-                                    </div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <h6>Percentiles</h6>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            {% for p, value in stats.percentiles %}
-                                                <span class="badge bg-info">
-                                                    P{{ p }}: {{ value|number_format(4) }} {{ stats.unit }}
-                                                </span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                                {% if stats.outliers_count > 0 %}
-                                    <div class="row mb-3">
-                                        <div class="col-12">
-                                            <h6>Outliers</h6>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                {% for outlier in stats.outliers|slice(0, 20) %}
-                                                    <span class="badge bg-warning text-dark">{{ outlier }} {{ stats.unit }}</span>
-                                                {% endfor %}
-                                                {% if stats.outliers|length > 20 %}
-                                                    <span class="badge bg-secondary">+{{ stats.outliers|length - 20 }} more</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h6>Distribution Histogram</h6>
-                                        <div class="alert alert-info mb-3">
-                                            <h6 class="alert-heading">
-                                                {{ ux_icon('bi:info-circle', {height: '16px', width: '16px', class: 'me-2', style: 'width: 16px; height: 16px;'}) }}
-                                                What this chart shows:
-                                            </h6>
-                                            <p class="mb-2"><strong>Distribution Histogram</strong> - This chart displays how {{ stats.label|lower }} values are distributed across all routes.</p>
-                                            <ul class="mb-0 small">
-                                                {% if metricKey == 'request_time' %}
-                                                    <li><strong>Left side (low values):</strong> Fast routes with good performance</li>
-                                                    <li><strong>Right side (high values):</strong> Slow routes that need optimization</li>
-                                                    <li><strong>Peak height:</strong> Most common request time range</li>
-                                                    <li><strong>Wide distribution:</strong> High variability indicates inconsistent performance</li>
-                                                    <li><strong>Right-skewed:</strong> Most routes are fast, but some outliers are very slow</li>
-                                                {% elseif metricKey == 'query_time' %}
-                                                    <li><strong>Left side (low values):</strong> Efficient database queries</li>
-                                                    <li><strong>Right side (high values):</strong> Slow queries that may need indexing or optimization</li>
-                                                    <li><strong>Peak height:</strong> Most common query execution time</li>
-                                                    <li><strong>Multiple peaks:</strong> Different query patterns (simple vs complex queries)</li>
-                                                    <li><strong>High values:</strong> Routes with N+1 queries or missing indexes</li>
-                                                {% elseif metricKey == 'query_count' %}
-                                                    <li><strong>Left side (low values):</strong> Routes with efficient database usage</li>
-                                                    <li><strong>Right side (high values):</strong> Routes with excessive queries (N+1 problem)</li>
-                                                    <li><strong>Peak height:</strong> Most common number of queries per route</li>
-                                                    <li><strong>Spikes at specific values:</strong> Common query patterns (e.g., 0, 1, 5, 10 queries)</li>
-                                                    <li><strong>High outliers:</strong> Routes that need query optimization or eager loading</li>
-                                                {% elseif metricKey == 'memory_usage' %}
-                                                    <li><strong>Left side (low values):</strong> Memory-efficient routes</li>
-                                                    <li><strong>Right side (high values):</strong> Memory-intensive routes that may cause issues</li>
-                                                    <li><strong>Peak height:</strong> Most common memory consumption level</li>
-                                                    <li><strong>Wide distribution:</strong> High variability in memory usage across routes</li>
-                                                    <li><strong>High values:</strong> Routes that may need memory optimization or pagination</li>
-                                                {% elseif metricKey == 'access_count' %}
-                                                    <li><strong>Left side (low values):</strong> Rarely accessed routes</li>
-                                                    <li><strong>Right side (high values):</strong> Frequently accessed routes (hot paths)</li>
-                                                    <li><strong>Peak height:</strong> Most common access frequency</li>
-                                                    <li><strong>Right-skewed:</strong> Few routes handle most traffic (80/20 rule)</li>
-                                                    <li><strong>High values:</strong> Critical routes that should be optimized first</li>
-                                                {% else %}
-                                                    <li><strong>Distribution pattern:</strong> Shows how values are spread across routes</li>
-                                                    <li><strong>Peaks:</strong> Indicate common value ranges</li>
-                                                    <li><strong>Outliers:</strong> Values that deviate significantly from the norm</li>
-                                                {% endif %}
-                                            </ul>
-                                        </div>
-                                        <canvas id="chart_{{ metricKey }}" height="100"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-</div>
-{% else %}
-        <div class="mb-8 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Advanced Performance Statistics</h1>
-                <p class="mt-2 text-sm text-gray-600">Detailed statistical analysis to identify optimization targets</p>
-                <div class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
-                    <h5 class="text-blue-900 font-semibold mb-2">📊 Understanding the Statistics</h5>
-                    <p class="text-blue-800 text-sm mb-2">This page provides comprehensive statistical analysis of your route performance metrics. Each section includes:</p>
-                    <ul class="text-blue-800 text-sm space-y-1">
-                        <li><strong>Statistical Measures:</strong> Mean, Median, Mode, and Standard Deviation to understand data distribution</li>
-                        <li><strong>Percentiles:</strong> P25, P50, P75, P90, P95, P99 to identify performance thresholds</li>
-                        <li><strong>Distribution Histogram:</strong> Visual representation showing how values are distributed across routes</li>
-                        <li><strong>Outliers:</strong> Routes with unusual values that may need special attention</li>
-                    </ul>
-                </div>
-            </div>
-            <div>
-                <a href="{{ path('nowo_performance.index', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    ← Back to Dashboard
-                </a>
-            </div>
-        </div>
-
-        {# Environment selector – FormType (StatisticsEnvFilterType) #}
-        <div class="mb-6 bg-white shadow rounded-lg p-6">
-            {{ form_start(envForm, {'action': path('nowo_performance.statistics')}) }}
-                {# REQ-TWIG-003: child loop (the env select's onchange auto-submit comes from the FormType attr_extra option) #}
-                {% for child in envForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
+    {% set _body %}
+            {{ form_start(envForm, {attr: {class: nowo_ui_class('filters', _b), role: 'search'}}) }}
+                {% for _child in envForm %}{% if not _child.rendered %}{{ form_row(_child, {attr: _child.vars.attr|merge({'data-nowo-ui-autosubmit': ''})}) }}{% endif %}{% endfor %}
+                <div class="{{ nowo_ui_class('filters_actions', _b) }}"><button type="submit" class="{{ nowo_ui_class('btn_secondary', _b) }}">{{ 'filters.apply_filters'|trans }}</button></div>
             {{ form_end(envForm) }}
-        </div>
+    {% endset %}
+    {{ include(_card, {title: 'filters.environment'|trans, bundle: _b, testid: 'performance-statistics-env', body: _body}) }}
 
-        {# Routes needing attention #}
-        <div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h3 class="text-lg font-semibold text-yellow-900 mb-4">⚠️ Routes Needing Attention</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="font-medium text-gray-900 mb-2">Slow Request Time (Top 95th percentile)</h4>
-                    {% if routes_needing_attention.slow_request_time is not empty %}
-                        <ul class="space-y-2">
-                            {% for item in routes_needing_attention.slow_request_time|slice(0, 10) %}
-                                <li class="flex justify-between items-center p-2 bg-white rounded">
-                                    <code class="text-sm">{{ item.route.name }}</code>
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ item.value|number_format(4) }}s</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-gray-500 text-sm">No routes found</p>
-                    {% endif %}
-                </div>
-                <div>
-                    <h4 class="font-medium text-gray-900 mb-2">High Query Count (Top 95th percentile)</h4>
-                    {% if routes_needing_attention.high_query_count is not empty %}
-                        <ul class="space-y-2">
-                            {% for item in routes_needing_attention.high_query_count|slice(0, 10) %}
-                                <li class="flex justify-between items-center p-2 bg-white rounded">
-                                    <code class="text-sm">{{ item.route.name }}</code>
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ item.value }} queries</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-gray-500 text-sm">No routes found</p>
-                    {% endif %}
-                </div>
-            </div>
-            {% if routes_needing_attention.high_memory is not empty %}
-                <div class="mt-4">
-                    <h4 class="font-medium text-gray-900 mb-2">High Memory Usage (Top 95th percentile)</h4>
-                    <ul class="space-y-2">
-                        {% for item in routes_needing_attention.high_memory|slice(0, 10) %}
-                            <li class="flex justify-between items-center p-2 bg-white rounded">
-                                <code class="text-sm">{{ item.route.name }}</code>
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ item.value|number_format(2) }} MB</span>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        </div>
+    {% if recommendations|default([]) is not empty %}
+        {% set _body %}
+                <ul>
+                    {% for _r in recommendations %}
+                        <li>
+                            <span class="{{ nowo_ui_class(_r.priority == 'high' ? 'badge_danger' : (_r.priority == 'medium' ? 'badge_warning' : 'badge_info'), _b) }}">{{ ('ui.statistics.priority.' ~ (_r.priority in ['high', 'medium'] ? _r.priority : 'low'))|trans }}</span>
+                            <strong>{{ _r.title }}</strong> — {{ _r.description }}
+                            {% if _r.action|default(null) %}<br><span class="{{ nowo_ui_class('muted', _b) }}">{{ 'ui.statistics.recommendation_action'|trans }} {{ _r.action }}</span>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+        {% endset %}
+        {{ include(_card, {title: 'ui.statistics.recommendations'|trans, bundle: _b, testid: 'performance-recommendations', body: _body}) }}
+    {% endif %}
 
-        {# Detailed statistics #}
-        {% for metricKey, stats in advanced_stats %}
-            {% if stats.count > 0 %}
-                <div class="mb-6 bg-white shadow rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ stats.label }} Statistics</h3>
-                    <div class="mb-4 p-4 bg-gray-50 border-l-4 border-gray-400 rounded">
-                        <h5 class="text-gray-900 font-semibold mb-2 flex items-center">
-                            {{ ux_icon('bi:box-arrow-up-right', {class: 'h-5 w-5 text-gray-600 mr-2'}) }}
-                            Key Insights from {{ stats.label }} Statistics:
-                        </h5>
-                        <ul class="text-gray-700 text-sm space-y-1">
-                            {% if metricKey == 'request_time' %}
-                                <li><strong>Mean vs Median:</strong> If mean > median, you have slow outliers pulling the average up</li>
-                                <li><strong>Standard Deviation:</strong> High std dev indicates inconsistent performance across routes</li>
-                                <li><strong>P95/P99:</strong> Shows worst-case scenarios - focus optimization on routes above P95</li>
-                                <li><strong>Outliers:</strong> Routes with unusually high request times need immediate attention</li>
-                            {% elseif metricKey == 'query_time' %}
-                                <li><strong>Mean vs Median:</strong> Large difference indicates some routes have very slow queries</li>
-                                <li><strong>Standard Deviation:</strong> High variability suggests inconsistent query performance</li>
-                                <li><strong>P95/P99:</strong> Identifies routes with the slowest database operations</li>
-                                <li><strong>Outliers:</strong> Routes with slow queries may need index optimization or query refactoring</li>
-                            {% elseif metricKey == 'query_count' %}
-                                <li><strong>Mean vs Median:</strong> If mean >> median, some routes execute excessive queries (N+1 problem)</li>
-                                <li><strong>Standard Deviation:</strong> High std dev shows inconsistent query efficiency</li>
-                                <li><strong>P95/P99:</strong> Routes above P95 likely have N+1 queries or missing eager loading</li>
-                                <li><strong>Outliers:</strong> Routes with 50+ queries should be optimized with eager loading or caching</li>
-                            {% elseif metricKey == 'memory_usage' %}
-                                <li><strong>Mean vs Median:</strong> Large difference indicates memory-intensive outliers</li>
-                                <li><strong>Standard Deviation:</strong> High variability suggests some routes load too much data</li>
-                                <li><strong>P95/P99:</strong> Routes above P95 may cause memory issues under load</li>
-                                <li><strong>Outliers:</strong> High memory routes may need pagination or data limiting</li>
-                            {% elseif metricKey == 'access_count' %}
-                                <li><strong>Mean vs Median:</strong> If mean >> median, few routes handle most traffic (80/20 rule)</li>
-                                <li><strong>Standard Deviation:</strong> High std dev indicates uneven traffic distribution</li>
-                                <li><strong>P95/P99:</strong> These are your hot paths - optimize these routes first for maximum impact</li>
-                                <li><strong>Outliers:</strong> Frequently accessed routes should be prioritized for optimization</li>
-                            {% else %}
-                                <li><strong>Mean:</strong> Average value across all routes</li>
-                                <li><strong>Median:</strong> Middle value - less affected by outliers than mean</li>
-                                <li><strong>Mode:</strong> Most common value</li>
-                                <li><strong>Standard Deviation:</strong> Measure of variability - higher means more inconsistency</li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="text-center p-4 bg-gray-50 rounded">
-                            <div class="text-sm text-gray-600">Mean</div>
-                            <div class="text-2xl font-bold text-gray-900">{{ stats.mean|number_format(4) }} {{ stats.unit }}</div>
-                        </div>
-                        <div class="text-center p-4 bg-gray-50 rounded">
-                            <div class="text-sm text-gray-600">Median</div>
-                            <div class="text-2xl font-bold text-gray-900">{{ stats.median|number_format(4) }} {{ stats.unit }}</div>
-                        </div>
-                        <div class="text-center p-4 bg-gray-50 rounded">
-                            <div class="text-sm text-gray-600">Mode</div>
-                            <div class="text-2xl font-bold text-gray-900">{{ stats.mode|number_format(4) }} {{ stats.unit }}</div>
-                        </div>
-                        <div class="text-center p-4 bg-gray-50 rounded">
-                            <div class="text-sm text-gray-600">Std Dev</div>
-                            <div class="text-2xl font-bold text-gray-900">{{ stats.std_dev|number_format(4) }} {{ stats.unit }}</div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 text-sm">
-                        <div><strong>Min:</strong> {{ stats.min|number_format(4) }} {{ stats.unit }}</div>
-                        <div><strong>Max:</strong> {{ stats.max|number_format(4) }} {{ stats.unit }}</div>
-                        <div><strong>Range:</strong> {{ stats.range|number_format(4) }} {{ stats.unit }}</div>
-                        <div><strong>Count:</strong> {{ stats.count }}</div>
-                        <div><strong>Outliers:</strong> {{ stats.outliers_count }}</div>
-                    </div>
-                    <div class="mb-4">
-                        <h4 class="font-medium text-gray-900 mb-2">Percentiles</h4>
-                        <div class="flex flex-wrap gap-2">
-                            {% for p, value in stats.percentiles %}
-                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                    P{{ p }}: {{ value|number_format(4) }} {{ stats.unit }}
-                                </span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% if stats.outliers_count > 0 %}
-                        <div class="mb-4">
-                            <h4 class="font-medium text-gray-900 mb-2">Outliers</h4>
-                            <div class="flex flex-wrap gap-2">
-                                {% for outlier in stats.outliers|slice(0, 20) %}
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ outlier }} {{ stats.unit }}</span>
-                                {% endfor %}
-                                {% if stats.outliers|length > 20 %}
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">+{{ stats.outliers|length - 20 }} more</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endif %}
-                    <div>
-                        <h4 class="font-medium text-gray-900 mb-2">Distribution Histogram</h4>
-                        <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
-                            <h5 class="text-blue-900 font-semibold mb-2 flex items-center">
-                                {{ ux_icon('bi:info-circle', {class: 'h-5 w-5 text-blue-500 mr-2'}) }}
-                                What this chart shows:
-                            </h5>
-                            <p class="text-blue-800 mb-2"><strong>Distribution Histogram</strong> - This chart displays how {{ stats.label|lower }} values are distributed across all routes.</p>
-                            <ul class="text-blue-800 text-sm space-y-1">
-                                {% if metricKey == 'request_time' %}
-                                    <li><strong>Left side (low values):</strong> Fast routes with good performance</li>
-                                    <li><strong>Right side (high values):</strong> Slow routes that need optimization</li>
-                                    <li><strong>Peak height:</strong> Most common request time range</li>
-                                    <li><strong>Wide distribution:</strong> High variability indicates inconsistent performance</li>
-                                    <li><strong>Right-skewed:</strong> Most routes are fast, but some outliers are very slow</li>
-                                {% elseif metricKey == 'query_time' %}
-                                    <li><strong>Left side (low values):</strong> Efficient database queries</li>
-                                    <li><strong>Right side (high values):</strong> Slow queries that may need indexing or optimization</li>
-                                    <li><strong>Peak height:</strong> Most common query execution time</li>
-                                    <li><strong>Multiple peaks:</strong> Different query patterns (simple vs complex queries)</li>
-                                    <li><strong>High values:</strong> Routes with N+1 queries or missing indexes</li>
-                                {% elseif metricKey == 'query_count' %}
-                                    <li><strong>Left side (low values):</strong> Routes with efficient database usage</li>
-                                    <li><strong>Right side (high values):</strong> Routes with excessive queries (N+1 problem)</li>
-                                    <li><strong>Peak height:</strong> Most common number of queries per route</li>
-                                    <li><strong>Spikes at specific values:</strong> Common query patterns (e.g., 0, 1, 5, 10 queries)</li>
-                                    <li><strong>High outliers:</strong> Routes that need query optimization or eager loading</li>
-                                {% elseif metricKey == 'memory_usage' %}
-                                    <li><strong>Left side (low values):</strong> Memory-efficient routes</li>
-                                    <li><strong>Right side (high values):</strong> Memory-intensive routes that may cause issues</li>
-                                    <li><strong>Peak height:</strong> Most common memory consumption level</li>
-                                    <li><strong>Wide distribution:</strong> High variability in memory usage across routes</li>
-                                    <li><strong>High values:</strong> Routes that may need memory optimization or pagination</li>
-                                {% elseif metricKey == 'access_count' %}
-                                    <li><strong>Left side (low values):</strong> Rarely accessed routes</li>
-                                    <li><strong>Right side (high values):</strong> Frequently accessed routes (hot paths)</li>
-                                    <li><strong>Peak height:</strong> Most common access frequency</li>
-                                    <li><strong>Right-skewed:</strong> Few routes handle most traffic (80/20 rule)</li>
-                                    <li><strong>High values:</strong> Critical routes that should be optimized first</li>
-                                {% else %}
-                                    <li><strong>Distribution pattern:</strong> Shows how values are spread across routes</li>
-                                    <li><strong>Peaks:</strong> Indicate common value ranges</li>
-                                    <li><strong>Outliers:</strong> Values that deviate significantly from the norm</li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                        <canvas id="chart_{{ metricKey }}" height="100"></canvas>
-                    </div>
-                </div>
+    {% if correlations|default([]) is not empty %}
+        {% set _items = [] %}
+        {% for _entry in ['request_time_vs_query_time', 'request_time_vs_query_count', 'query_time_vs_query_count', 'memory_vs_request_time'] %}
+            {% set _c = correlations[_entry] ?? null %}
+            {% if _c %}
+                {% set _coef = _c.coefficient|default(0) %}
+                {% set _items = _items|merge([{label: ('ui.statistics.correlation.' ~ _entry)|trans ~ ' (' ~ 'ui.statistics.sample_size'|trans({'%count%': _c.sample_size|default(0)}) ~ ')', value: _coef ~ (_c.interpretation|default('') ? ' · ' ~ _c.interpretation : ''), badge: _coef|abs >= 0.7 ? 'danger' : (_coef|abs >= 0.5 ? 'warning' : 'neutral'), href: null}]) %}
             {% endif %}
         {% endfor %}
-    </div>
-</div>
-{% endif %}
-{% endblock %}
-
-{% block scripts_extra %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof Chart === 'undefined') return;
-
-    // Create charts for each metric (histograms)
-    {% for metricKey, stats in advanced_stats %}
-    {% if stats.count > 0 and stats.distribution is not empty %}
-    (function() {
-        const canvas = document.getElementById('chart_{{ metricKey }}');
-        if (canvas) {
-            new Chart(canvas, {
-                    type: 'bar',
-                    data: {
-                        labels: {{ stats.bucket_labels|json_encode|raw }},
-                        datasets: [{
-                            label: '{{ stats.label }} Distribution',
-                            data: {{ stats.distribution|json_encode|raw }},
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return 'Count: ' + context.parsed.y;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-        }
-    })();
+        {% set _body %}{{ include(nowo_ui_partial('detail_list', _b), {items: _items, bundle: _b}) }}{% endset %}
+        {{ include(_card, {title: 'ui.statistics.correlations'|trans, intro: 'ui.statistics.correlations_intro'|trans, bundle: _b, testid: 'performance-correlations', body: _body}) }}
     {% endif %}
+
+    {% if efficiency|default([]) is not empty %}
+        {% set _body %}
+                {% if efficiency.avg_query_ratio is defined and efficiency.avg_query_ratio is not null %}
+                    <p>{{ 'ui.statistics.avg_query_ratio'|trans({'%ratio%': efficiency.avg_query_ratio}) }}</p>
+                {% endif %}
+                {% for _group in [{key: 'query_bottleneck_routes', title: 'ui.statistics.query_bottlenecks', intro: 'ui.statistics.query_bottlenecks_intro'}, {key: 'inefficient_routes', title: 'ui.statistics.inefficient_routes', intro: 'ui.statistics.inefficient_routes_intro'}] %}
+                    {% set _list = efficiency[_group.key] ?? [] %}
+                    {% if _list is not empty %}
+                        <h3 class="{{ nowo_ui_class('card_title', _b) }}">{{ _group.title|trans }}</h3>
+                        <p class="{{ nowo_ui_class('muted', _b) }}">{{ _group.intro|trans }}</p>
+                        <ul>
+                            {% for _item in _list|slice(0, 5) %}
+                                <li><code class="{{ nowo_ui_class('code', _b) }}">{{ _item.route.name }}</code> — {{ (_item.request_time * 1000)|number_format(2) }} ms · {{ 'ui.statistics.queries'|trans({'%count%': _item.query_count ?? '—'}) }}{% if _item.query_ratio is defined %} · {{ 'ui.statistics.query_ratio'|trans({'%ratio%': _item.query_ratio}) }}{% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endfor %}
+        {% endset %}
+        {{ include(_card, {title: 'ui.statistics.efficiency'|trans, bundle: _b, testid: 'performance-efficiency', body: _body}) }}
+    {% endif %}
+
+    {% if traffic_distribution|default([]) is not empty %}
+        {% set _body %}
+                {% if traffic_distribution.traffic_concentration is defined and traffic_distribution.traffic_concentration is not null %}
+                    <p>{{ 'ui.statistics.traffic_concentration'|trans({'%ratio%': traffic_distribution.traffic_concentration}) }}</p>
+                {% endif %}
+                <p>{{ 'access_statistics.total_accesses'|trans }}: <strong>{{ traffic_distribution.total_accesses|default(0)|number_format }}</strong></p>
+                {% if traffic_distribution.hot_paths|default([]) is not empty %}
+                    <h3 class="{{ nowo_ui_class('card_title', _b) }}">{{ 'ui.statistics.hot_paths'|trans }}</h3>
+                    <ol>
+                        {% for _item in traffic_distribution.hot_paths|slice(0, 10) %}
+                            <li><code class="{{ nowo_ui_class('code', _b) }}">{{ _item.route.name }}</code> <span class="{{ nowo_ui_class('badge_neutral', _b) }}">{{ _item.access_count|number_format }}</span> <span class="{{ nowo_ui_class('badge_info', _b) }}">{{ _item.percentage }}%</span></li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+        {% endset %}
+        {{ include(_card, {title: 'ui.statistics.traffic'|trans, bundle: _b, testid: 'performance-traffic', body: _body}) }}
+    {% endif %}
+
+    {% set _body %}
+            {% for _group in [{key: 'slow_request_time', title: 'ui.statistics.slow_request_time', unit: 'ms'}, {key: 'high_query_count', title: 'ui.statistics.high_query_count', unit: ''}, {key: 'high_memory', title: 'ui.statistics.high_memory', unit: 'MB'}] %}
+                {% set _list = routes_needing_attention[_group.key] ?? [] %}
+                <h3 class="{{ nowo_ui_class('card_title', _b) }}">{{ _group.title|trans }}</h3>
+                {% if _list is not empty %}
+                    <ul>
+                        {% for _item in _list|slice(0, 10) %}
+                            <li><code class="{{ nowo_ui_class('code', _b) }}">{{ _item.route.name }}</code> <span class="{{ nowo_ui_class('badge_danger', _b) }}">{{ _group.unit == 'ms' ? (_item.value * 1000)|number_format(2) ~ ' ms' : (_group.unit == 'MB' ? _item.value|number_format(2) ~ ' MB' : _item.value) }}</span></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="{{ nowo_ui_class('muted', _b) }}">{{ 'ui.statistics.no_routes'|trans }}</p>
+                {% endif %}
+            {% endfor %}
+    {% endset %}
+    {{ include(_card, {title: 'statistics_page.routes_needing_attention'|trans, intro: 'statistics_page.routes_above_p95'|trans, bundle: _b, testid: 'performance-attention', body: _body}) }}
+
+    {% for _metric, _s in advanced_stats|default({}) %}
+        {% if _s.count|default(0) > 0 %}
+            {% set _metric_label = ('statistics_page.' ~ _metric)|trans %}
+                    {% set _unit = _s.unit ? ' ' ~ _s.unit : '' %}
+                    {% set _items = [] %}
+                    {% for _k, _entry in {mean: 'statistics_page.mean', median: 'statistics_page.median', mode: 'statistics_page.mode', std_dev: 'statistics_page.std_deviation', min: 'statistics_page.min', max: 'statistics_page.max', range: 'statistics_page.range'} %}
+                        {% set _items = _items|merge([{label: _entry|trans, value: _s[_k] ~ _unit, badge: null, href: null}]) %}
+                    {% endfor %}
+                    {% for _p, _v in _s.percentiles|default({}) %}
+                        {% set _items = _items|merge([{label: ('statistics_page.p' ~ _p)|trans, value: _v ~ _unit, badge: null, href: null}]) %}
+                    {% endfor %}
+                    {% set _items = _items|merge([{label: 'statistics_page.outliers'|trans, value: _s.outliers_count, badge: _s.outliers_count > 0 ? 'warning' : 'success', href: null}]) %}
+            {% set _body %}
+                    {{ include(nowo_ui_partial('detail_list', _b), {items: _items, bundle: _b}) }}
+                    {% if _s.distribution|default([]) is not empty %}
+                        <h3 class="{{ nowo_ui_class('card_title', _b) }}">{{ 'statistics_page.histogram'|trans }}</h3>
+                        {{ include('@NowoPerformanceBundle/Performance/_bar_chart.html.twig', {labels: _s.bucket_labels, values: _s.distribution, decimals: 0, unit: '', title: 'statistics_page.histogram'|trans ~ ' — ' ~ _metric_label}) }}
+                    {% endif %}
+            {% endset %}
+            {{ include(_card, {title: 'ui.statistics.metric_title'|trans({'%metric%': _metric_label}), intro: 'ui.statistics.samples'|trans({'%count%': _s.count}), bundle: _b, testid: 'performance-metric-' ~ _metric|replace({_: '-'}), body: _body}) }}
+        {% endif %}
     {% endfor %}
-});
-</script>
 {% endblock %}

@@ -1,0 +1,25 @@
+{#
+  KPI tiles outside the dashboard scaffold (routes page, deprecated Statistics component): same markup and theme slots
+  as @NowoUiKit/page/dashboard.html.twig (kpis, kpi, kpi_label, kpi_value, kpi_hint, kpi_link).
+
+  Required:
+    - kpis: list of View\KpiTile (or hashes with the same keys: label, value, hint, href, variant, linkTile)
+  Optional:
+    - bundle (theme exceptions), attr (extra attributes of the region)
+#}
+{% set _b = bundle|default(null) %}
+{% if kpis|default([]) is not empty %}
+    <div class="{{ nowo_ui_class('kpis', _b) }}" data-nowo-ui-region="kpis"{{ nowo_ui_attrs('kpis', _b, attr|default({})) }}>
+        {% for kpi in kpis %}
+            {% set _href = kpi.href ?? null %}
+            {% set _tile_link = _href and (kpi.linkTile ?? false) %}
+            <{{ _tile_link ? 'a' : 'div' }} class="{{ nowo_ui_class('kpi', _b) }} nowo-ui-kpi--{{ kpi.variant ?? 'neutral' }}{{ _tile_link ? ' ' ~ nowo_ui_class('kpi_link', _b) }}"{% if _tile_link %} href="{{ _href }}"{% endif %}{{ nowo_ui_attrs('kpi', _b) }}>
+                <p class="{{ nowo_ui_class('kpi_label', _b) }}">{{ kpi.label|nowo_ui_trans }}</p>
+                <p class="{{ nowo_ui_class('kpi_value', _b) }}">
+                    {%- if _href and not _tile_link -%}<a href="{{ _href }}">{{ kpi.value }}</a>{%- else -%}{{ kpi.value }}{%- endif -%}
+                </p>
+                {% if kpi.hint ?? null %}<p class="{{ nowo_ui_class('kpi_hint', _b) }}">{{ kpi.hint|nowo_ui_trans }}</p>{% endif %}
+            </{{ _tile_link ? 'a' : 'div' }}>
+        {% endfor %}
+    </div>
+{% endif %}

@@ -86,6 +86,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Performance: dashboard on the UiKit page contract (REQ-UI-003), canonical `web_ui` keys, PSR-20 clock. See
+[UPGRADING](UPGRADING.md#unreleased).
+
+### Security (SEC-004 re-audit 2026-10-30, Appendix BP: Pass (good) / Low)
+
+- **L1 — `web_ui.enabled` must be a literal boolean.** The 3.15 load-time cast turned an `%env(bool:…)%` placeholder
+  (also through the deprecated `dashboard.enabled`) into `true`, so an environment variable could no longer switch the
+  dashboard off. Anything but `true` / `false` now fails the container build with an `InvalidConfigurationException`.
+- **I1** — the same literal-boolean rule for `security.allow_unauthenticated` (an env placeholder was truthy in dev /
+  test kernels).
+- **I3** — malformed date query parameters (`date_from`, `date_to`, `start_date`, `end_date`) are ignored instead of
+  raising a 500 (routes page, exports, access statistics, access records).
+- **I4** — `.gitattributes` keeps `demo/`, `tests/`, `specs/`, `.specify/`, `.cursor/`, `.scripts/`, `scripts/`,
+  `.githooks/`, `.github/`, `docs/images/` and the tooling configs out of the GitHub / Packagist dist archives.
+
+### Added
+
+- **UiKit page contract (REQ-UI-003).** The dashboard pages extend the UiKit scaffolds: routes and access records
+  `page/list`, advanced statistics and access statistics `page/dashboard`, diagnose `page/show`. View models come from
+  `Ui\PerformancePageFactory`; layout / per-page template resolution from `Ui\PerformancePages`. Page map, data blocks
+  and view-model fields: [TEMPLATES.md](TEMPLATES.md). Contract test: `tests/Integration/Contract/PageContractTest.php`.
+- **Canonical configuration keys** `web_ui.enabled`, `web_ui.path_prefix`, `web_ui.layout_template` (default `null` =
+  `nowo_ui_kit.layouts.admin`) and `web_ui.templates.<page>` (`index`, `statistics`, `access_statistics`,
+  `access_records`, `diagnose`). The route prefix is `%nowo_performance.web_ui.path_prefix%`.
+- **Area navigation** `Ui\PerformanceAreaNav`: page-header tabs on every page and `nowo_ui_area_nav('performance')` for
+  host menus (DashboardMenu).
+- **Server-side charts**: daily request-time trend, metric histograms, accesses by hour and the access heatmap are
+  inline SVG partials (`_bar_chart`, `_heatmap`); no chart library, no JavaScript.
+- `with_submit` option (default `true`) on `PerformanceFiltersType`, `RecordFiltersType`, `ClearPerformanceDataType` and
+  `DeleteRecordsByFilterType`: the pages pass `false` because the UiKit filters / Action render the button.
+- **PSR-20 clock (REQ-DI-001).** `PerformanceController`, `PerformanceMetricsService` and `PurgeAccessRecordsCommand`
+  take an optional `Psr\Clock\ClockInterface` (`symfony/clock` is now required); `RouteData::markAsReviewed()` /
+  `RouteDataRepository::markAsReviewed()` accept an optional review time.
+
+### Changed
+
+- **Template contract.** Destructive actions (clear all, delete route, delete matching records) use the UiKit confirm
+  `<dialog>` with their CSRF form; review and purge open in a UiKit `dialog`; flashes, filters, pagination and empty
+  states come from UiKit. No inline `onclick` / `onsubmit` / `confirm()`, no CDN (Bootstrap, Tailwind, Chart.js).
+  Auto refresh is a `<meta http-equiv="refresh">`; the statistics environment selector auto-submits through UiKit
+  (`data-nowo-ui-autosubmit`).
+- The form types and the FormKit `performance` profile carry no framework utility classes any more (`form-control`,
+  `form-select`, `btn btn-*`, `mb-2`): the host form theme and the UiKit theme slots style them.
+- The UiKit `css_framework` / `icon_set` seed only happens when the host still sets the deprecated
+  `dashboard.css_framework` / `dashboard.template` and `nowo_ui_kit` has no `css_framework` of its own.
+- `nowo-tech/ui-kit-bundle` constraint raised to `^2.17.3`.
+- `api/chart-data` rounds averages / maxima to 4 decimals (was 2).
+- **100% statement coverage without exclusions (REQ-TEST-003)**: `PerformanceController`, both table commands and
+  `QueryTrackingMiddlewareRegistry` are no longer excluded in `phpunit.xml.dist`; `make test-coverage` and CI fail
+  below 100%. Code that cannot run on the supported dependencies was removed instead of ignored: DBAL 2 fallbacks
+  (`getSchemaManager()`, `quoteIdentifier()`, `Type::getType()`), impossible `catch` blocks, a dead `$limit >= 1000`
+  branch, the internal-connection probe of the middleware registry and the composer.json / class heuristics of its
+  DoctrineBundle version detection (Composer runtime data only). The CSV export streams throw a `RuntimeException`
+  when `php://output` cannot be opened instead of silently returning nothing; diagnose always uses
+  `Connection::createSchemaManager()`; `NotificationChannelsPass` builds its tagged iterator with one
+  version-agnostic constructor call; the deprecated `LogHelper` no longer guards `function_exists('error_log')`. No `@codeCoverageIgnore` is left in `src/`:
+  the DBAL 2 fallback of `TableStatusChecker`, the unreachable outer `catch` of `QueryTrackingConnectionSubscriber`
+  and the pool guard of the statistics cache generation (now a `LogicException` invariant) are gone; the deprecated
+  `ChartFiltersType` no longer sets an inline `onsubmit`. `make test-coverage` now fails on test failures too
+  (`pipefail`) and runs without `--process-isolation` (PHPUnit `memory_limit` 1G).
+
+### Deprecated
+
+- `dashboard.enabled`, `dashboard.path`, `dashboard.prefix`, `dashboard.layout_template` → `web_ui.*`;
+  `dashboard.css_framework` and `dashboard.template` → `nowo_ui_kit.css_framework` (removed in 4.0).
+- A `layout_template` that does not render the UiKit canonical blocks is wrapped in
+  `Performance/_legacy_layout.html.twig` (deprecated bridge, removed in 4.0).
+- The Twig components `nowo_performance.Statistics`, `.Filters`, `.Charts`, `.RoutesTable` (they render through the new
+  slot-based partials) and `ChartFiltersType`; the Twig globals `nowo_performance_layout_template` /
+  `nowo_performance_css_framework`; the `DeleteRecordType` option `submit_attr_class` (ignored).
+
+### Removed
+
+- Templates `Performance/base.html.twig`, `Performance/layout.html.twig` (CDN demo shell) and the per-framework partials
+  `Performance/components/_{statistics,filters,charts,routes_table}_{bootstrap,tailwind}.html.twig`, `_paginator`,
+  `_dependency_modal`. The `chartFiltersForm` variable is no longer passed to the routes page.
+- `NowoPerformanceBundle::boot()` no longer looks up the kernel in the container nor replaces the global VarDumper
+  handler in CLI debug runs (REQ-DI-001).
+
+### Fixed
+
+- **Review from the dashboard crashed.** `review()` called an undefined `$this->trans()` after a successful review
+  (fatal "Call to undefined method"); the controller now takes an optional `TranslatorInterface` (last constructor
+  argument) for its flashes. With access records enabled, the review form was also rebuilt without `route_data` /
+  `enable_access_records`, so every review was rejected as "Invalid form data".
+- **Twig components were never registered**: the extension checked a `ComponentInterface` that
+  `symfony/ux-twig-component` does not ship; it now checks `AsTwigComponent`.
+- `nowo:performance:create-table` / `create-records-table`:
+  - the MySQL `AUTO_INCREMENT` patch now matches only the `id` column (it also hit `route_data_id INT`, giving two auto
+    columns and a failed `CREATE TABLE` for access records);
+  - `--update --drop-obsolete` no longer treats the `route_data_id` join column as obsolete (dropped on
+    PostgreSQL/SQLite, failed on MySQL because of the foreign key);
+  - `--update` no longer flags the `id` column as changed on every run (the comparison includes the platform's
+    auto-increment / identity declaration) and no longer emits the MySQL-only `MODIFY COLUMN ... AUTO_INCREMENT` repair
+    on other platforms (a warning points to Doctrine migrations);
+  - `MODIFY COLUMN id` no longer declares `AUTO_INCREMENT` twice;
+  - a string field without a length no longer crashes on MySQL (`TypeError`); it falls back to `VARCHAR(255)`.
+- Translated label for the statistics environment selector (was the literal `Environment`).
+- Flex recipe: `security.access_roles: ['ROLE_ADMIN']` instead of the former `dashboard.roles: []`, which an empty list
+  now refuses at container compilation.
+
 ## [3.14.1] - 2026-10-30
 
 Performance: track_user and kernel environment detection wired (optional services) See [UPGRADING](UPGRADING.md#to-3141).

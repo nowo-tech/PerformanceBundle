@@ -11,6 +11,8 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
+ *
+ * @deprecated since 3.15.0, removed in 4.0: the dashboard pages render through the UiKit page scaffolds (REQ-UI-003)
  */
 #[AsTwigComponent('nowo_performance.Statistics', template: '@NowoPerformanceBundle/components/Statistics.html.twig')]
 final class StatisticsComponent

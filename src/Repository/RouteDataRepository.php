@@ -375,17 +375,18 @@ class RouteDataRepository extends ServiceEntityRepository
      * @param bool|null $queriesImproved Whether queries improved
      * @param bool|null $timeImproved Whether time improved
      * @param string|null $reviewedBy The reviewer username
+     * @param DateTimeImmutable|null $reviewedAt Review time (default: system time)
      *
      * @return bool True if updated, false if not found
      */
-    public function markAsReviewed(int $id, ?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null): bool
+    public function markAsReviewed(int $id, ?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null, ?DateTimeImmutable $reviewedAt = null): bool
     {
         $routeData = $this->find($id);
         if ($routeData === null) {
             return false;
         }
 
-        $routeData->markAsReviewed($queriesImproved, $timeImproved, $reviewedBy);
+        $routeData->markAsReviewed($queriesImproved, $timeImproved, $reviewedBy, $reviewedAt);
         $this->getEntityManager()->flush();
 
         return true;

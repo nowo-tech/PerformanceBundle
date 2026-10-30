@@ -10,6 +10,7 @@ use Nowo\PerformanceBundle\Form\ReviewRouteDataType;
 use Nowo\PerformanceBundle\Model\ClearPerformanceDataRequest;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
+use Nowo\PerformanceBundle\Ui\PerformancePageFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -441,10 +442,10 @@ final class PerformanceControllerIntegrationTest extends TestCase
     }
 
     /**
-     * Confirm messages are JS-escaped: the French "d'accès" must not end the confirm('...') string
-     * (which made the onsubmit handler a syntax error and let the purge run without confirmation).
+     * REQ-UI-003: destructive actions use the UiKit confirm contract (native <dialog>, no inline onsubmit / confirm()),
+     * and the French texts (with apostrophes) are HTML-escaped inside the dialogs.
      */
-    public function testAccessRecordsConfirmMessagesAreJsEscapedInFrench(): void
+    public function testAccessRecordsConfirmDialogsHaveNoInlineScriptInFrench(): void
     {
         $this->createTablesAndRecordMetric();
         $request = Request::create('/performance/access-records?env=test', Request::METHOD_GET);
@@ -453,13 +454,35 @@ final class PerformanceControllerIntegrationTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
         $content = (string) $response->getContent();
-        // delete-by-filter + purge forms
-        self::assertGreaterThanOrEqual(2, preg_match_all('/onsubmit="return confirm\(&#039;([^"]*)&#039;\);"/', $content, $matches));
-        foreach ($matches[1] as $message) {
-            // A raw (HTML-encoded) single quote inside the JS string literal would terminate it.
-            self::assertStringNotContainsString('&#039;', $message);
-        }
-        self::assertStringContainsString('d\u0027acc', $content);
+        self::assertStringNotContainsString('onsubmit=', $content);
+        self::assertStringNotContainsString('confirm(', $content);
+        self::assertStringContainsString('<dialog', $content);
+        self::assertStringContainsString('id="' . PerformancePageFactory::PURGE_DIALOG_ID . '"', $content);
+        self::assertStringContainsString('d&#039;acc', $content);
+    }
+
+    /**
+     * SEC-004 (BP I3): malformed date query parameters are ignored, never a 500.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function malformedDateUrls(): iterable
+    {
+        yield 'index' => ['/performance?date_from=not-a-date&date_to=31/02/x'];
+        yield 'export csv' => ['/performance/export/csv?env=test&date_from=garbage&date_to=%2B%2B'];
+        yield 'access statistics' => ['/performance/access-statistics?env=test&start_date=garbage&end_date=nope'];
+        yield 'access records' => ['/performance/access-records?env=test&start_date=garbage&end_date=nope'];
+        yield 'export records csv' => ['/performance/export/records/csv?env=test&start_date=garbage&end_date=nope'];
+        yield 'export records json' => ['/performance/export/records/json?env=test&start_date=garbage&end_date=nope'];
+    }
+
+    #[DataProvider('malformedDateUrls')]
+    public function testMalformedDateQueryParametersAreIgnored(string $url): void
+    {
+        $this->createTablesAndRecordMetric();
+        $response = $this->requestGet($url);
+
+        self::assertSame(200, $response->getStatusCode(), $url);
     }
 
     public function testAccessRecordsWithRefererAndUser(): void

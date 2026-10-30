@@ -18,7 +18,7 @@ help:
 	@echo "  install       Install Composer dependencies"
 	@echo "  assets        No frontend assets in this bundle (no-op)"
 	@echo "  test          Run PHPUnit tests (starts container if needed)"
-	@echo "  test-coverage Run PHPUnit tests with code coverage (HTML + Clover)"
+	@echo "  test-coverage Run PHPUnit tests with code coverage (HTML + Clover); fails below 100% statements"
 	@echo "  test-coverage-90  Run test-coverage and fail if coverage < 90%"
 	@echo "  test-coverage-100 Run test-coverage and fail if coverage < 100%"
 	@echo "  test-with-db  Run tests with databases (same compose: php + MySQL + PostgreSQL)"
@@ -95,11 +95,12 @@ test: ensure-up
 	$(COMPOSE) exec php composer test
 
 # Run tests with code coverage (no -T so coverage is shown in console with colors).
-# --process-isolation avoids truncated output; @runInSeparateProcess tests and non-TTY pipes can otherwise
-# end the run before the report is printed (see PHPUnit issue #5993).
+# No --process-isolation: the UiKit page contract fixtures (view models with closures, FormViews) cannot be
+# serialized into child processes; tests that need isolation declare #[RunInSeparateProcess] themselves.
 test-coverage: ensure-up
-	$(COMPOSE) exec php composer test-coverage | tee coverage-php.txt
+	bash -o pipefail -c '$(COMPOSE) exec php composer test-coverage | tee coverage-php.txt'
 	./.scripts/php-coverage-percent.sh coverage-php.txt
+	$(COMPOSE) exec -T php php scripts/check-coverage.php coverage.xml --min-percent=100
 
 # Run test-coverage and fail if coverage is below 90%
 test-coverage-90: ensure-up

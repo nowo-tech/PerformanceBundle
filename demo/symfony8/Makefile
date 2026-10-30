@@ -184,6 +184,8 @@ SERVICE_PHP := php
 PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.63.0-jammy
 
 test-e2e: ensure-up
+	@$(COMPOSE) exec -T php php bin/console assets:install public --no-interaction >/dev/null
+	@$(COMPOSE) exec -T php php bin/console app:demo:seed-metrics --no-interaction
 	@mkdir -p e2e/node_modules
 	@PORT=$$(grep -E '^PORT=' .env 2>/dev/null | cut -d= -f2); PORT=$${PORT:-8000}; \
 	docker run --rm --network host \
@@ -193,6 +195,8 @@ test-e2e: ensure-up
 		bash -lc 'npm install --no-fund --no-audit && npx playwright test --project=chromium'
 
 demo-screenshots: ensure-up
+	@$(COMPOSE) exec -T php php bin/console assets:install public --no-interaction >/dev/null
+	@$(COMPOSE) exec -T php php bin/console app:demo:seed-metrics --no-interaction
 	@mkdir -p ../../docs/images/demo e2e/node_modules
 	@PORT=$$(grep -E '^PORT=' .env 2>/dev/null | cut -d= -f2); PORT=$${PORT:-8000}; \
 	docker run --rm --network host \

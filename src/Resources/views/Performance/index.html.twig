@@ -1,257 +1,158 @@
-{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
-{% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
+{#
+  Routes (dashboard home, REQ-UI-003): UiKit list scaffold. Variable: page (View\ListPage from
+  PerformancePageFactory::index(): header dashboard.title / dashboard.subtitle with the area tabs and the actions
+  Export CSV / Export JSON / Clear all records (POST + CSRF FormView behind a Confirm, with record management); filters
+  = PerformanceFiltersType; columns name (+ HTTP method badge), status codes, accesses, request time, query time, queries, memory,
+  last access, review; rows = list<RouteDataWithAggregates>; row actions View records / Review (dialog) / Delete
+  (confirm); Pagination; EmptyState dashboard.no_routes_found).
+  Extra variables: kpis (list<KpiTile>), trend ({labels, values}: average request time per day, ms), top_used_routes,
+  top_consumed_routes, missingDependencies, reviewForms (route id => FormView, one dialog each), thresholds,
+  dateTimeFormat, dateFormat, autoRefreshInterval, environment; 3.14 variables kept for web_ui.templates overrides:
+  routes, stats, paginator, form, clearForm, deleteForms (the same FormViews back the page actions: render each once).
+  Data blocks filled: nowo_ui_list_filters (notices + KPI tiles before the filters), nowo_ui_list_row (cells),
+  nowo_ui_list_after (trend + top routes), nowo_ui_modals (review dialogs), nowo_ui_head (auto refresh).
+#}
+{% extends '@NowoUiKit/page/list.html.twig' %}
+{% trans_default_domain 'NowoPerformanceBundle' %}
 
-{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
-{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
-{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
-{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
-{% block title %}Performance Metrics Dashboard{% endblock %}
-
-{% block content %}
-    {# Header Section #}
-    {% if _is_bootstrap %}
-        <div class="container mt-4">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1>{{ 'dashboard.title'|trans({}, 'NowoPerformanceBundle') }}</h1>
-                            <p class="text-muted">{{ 'dashboard.subtitle'|trans({}, 'NowoPerformanceBundle') }}</p>
-                        </div>
-                        <div class="{{ ui.row_actions(_perf_css) }}">
-                        <a href="{{ path('nowo_performance.diagnose') }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                            {{ ux_icon('bi:gear', {height: '16px', width: '16px', class: 'me-1'}) }}
-                            Diagnose
-                        </a>
-                        <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                            {{ ux_icon('bi:bar-chart', {height: '16px', width: '16px', class: 'me-1'}) }}
-                            {{ 'dashboard.advanced_statistics'|trans({}, 'NowoPerformanceBundle') }}
-                        </a>
-                        <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                            {{ ux_icon('bi:download', {height: '16px', width: '16px', class: 'me-1'}) }}
-                            {{ 'dashboard.export_csv'|trans({}, 'NowoPerformanceBundle') }}
-                        </a>
-                        <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                            {{ ux_icon('bi:file-text', {height: '16px', width: '16px', class: 'me-1'}) }}
-                            {{ 'dashboard.export_json'|trans({}, 'NowoPerformanceBundle') }}
-                        </a>
-                        {% if enableAccessRecords is defined and enableAccessRecords %}
-                            <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                                {{ ux_icon('bi:clock', {height: '16px', width: '16px', class: 'me-1'}) }}
-                                {{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}
-                            </a>
-                        {% endif %}
-                        {% if enableRecordManagement is defined and enableRecordManagement %}
-                            {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'style': 'display: inline;', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
-                                {# REQ-TWIG-003: child loop; the submit is captured first so it stays inline after the fields #}
-                                {% set _clear_submit %}{{ form_widget(clearForm.submit, {attr: {class: ui.btn('danger', null, _perf_css)}}) }}{% endset %}
-                                {% for child in clearForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
-                                {{ _clear_submit }}
-                            {{ form_end(clearForm) }}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% else %}
-        <div class="mb-8 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">{{ 'dashboard.title'|trans({}, 'NowoPerformanceBundle') }}</h1>
-                <p class="mt-2 text-sm text-gray-600">{{ 'dashboard.subtitle'|trans({}, 'NowoPerformanceBundle') }}</p>
-            </div>
-            <div class="flex space-x-2">
-                <a href="{{ path('nowo_performance.diagnose') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                    {{ ux_icon('bi:gear', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                    Diagnose
-                </a>
-                <a href="{{ path('nowo_performance.statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    {{ ux_icon('bi:bar-chart', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                    {{ 'dashboard.advanced_statistics'|trans({}, 'NowoPerformanceBundle') }}
-                </a>
-                <a href="{{ path('nowo_performance.export_csv', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    {{ ux_icon('bi:download', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                    {{ 'dashboard.export_csv'|trans({}, 'NowoPerformanceBundle') }}
-                </a>
-                <a href="{{ path('nowo_performance.export_json', app.request.query.all) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                    {{ ux_icon('bi:file-text', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                    {{ 'dashboard.export_json'|trans({}, 'NowoPerformanceBundle') }}
-                </a>
-                {% if enableAccessRecords is defined and enableAccessRecords %}
-                    <a href="{{ path('nowo_performance.access_statistics', {env: environment}) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        {{ ux_icon('bi:clock', {height: '16px', width: '16px', class: 'w-4 h-4 mr-2'}) }}
-                        {{ 'access_statistics.title'|trans({}, 'NowoPerformanceBundle') }}
-                    </a>
-                {% endif %}
-                {% if enableRecordManagement is defined and enableRecordManagement %}
-                    {{ form_start(clearForm, {'action': path('nowo_performance.clear'), 'attr': {'class': 'inline', 'onsubmit': "return confirm('" ~ 'confirmations.clear_all_records'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
-                        {# REQ-TWIG-003: child loop; the submit is captured first so it stays inline after the fields #}
-                        {% set _clear_submit %}{{ form_widget(clearForm.submit, {attr: {class: 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'}}) }}{% endset %}
-                        {% for child in clearForm %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}
-                        {{ _clear_submit }}
-                    {{ form_end(clearForm) }}
-                {% endif %}
-            </div>
-        </div>
-    {% endif %}
-
-    {# Show missing dependencies warning #}
-    {% if missingDependencies is not empty %}
-        {% if _is_bootstrap %}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        <h5 class="alert-heading">{{ ux_icon('bi:exclamation-triangle', {height: '16px', width: '16px', class: 'me-1'}) }} Optional Dependencies Missing</h5>
-                        <p class="mb-2">Some features are using fallback mode. For better performance, consider installing:</p>
-                        <ul class="mb-2">
-                            {% for dep in missingDependencies %}
-                                <li>
-                                    <strong>{{ dep.feature }}:</strong> {{ dep.message }}
-                                    <br>
-                                    <code class="text-dark">{{ dep.install_command }}</code>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                </div>
-            </div>
-        {% else %}
-            <div class="mb-8 rounded-md bg-yellow-50 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        {{ ux_icon('bi:exclamation-triangle', {class: 'h-5 w-5 text-yellow-400'}) }}
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <h3 class="text-sm font-medium text-yellow-800">Optional Dependencies Missing</h3>
-                        <div class="mt-2 text-sm text-yellow-700">
-                            <p class="mb-2">Some features are using fallback mode. For better performance, consider installing:</p>
-                            <ul class="list-disc list-inside space-y-1">
-                                {% for dep in missingDependencies %}
-                                    <li>
-                                        <strong>{{ dep.feature }}:</strong> {{ dep.message }}
-                                        <br>
-                                        <code class="bg-yellow-100 px-2 py-1 rounded text-xs">{{ dep.install_command }}</code>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-    {% endif %}
-
-    {# Components Section - Shared for both bootstrap and tailwind #}
-    {% if useComponents and component is defined %}
-        {# Statistics Component - Using Symfony UX Twig Component #}
-        {{ component('nowo_performance.Statistics', { stats: stats, ui_template: ui_template, enableAccessRecords: enableAccessRecords|default(false), environment: environment }) }}
-
-        {# Filters Component - Using Symfony UX Twig Component #}
-        {{ component('nowo_performance.Filters', { form: form, ui_template: ui_template }) }}
-
-        {# Charts Component - Using Symfony UX Twig Component #}
-        {{ component('nowo_performance.Charts', { 
-            environment: environment, 
-            currentRoute: currentRoute, 
-            chartDataUrl: path('nowo_performance.api.chart_data'),
-            ui_template: ui_template 
-        }) }}
-
-        {# Routes Table Component - Using Symfony UX Twig Component #}
-        {{ component('nowo_performance.RoutesTable', { 
-            routes: routes, 
-            ui_template: ui_template,
-            sortBy: sortBy|default('requestTime'),
-            order: order|default('DESC'),
-            thresholds: thresholds|default({}),
-            enableRecordManagement: enableRecordManagement,
-            enableReviewSystem: enableReviewSystem,
-            reviewForms: reviewForms|default({}),
-            deleteForms: deleteForms|default({})
-        }) }}
-        {% if paginator is defined and paginator.total_pages > 1 %}
-            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, ui_template: ui_template } %}
-        {% endif %}
-    {% else %}
-        {# Fallback to includes if components are not available #}
-        {% include '@NowoPerformanceBundle/Performance/components/_statistics_' ~ _ui ~ '.html.twig' %}
-
-        {% include '@NowoPerformanceBundle/Performance/components/_filters_' ~ _ui ~ '.html.twig' %}
-
-        {% include '@NowoPerformanceBundle/Performance/components/_charts_' ~ _ui ~ '.html.twig' %}
-
-        {% include '@NowoPerformanceBundle/Performance/components/_routes_table_' ~ _ui ~ '.html.twig' with {
-            thresholds: thresholds|default({}),
-            enableRecordManagement: enableRecordManagement,
-            enableReviewSystem: enableReviewSystem,
-            reviewForms: reviewForms|default({}),
-            deleteForms: deleteForms|default({})
-        } %}
-        {% if paginator is defined and paginator.total_pages > 1 %}
-            {% include '@NowoPerformanceBundle/Performance/components/_paginator.html.twig' with { paginator: paginator, ui_template: ui_template } %}
-        {% endif %}
-    {% endif %}
-    
-    {# Include dependency modal #}
-    {% include '@NowoPerformanceBundle/Performance/components/_dependency_modal.html.twig' with {ui_template: ui_template} %}
+{% block nowo_ui_head %}
+    {{ parent() }}
+    {% if autoRefreshInterval|default(0) > 0 %}<meta http-equiv="refresh" content="{{ autoRefreshInterval }}">{% endif %}
 {% endblock %}
 
-{% block scripts_extra %}
-    <script>
-        // Make missingDependencies available to JavaScript
-        window.missingDependencies = {{ missingDependencies|json_encode|raw }};
-    </script>
-    {% if autoRefreshInterval > 0 %}
-    <script>
-        // Auto-refresh dashboard
-        (function() {
-            const refreshInterval = {{ autoRefreshInterval }} * 1000; // Convert to milliseconds
-            let refreshTimer;
-            
-            function refreshDashboard() {
-                // Reload the page to get fresh data
-                window.location.reload();
-            }
-            
-            // Start auto-refresh
-            refreshTimer = setInterval(refreshDashboard, refreshInterval);
-            
-            // Show refresh indicator
-            const refreshIndicator = document.createElement('div');
-            refreshIndicator.className = 'position-fixed bottom-0 end-0 m-3 p-2 bg-info text-white rounded shadow';
-            refreshIndicator.style.zIndex = '1050';
-            refreshIndicator.innerHTML = '<small><i class="bi bi-arrow-clockwise"></i> Auto-refresh: <span id="refresh-countdown">' + {{ autoRefreshInterval }} + '</span>s</small>';
-            document.body.appendChild(refreshIndicator);
-            
-            // Update countdown
-            let countdown = {{ autoRefreshInterval }};
-            const countdownElement = document.getElementById('refresh-countdown');
-            setInterval(function() {
-                countdown--;
-                if (countdown <= 0) {
-                    countdown = {{ autoRefreshInterval }};
-                }
-                if (countdownElement) {
-                    countdownElement.textContent = countdown;
-                }
-            }, 1000);
-            
-            // Pause on window focus/blur
-            let isPaused = false;
-            window.addEventListener('blur', function() {
-                if (!isPaused) {
-                    clearInterval(refreshTimer);
-                    isPaused = true;
-                }
-            });
-            
-            window.addEventListener('focus', function() {
-                if (isPaused) {
-                    refreshTimer = setInterval(refreshDashboard, refreshInterval);
-                    isPaused = false;
-                }
-            });
-        })();
-    </script>
+{% block nowo_ui_list_filters %}
+    {% set _b = page.bundle %}
+    {% if missingDependencies|default([]) is not empty %}
+        <div class="{{ nowo_ui_class('flash', _b) }} {{ nowo_ui_class('flash_info', _b) }}" role="status" data-testid="performance-missing-dependencies">
+            <p><strong>{{ 'ui.dependencies.title'|trans }}</strong> {{ 'ui.dependencies.intro'|trans }}</p>
+            <ul>
+                {% for dep in missingDependencies %}
+                    <li><strong>{{ dep.feature }}</strong>: {{ dep.message }} <code class="{{ nowo_ui_class('code', _b) }}">{{ dep.install_command }}</code></li>
+                {% endfor %}
+            </ul>
+        </div>
     {% endif %}
+    {% if autoRefreshInterval|default(0) > 0 %}
+        <p class="{{ nowo_ui_class('muted', _b) }}" data-testid="performance-auto-refresh">{{ 'ui.auto_refresh'|trans({'%seconds%': autoRefreshInterval}) }}</p>
+    {% endif %}
+    {{ include('@NowoPerformanceBundle/Performance/_kpis.html.twig', {kpis: kpis|default([]), bundle: _b, attr: {'data-testid': 'performance-kpis'}}) }}
+    {{ parent() }}
+{% endblock %}
+
+{% block nowo_ui_list_row %}
+    {% set _b = page.bundle %}
+    {% set _cell = nowo_ui_class('table_cell', _b) %}
+    {% set _muted = nowo_ui_class('table_cell_muted', _b) %}
+    {% set _t = thresholds|default({}) %}
+    {% set _dash = '—' %}
+    <td class="{{ _cell }}" data-label="{{ 'routes_table.route_name'|trans }}" data-required="1">
+        <code class="{{ nowo_ui_class('code', _b) }}">{{ row.name ?? _dash }}</code>
+        {%- if row.httpMethod %} <span class="{{ nowo_ui_class(row.httpMethod == 'DELETE' ? 'badge_danger' : (row.httpMethod in ['POST', 'PUT', 'PATCH'] ? 'badge_warning' : 'badge_neutral'), _b) }}" title="{{ 'routes_table.http_method'|trans }}">{{ row.httpMethod }}</span>{% endif -%}
+    </td>
+    {% if page.columns|filter(c => c.key == 'statusCodes') is not empty %}
+        <td class="{{ _cell }}" data-label="{{ 'routes_table.status_codes'|trans }}" data-nowo-ui-priority="3">
+            {%- set _total = row.totalResponses -%}
+            {%- if row.statusCodes is not empty and _total > 0 -%}
+                {%- for _code, _count in row.statusCodes|sort((a, b) => b <=> a) -%}
+                    {%- set _variant = _code >= 500 ? 'badge_danger' : (_code >= 400 ? 'badge_warning' : (_code >= 300 ? 'badge_info' : 'badge_success')) -%}
+                    <span class="{{ nowo_ui_class(_variant, _b) }}" title="{{ _count }} / {{ _total }}">{{ _code }} · {{ (_count / _total * 100)|number_format(1) }}%</span>{{ ' ' }}
+                {%- endfor -%}
+            {%- else -%}<span class="{{ _muted }}">{{ _dash }}</span>{%- endif -%}
+        </td>
+    {% endif %}
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'routes_table.access_count'|trans }}">{{ row.accessCount|number_format }}</td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'routes_table.request_time'|trans }}">
+        {%- if row.requestTime is not null -%}
+            {%- set _rt = row.requestTime -%}
+            <span class="{{ nowo_ui_class(_rt > (_t.request_time.critical ?? 1.0) ? 'badge_danger' : (_rt > (_t.request_time.warning ?? 0.5) ? 'badge_warning' : 'badge_success'), _b) }}">{{ (_rt * 1000)|number_format(2) }} ms</span>
+        {%- else -%}<span class="{{ _muted }}">{{ _dash }}</span>{%- endif -%}
+    </td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'routes_table.query_time'|trans }}" data-nowo-ui-priority="2">
+        {%- if row.queryTime is not null %}<span class="{{ nowo_ui_class('badge_neutral', _b) }}">{{ (row.queryTime * 1000)|number_format(2) }} ms</span>{% else %}<span class="{{ _muted }}">{{ _dash }}</span>{% endif -%}
+    </td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'routes_table.total_queries'|trans }}">
+        {%- if row.totalQueries is not null -%}
+            {%- set _q = row.totalQueries -%}
+            <span class="{{ nowo_ui_class(_q > (_t.query_count.critical ?? 50) ? 'badge_danger' : (_q > (_t.query_count.warning ?? 20) ? 'badge_warning' : 'badge_success'), _b) }}">{{ _q }}</span>
+        {%- else -%}<span class="{{ _muted }}">{{ _dash }}</span>{%- endif -%}
+    </td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'routes_table.memory_usage'|trans }}" data-nowo-ui-priority="2">
+        {%- if row.memoryUsage is not null -%}
+            {%- set _mb = row.memoryUsage / 1048576 -%}
+            <span class="{{ nowo_ui_class(_mb > (_t.memory_usage.critical ?? 50.0) ? 'badge_danger' : (_mb > (_t.memory_usage.warning ?? 20.0) ? 'badge_warning' : 'badge_neutral'), _b) }}">{{ _mb|number_format(2) }} MB</span>
+        {%- else -%}<span class="{{ _muted }}">{{ _dash }}</span>{%- endif -%}
+    </td>
+    <td class="{{ _cell }}{{ row.lastAccessedAt ? '' : ' ' ~ _muted }}" data-label="{{ 'routes_table.last_accessed_at'|trans }}" data-nowo-ui-priority="3">
+        {%- if row.lastAccessedAt %}<time datetime="{{ row.lastAccessedAt|date('c') }}">{{ row.lastAccessedAt|date(dateFormat|default('Y-m-d H:i')) }}</time>{% else %}{{ _dash }}{% endif -%}
+    </td>
+    {% if page.columns|filter(c => c.key == 'review') is not empty %}
+        <td class="{{ _cell }}" data-label="{{ 'routes_table.review_status'|trans }}" data-nowo-ui-priority="2">
+            {%- if row.reviewed -%}
+                <span class="{{ nowo_ui_class('badge_success', _b) }}">{{ 'routes_table.reviewed'|trans }}</span>
+                {%- if row.reviewedAt %} <time class="{{ nowo_ui_class('muted', _b) }}" datetime="{{ row.reviewedAt|date('c') }}">{{ row.reviewedAt|date(dateFormat|default('Y-m-d H:i')) }}</time>{% endif -%}
+                {%- if row.queriesImproved is not null %} <span class="{{ nowo_ui_class(row.queriesImproved ? 'badge_success' : 'badge_danger', _b) }}">{{ (row.queriesImproved ? 'routes_table.queries_improved' : 'routes_table.queries_not_improved')|trans }}</span>{% endif -%}
+                {%- if row.timeImproved is not null %} <span class="{{ nowo_ui_class(row.timeImproved ? 'badge_success' : 'badge_danger', _b) }}">{{ (row.timeImproved ? 'routes_table.time_improved' : 'routes_table.time_not_improved')|trans }}</span>{% endif -%}
+            {%- else -%}
+                <span class="{{ nowo_ui_class('badge_neutral', _b) }}">{{ 'routes_table.not_reviewed'|trans }}</span>
+            {%- endif -%}
+        </td>
+    {% endif %}
+{% endblock %}
+
+{% block nowo_ui_list_after %}
+    {% set _b = page.bundle %}
+    {% set _has_trend = trend is defined and trend.values|default([]) is not empty %}
+    {% set _top_used = top_used_routes|default([]) %}
+    {% set _top_consumed = top_consumed_routes|default([]) %}
+    {% if _has_trend or _top_used is not empty or _top_consumed is not empty %}
+        <div class="{{ nowo_ui_class('cards', _b) }}" data-nowo-ui-region="cards">
+            {% if _has_trend %}
+                {% set _trend_title = 'ui.trend.title'|trans({'%days%': trend.values|length}) %}
+                {% set _body %}
+                        {{ include('@NowoPerformanceBundle/Performance/_bar_chart.html.twig', {labels: trend.labels, values: trend.values, unit: ' ms', title: _trend_title}) }}
+                {% endset %}
+                {{ include('@NowoPerformanceBundle/Performance/_card.html.twig', {title: _trend_title, intro: 'ui.trend.intro'|trans, bundle: _b, testid: 'performance-trend', body: _body}) }}
+            {% endif %}
+            {% if _top_used is not empty %}
+                {% set _body %}
+                        <ol>
+                            {% for _item in _top_used %}
+                                <li><code class="{{ nowo_ui_class('code', _b) }}">{{ _item.name }}</code> <span class="{{ nowo_ui_class('badge_neutral', _b) }}">{{ _item.access_count|number_format }}</span></li>
+                            {% endfor %}
+                        </ol>
+                {% endset %}
+                {{ include('@NowoPerformanceBundle/Performance/_card.html.twig', {title: 'statistics.top_used_routes'|trans, bundle: _b, testid: 'performance-top-used', body: _body}) }}
+            {% endif %}
+            {% if _top_consumed is not empty %}
+                {% set _body %}
+                        <ol>
+                            {% for _item in _top_consumed %}
+                                <li><code class="{{ nowo_ui_class('code', _b) }}">{{ _item.name }}</code> <span class="{{ nowo_ui_class('badge_neutral', _b) }}">{{ (_item.request_time * 1000)|number_format(2) }} ms</span></li>
+                            {% endfor %}
+                        </ol>
+                {% endset %}
+                {{ include('@NowoPerformanceBundle/Performance/_card.html.twig', {title: 'statistics.top_consumed_routes'|trans, bundle: _b, testid: 'performance-top-consumed', body: _body}) }}
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block nowo_ui_modals %}
+    {{ parent() }}
+    {% for _id, _form in reviewForms|default({}) %}
+        {% set _route = page.rows|filter(r => r.id == _id)|first %}
+        {% set _body %}
+            {{ form_start(_form, {action: path('nowo_performance.review', {id: _id}), attr: {'data-testid': 'performance-review-form-' ~ _id}}) }}
+                <p><code class="{{ nowo_ui_class('code', page.bundle) }}">{{ _route ? _route.name : '#' ~ _id }}</code></p>
+                {# REQ-TWIG-003: child loop (fields, CSRF token, submit) #}
+                {% for _child in _form %}{% if not _child.rendered %}{{ form_row(_child, 'submit' in _child.vars.block_prefixes ? {attr: _child.vars.attr|merge({class: nowo_ui_class('btn_primary', page.bundle)})} : {}) }}{% endif %}{% endfor %}
+            {{ form_end(_form) }}
+        {% endset %}
+        {{ include(nowo_ui_partial('dialog', page.bundle), {
+            id: constant('Nowo\\PerformanceBundle\\Ui\\PerformancePageFactory::REVIEW_DIALOG_PREFIX') ~ _id,
+            title: ((_route and _route.reviewed) ? 'review.modal_title_edit' : 'review.modal_title')|trans,
+            body: _body,
+            bundle: page.bundle,
+        }) }}
+    {% endfor %}
 {% endblock %}

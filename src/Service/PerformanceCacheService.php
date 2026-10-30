@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Service;
 
+use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
 
 /**
@@ -241,11 +242,9 @@ class PerformanceCacheService
      */
     private function getStatisticsGeneration(string $env): int
     {
-        if (!$this->cachePool instanceof CacheItemPoolInterface) {
-            return 0; // @codeCoverageIgnore – only reachable if getStatisticsKey() were called without a prior pool-null guard; defensive dead code
-        }
-
-        $item = $this->cachePool->getItem($this->getStatisticsGenerationKey($env));
+        // Callers return early without a pool; the throw documents the invariant (no unreachable `return 0` branch).
+        $pool = $this->cachePool ?? throw new LogicException('The statistics cache generation needs a cache pool.');
+        $item = $pool->getItem($this->getStatisticsGenerationKey($env));
         if ($item->isHit()) {
             return (int) $item->get();
         }

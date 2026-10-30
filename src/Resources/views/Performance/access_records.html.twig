@@ -1,419 +1,55 @@
-{% extends '@NowoPerformanceBundle/Performance/base.html.twig' %}
-{% import '@NowoUiKitBundle/macros/ui.html.twig' as ui %}
+{#
+  Access records (REQ-UI-003): UiKit list scaffold. Variable: page (View\ListPage from
+  PerformancePageFactory::accessRecords(): header access_statistics.records with the area tabs and the actions Export
+  records CSV / JSON, Delete records matching the filter (POST + CSRF FormView behind a Confirm) and Purge records
+  (opens the purge dialog) with record management; filters = RecordFiltersType; sortable columns accessed at, route,
+  path, status, response time, queries, query time, memory, plus referer and user; rows = list<RouteDataRecord>;
+  Pagination; EmptyState access_statistics.no_records).
+  Extra variables: purgeForm (PurgeAccessRecordsType, rendered in the purge dialog when record management is on),
+  dateTimeFormat, environment; 3.14 variables kept for web_ui.templates overrides: paginated_data, environments,
+  available_routes, selected_route, selected_status_code, start_date, end_date, sort_by, order, filterForm,
+  deleteByFilterForm (the same FormViews back the page: render each once).
+  Data blocks filled: nowo_ui_list_row (cells), nowo_ui_modals (purge dialog).
+#}
+{% extends '@NowoUiKit/page/list.html.twig' %}
+{% trans_default_domain 'NowoPerformanceBundle' %}
 
-{# REQ-UI-001: accept css_framework / ui_template / template; bootstrap5 ≡ bootstrap markup #}
-{% set _perf_css = nowo_performance_css_framework|default(css_framework|default(ui_template|default(template|default('bootstrap5')))) %}
-{% set _is_bootstrap = _perf_css != 'tailwind' and (ui_template|default(_perf_css)) != 'tailwind' %}
-{% set _ui = _is_bootstrap ? 'bootstrap' : 'tailwind' %}
-{% block title %}{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}{% endblock %}
+{% block nowo_ui_list_row %}
+    {% set _b = page.bundle %}
+    {% set _cell = nowo_ui_class('table_cell', _b) %}
+    {% set _muted = nowo_ui_class('table_cell_muted', _b) %}
+    {% set _dash = '—' %}
+    <td class="{{ _cell }}" data-label="{{ 'access_statistics.timestamp'|trans }}" data-required="1"><time datetime="{{ row.accessedAt|date('c') }}">{{ row.accessedAt|date(dateTimeFormat|default('Y-m-d H:i:s')) }}</time></td>
+    <td class="{{ _cell }}" data-label="{{ 'access_statistics.route'|trans }}"><code class="{{ nowo_ui_class('code', _b) }}">{{ row.routeData ? row.routeData.name : _dash }}</code></td>
+    <td class="{{ _cell }}{{ row.routePath ? '' : ' ' ~ _muted }}" data-label="{{ 'access_statistics.path'|trans }}" data-nowo-ui-priority="2">{{ row.routePath ?? _dash }}</td>
+    <td class="{{ _cell }}" data-label="{{ 'access_statistics.status_code'|trans }}">
+        {%- set _code = row.statusCode -%}
+        {%- if _code %}<span class="{{ nowo_ui_class(_code >= 500 ? 'badge_danger' : (_code >= 400 ? 'badge_warning' : (_code >= 300 ? 'badge_info' : 'badge_success')), _b) }}">{{ _code }}</span>{% else %}<span class="{{ _muted }}">{{ _dash }}</span>{% endif -%}
+    </td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'access_statistics.response_time'|trans }}">{{ row.responseTime is not null ? (row.responseTime * 1000)|number_format(2) ~ ' ms' : _dash }}</td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'access_statistics.total_queries'|trans }}" data-nowo-ui-priority="2">{{ row.totalQueries ?? _dash }}</td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'access_statistics.query_time'|trans }}" data-nowo-ui-priority="3">{{ row.queryTime is not null ? (row.queryTime * 1000)|number_format(2) ~ ' ms' : _dash }}</td>
+    <td class="{{ _cell }} nowo-ui-cell--end" data-label="{{ 'access_statistics.memory_usage'|trans }}" data-nowo-ui-priority="3">{{ row.memoryUsage is not null ? (row.memoryUsage / 1048576)|number_format(2) ~ ' MB' : _dash }}</td>
+    <td class="{{ _cell }}{{ row.referer ? '' : ' ' ~ _muted }}" data-label="{{ 'access_statistics.referer'|trans }}" data-nowo-ui-priority="3">{{ row.referer ?? _dash }}</td>
+    <td class="{{ _cell }}{{ row.userIdentifier or row.userId ? '' : ' ' ~ _muted }}" data-label="{{ 'access_statistics.user'|trans }}" data-nowo-ui-priority="3">{{ row.userIdentifier ?? row.userId ?? _dash }}</td>
+{% endblock %}
 
-{% block content %}
-{% set export_params = {
-    env: environment,
-    start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '',
-    end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '',
-    route: selected_route ?? '',
-    status_code: selected_status_code ?? '',
-    min_query_time: filterForm.min_query_time.vars.value ?? '',
-    max_query_time: filterForm.max_query_time.vars.value ?? '',
-    min_memory_mb: filterForm.min_memory_mb.vars.value ?? '',
-    max_memory_mb: filterForm.max_memory_mb.vars.value ?? '',
-    referer: filterForm.referer.vars.value ?? '',
-    user: filterForm.user.vars.value ?? '',
-    sort_by: sort_by|default('accessed_at'),
-    order: order|default('DESC')
-} %}
-{% set _base_params = export_params|merge({per_page: paginated_data.per_page|default(50)}) %}
-{% if _is_bootstrap %}
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}</h1>
-            <div class="{{ ui.row_actions(_perf_css) }}">
-                <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                    {{ 'access_statistics.export_records_csv'|trans({}, 'NowoPerformanceBundle') }}
-                </a>
-                <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                    {{ 'access_statistics.export_records_json'|trans({}, 'NowoPerformanceBundle') }}
-                </a>
-                <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                    {{ 'access_statistics.back_to_statistics'|trans({}, 'NowoPerformanceBundle') }}
-                </a>
-                <a href="{{ path('nowo_performance.index') }}" class="{{ ui.btn('secondary', null, _perf_css) }}">
-                    {{ 'dashboard.back_to_dashboard'|trans({}, 'NowoPerformanceBundle') }}
-                </a>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h5>
-            </div>
-            <div class="card-body">
-                {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'row g-3'}}) }}
-                    {# REQ-TWIG-003: child loop; the submit is captured first so it stays in the actions row #}
-                    {% set _filter_cols = {start_date: 'col-md-3', end_date: 'col-md-3', referer: 'col-md-3', user: 'col-md-3'} %}
-                    {% set _filter_submit %}{{ form_widget(filterForm.filter) }}{% endset %}
-                    {% for child in filterForm %}
-                        {% if not child.rendered %}
-                            <div class="{{ _filter_cols[child.vars.name]|default('col-md-2') }}">{{ form_row(child) }}</div>
-                        {% endif %}
-                    {% endfor %}
-                    <div class="col-md-12">
-                        {{ _filter_submit }}
-                        <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="{{ ui.btn('secondary', null, _perf_css) }}">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
-                    </div>
-                {{ form_end(filterForm, {'render_rest': false}) }}
-                {% if enable_record_management|default(false) %}
-                    {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'd-inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
-                        {{ form_widget(deleteByFilterForm) }}
-                    {{ form_end(deleteByFilterForm) }}
-                {% endif %}
-            </div>
-        </div>
-
-        {% if enable_record_management|default(false) and purgeForm is defined %}
-        <div class="card mb-4 border-warning">
-            <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0">{{ 'access_statistics.purge_records_title'|trans({}, 'NowoPerformanceBundle') }}</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
-                {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'row g-3', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
-                    {{ form_widget(purgeForm._token) }}
-                    {# REQ-TWIG-003: child loop (the CSRF token is rendered above, outside the column grid) #}
-                    {% for child in purgeForm %}
-                        {% if not child.rendered %}
-                            <div class="col-md-2{{ child.vars.name == 'days' ? ' purge-days-field' : '' }}">{{ form_row(child) }}</div>
-                        {% endif %}
-                    {% endfor %}
-                {{ form_end(purgeForm, {'render_rest': false}) }}
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">{{ 'access_statistics.records'|trans({}, 'NowoPerformanceBundle') }}</h5>
-                <span class="badge bg-primary">
-                    {{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}
-                </span>
-            </div>
-            <div class="card-body">
-                {% if paginated_data.records|length > 0 %}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'accessed_at', order: (sort_by|default('accessed_at') == 'accessed_at' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.timestamp'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('accessed_at') == 'accessed_at' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'route', order: (sort_by|default('') == 'route' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.route'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'route' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'path', order: (sort_by|default('') == 'path' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.path'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'path' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'status_code', order: (sort_by|default('') == 'status_code' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.status_code'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'status_code' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'response_time', order: (sort_by|default('') == 'response_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.response_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'response_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'total_queries', order: (sort_by|default('') == 'total_queries' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.total_queries'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'total_queries' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'query_time', order: (sort_by|default('') == 'query_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.query_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'query_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'memory_usage', order: (sort_by|default('') == 'memory_usage' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-decoration-none text-dark">{{ 'access_statistics.memory_usage'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'memory_usage' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                                    <th>{{ 'access_statistics.referer'|trans({}, 'NowoPerformanceBundle') }}</th>
-                                    <th>{{ 'access_statistics.user'|trans({}, 'NowoPerformanceBundle') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for record in paginated_data.records %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ record.accessedAt|date(dateTimeFormat) }}</strong>
-                                        </td>
-                                        <td>
-                                            <code>{{ record.routeData.name ?? 'N/A' }}</code>
-                                        </td>
-                                        <td>
-                                            {% if record.routePath %}
-                                                <a href="{{ record.routePath }}" title="{{ record.routePath }}">{{ record.routePath }}</a>
-                                            {% elseif record.routeParams is not empty %}
-                                                <code>{{ record.routeParams|json_encode }}</code>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if record.statusCode %}
-                                                {% set badgeClass = 'bg-secondary' %}
-                                                {% if record.statusCode >= 200 and record.statusCode < 300 %}{% set badgeClass = 'bg-success' %}
-                                                {% elseif record.statusCode >= 400 and record.statusCode < 500 %}{% set badgeClass = 'bg-warning text-dark' %}
-                                                {% elseif record.statusCode >= 500 %}{% set badgeClass = 'bg-danger' %}
-                                                {% endif %}
-                                                <span class="badge {{ badgeClass }}">{{ record.statusCode }}</span>
-                                            {% else %}
-                                                <span class="text-muted">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if record.responseTime is not null %}
-                                                <span class="badge {{ record.responseTime > 1.0 ? 'bg-danger' : (record.responseTime > 0.5 ? 'bg-warning' : 'bg-success') }}">
-                                                    {{ (record.responseTime * 1000)|number_format(0) }}ms
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if record.totalQueries is not null %}
-                                                <span class="badge bg-secondary">{{ record.totalQueries }}</span>
-                                            {% else %}
-                                                <span class="text-muted">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if record.queryTime is not null %}
-                                                <span class="badge {{ record.queryTime > 1.0 ? 'bg-danger' : (record.queryTime > 0.5 ? 'bg-warning' : 'bg-success') }}">
-                                                    {{ (record.queryTime * 1000)|number_format(0) }}ms
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if record.memoryUsage is not null %}
-                                                {% set mem_mb = record.memoryUsage / 1024 / 1024 %}
-                                                <span class="badge {{ mem_mb > 50 ? 'bg-danger' : (mem_mb > 20 ? 'bg-warning' : 'bg-info') }}">
-                                                    {% if mem_mb >= 1 %}{{ mem_mb|number_format(2) }} MB
-                                                    {% else %}{{ (record.memoryUsage / 1024)|number_format(0) }} KB
-                                                    {% endif %}
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if record.referer %}
-                                                {% if record.referer starts with 'http://' or record.referer starts with 'https://' %}
-                                                <a href="{{ record.referer }}" target="_blank" rel="noopener noreferrer" class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record.referer }}">{{ record.referer }}</a>
-                                                {% else %}
-                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record.referer }}">{{ record.referer }}</span>
-                                                {% endif %}
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if record.userIdentifier or record.userId %}
-                                                <span class="text-truncate d-inline-block" style="max-width: 180px;" title="{{ record.userIdentifier ?? record.userId }}">{{ record.userIdentifier ?? record.userId }}</span>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {# Pagination #}
-                    {% if paginated_data.total_pages > 1 %}
-                        {% set pagination_params = _base_params %}
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center">
-                                {% if paginated_data.page > 1 %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page - 1})) }}">
-                                            {{ 'access_statistics.previous'|trans({}, 'NowoPerformanceBundle') }}
-                                        </a>
-                                    </li>
-                                {% endif %}
-
-                                {% for pageNum in 1..paginated_data.total_pages %}
-                                    {% if pageNum == 1 or pageNum == paginated_data.total_pages or (pageNum >= paginated_data.page - 2 and pageNum <= paginated_data.page + 2) %}
-                                        <li class="page-item {{ pageNum == paginated_data.page ? 'active' : '' }}">
-                                            <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: pageNum})) }}">
-                                                {{ pageNum }}
-                                            </a>
-                                        </li>
-                                    {% elseif pageNum == paginated_data.page - 3 or pageNum == paginated_data.page + 3 %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">...</span>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-
-                                {% if paginated_data.page < paginated_data.total_pages %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page + 1})) }}">
-                                            {{ 'access_statistics.next'|trans({}, 'NowoPerformanceBundle') }}
-                                        </a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                        <div class="text-center mt-3">
-                            <small class="text-muted">
-                                {{ 'access_statistics.showing'|trans({}, 'NowoPerformanceBundle') }} 
-                                {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - 
-                                {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }}
-                                {{ 'access_statistics.of'|trans({}, 'NowoPerformanceBundle') }} 
-                                {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}
-                            </small>
-                        </div>
-                    {% endif %}
-                {% else %}
-                    <div class="alert alert-info">
-                        {{ 'access_statistics.no_records'|trans({}, 'NowoPerformanceBundle') }}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-{% else %}
-    {# Tailwind #}
-    <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
-        <h1 class="text-3xl font-bold text-gray-900">{{ 'access_statistics.view_records'|trans({}, 'NowoPerformanceBundle') }}</h1>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ path('nowo_performance.export_records_csv', export_params) }}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">{{ 'access_statistics.export_records_csv'|trans({}, 'NowoPerformanceBundle') }}</a>
-            <a href="{{ path('nowo_performance.export_records_json', export_params) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.export_records_json'|trans({}, 'NowoPerformanceBundle') }}</a>
-            <a href="{{ path('nowo_performance.access_statistics', {env: environment, start_date: start_date ? start_date|date('Y-m-d\\TH:i') : '', end_date: end_date ? end_date|date('Y-m-d\\TH:i') : '', route: selected_route, status_code: selected_status_code}) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ 'access_statistics.back_to_statistics'|trans({}, 'NowoPerformanceBundle') }}</a>
-            <a href="{{ path('nowo_performance.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">{{ 'dashboard.back_to_dashboard'|trans({}, 'NowoPerformanceBundle') }}</a>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ 'access_statistics.filters'|trans({}, 'NowoPerformanceBundle') }}</h2>
-        {{ form_start(filterForm, {'action': path('nowo_performance.access_records'), 'attr': {'class': 'space-y-4'}}) }}
-            {# REQ-TWIG-003: child loop; the submit is captured first so it stays in the actions row #}
-            {% set _filter_submit %}{{ form_widget(filterForm.filter, {attr: {class: 'inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}}) }}{% endset %}
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {% for child in filterForm %}
-                    {% if not child.rendered %}
-                        <div>
-                            {{ form_label(child, null, {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-                            {{ form_widget(child, {attr: child.vars.attr|merge({class: 'block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'})}) }}
-                            {{ form_errors(child) }}
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            <div class="flex flex-wrap items-center gap-2 pt-2">
-                {{ _filter_submit }}
-                <a href="{{ path('nowo_performance.access_records', {env: environment}) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ 'access_statistics.reset'|trans({}, 'NowoPerformanceBundle') }}</a>
-            </div>
-        {{ form_end(filterForm, {'render_rest': false}) }}
-        {% if enable_record_management|default(false) %}
-            {{ form_start(deleteByFilterForm, {'action': path('nowo_performance.delete_records_by_filter'), 'attr': {'class': 'inline mt-2', 'onsubmit': "return confirm('" ~ 'access_statistics.delete_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
-                {{ form_widget(deleteByFilterForm, {'attr': {'class': 'inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700'}}) }}
-            {{ form_end(deleteByFilterForm) }}
-        {% endif %}
-    </div>
-
-    {% if enable_record_management|default(false) and purgeForm is defined %}
-    <div class="mt-4 rounded-lg border-2 border-amber-200 bg-amber-50 p-4">
-        <h3 class="text-lg font-medium text-amber-900 mb-2">{{ 'access_statistics.purge_records_title'|trans({}, 'NowoPerformanceBundle') }}</h3>
-        <p class="text-sm text-amber-800 mb-3">{{ 'access_statistics.purge_records_help'|trans({}, 'NowoPerformanceBundle') }}</p>
-        {{ form_start(purgeForm, {'action': path('nowo_performance.purge_records'), 'attr': {'class': 'flex flex-wrap items-end gap-4', 'onsubmit': "return confirm('" ~ 'access_statistics.purge_records_confirm'|trans({}, 'NowoPerformanceBundle')|e('js') ~ "');"}}) }}
-            {{ form_widget(purgeForm._token) }}
-            {# REQ-TWIG-003: child loop (the CSRF token is rendered above); wrapper classes and attr overrides by child name #}
-            {% set _purge_wrap = {purgeType: 'flex-1 min-w-[140px]', days: 'flex-1 min-w-[100px] purge-days-field', env: 'flex-1 min-w-[120px]'} %}
-            {% set _purge_attr = {purgeType: {class: 'form-select'}, submit: {class: 'px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700'}} %}
-            {% for child in purgeForm %}
-                {% if not child.rendered %}
-                    <div{% if _purge_wrap[child.vars.name] is defined %} class="{{ _purge_wrap[child.vars.name] }}"{% endif %}>{{ _purge_attr[child.vars.name] is defined ? form_row(child, {attr: _purge_attr[child.vars.name]}) : form_row(child) }}</div>
-                {% endif %}
-            {% endfor %}
-        {{ form_end(purgeForm, {'render_rest': false}) }}
-    </div>
+{% block nowo_ui_modals %}
+    {{ parent() }}
+    {% if purgeForm is defined and purgeForm is not null and page.header.actions|filter(a => a.dialogId == constant('Nowo\\PerformanceBundle\\Ui\\PerformancePageFactory::PURGE_DIALOG_ID')) is not empty %}
+        {% set _body %}
+            <p>{{ 'access_statistics.purge_records_help'|trans }}</p>
+            <p><strong>{{ 'access_statistics.purge_records_confirm'|trans }}</strong></p>
+            {{ form_start(purgeForm, {action: path('nowo_performance.purge_records'), attr: {'data-testid': 'performance-purge-form'}}) }}
+                {# REQ-TWIG-003: child loop (type, days, environment, CSRF token, Purge) #}
+                {% for _child in purgeForm %}{% if not _child.rendered %}{{ form_row(_child, 'submit' in _child.vars.block_prefixes ? {attr: _child.vars.attr|merge({class: nowo_ui_class('btn_danger', page.bundle)})} : {}) }}{% endif %}{% endfor %}
+            {{ form_end(purgeForm) }}
+        {% endset %}
+        {{ include(nowo_ui_partial('dialog', page.bundle), {
+            id: constant('Nowo\\PerformanceBundle\\Ui\\PerformancePageFactory::PURGE_DIALOG_ID'),
+            title: 'access_statistics.purge_records_title'|trans,
+            body: _body,
+            bundle: page.bundle,
+        }) }}
     {% endif %}
-
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-gray-900">{{ 'access_statistics.records'|trans({}, 'NowoPerformanceBundle') }}</h2>
-            <span class="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">{{ 'access_statistics.total_records'|trans({}, 'NowoPerformanceBundle') }}: {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}</span>
-        </div>
-        <div class="overflow-x-auto">
-            {% if paginated_data.records|length > 0 %}
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'accessed_at', order: (sort_by|default('accessed_at') == 'accessed_at' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.timestamp'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('accessed_at') == 'accessed_at' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'route', order: (sort_by|default('') == 'route' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.route'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'route' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'path', order: (sort_by|default('') == 'path' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.path'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'path' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'status_code', order: (sort_by|default('') == 'status_code' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.status_code'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'status_code' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'response_time', order: (sort_by|default('') == 'response_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.response_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'response_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'total_queries', order: (sort_by|default('') == 'total_queries' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.total_queries'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'total_queries' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'query_time', order: (sort_by|default('') == 'query_time' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.query_time'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'query_time' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><a href="{{ path('nowo_performance.access_records', _base_params|merge({sort_by: 'memory_usage', order: (sort_by|default('') == 'memory_usage' and (order|default('DESC')) == 'DESC') ? 'ASC' : 'DESC', page: 1})) }}" class="text-gray-700 hover:text-gray-900">{{ 'access_statistics.memory_usage'|trans({}, 'NowoPerformanceBundle') }}{% if sort_by|default('') == 'memory_usage' %} {% if order|default('DESC') == 'DESC' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.referer'|trans({}, 'NowoPerformanceBundle') }}</th>
-                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'access_statistics.user'|trans({}, 'NowoPerformanceBundle') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for record in paginated_data.records %}
-                    <tr>
-                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ record.accessedAt|date(dateTimeFormat) }}</td>
-                        <td class="px-4 py-3 text-sm"><code class="bg-gray-100 px-1 rounded">{{ record.routeData.name ?? 'N/A' }}</code></td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if record.routePath %}
-                                <a href="{{ record.routePath }}" class="text-blue-600 hover:text-blue-800" title="{{ record.routePath }}">{{ record.routePath }}</a>
-                            {% elseif record.routeParams is not empty %}
-                                <code class="bg-gray-100 px-1 rounded">{{ record.routeParams|json_encode }}</code>
-                            {% else %}<span class="text-gray-400">—</span>{% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if record.statusCode %}
-                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ record.statusCode >= 200 and record.statusCode < 300 ? 'bg-green-100 text-green-800' : (record.statusCode >= 400 and record.statusCode < 500 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800') }}">{{ record.statusCode }}</span>
-                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if record.responseTime is not null %}
-                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ record.responseTime > 1.0 ? 'bg-red-100 text-red-800' : (record.responseTime > 0.5 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800') }}">{{ (record.responseTime * 1000)|number_format(0) }}ms</span>
-                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm">{% if record.totalQueries is not null %}<span class="inline-flex px-2 py-0.5 rounded bg-gray-100 text-gray-800">{{ record.totalQueries }}</span>{% else %}<span class="text-gray-400">N/A</span>{% endif %}</td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if record.queryTime is not null %}
-                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ record.queryTime > 1.0 ? 'bg-red-100 text-red-800' : (record.queryTime > 0.5 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800') }}">{{ (record.queryTime * 1000)|number_format(0) }}ms</span>
-                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if record.memoryUsage is not null %}
-                                {% set mem_mb = record.memoryUsage / 1024 / 1024 %}
-                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ mem_mb > 50 ? 'bg-red-100 text-red-800' : (mem_mb > 20 ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800') }}">{% if mem_mb >= 1 %}{{ mem_mb|number_format(2) }} MB{% else %}{{ (record.memoryUsage / 1024)|number_format(0) }} KB{% endif %}</span>
-                            {% else %}<span class="text-gray-400">N/A</span>{% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if record.referer %}
-                                {% if record.referer starts with 'http://' or record.referer starts with 'https://' %}
-                                <a href="{{ record.referer }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 truncate max-w-xs inline-block" title="{{ record.referer }}">{{ record.referer }}</a>
-                                {% else %}
-                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record.referer }}">{{ record.referer }}</span>
-                                {% endif %}
-                            {% else %}<span class="text-gray-400">—</span>{% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if record.userIdentifier or record.userId %}
-                                <span class="truncate max-w-xs inline-block" title="{{ record.userIdentifier ?? record.userId }}">{{ record.userIdentifier ?? record.userId }}</span>
-                            {% else %}<span class="text-gray-400">—</span>{% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            {% if paginated_data.total_pages > 1 %}
-                {% set pagination_params = _base_params %}
-                <nav class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-                    <p class="text-sm text-gray-600">
-                        {{ 'access_statistics.showing'|trans({}, 'NowoPerformanceBundle') }} {{ ((paginated_data.page - 1) * paginated_data.per_page + 1)|number_format }} - {{ (paginated_data.page * paginated_data.per_page > paginated_data.total ? paginated_data.total : paginated_data.page * paginated_data.per_page)|number_format }} {{ 'access_statistics.of'|trans({}, 'NowoPerformanceBundle') }} {{ paginated_data.total|number_format }}{{ paginated_data.total_capped|default(false) ? "+" }}
-                    </p>
-                    <div class="flex gap-2">
-                        {% if paginated_data.page > 1 %}
-                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page - 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.previous'|trans({}, 'NowoPerformanceBundle') }}</a>
-                        {% endif %}
-                        {% if paginated_data.page < paginated_data.total_pages %}
-                            <a href="{{ path('nowo_performance.access_records', pagination_params|merge({page: paginated_data.page + 1})) }}" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">{{ 'access_statistics.next'|trans({}, 'NowoPerformanceBundle') }}</a>
-                        {% endif %}
-                    </div>
-                </nav>
-            {% endif %}
-            {% else %}
-            <div class="px-4 py-12 text-center text-gray-500">{{ 'access_statistics.no_records'|trans({}, 'NowoPerformanceBundle') }}</div>
-            {% endif %}
-        </div>
-    </div>
-{% endif %}
 {% endblock %}

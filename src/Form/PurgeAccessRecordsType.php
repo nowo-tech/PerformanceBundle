@@ -47,27 +47,24 @@ class PurgeAccessRecordsType extends AbstractType
                 'access_statistics.purge_older_than' => PurgeAccessRecordsRequest::PURGE_OLDER_THAN,
             ],
             'choice_translation_domain' => 'NowoPerformanceBundle',
-            'attr'                      => ['class' => 'form-select purge-type-select'],
         ]);
         $this->addInteger($builder, 'days', [
             'label'              => 'access_statistics.older_than_days',
             'translation_domain' => 'NowoPerformanceBundle',
             'required'           => false,
             'data'               => $options['default_days'] ?? 30,
-            'attr'               => ['class' => 'form-control', 'min' => 1, 'placeholder' => '30'],
+            'attr'               => ['min' => 1],
         ]);
         $this->addChoice($builder, 'env', [
             'label'                     => 'access_statistics.environment',
             'translation_domain'        => 'NowoPerformanceBundle',
             'choices'                   => $choicesEnv,
-            'choice_translation_domain' => 'NowoPerformanceBundle',
+            'choice_translation_domain' => false,
             'required'                  => false,
-            'attr'                      => ['class' => 'form-select'],
         ]);
         $this->addWithDefaults($builder, 'submit', SubmitType::class, [
             'label'              => 'access_statistics.purge_records',
             'translation_domain' => 'NowoPerformanceBundle',
-            'attr'               => ['class' => 'btn btn-warning'],
         ]);
     }
 

@@ -52,11 +52,13 @@ class DeleteRecordsByFilterType extends AbstractType
         $this->addWithDefaults($builder, 'max_memory_usage', HiddenType::class, ['property_path' => 'maxMemoryUsage']);
         $this->addWithDefaults($builder, 'referer', HiddenType::class, []);
         $this->addWithDefaults($builder, 'user', HiddenType::class, []);
-        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
-            'label'              => 'access_statistics.delete_records_matching_filter',
-            'translation_domain' => 'NowoPerformanceBundle',
-            'attr'               => ['class' => 'btn btn-danger'],
-        ]);
+        // with_submit false: the page (UiKit list filters / Action form) renders its own button (REQ-UI-003)
+        if ($options['with_submit'] ?? true) {
+            $this->addWithDefaults($builder, 'submit', SubmitType::class, [
+                'label'              => 'access_statistics.delete_records_matching_filter',
+                'translation_domain' => 'NowoPerformanceBundle',
+            ]);
+        }
     }
 
     /**
@@ -67,6 +69,7 @@ class DeleteRecordsByFilterType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
+            'with_submit'     => true,
             'data_class'      => DeleteRecordsByFilterRequest::class,
             'method'          => 'POST',
             'csrf_protection' => true,
@@ -74,6 +77,7 @@ class DeleteRecordsByFilterType extends AbstractType
             'csrf_token_id'   => 'delete_records_by_filter',
             'from_value'      => 'access_records',
         ]);
+        $resolver->setAllowedTypes('with_submit', 'bool');
     }
 
     /**

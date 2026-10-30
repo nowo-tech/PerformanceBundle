@@ -13,6 +13,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Tests\Support\PageFixtures;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -117,6 +118,7 @@ final class PerformanceControllerStatisticsTest extends TestCase
                 true,
                 null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -190,6 +192,7 @@ final class PerformanceControllerStatisticsTest extends TestCase
                 true,
                 null,
                 'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'pageFactory'   => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render'])
             ->getMock();
@@ -258,6 +261,7 @@ final class PerformanceControllerStatisticsTest extends TestCase
                 true,
                 true,
                 null,
+                'pageFactory' => PageFixtures::factory(),
             ])
             ->onlyMethods(['createForm', 'getParameter', 'render', 'isGranted'])
             ->getMock();

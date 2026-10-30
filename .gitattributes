@@ -1,0 +1,30 @@
+# Keep the distributed package (Packagist dist / GitHub zipball) to the bundle runtime: src/, docs (text), README,
+# LICENSE, composer.json and the Flex recipe. Development, demo and CI files stay in the repository only (SEC-004 BP I4).
+* text=auto
+
+/demo export-ignore
+/tests export-ignore
+/specs export-ignore
+/.specify export-ignore
+/.cursor export-ignore
+/.cursorignore export-ignore
+/.scripts export-ignore
+/scripts export-ignore
+/.githooks export-ignore
+/.github export-ignore
+/docs/images export-ignore
+/.coderabbit.yaml export-ignore
+/.dockerignore export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/.scrutinizer.yml export-ignore
+/.twig-cs-fixer.php export-ignore
+/Dockerfile export-ignore
+/docker-compose.yml export-ignore
+/Makefile export-ignore
+/igor.json export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist export-ignore
+/rector.php export-ignore
+/composer.lock export-ignore

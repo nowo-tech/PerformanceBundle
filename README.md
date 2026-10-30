@@ -1,6 +1,6 @@
 # Performance Bundle
 
-[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.4%20%7C%208.0%2B-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/PerformanceBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/PerformanceBundle) [![Coverage](https://img.shields.io/badge/Coverage-99.4%25-brightgreen)](#tests-and-coverage)
+[![CI](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/PerformanceBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/performance-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/performance-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/performance-bundle.svg)](https://packagist.org/packages/nowo-tech/performance-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.4%20%7C%208.0%2B-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/PerformanceBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/PerformanceBundle) [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen)](#tests-and-coverage)
 
 > ⭐ **Found this useful?** Give it a star on GitHub! It helps us maintain and improve the project.
 
@@ -63,11 +63,10 @@ Looking for: **route performance**, **performance monitoring**, **query tracking
 - ✅ **Data export** - CSV and JSON export functionality
 - ✅ **Record management** - Delete individual records (optional)
 - ✅ **Review system** - Mark and edit records as reviewed with improvement tracking (optional)
-- ✅ **Bootstrap and Tailwind CSS support** - Choose your preferred CSS framework
+- ✅ **UiKit page contract** (REQ-UI-003) — pages extend the UiKit scaffolds; Bootstrap, Tailwind, Foundation, Tabler or your own theme through `nowo_ui_kit` (no CDN, no inline JavaScript)
 - ✅ Role-based access control for dashboard
 - ✅ WebProfiler integration with ranking information
-- ✅ **Chart.js integration** - Interactive performance charts
-- ✅ **Symfony UX Twig Components** - Optional modern component system
+- ✅ **Server-side charts** — trend, histograms, hourly bars and heatmap as inline SVG (CSP-safe)
 - ✅ **Nowo UiKit + FormKit** — dashboard chrome and admin forms (`nowo-tech/ui-kit-bundle`, `nowo-tech/form-kit-bundle`, `symfony/ux-icons`)
 - ✅ Symfony 7.4 and 8.x compatible
 - ✅ **FrankenPHP** — Compatible with FrankenPHP worker mode (scenario B: no kernel reboot / no `services_resetter`). Production Caddyfile can use worker mode; **dev demos** use `APP_ENV=dev` so the image entrypoint swaps in `Caddyfile.dev` (no worker, comfortable local dev). See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md), [docs/FRANKENPHP-WORKER-AUDIT.md](docs/FRANKENPHP-WORKER-AUDIT.md), and the demo READMEs.
@@ -108,11 +107,10 @@ nowo_performance:
     - '_profiler'
     - 'web_profiler*'
     - '_error'
-    dashboard:
-      enabled: true
-      path: '/performance'
-      template: 'bootstrap' # or 'tailwind'
-      roles: ['ROLE_ADMIN'] # Optional: restrict access
+  web_ui:
+    path_prefix: '/performance'   # layout / CSS stack come from nowo_ui_kit (REQ-UI-003)
+  security:
+    access_roles: ['ROLE_ADMIN']
 ```
 
 2. **Create the database table(s)**:
@@ -164,11 +162,11 @@ nowo_performance:
     - '_profiler'
     - 'web_profiler*'
     - '_error'
-  dashboard:
+  web_ui:
     enabled: true
-    path: '/performance'
-    template: 'bootstrap' # or 'tailwind'
-    roles: [] # empty = unrestricted
+    path_prefix: '/performance'
+  security:
+    access_roles: ['ROLE_ADMIN']   # an empty list denies
 ```
 
 ## Usage
@@ -265,15 +263,15 @@ The main dashboard shows KPIs (total routes, records, average/max queries and re
 
 This view provides statistical analysis to find optimization targets: **Performance Recommendations** (e.g. high average query count, request time outliers), **Correlation Analysis** (request time vs query time, query time vs query count, memory vs request time), **Efficiency Analysis** (query time ratio), **Traffic Distribution** and hot/bad routes, **Routes Needing Attention** (high request time or query count by percentile), and detailed **Request Time**, **Query Time**, **Query Count**, **Memory Usage**, and **Access Count** sections with min/mean/median/max, percentiles, and distribution histograms.
 
-*Access: **Advanced Statistics** button from the main dashboard. Requires enough route data for meaningful stats.*
+*Access: **Statistics** tab of the dashboard. Requires enough route data for meaningful stats.*
 
 ### Access Statistics by Hour
 
-When **temporal access records** are enabled (`enable_access_records: true`), this page shows access patterns over time: filters (date range, environment, route, status code), **Total Accesses** and period, **Statistics by Hour of Day** (line chart: access count and average response time), **Statistics by Day of Week** and **by Month** (bar charts), **Access Heatmap** (day of week vs hour), and a detailed table by hour with access count, average response time, and status code breakdown. You can **Delete records matching filter** from here.
+When **temporal access records** are enabled (`enable_access_records: true`), this page shows access patterns over time: filters (date range, environment, route, status code), **Total Accesses** and period, **Statistics by Hour of Day** (bar chart), **Access Heatmap** (day of week vs hour) and **Statistics by Day of Week** / **by Month** tables with access count, average response time and status code breakdown — all rendered server-side. You can **Delete records matching filter** from here.
 
 ![Access Statistics by Hour](docs/images/demo/dashboard-access-statistics.webp)
 
-*Access: **Access Statistics by Hour** from the main dashboard. Requires `enable_access_records: true` and the `routes_data_records` table (see [Configuration](docs/CONFIGURATION.md#enable_access_records)).*
+*Access: **Access statistics** tab of the dashboard. Requires `enable_access_records: true` and the `routes_data_records` table (see [Configuration](docs/CONFIGURATION.md#enable_access_records)).*
 
 ## Entity structure (v2.x)
 
@@ -336,7 +334,7 @@ Demo (Symfony 8, FrankenPHP): Playwright e2e with `make -C demo/symfony8 test-e2
 ## Tests and coverage
 
 - Tests: PHPUnit (PHP)
-- PHP: **99.4%** lines (`make test-coverage`; 4 orchestration files excluded in `phpunit.xml.dist`; CI fails below 99%)
+- PHP: **100%** statements (`make test-coverage`; no file excluded in `phpunit.xml.dist`; `make test-coverage` and CI fail below 100%)
 - TS/JS: N/A (no TypeScript sources)
 - Python: N/A
 

@@ -26,20 +26,11 @@
         <exclude>
             <directory>demo</directory>
             <directory>tests</directory>
-            <!--
-              Aggregate coverage: these commands are covered by unit tests (Create*CommandTest) and CLI integration,
-              but DBAL/SQL branch volume keeps the global percentage below 90% if they are included in the report.
-            -->
-            <file>src/Command/CreateTableCommand.php</file>
-            <file>src/Command/CreateRecordsTableCommand.php</file>
-            <!-- DBAL registry: integration-tested; branch volume prevents aggregate >=99% (REQ-TEST-003). -->
-            <file>src/DBAL/QueryTrackingMiddlewareRegistry.php</file>
-            <!-- Dashboard HTTP surface covered by tests/Integration/Controller/* and tests/Unit/Controller/*. -->
-            <file>src/Controller/PerformanceController.php</file>
         </exclude>
     </source>
     <php>
         <ini name="error_reporting" value="-1"/>
+        <ini name="memory_limit" value="1G"/>
         <ini name="display_errors" value="1"/>
         <ini name="display_startup_errors" value="1"/>
         <env name="SYMFONY_DEPRECATIONS_HELPER" value="max[direct]=0"/>

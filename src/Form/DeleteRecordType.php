@@ -7,7 +7,6 @@ namespace Nowo\PerformanceBundle\Form;
 use Nowo\FormKitBundle\Attribute\FormKitConfig;
 use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -27,23 +26,18 @@ class DeleteRecordType extends AbstractType
     use FormOptionsTrait;
 
     /**
-     * Builds the form with a single submit button.
+     * Builds a CSRF-only form (no fields).
      *
      * @param FormBuilderInterface<mixed> $builder The form builder
-     * @param array<string, mixed> $options Options (submit_attr_class for button CSS)
+     * @param array<string, mixed> $options Options (submit_attr_class: deprecated, ignored)
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        /*
-        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
-            'label' => 'Delete',
-            'attr' => ['class' => $options['submit_attr_class'] ?? 'btn btn-danger btn-sm'],
-        ]);
-        */
+        // CSRF token only: the page renders the button (UiKit delete Action with a confirm, REQ-UI-003).
     }
 
     /**
-     * Configures options (method POST, CSRF, submit_attr_class).
+     * Configures options (method POST, CSRF, deprecated submit_attr_class).
      *
      * @param OptionsResolver $resolver The options resolver
      */
@@ -54,8 +48,10 @@ class DeleteRecordType extends AbstractType
             'csrf_protection'   => true,
             'csrf_field_name'   => '_token',
             'csrf_token_id'     => 'delete_performance_record',
-            'submit_attr_class' => 'btn btn-danger btn-sm',
+            'submit_attr_class' => null,
         ]);
+        $resolver->setAllowedTypes('submit_attr_class', ['string', 'null']);
+        $resolver->setDeprecated('submit_attr_class', 'nowo-tech/performance-bundle', '3.15.0', 'The option "%name%" is deprecated and ignored: the delete button is a UiKit Action (theme slots).');
         $resolver->setRequired('csrf_token_id');
     }
 

@@ -219,3 +219,108 @@ delete: Supprimer
 delete_records_by_filter: Supprimer les enregistrements par filtre
 diagnose: Diagnostiquer
 index: Tableau de bord
+
+# Dashboard pages (UiKit page contract, REQ-UI-003)
+ui:
+    nav:
+        label: "Sections de performance"
+        dashboard: "Routes"
+        statistics: "Statistiques"
+        access_statistics: "Statistiques d'accès"
+        access_records: "Enregistrements d'accès"
+        diagnose: "Diagnostic"
+    confirm:
+        clear_title: "Supprimer tous les enregistrements de performance de %env% ?"
+        delete_route_title: "Supprimer l'enregistrement de %route% ?"
+    routes:
+        view_records: "Voir les enregistrements d'accès"
+    kpi:
+        max: "max. %value%"
+        environment: "environnement %env%"
+        median_request_time: "Temps de requête médian"
+        p95: "p95 %value%"
+        mean_queries: "Requêtes SQL moyennes par requête"
+        until: "jusqu'au %date%"
+        busiest_hour: "Heure la plus chargée"
+        requests: "%count% requêtes"
+    access_statistics:
+        intro: "Accès par heure, jour de la semaine et mois pour la période et les filtres choisis."
+    access_records:
+        intro: "Toutes les requêtes enregistrées, les plus récentes d'abord. Filtrez, triez et exportez-les."
+    diagnose:
+        title: "Diagnostic"
+        intro: "État de la configuration, de la base de données, des tables et du suivi du bundle."
+        issues: "Problèmes (%count%)"
+        warnings: "Avertissements (%count%)"
+        suggestions: "Suggestions (%count%)"
+        all_good: "Aucun problème : le suivi est configuré et enregistre des données."
+        section:
+            configuration: "Configuration"
+            environment: "Environnement"
+            database_connection: "Connexion à la base de données"
+            table_status: "Tables"
+            data_status: "Données enregistrées"
+            route_tracking: "Suivi des routes"
+            subscriber_status: "Abonné"
+    dependencies:
+        title: "Dépendances optionnelles manquantes."
+        intro: "Certaines fonctions utilisent une solution de repli ; installez ces paquets pour en profiter pleinement :"
+    auto_refresh: "Cette page se recharge toutes les %seconds% secondes."
+    trend:
+        title: "Temps de requête, %days% derniers jours"
+        intro: "Temps de requête moyen par jour (ms)."
+    statistics:
+        recommendations: "Recommandations"
+        priority:
+            high: "Haute"
+            medium: "Moyenne"
+            low: "Basse"
+        recommendation_action: "Action :"
+        correlations: "Corrélations"
+        correlations_intro: "De -1 (inverse) à +1 (directe) ; une valeur proche de ±1 indique une relation forte."
+        correlation:
+            request_time_vs_query_time: "Temps de requête vs temps SQL"
+            request_time_vs_query_count: "Temps de requête vs nombre de requêtes SQL"
+            query_time_vs_query_count: "Temps SQL vs nombre de requêtes SQL"
+            memory_vs_request_time: "Mémoire vs temps de requête"
+        sample_size: "%count% routes"
+        efficiency: "Efficacité"
+        avg_query_ratio: "Les requêtes SQL représentent en moyenne %ratio%% du temps de requête."
+        query_bottlenecks: "Goulots d'étranglement SQL"
+        query_bottlenecks_intro: "Routes où les requêtes SQL dépassent 80% du temps de requête."
+        inefficient_routes: "Routes inefficaces"
+        inefficient_routes_intro: "Routes avec un temps de requête ou un nombre de requêtes SQL élevé."
+        queries: "%count% requêtes SQL"
+        query_ratio: "%ratio%% en SQL"
+        traffic: "Répartition du trafic"
+        traffic_concentration: "%ratio%% du trafic va aux 10% de routes les plus visitées."
+        hot_paths: "Routes les plus visitées"
+        slow_request_time: "Temps de requête lent (au-dessus de p95)"
+        high_query_count: "Beaucoup de requêtes SQL (au-dessus de p95)"
+        high_memory: "Mémoire élevée (au-dessus de p95)"
+        no_routes: "Aucune route."
+        metric_title: "Statistiques : %metric%"
+        samples: "%count% routes mesurées"
+    weekday:
+        '0': "Dimanche"
+        '1': "Lundi"
+        '2': "Mardi"
+        '3': "Mercredi"
+        '4': "Jeudi"
+        '5': "Vendredi"
+        '6': "Samedi"
+    month:
+        '1': "Janvier"
+        '2': "Février"
+        '3': "Mars"
+        '4': "Avril"
+        '5': "Mai"
+        '6': "Juin"
+        '7': "Juillet"
+        '8': "Août"
+        '9': "Septembre"
+        '10': "Octobre"
+        '11': "Novembre"
+        '12': "Décembre"
+    components:
+        charts_moved: "Le graphique de tendance est affiché sur la page du tableau de bord ; les données du graphique sont disponibles en JSON."

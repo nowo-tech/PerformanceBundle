@@ -219,3 +219,108 @@ delete: Elimina
 delete_records_by_filter: Elimina record per filtro
 diagnose: Diagnostica
 index: Dashboard
+
+# Dashboard pages (UiKit page contract, REQ-UI-003)
+ui:
+    nav:
+        label: "Sezioni prestazioni"
+        dashboard: "Rotte"
+        statistics: "Statistiche"
+        access_statistics: "Statistiche di accesso"
+        access_records: "Registri di accesso"
+        diagnose: "Diagnosi"
+    confirm:
+        clear_title: "Eliminare tutti i record di prestazioni di %env%?"
+        delete_route_title: "Eliminare il record di %route%?"
+    routes:
+        view_records: "Mostra i registri di accesso"
+    kpi:
+        max: "max %value%"
+        environment: "ambiente %env%"
+        median_request_time: "Tempo di richiesta mediano"
+        p95: "p95 %value%"
+        mean_queries: "Query medie per richiesta"
+        until: "fino al %date%"
+        busiest_hour: "Ora di punta"
+        requests: "%count% richieste"
+    access_statistics:
+        intro: "Accessi per ora, giorno della settimana e mese per il periodo e i filtri scelti."
+    access_records:
+        intro: "Tutte le richieste registrate, le più recenti per prime. Filtrale, ordinale ed esportale."
+    diagnose:
+        title: "Diagnosi"
+        intro: "Stato di configurazione, database, tabelle e tracciamento del bundle."
+        issues: "Problemi (%count%)"
+        warnings: "Avvisi (%count%)"
+        suggestions: "Suggerimenti (%count%)"
+        all_good: "Nessun problema: il tracciamento è configurato e salva i dati."
+        section:
+            configuration: "Configurazione"
+            environment: "Ambiente"
+            database_connection: "Connessione al database"
+            table_status: "Tabelle"
+            data_status: "Dati registrati"
+            route_tracking: "Tracciamento delle rotte"
+            subscriber_status: "Subscriber"
+    dependencies:
+        title: "Mancano dipendenze opzionali."
+        intro: "Alcune funzioni usano un ripiego; installa questi pacchetti per averle tutte:"
+    auto_refresh: "Questa pagina si ricarica ogni %seconds% secondi."
+    trend:
+        title: "Tempo di richiesta, ultimi %days% giorni"
+        intro: "Tempo medio di richiesta al giorno (ms)."
+    statistics:
+        recommendations: "Raccomandazioni"
+        priority:
+            high: "Alta"
+            medium: "Media"
+            low: "Bassa"
+        recommendation_action: "Azione:"
+        correlations: "Correlazioni"
+        correlations_intro: "Da -1 (inversa) a +1 (diretta); valori vicini a ±1 indicano una relazione forte."
+        correlation:
+            request_time_vs_query_time: "Tempo di richiesta vs tempo delle query"
+            request_time_vs_query_count: "Tempo di richiesta vs numero di query"
+            query_time_vs_query_count: "Tempo delle query vs numero di query"
+            memory_vs_request_time: "Memoria vs tempo di richiesta"
+        sample_size: "%count% rotte"
+        efficiency: "Efficienza"
+        avg_query_ratio: "Le query occupano in media il %ratio%% del tempo di richiesta."
+        query_bottlenecks: "Colli di bottiglia nelle query"
+        query_bottlenecks_intro: "Rotte in cui le query occupano oltre l'80% del tempo di richiesta."
+        inefficient_routes: "Rotte inefficienti"
+        inefficient_routes_intro: "Rotte con tempo di richiesta o numero di query elevati."
+        queries: "%count% query"
+        query_ratio: "%ratio%% nelle query"
+        traffic: "Distribuzione del traffico"
+        traffic_concentration: "Il %ratio%% del traffico va al 10% delle rotte più visitate."
+        hot_paths: "Rotte più visitate"
+        slow_request_time: "Tempo di richiesta lento (sopra p95)"
+        high_query_count: "Molte query (sopra p95)"
+        high_memory: "Uso di memoria elevato (sopra p95)"
+        no_routes: "Nessuna rotta."
+        metric_title: "Statistiche: %metric%"
+        samples: "%count% rotte misurate"
+    weekday:
+        '0': "Domenica"
+        '1': "Lunedì"
+        '2': "Martedì"
+        '3': "Mercoledì"
+        '4': "Giovedì"
+        '5': "Venerdì"
+        '6': "Sabato"
+    month:
+        '1': "Gennaio"
+        '2': "Febbraio"
+        '3': "Marzo"
+        '4': "Aprile"
+        '5': "Maggio"
+        '6': "Giugno"
+        '7': "Luglio"
+        '8': "Agosto"
+        '9': "Settembre"
+        '10': "Ottobre"
+        '11': "Novembre"
+        '12': "Dicembre"
+    components:
+        charts_moved: "Il grafico di tendenza è mostrato nella pagina della dashboard; i dati del grafico sono disponibili in JSON."

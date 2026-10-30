@@ -6,7 +6,7 @@ namespace Nowo\PerformanceBundle\Helper;
 
 use function constant;
 use function defined;
-use function function_exists;
+use function error_log;
 use function sprintf;
 
 /**
@@ -40,7 +40,8 @@ final class LogHelper
     }
 
     /**
-     * Log a message if logging is enabled.
+     * Log a message if logging is enabled (skipped, but reported as logged, when the host defines
+     * NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS=true).
      *
      * @param string $message The message to log
      * @param bool|null $enableLogging The logging configuration value (from container parameter)
@@ -53,23 +54,11 @@ final class LogHelper
             return false;
         }
 
-        if (defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS')) {
-            return true;
+        if (!defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') || !constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS')) {
+            error_log($message);
         }
-
-        // @codeCoverageIgnoreStart
-        // error_log() always exists in PHP; this guard is defensive dead code.
-        if (!function_exists('error_log')) {
-            return false;
-        }
-
-        // The lines below are only reachable in production (outside the test suite).
-        // Tests/bootstrap.php defines NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS=true,
-        // so the early-return above always fires during test runs.
-        error_log($message);
 
         return true;
-        // @codeCoverageIgnoreEnd
     }
 
     /**
@@ -87,21 +76,6 @@ final class LogHelper
             return false;
         }
 
-        if (defined('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS') && constant('NOWO_PERFORMANCE_SUPPRESS_LOGS_IN_TESTS')) {
-            return true;
-        }
-
-        $message = sprintf($format, ...$args);
-        // @codeCoverageIgnoreStart
-        // Same reasoning as log(): error_log() is always defined; actual call is masked by the
-        // test-bootstrap constant above in every test process.
-        if (!function_exists('error_log')) {
-            return false;
-        }
-
-        error_log($message);
-
-        return true;
-        // @codeCoverageIgnoreEnd
+        return self::log(sprintf($format, ...$args), true);
     }
 }

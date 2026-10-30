@@ -76,20 +76,8 @@ class TableStatusChecker
      */
     private function getSchemaManager(Connection $connection): AbstractSchemaManager
     {
-        /* @phpstan-ignore function.alreadyNarrowedType (DBAL 2.x/3.x) */
-        if (method_exists($connection, 'createSchemaManager')) {
-            return $connection->createSchemaManager();
-        }
-        // @codeCoverageIgnoreStart
-        // DBAL 2.x uses getSchemaManager(); unreachable in DBAL 3.x test environment.
-        if (method_exists($connection, 'getSchemaManager')) {
-            /** @var callable $getSchemaManager */
-            $getSchemaManager = [$connection, 'getSchemaManager'];
-
-            return $getSchemaManager();
-        }
-        throw new RuntimeException('Unable to get schema manager: neither createSchemaManager() nor getSchemaManager() is available.');
-        // @codeCoverageIgnoreEnd
+        // doctrine/dbal ^3.8.2 || ^4.0: createSchemaManager() always exists (the DBAL 2 getSchemaManager() fallback is gone)
+        return $connection->createSchemaManager();
     }
 
     /**
