@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.15.3](#to-3153)
 - [To 3.15.2](#to-3152)
 - [To 3.15.1](#to-3151)
 - [To 3.15.0](#to-3150)
@@ -136,6 +137,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.15.3
+
+From **3.15.2**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 ## To 3.15.2
 
