@@ -159,7 +159,7 @@
     {% else %}
         {% set status = 'status-disabled' %}
     {% endif %}
-    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url, status: status }) }}
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', {link: profiler_url, status: status}) }}
 {% endblock %}
 
 {% block menu %}
@@ -284,7 +284,7 @@
                         <table style="width: 100%; border-collapse: collapse;">
                             {% for feature, status in collector.dependencyStatus %}
                                 <tr>
-                                    <td style="padding: 2px 8px 2px 0; font-size: 12px;">{{ feature|replace({'_': ' '})|title }}</td>
+                                    <td style="padding: 2px 8px 2px 0; font-size: 12px;">{{ feature|replace({_: ' '})|title }}</td>
                                     <td style="padding: 2px 0; font-size: 12px;">
                                         {% if status.available %}
                                             <span style="color: #4caf50;">✓</span>
@@ -559,7 +559,7 @@
                                 {% for feature, status in collector.dependencyStatus %}
                                     <tr>
                                         <td style="padding: 4px 8px; font-size: 12px; width: 40%;">
-                                            <strong>{{ feature|replace({'_': ' '})|title }}</strong>
+                                            <strong>{{ feature|replace({_: ' '})|title }}</strong>
                                         </td>
                                         <td style="padding: 4px 8px; font-size: 12px;">
                                             {% if status.available %}

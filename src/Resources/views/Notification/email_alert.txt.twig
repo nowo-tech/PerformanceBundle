@@ -29,7 +29,7 @@ Type: {{ alert.type }}
 Severity: {{ severityLabel }}
 {% if alert.context is not empty %}
 {% for key, value in alert.context %}
-{{ key|replace({'_': ' '})|title }}: {{ value }}
+{{ key|replace({_: ' '})|title }}: {{ value }}
 {% endfor %}
 {% endif %}
 

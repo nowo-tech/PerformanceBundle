@@ -72,7 +72,7 @@
         <tr><td>Severity</td><td>{{ severityLabel }}</td></tr>
         {% if alert.context is not empty %}
             {% for key, value in alert.context %}
-                <tr><td>{{ key|replace({'_': ' '})|title }}</td><td>{{ value }}</td></tr>
+                <tr><td>{{ key|replace({_: ' '})|title }}</td><td>{{ value }}</td></tr>
             {% endfor %}
         {% endif %}
     </table>

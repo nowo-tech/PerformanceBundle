@@ -1,7 +1,7 @@
 # Makefile for Performance Bundle
 # Simplifies Docker commands for development
 
-.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan igor release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history check-twig-extra check-no-raw-html-form
+.PHONY: help up down down-dev build shell install test test-coverage coverage-php-percent test-coverage-90 test-coverage-100 cs-check cs-fix qa clean assets setup-hooks ensure-up rector rector-dry phpstan igor release-check release-check-demos demo-smoke composer-sync update validate test-with-db test-coverage-with-db validate-translations check-no-cursor-coauthor check-no-cursor-coauthor-since-release strip-cursor-coauthor-from-history check-twig-extra check-no-raw-html-form twig-lint
 
 # Default target
 help:
@@ -167,6 +167,7 @@ release-check:
 	@$(MAKE) check-open-prs
 	@$(MAKE) check-twig-extra
 	@$(MAKE) check-no-raw-html-form
+	@$(MAKE) twig-lint
 	@$(MAKE) composer-sync
 	@$(MAKE) cs-fix
 	@$(MAKE) cs-check
