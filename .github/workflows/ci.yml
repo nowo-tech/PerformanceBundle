@@ -189,6 +189,10 @@ jobs:
       - name: PHPStan
         run: composer phpstan
 
+      # Twig coding standard (twig-cs-fixer, .twig-cs-fixer.php): fails on any lint error.
+      - name: Twig lint
+        run: composer twig:lint
+
   code-style:
     name: Code Style
     runs-on: ubuntu-latest
