@@ -42,8 +42,10 @@ final class AfterMetricsRecordedEvent extends Event
      *
      * Since 3.16.0 it belongs to the bundle's private write entity manager, which is cleared right after this event:
      * treat it as read-only. Do not persist() / flush() it through your entity manager (persist() would insert a
-     * second routes_data row) and do not expect changes to it to be saved. To change bundle data, load the row by
-     * getRouteDataId() in your entity manager (find()) or run a DQL / DBAL update by id.
+     * second routes_data row) and do not expect changes to it to be saved. To change bundle data, run a DQL / DBAL
+     * UPDATE by getRouteDataId(), or dispatch a message carrying the id. Never flush your application's entity manager
+     * from a listener of this event: in sync mode it runs at kernel.terminate and would commit the changes the request
+     * left pending.
      */
     public function getRouteData(): RouteData
     {

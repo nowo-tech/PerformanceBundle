@@ -183,21 +183,23 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
         self::assertTrue($events[0]->isNew());
     }
 
-    public function testAfterEventListenerWritesThroughTheHostManagerByIdWithoutADuplicateRow(): void
+    public function testAfterEventListenerUpdatesTheRowByIdWithoutCommittingPendingHostChanges(): void
     {
+        // The request left an invalid edit pending in the host manager (e.g. a form that failed validation).
+        $existing = $this->insertRoute('host_invalid_edit');
+        $existing->setReviewed(true);
+
         $hostEm     = $this->hostEm;
+        $connection = $this->connection;
         $dispatcher = new EventDispatcher();
-        $dispatcher->addListener(AfterMetricsRecordedEvent::class, static function (AfterMetricsRecordedEvent $event) use ($hostEm): void {
+        $dispatcher->addListener(AfterMetricsRecordedEvent::class, static function (AfterMetricsRecordedEvent $event) use ($hostEm, $connection): void {
             self::assertNotNull($event->getRouteDataId());
             self::assertSame('by_id', $event->getRouteName());
             self::assertSame('prod', $event->getEnv());
             self::assertFalse($hostEm->contains($event->getRouteData()), 'The event entity belongs to the private manager.');
 
-            // Documented pattern: load the row by id in the host manager, change it, flush the host manager.
-            $route = $hostEm->find(RouteData::class, $event->getRouteDataId());
-            self::assertInstanceOf(RouteData::class, $route);
-            $route->setReviewed(true);
-            $hostEm->flush();
+            // Documented pattern: an UPDATE by id, never a flush of the application's entity manager.
+            $connection->update('routes_data', ['reviewed' => 1], ['id' => $event->getRouteDataId()]);
         });
 
         $service = $this->service();
@@ -206,6 +208,12 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
 
         self::assertSame(1, $this->countRoutes('by_id'));
         self::assertSame(1, (int) $this->connection->fetchOne('SELECT reviewed FROM routes_data WHERE name = ?', ['by_id']));
+        self::assertSame(0, (int) $this->connection->fetchOne('SELECT reviewed FROM routes_data WHERE name = ?', ['host_invalid_edit']), 'The pending host change must stay uncommitted.');
+
+        // Still pending in the host's unit of work, for the host to flush or drop.
+        $unitOfWork = $this->hostEm->getUnitOfWork();
+        $unitOfWork->computeChangeSets();
+        self::assertArrayHasKey('reviewed', $unitOfWork->getEntityChangeSet($existing));
     }
 
     public function testFlushErrorDropsThePrivateManagerRestoresErrorReportingAndNextRecordingWorks(): void

@@ -123,13 +123,20 @@ event. The entity is not managed by your entity manager:
 - changes you make to it are **not saved** (neither by the bundle nor by your `flush()`);
 - read its scalar getters, or better the scalar accessors above.
 
-To change bundle data from a listener, load the row by id in your own entity manager and flush that manager, or run a
-DQL / DBAL update by id:
+**Never call `flush()` on your application's entity manager from this listener.** In sync mode (the default) it
+runs at `kernel.terminate`, so that flush would commit every change the request left pending (for example the values
+of a form that failed validation): the very bug fixed in 3.16.0. To change bundle data from a listener, run a DQL /
+DBAL update by id (it writes only that row), or dispatch a message that carries `getRouteDataId()` and change the row
+in its handler:
 
 ```php
-$route = $entityManager->find(RouteData::class, $event->getRouteDataId());
-$route?->setReviewed(true);
-$entityManager->flush();
+// DQL: respects the configured table name (nowo_performance.table_name)
+$entityManager->createQuery('UPDATE '.RouteData::class.' r SET r.reviewed = true WHERE r.id = :id')
+    ->setParameter('id', $event->getRouteDataId())
+    ->execute();
+
+// or a message handled elsewhere (an asynchronous transport, or a handler that flushes only its own changes)
+$bus->dispatch(new ReviewRoute($event->getRouteDataId()));
 ```
 
 **Use Cases:**

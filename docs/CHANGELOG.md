@@ -104,9 +104,11 @@ Target 3.16.0 (minor: the bundle stops flushing / resetting the host's entity ma
   authorization check after loading). Metrics are now written through a **private entity manager** on the same
   connection (new `MetricsEntityManagerFactory`, same configuration and event manager, own unit of work): only
   `RouteData` / `RouteDataRecord` are flushed, and the private manager is cleared after each recording.
-  **Workaround for older versions:** set `async: true` (Messenger; the handler runs outside the request), or point
-  `connection` at a dedicated connection / entity manager that only maps the bundle's entities (see
-  [CONFIGURATION](CONFIGURATION.md)).
+  **Workaround for older versions:** set `async: true` **and route `RecordMetricsMessage` to an asynchronous Messenger
+  transport** (not `sync://`, and not left unrouted: then the handler runs inside the request and still flushes the
+  application's entity manager), or point `connection` at a **dedicated entity manager that maps only the bundle's
+  entities** (see [CONFIGURATION](CONFIGURATION.md)). After upgrading, never flush the application's entity manager
+  from an `AfterMetricsRecordedEvent` listener (it runs at `kernel.terminate`); use a DQL / DBAL update by id instead.
 
 ### Fixed
 
@@ -118,8 +120,9 @@ Target 3.16.0 (minor: the bundle stops flushing / resetting the host's entity ma
 
 - **`AfterMetricsRecordedEvent::getRouteDataId()`, `getRouteName()`, `getEnv()` (audit KR-P-L1):** scalar accessors,
   so listeners no longer need the entity. `getRouteData()` stays; it now belongs to the private manager and is
-  read-only (persisting it into the application's entity manager inserts a duplicate row). Documented in EVENTS.md and
-  UPGRADING.
+  read-only (persisting it into the application's entity manager inserts a duplicate row). EVENTS.md and UPGRADING
+  recommend a DQL / DBAL update by id (or a message carrying the id) and forbid flushing the application's entity
+  manager from the listener.
 
 ### Documentation
 

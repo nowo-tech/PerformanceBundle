@@ -154,6 +154,11 @@ flushed it at `kernel.terminate`, which also committed every change your code ha
 From 3.16.0 metrics are written through a private entity manager on the same connection, so only the bundle's own
 rows are written.
 
+**If you cannot upgrade yet**, avoid the terminate-time flush in older versions either by setting `async: true`
+**and routing `Nowo\PerformanceBundle\Message\RecordMetricsMessage` to an asynchronous Messenger transport** (not
+`sync://`, and not left unrouted: in both cases the handler runs inside the request and still flushes your entity
+manager), or by pointing `connection` at a **dedicated entity manager that maps only the bundle's entities**.
+
 - If some code of yours modified or persisted entities **without calling `flush()`** and the data was nevertheless
   saved, it was saved by this bundle by accident. Those changes are no longer written: add the missing `flush()`.
 - The bundle no longer calls `ManagerRegistry::resetManager()` on your entity manager when it is closed.
@@ -164,8 +169,9 @@ rows are written.
   event. Treat it as read-only. A listener that `persist()`s it into your entity manager now inserts a **second
   `routes_data` row** for the same route, and changes to it are no longer saved by your `flush()` (before 3.16.0 the
   entity was managed by your manager). Use the new scalar accessors `getRouteDataId()`, `getRouteName()` and
-  `getEnv()`; to change bundle data load the row by id (`$entityManager->find(RouteData::class,
-  $event->getRouteDataId())`) and flush your manager, or run a DQL / DBAL update by id. See
+  `getEnv()`. To change bundle data, run a DQL / DBAL `UPDATE` by id, or dispatch a message that carries
+  `getRouteDataId()`. **Never call `flush()` on your application's entity manager from this listener:** it runs at
+  `kernel.terminate` in sync mode and would commit the changes the request left pending. See
   [EVENTS.md](EVENTS.md#aftermetricsrecordedevent).
 - Doctrine listeners registered on the shared event manager (`onFlush`, `postFlush`, …) now also run for the private
   manager: `$args->getObjectManager()` is the private manager, not the one in the registry. A `postFlush` listener

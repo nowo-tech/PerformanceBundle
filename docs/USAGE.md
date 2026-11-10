@@ -514,8 +514,8 @@ relation to your entities; with `track_user: true` it stores the user identifier
   configured connection (`MetricsEntityManagerFactory`): recording at `kernel.terminate` only writes the bundle's
   rows, never a change your code left pending in your entity manager, and never resets your manager when it is
   closed. The writes share the connection, so if your code leaves a database transaction open until
-  `kernel.terminate` the metrics join it; use a dedicated `connection` or `async: true` (Messenger) to separate them
-  completely.
+  `kernel.terminate` the metrics join it; use a dedicated `connection`, or `async: true` with `RecordMetricsMessage`
+  routed to an asynchronous Messenger transport (not `sync://`), to separate them completely.
 - Integrate through its events (`BeforeMetricsRecordedEvent` to adjust or drop metrics, `AfterMetricsRecordedEvent`,
   the `Before*/After*` record review, delete and clear events) and through `NotificationChannelInterface` for alerts
   (for example to publish them on your own bus). Read scalar values in listeners.
