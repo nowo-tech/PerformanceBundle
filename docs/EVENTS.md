@@ -105,17 +105,44 @@ class MetricsModifierListener
 
 #### `AfterMetricsRecordedEvent`
 
-Dispatched after performance metrics are recorded to the database.
+Dispatched after performance metrics are recorded to the database (after the bundle's own flush).
 
 **Properties:**
-- `getRouteData(): RouteData` - The saved route data entity
+- `getRouteDataId(): ?int` - Id of the `routes_data` row just written (since 3.16.0)
+- `getRouteName(): ?string` / `getEnv(): ?string` - Route name and environment just recorded (since 3.16.0)
 - `isNew(): bool` - Whether this was a new record (true) or an update (false)
+- `getRequestTime(): ?float`, `getTotalQueries(): ?int`, `getMemoryUsage(): ?int` - The metrics just recorded
+- `getRouteData(): RouteData` - The saved route data entity, **read-only** (see below)
+
+**`getRouteData()` belongs to the bundle's private entity manager.** Since 3.16.0 metrics are written through a
+private entity manager (see [CONFIGURATION: `connection`](CONFIGURATION.md)), which is cleared right after this
+event. The entity is not managed by your entity manager:
+
+- do **not** `persist()` it into your entity manager: Doctrine sees a new object and inserts a **second
+  `routes_data` row** for the same route;
+- changes you make to it are **not saved** (neither by the bundle nor by your `flush()`);
+- read its scalar getters, or better the scalar accessors above.
+
+**Never call `flush()` on your application's entity manager from this listener.** In sync mode (the default) it
+runs at `kernel.terminate`, so that flush would commit every change the request left pending (for example the values
+of a form that failed validation): the very bug fixed in 3.16.0. To change bundle data from a listener, run a DQL /
+DBAL update by id (it writes only that row), or dispatch a message that carries `getRouteDataId()` and change the row
+in its handler:
+
+```php
+// DQL: respects the configured table name (nowo_performance.table_name)
+$entityManager->createQuery('UPDATE '.RouteData::class.' r SET r.reviewed = true WHERE r.id = :id')
+    ->setParameter('id', $event->getRouteDataId())
+    ->execute();
+
+// or a message handled elsewhere (an asynchronous transport, or a handler that flushes only its own changes)
+$bus->dispatch(new ReviewRoute($event->getRouteDataId()));
+```
 
 **Use Cases:**
 - Send notifications when metrics are recorded
 - Log metrics to external systems
-- Trigger additional processing
-- Update related data
+- Trigger additional processing (e.g. dispatch a message with `getRouteDataId()`)
 
 **Example:**
 
@@ -128,16 +155,14 @@ class MetricsNotificationListener
 {
     public function onAfterMetricsRecorded(AfterMetricsRecordedEvent $event): void
     {
-        $routeData = $event->getRouteData();
-        
         // Send alert if request time is too high
-        if ($routeData->getRequestTime() > 2.0) {
-            // Send notification...
+        if ($event->getRequestTime() > 2.0) {
+            // Send notification about $event->getRouteName() in $event->getEnv()...
         }
 
         // Log to external system
         if ($event->isNew()) {
-            // New route detected...
+            // New route detected: $event->getRouteDataId()...
         }
     }
 }
@@ -452,13 +477,12 @@ class PerformanceMetricsListener
     #[AsEventListener]
     public function onAfterMetricsRecorded(AfterMetricsRecordedEvent $event): void
     {
-        $routeData = $event->getRouteData();
-        
         $this->logger->info('Performance metrics recorded', [
-            'route' => $routeData->getName(),
-            'env' => $routeData->getEnv(),
-            'request_time' => $routeData->getRequestTime(),
-            'queries' => $routeData->getTotalQueries(),
+            'route_id' => $event->getRouteDataId(),
+            'route' => $event->getRouteName(),
+            'env' => $event->getEnv(),
+            'request_time' => $event->getRequestTime(),
+            'queries' => $event->getTotalQueries(),
             'is_new' => $event->isNew(),
         ]);
     }

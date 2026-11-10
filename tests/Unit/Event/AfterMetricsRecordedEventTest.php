@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Event;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Symfony\Contracts\EventDispatcher\Event;
 
 final class AfterMetricsRecordedEventTest extends TestCase
@@ -21,6 +22,20 @@ final class AfterMetricsRecordedEventTest extends TestCase
 
         $this->assertSame($routeData, $event->getRouteData());
         $this->assertTrue($event->isNew());
+    }
+
+    public function testIdNameAndEnvAccessors(): void
+    {
+        $routeData = new RouteData();
+        $routeData->setName('app_home')->setEnv('dev');
+
+        $event = new AfterMetricsRecordedEvent($routeData, true);
+        $this->assertNull($event->getRouteDataId());
+        $this->assertSame('app_home', $event->getRouteName());
+        $this->assertSame('dev', $event->getEnv());
+
+        (new ReflectionProperty(RouteData::class, 'id'))->setValue($routeData, 42);
+        $this->assertSame(42, $event->getRouteDataId());
     }
 
     public function testIsNewReturnsFalseForUpdate(): void

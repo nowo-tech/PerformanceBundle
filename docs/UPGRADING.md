@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.16.0](#to-3160)
 - [To 3.15.3](#to-3153)
 - [To 3.15.2](#to-3152)
 - [To 3.15.1](#to-3151)
@@ -137,6 +138,45 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.16.0
+
+From **3.15.3**:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
+**The bundle no longer flushes your entity manager.** Up to 3.15.3, sync recording (`async: false`, the default)
+persisted the metrics with the entity manager named by `connection` (default: your **default** entity manager) and
+flushed it at `kernel.terminate`, which also committed every change your code had left unflushed in that manager.
+From 3.16.0 metrics are written through a private entity manager on the same connection, so only the bundle's own
+rows are written.
+
+**If you cannot upgrade yet**, avoid the terminate-time flush in older versions either by setting `async: true`
+**and routing `Nowo\PerformanceBundle\Message\RecordMetricsMessage` to an asynchronous Messenger transport** (not
+`sync://`, and not left unrouted: in both cases the handler runs inside the request and still flushes your entity
+manager), or by pointing `connection` at a **dedicated entity manager that maps only the bundle's entities**.
+
+- If some code of yours modified or persisted entities **without calling `flush()`** and the data was nevertheless
+  saved, it was saved by this bundle by accident. Those changes are no longer written: add the missing `flush()`.
+- The bundle no longer calls `ManagerRegistry::resetManager()` on your entity manager when it is closed.
+- `PerformanceMetricsService::getEntityManager()` still returns the configured manager (reads, dashboard actions).
+  A new optional last constructor argument `?MetricsEntityManagerFactory $writeEntityManagerFactory` lets you
+  customise how the private write manager is created.
+- **`AfterMetricsRecordedEvent::getRouteData()` now belongs to the private manager**, which is cleared right after the
+  event. Treat it as read-only. A listener that `persist()`s it into your entity manager now inserts a **second
+  `routes_data` row** for the same route, and changes to it are no longer saved by your `flush()` (before 3.16.0 the
+  entity was managed by your manager). Use the new scalar accessors `getRouteDataId()`, `getRouteName()` and
+  `getEnv()`. To change bundle data, run a DQL / DBAL `UPDATE` by id, or dispatch a message that carries
+  `getRouteDataId()`. **Never call `flush()` on your application's entity manager from this listener:** it runs at
+  `kernel.terminate` in sync mode and would commit the changes the request left pending. See
+  [EVENTS.md](EVENTS.md#aftermetricsrecordedevent).
+- Doctrine listeners registered on the shared event manager (`onFlush`, `postFlush`, …) now also run for the private
+  manager: `$args->getObjectManager()` is the private manager, not the one in the registry. A `postFlush` listener
+  that flushes an injected default entity manager would still flush your pending changes. SQL filters enabled on your
+  entity manager are not enabled on the private manager (the bundle's own look-ups do not need them).
 
 ## To 3.15.3
 

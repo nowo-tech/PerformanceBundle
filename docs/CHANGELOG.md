@@ -90,6 +90,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Target 3.16.0 (minor: the bundle stops flushing / resetting the host's entity manager). See [UPGRADING](UPGRADING.md#to-3160).
+
+### Security
+
+- **Unflushed application changes were committed at `kernel.terminate` (validation bypass; DDD audit 2026-11-10 G1,
+  independent audit KR; affected `>= 0.0.1, < 3.16.0`):** in sync mode `recordMetricsSync()` (called at
+  `kernel.terminate` and by the Messenger handler) persisted and flushed the entity manager named by `connection` (by
+  default the application's **default** entity manager), committing every change the application had left unflushed
+  during the request. For example, a Symfony form maps the submitted values onto a managed entity before validation;
+  when the form was invalid the controller did not flush, but the bundle did, so the rejected values were saved. The
+  same happened for any use case that changed an entity and then aborted without flushing (failed business rule,
+  authorization check after loading). Metrics are now written through a **private entity manager** on the same
+  connection (new `MetricsEntityManagerFactory`, same configuration and event manager, own unit of work): only
+  `RouteData` / `RouteDataRecord` are flushed, and the private manager is cleared after each recording.
+  **Workaround for older versions:** set `async: true` **and route `RecordMetricsMessage` to an asynchronous Messenger
+  transport** (not `sync://`, and not left unrouted: then the handler runs inside the request and still flushes the
+  application's entity manager), or point `connection` at a **dedicated entity manager that maps only the bundle's
+  entities** (see [CONFIGURATION](CONFIGURATION.md)). After upgrading, never flush the application's entity manager
+  from an `AfterMetricsRecordedEvent` listener (it runs at `kernel.terminate`); use a DQL / DBAL update by id instead.
+
+### Fixed
+
+- **The host's entity manager is no longer reset:** when the configured manager was closed (typically after an
+  application exception) the bundle called `ManagerRegistry::resetManager()` on it. The private manager does not
+  depend on it; after an error the bundle drops only its own manager (`\Throwable`, previously `\Exception` only).
+
+### Added
+
+- **`AfterMetricsRecordedEvent::getRouteDataId()`, `getRouteName()`, `getEnv()` (audit KR-P-L1):** scalar accessors,
+  so listeners no longer need the entity. `getRouteData()` stays; it now belongs to the private manager and is
+  read-only (persisting it into the application's entity manager inserts a duplicate row). EVENTS.md and UPGRADING
+  recommend a DQL / DBAL update by id (or a message carrying the id) and forbid flushing the application's entity
+  manager from the listener.
+
+### Documentation
+
+- EVENTS.md: removed the "Update related data" use case and the example reading `RouteData::getRequestTime()` (the
+  metrics live in the event / `RouteDataRecord`); documented the private-manager entity and the update-by-id pattern.
+- UPGRADING / CONFIGURATION: Doctrine listeners on the shared event manager also run for the private manager; SQL
+  filters of the application's manager are not enabled on it.
+
 ## [3.15.3] - 2026-10-31
 
 Twig templates pass twig-cs-fixer (formatting only, rendered HTML unchanged); twig lint in CI and release-check. See [UPGRADING](UPGRADING.md#to-3153).

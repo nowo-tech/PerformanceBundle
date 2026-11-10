@@ -36,6 +36,7 @@
 - [Performance Notifications](#performance-notifications)
   - [Configuration](#configuration-1)
   - [How It Works](#how-it-works-1)
+- [Using it from a DDD / hexagonal application](#using-it-from-a-ddd--hexagonal-application)
 - [Best Practices](#best-practices)
 - [Examples](#examples)
   - [Example 1: Track API Endpoints](#example-1-track-api-endpoints)
@@ -501,6 +502,58 @@ Notifications are automatically sent when:
 - Request time exceeds warning/critical thresholds
 - Query count exceeds warning/critical thresholds
 - Memory usage exceeds warning/critical thresholds
+
+## Using it from a DDD / hexagonal application
+
+PerformanceBundle is **operations infrastructure**: it measures requests and stores route metrics in its own tables
+(`routes_data`, `routes_data_records`) through its own Doctrine entities, and ships an admin dashboard. It has no
+relation to your entities; with `track_user: true` it stores the user identifier and id as strings only.
+
+- Keep it out of your domain: nothing in your model should reference `RouteData` or `RouteDataRecord`.
+- **Your unit of work stays yours.** Since 3.16.0 metrics are written through a private entity manager on the
+  configured connection (`MetricsEntityManagerFactory`): recording at `kernel.terminate` only writes the bundle's
+  rows, never a change your code left pending in your entity manager, and never resets your manager when it is
+  closed. The writes share the connection, so if your code leaves a database transaction open until
+  `kernel.terminate` the metrics join it; use a dedicated `connection`, or `async: true` with `RecordMetricsMessage`
+  routed to an asynchronous Messenger transport (not `sync://`), to separate them completely.
+- Integrate through its events (`BeforeMetricsRecordedEvent` to adjust or drop metrics, `AfterMetricsRecordedEvent`,
+  the `Before*/After*` record review, delete and clear events) and through `NotificationChannelInterface` for alerts
+  (for example to publish them on your own bus). Read scalar values in listeners.
+- Dashboard access: implement `PerformanceAccessCheckerInterface::canAccess(?object $user)` and set
+  `security.access_checker`.
+
+```yaml
+# config/packages/doctrine.yaml (excerpt): a separate connection / EM for monitoring data
+doctrine:
+    dbal:
+        connections:
+            default: { url: '%env(DATABASE_URL)%' }
+            performance: { url: '%env(DATABASE_URL)%' }
+    orm:
+        entity_managers:
+            default: { connection: default, mappings: { App: ~ } }
+            performance: { connection: performance, mappings: { NowoPerformanceBundle: ~ } }
+
+# config/packages/nowo_performance.yaml
+nowo_performance:
+    connection: performance   # also used as the entity manager name (registry->getManager('performance'))
+```
+
+The bundle maps its entities through Doctrine bundle auto-mapping (`NowoPerformanceBundle`); with several entity
+managers, list that mapping under the manager you name in `connection`.
+
+Known limitations:
+
+- Dashboard actions (review, delete, clear) and the maintenance commands still flush the configured entity manager
+  in their own (admin / CLI) requests.
+- `NotificationChannelInterface::send()` passes the `RouteData` entity; read its scalar getters.
+  `AfterMetricsRecordedEvent` has scalar accessors (`getRouteDataId()`, `getRouteName()`, `getEnv()`); its
+  `getRouteData()` belongs to the bundle's private entity manager and is read-only (never persist it into yours).
+- No unique index on `routes_data (env, name)`: two concurrent first hits of a route can create two rows (the writer
+  uses the first one).
+- `track_status_codes` is not applied when recording: every status code is recorded.
+- `PerformanceMetricsService` has no interface; reading metrics programmatically depends on the concrete service and
+  its Doctrine repositories.
 
 ## Best Practices
 
