@@ -13,6 +13,9 @@ use Symfony\Contracts\EventDispatcher\Event;
  * Carries the route and the metrics that were just recorded (for alerts).
  * RouteData no longer stores metrics; they are in RouteDataRecord.
  *
+ * Dispatched after the bundle's private write entity manager was flushed. Prefer getRouteDataId(), getRouteName() and
+ * getEnv() over the entity: getRouteData() is read-only (see its description).
+ *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
@@ -34,9 +37,41 @@ final class AfterMetricsRecordedEvent extends Event
     ) {
     }
 
+    /**
+     * Returns the route entity just written.
+     *
+     * Since 3.16.0 it belongs to the bundle's private write entity manager, which is cleared right after this event:
+     * treat it as read-only. Do not persist() / flush() it through your entity manager (persist() would insert a
+     * second routes_data row) and do not expect changes to it to be saved. To change bundle data, load the row by
+     * getRouteDataId() in your entity manager (find()) or run a DQL / DBAL update by id.
+     */
     public function getRouteData(): RouteData
     {
         return $this->routeData;
+    }
+
+    /**
+     * Returns the id of the routes_data row just written (null only if the entity was never flushed).
+     */
+    public function getRouteDataId(): ?int
+    {
+        return $this->routeData->getId();
+    }
+
+    /**
+     * Returns the route name just recorded.
+     */
+    public function getRouteName(): ?string
+    {
+        return $this->routeData->getName();
+    }
+
+    /**
+     * Returns the environment the route was recorded for.
+     */
+    public function getEnv(): ?string
+    {
+        return $this->routeData->getEnv();
     }
 
     public function isNew(): bool

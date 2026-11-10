@@ -546,8 +546,12 @@ Known limitations:
 
 - Dashboard actions (review, delete, clear) and the maintenance commands still flush the configured entity manager
   in their own (admin / CLI) requests.
-- Events and `NotificationChannelInterface::send()` pass the `RouteData` entity; read its scalar getters in your
-  listener.
+- `NotificationChannelInterface::send()` passes the `RouteData` entity; read its scalar getters.
+  `AfterMetricsRecordedEvent` has scalar accessors (`getRouteDataId()`, `getRouteName()`, `getEnv()`); its
+  `getRouteData()` belongs to the bundle's private entity manager and is read-only (never persist it into yours).
+- No unique index on `routes_data (env, name)`: two concurrent first hits of a route can create two rows (the writer
+  uses the first one).
+- `track_status_codes` is not applied when recording: every status code is recorded.
 - `PerformanceMetricsService` has no interface; reading metrics programmatically depends on the concrete service and
   its Doctrine repositories.
 

@@ -160,8 +160,17 @@ rows are written.
 - `PerformanceMetricsService::getEntityManager()` still returns the configured manager (reads, dashboard actions).
   A new optional last constructor argument `?MetricsEntityManagerFactory $writeEntityManagerFactory` lets you
   customise how the private write manager is created.
-- `AfterMetricsRecordedEvent::getRouteData()` is managed by the private manager while the event is dispatched and
-  detached right after (as before); do not persist it into your own entity manager.
+- **`AfterMetricsRecordedEvent::getRouteData()` now belongs to the private manager**, which is cleared right after the
+  event. Treat it as read-only. A listener that `persist()`s it into your entity manager now inserts a **second
+  `routes_data` row** for the same route, and changes to it are no longer saved by your `flush()` (before 3.16.0 the
+  entity was managed by your manager). Use the new scalar accessors `getRouteDataId()`, `getRouteName()` and
+  `getEnv()`; to change bundle data load the row by id (`$entityManager->find(RouteData::class,
+  $event->getRouteDataId())`) and flush your manager, or run a DQL / DBAL update by id. See
+  [EVENTS.md](EVENTS.md#aftermetricsrecordedevent).
+- Doctrine listeners registered on the shared event manager (`onFlush`, `postFlush`, …) now also run for the private
+  manager: `$args->getObjectManager()` is the private manager, not the one in the registry. A `postFlush` listener
+  that flushes an injected default entity manager would still flush your pending changes. SQL filters enabled on your
+  entity manager are not enabled on the private manager (the bundle's own look-ups do not need them).
 
 ## To 3.15.3
 

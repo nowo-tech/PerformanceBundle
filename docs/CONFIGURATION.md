@@ -139,7 +139,11 @@ nowo_performance:
 The name is used as the Doctrine **entity manager** name (`ManagerRegistry::getManager($connection)`); the bundle
 mapping must be registered on that manager. Since 3.16.0 metrics are written through a private entity manager on that
 manager's connection (same mapping and listeners, own unit of work), so recording never flushes changes your
-application left pending in the configured manager, and never resets it when it is closed.
+application left pending in the configured manager, and never resets it when it is closed. The private manager shares
+the configured manager's event manager, so your Doctrine listeners (`onFlush`, `postFlush`, …) also run for it, with
+`getObjectManager()` returning the private manager; a `postFlush` listener that flushes an injected default entity
+manager would still flush your pending changes. SQL filters enabled on the configured manager are not enabled on the
+private one.
 
 ### `cache`
 

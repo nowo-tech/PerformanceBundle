@@ -183,6 +183,31 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
         self::assertTrue($events[0]->isNew());
     }
 
+    public function testAfterEventListenerWritesThroughTheHostManagerByIdWithoutADuplicateRow(): void
+    {
+        $hostEm     = $this->hostEm;
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(AfterMetricsRecordedEvent::class, static function (AfterMetricsRecordedEvent $event) use ($hostEm): void {
+            self::assertNotNull($event->getRouteDataId());
+            self::assertSame('by_id', $event->getRouteName());
+            self::assertSame('prod', $event->getEnv());
+            self::assertFalse($hostEm->contains($event->getRouteData()), 'The event entity belongs to the private manager.');
+
+            // Documented pattern: load the row by id in the host manager, change it, flush the host manager.
+            $route = $hostEm->find(RouteData::class, $event->getRouteDataId());
+            self::assertInstanceOf(RouteData::class, $route);
+            $route->setReviewed(true);
+            $hostEm->flush();
+        });
+
+        $service = $this->service();
+        $service->setEventDispatcher($dispatcher);
+        $service->recordMetrics('by_id', 'prod', 0.1, 1);
+
+        self::assertSame(1, $this->countRoutes('by_id'));
+        self::assertSame(1, (int) $this->connection->fetchOne('SELECT reviewed FROM routes_data WHERE name = ?', ['by_id']));
+    }
+
     public function testFlushErrorDropsThePrivateManagerRestoresErrorReportingAndNextRecordingWorks(): void
     {
         $switch = new ArrayObject(['fail' => true]);
