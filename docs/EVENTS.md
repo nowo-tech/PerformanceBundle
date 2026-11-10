@@ -470,13 +470,12 @@ class PerformanceMetricsListener
     #[AsEventListener]
     public function onAfterMetricsRecorded(AfterMetricsRecordedEvent $event): void
     {
-        $routeData = $event->getRouteData();
-        
         $this->logger->info('Performance metrics recorded', [
-            'route' => $routeData->getName(),
-            'env' => $routeData->getEnv(),
-            'request_time' => $routeData->getRequestTime(),
-            'queries' => $routeData->getTotalQueries(),
+            'route_id' => $event->getRouteDataId(),
+            'route' => $event->getRouteName(),
+            'env' => $event->getEnv(),
+            'request_time' => $event->getRequestTime(),
+            'queries' => $event->getTotalQueries(),
             'is_new' => $event->isNew(),
         ]);
     }
