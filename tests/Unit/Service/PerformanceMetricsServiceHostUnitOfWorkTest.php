@@ -313,6 +313,45 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
         self::assertInstanceOf(EventManager::class, $em->getEventManager());
     }
 
+    /**
+     * Worker mode without kernel reset (FRANKENPHP_RESET_KERNEL=false): one service instance serves every request and
+     * nothing calls kernel.reset. The private manager must stay empty between recordings and memory must stay flat.
+     */
+    public function testFiveThousandRecordingsOnOneInstanceKeepMemoryFlatAndNoStateBetweenUsers(): void
+    {
+        $service = $this->service();
+        $users   = ['alice@example.test', 'bob@example.test'];
+
+        // Warm-up (metadata, query and proxy caches).
+        for ($i = 0; $i < 200; ++$i) {
+            $service->recordMetrics('worker_route_' . ($i % 20), 'prod', 0.1, 1, null, null, null, 'GET', 200, [], 'warm-' . $i, null, $users[$i % 2], (string) ($i % 2));
+        }
+        $writeEm = $this->writeEntityManager($service);
+        gc_collect_cycles();
+        $baseline = memory_get_usage();
+
+        for ($i = 0; $i < 5000; ++$i) {
+            $user = $users[$i % 2];
+            $service->recordMetrics('worker_route_' . ($i % 20), 'prod', 0.1, 1, null, null, null, 'GET', 200, [], 'req-' . $i, null, $user, (string) ($i % 2));
+
+            if ($i % 500 === 0) {
+                self::assertSame(0, $writeEm->getUnitOfWork()->size(), 'The private manager is cleared after every recording.');
+                self::assertSame(0, $this->hostEm->getUnitOfWork()->size(), 'The host manager is never used for writes.');
+            }
+        }
+        gc_collect_cycles();
+
+        self::assertSame($writeEm, $this->writeEntityManager($service), 'The open private manager is reused, not recreated per request.');
+        self::assertSame(0, $writeEm->getUnitOfWork()->size());
+        self::assertLessThan(2 * 1024 * 1024, memory_get_usage() - $baseline, 'Memory must stay flat over 5 000 recordings.');
+        self::assertSame(20, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM routes_data'));
+        self::assertSame(5200, $this->countRecords());
+
+        // No user data carried over from the previous recording.
+        $last = $this->connection->fetchAllAssociative('SELECT request_id, user_identifier FROM routes_data_records WHERE request_id IN (?, ?) ORDER BY request_id', ['req-4998', 'req-4999']);
+        self::assertSame([['request_id' => 'req-4998', 'user_identifier' => 'alice@example.test'], ['request_id' => 'req-4999', 'user_identifier' => 'bob@example.test']], $last);
+    }
+
     private function service(?MetricsEntityManagerFactory $factory = null): PerformanceMetricsService
     {
         return new PerformanceMetricsService($this->registry, 'default', false, true, false, null, new NativeClock(), $factory);
