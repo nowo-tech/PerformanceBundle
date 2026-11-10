@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Integration\Service;
 
 use DateTimeImmutable;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
+use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
 use PHPUnit\Framework\TestCase;
@@ -280,6 +283,27 @@ final class PerformanceMetricsServiceIntegrationTest extends TestCase
         $service->recordMetrics('no_save_ar', 'test', 0.2, 2, null, null, 100000, 'GET', 200, [], 'rid-ns-2');
 
         self::assertFalse($routeData->getSaveAccessRecords());
+    }
+
+    public function testRecordMetricsNeverFlushesTheHostDefaultEntityManager(): void
+    {
+        $this->createTablesFirst();
+        $container = $this->kernel->getContainer();
+        $service   = $container->get(PerformanceMetricsService::class);
+        $doctrine  = $container->get('doctrine');
+        self::assertInstanceOf(ManagerRegistry::class, $doctrine);
+        $hostEm = $doctrine->getManager();
+        self::assertInstanceOf(EntityManagerInterface::class, $hostEm);
+
+        $pending = (new RouteData())->setName('host_left_unflushed')->setEnv('test');
+        $hostEm->persist($pending);
+
+        $service->recordMetrics('kernel_terminate_route', 'test', 0.1, 1, null, null, 1024, 'GET', 200, [], 'rid-host-uow');
+
+        $connection = $hostEm->getConnection();
+        self::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM routes_data WHERE name = ?', ['kernel_terminate_route']));
+        self::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM routes_data WHERE name = ?', ['host_left_unflushed']));
+        self::assertTrue($hostEm->getUnitOfWork()->isScheduledForInsert($pending));
     }
 
     private function createTablesFirst(): void

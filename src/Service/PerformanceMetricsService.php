@@ -7,7 +7,6 @@ namespace Nowo\PerformanceBundle\Service;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use Exception;
 use LogicException;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
@@ -24,6 +23,7 @@ use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Service\Attribute\Required;
+use Throwable;
 
 use function in_array;
 use function sprintf;
@@ -39,17 +39,17 @@ class PerformanceMetricsService
     /**
      * The entity manager for the configured connection.
      */
-    private EntityManagerInterface $entityManager;
+    private readonly EntityManagerInterface $entityManager;
 
     /**
      * The repository for RouteData entities.
      */
-    private RouteDataRepository $repository;
+    private readonly RouteDataRepository $repository;
 
     /**
      * The repository for RouteDataRecord entities.
      */
-    private RouteDataRecordRepository $recordRepository;
+    private readonly RouteDataRecordRepository $recordRepository;
 
     /**
      * Cache service for performance metrics (optional).
@@ -67,11 +67,17 @@ class PerformanceMetricsService
     private ?MessageBusInterface $messageBus = null;
 
     /**
+     * Private entity manager of the write path (created on first write, dropped after an error).
+     */
+    private ?EntityManagerInterface $writeEntityManager = null;
+
+    /**
      * Creates a new instance.
      *
      * @param ManagerRegistry $registry The Doctrine registry
      * @param string $connectionName The name of the Doctrine connection to use
      * @param bool $async Whether to use async mode
+     * @param MetricsEntityManagerFactory|null $writeEntityManagerFactory Creates the private write entity manager
      */
     public function __construct(
         private readonly ManagerRegistry $registry,
@@ -91,6 +97,7 @@ class PerformanceMetricsService
         private readonly bool $enableLogging = true,
         private readonly ?LoggerInterface $logger = null,
         private readonly ClockInterface $clock = new NativeClock(),
+        private readonly ?MetricsEntityManagerFactory $writeEntityManagerFactory = null,
     ) {
         $manager = $this->registry->getManager($this->connectionName);
         if (!$manager instanceof EntityManagerInterface) {
@@ -118,7 +125,10 @@ class PerformanceMetricsService
     }
 
     /**
-     * Get the entity manager used by the metrics service.
+     * Get the entity manager of the configured connection (reads, dashboard actions).
+     *
+     * Metrics recorded by recordMetrics() / recordMetricsSync() are written through a private entity manager on the
+     * same connection instead, so they never flush this manager's pending changes.
      */
     public function getEntityManager(): EntityManagerInterface
     {
@@ -313,7 +323,10 @@ class PerformanceMetricsService
             $env,
         );
 
-        $routeData = $this->repository->findByRouteAndEnv($routeName, $env);
+        // A private entity manager on the configured connection: its unit of work only holds the bundle's entities,
+        // so the flush below never commits a change the host left pending, and a closed host manager is irrelevant.
+        $entityManager = $this->writeEntityManager();
+        $routeData     = $this->findRouteDataForWrite($entityManager, $routeName, $env);
 
         if (!$routeData instanceof RouteData) {
             $this->bundleLog(
@@ -330,7 +343,7 @@ class PerformanceMetricsService
             $routeData->setParams($params !== null ? SensitiveDataRedactor::redactParams($params) : null);
             $routeData->setLastAccessedAt($this->clock->now());
 
-            $this->entityManager->persist($routeData);
+            $entityManager->persist($routeData);
             $isNew = true;
         } else {
             $this->bundleLog(
@@ -350,7 +363,7 @@ class PerformanceMetricsService
                 $routeName,
                 $env,
                 $isNew ? 'true' : 'false',
-                $this->entityManager->isOpen() ? 'true' : 'false',
+                $entityManager->isOpen() ? 'true' : 'false',
             );
 
             // Create access record if enabled (one per request when requestId is set)
@@ -361,8 +374,7 @@ class PerformanceMetricsService
                     $skipAccessRecord = true;
                 }
                 if (!$skipAccessRecord && $requestId !== null && $requestId !== '') {
-                    $existing = $this->recordRepository->findOneByRequestId($requestId);
-                    if ($existing instanceof RouteDataRecord) {
+                    if ($this->accessRecordExistsForWrite($entityManager, $requestId)) {
                         $skipAccessRecord = true;
                     }
                 }
@@ -399,17 +411,12 @@ class PerformanceMetricsService
                         $accessRecord->setRoutePath(SensitiveDataRedactor::redactUrl($routePath));
                     }
 
-                    $this->entityManager->persist($accessRecord);
+                    $entityManager->persist($accessRecord);
                 }
             }
 
-            // Ensure EntityManager is open before flush
-            if (!$this->entityManager->isOpen()) {
-                $this->resetEntityManager();
-            }
-
             // Suppress any potential output from Doctrine ("@" is restored by the engine even on exceptions)
-            @$this->entityManager->flush();
+            @$entityManager->flush();
 
             $this->bundleLog(
                 'debug',
@@ -429,12 +436,9 @@ class PerformanceMetricsService
                 $this->eventDispatcher->dispatch($afterEvent);
             }
 
-            // Without kernel.reset (long-running worker) the shared identity map would keep one record per
-            // request and serve a stale RouteData (e.g. saveAccessRecords changed from another worker).
-            if ($accessRecord instanceof RouteDataRecord) {
-                $this->entityManager->detach($accessRecord);
-            }
-            $this->entityManager->detach($routeData);
+            // The private manager only holds the bundle's entities: clearing it keeps a long-running worker from
+            // accumulating one record per request or serving a stale RouteData changed by another worker.
+            $entityManager->clear();
 
             $this->bundleLog(
                 'debug',
@@ -446,7 +450,7 @@ class PerformanceMetricsService
             );
 
             return ['is_new' => $isNew, 'was_updated' => $wasUpdated];
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->bundleLog(
                 'debug',
                 '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, exception=%s, message=%s',
@@ -456,18 +460,18 @@ class PerformanceMetricsService
                 $e->getMessage(),
             );
 
-            // Always reset EntityManager after an error (it may be closed)
-            // This ensures subsequent operations can proceed
-            $this->resetEntityManager();
+            // Drop the private manager after an error (it may be closed or hold half-written entities); the next
+            // recording creates a fresh one. The host's entity manager is never reset by the bundle.
+            // @igor-ignore - Private unit of work of the write path, cleared after every recording and dropped on error.
+            $this->writeEntityManager = null;
 
             // Log the error for debugging
             $this->bundleLog(
                 'debug',
-                '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s, entityManagerOpen=%s',
+                '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s',
                 $routeName,
                 $env,
                 $e->getMessage(),
-                $this->entityManager->isOpen() ? 'true' : 'false',
             );
 
             // Re-throw to let the subscriber handle it
@@ -644,36 +648,55 @@ class PerformanceMetricsService
     }
 
     /**
-     * Reset the EntityManager if it's closed.
-     *
-     * This method should be called after an exception to ensure
-     * the EntityManager is in a valid state for subsequent operations.
+     * Returns the open private entity manager metrics are written with, creating it when needed.
      */
-    private function resetEntityManager(): void
+    private function writeEntityManager(): EntityManagerInterface
     {
-        if (!$this->entityManager->isOpen()) {
-            $this->registry->resetManager($this->connectionName);
-            $manager = $this->registry->getManager($this->connectionName);
-            if (!$manager instanceof EntityManagerInterface) {
-                throw new LogicException('Expected EntityManagerInterface from registry.');
-            }
-            // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
-            $this->entityManager = $manager;
-            $repository          = $this->entityManager->getRepository(RouteData::class);
-            if (!$repository instanceof RouteDataRepository) {
-                throw new LogicException('Expected RouteDataRepository.');
-            }
-            // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
-            $this->repository = $repository;
-            $recordRepo       = $this->entityManager->getRepository(RouteDataRecord::class);
-            if (!$recordRepo instanceof RouteDataRecordRepository) {
-                throw new LogicException('Expected RouteDataRecordRepository.');
-            }
-            // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
-            $this->recordRepository = $recordRepo;
-
-            $this->bundleLog('debug', '[PerformanceBundle] EntityManager reset after being closed');
+        if ($this->writeEntityManager instanceof EntityManagerInterface && $this->writeEntityManager->isOpen()) {
+            return $this->writeEntityManager;
         }
+
+        $factory = $this->writeEntityManagerFactory ?? new MetricsEntityManagerFactory();
+
+        // @igor-ignore - Private unit of work of the write path, cleared after every recording and dropped on error.
+        $this->writeEntityManager = $factory->create($this->entityManager);
+
+        return $this->writeEntityManager;
+    }
+
+    /**
+     * Loads the RouteData of a route and environment through the private write manager.
+     */
+    private function findRouteDataForWrite(EntityManagerInterface $entityManager, string $routeName, string $env): ?RouteData
+    {
+        $routeData = $entityManager->createQueryBuilder()
+            ->select('r')
+            ->from(RouteData::class, 'r')
+            ->where('r.name = :name')
+            ->andWhere('r.env = :env')
+            ->setParameter('name', $routeName)
+            ->setParameter('env', $env)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $routeData instanceof RouteData ? $routeData : null;
+    }
+
+    /**
+     * Tells whether an access record already exists for the request id (private write manager).
+     */
+    private function accessRecordExistsForWrite(EntityManagerInterface $entityManager, string $requestId): bool
+    {
+        $count = $entityManager->createQueryBuilder()
+            ->select('COUNT(rec.id)')
+            ->from(RouteDataRecord::class, 'rec')
+            ->where('rec.requestId = :requestId')
+            ->setParameter('requestId', $requestId)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $count > 0;
     }
 
     /**

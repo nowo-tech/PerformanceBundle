@@ -136,6 +136,11 @@ nowo_performance:
     connection: 'performance'  # Use a dedicated connection
 ```
 
+The name is used as the Doctrine **entity manager** name (`ManagerRegistry::getManager($connection)`); the bundle
+mapping must be registered on that manager. Since 3.16.0 metrics are written through a private entity manager on that
+manager's connection (same mapping and listeners, own unit of work), so recording never flushes changes your
+application left pending in the configured manager, and never resets it when it is closed.
+
 ### `cache`
 
 **Type:** `array`  

@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.16.0](#to-3160)
 - [To 3.15.3](#to-3153)
 - [To 3.15.2](#to-3152)
 - [To 3.15.1](#to-3151)
@@ -137,6 +138,30 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.16.0
+
+From **3.15.3**:
+
+```bash
+composer update nowo-tech/performance-bundle
+php bin/console cache:clear
+```
+
+**The bundle no longer flushes your entity manager.** Up to 3.15.3, sync recording (`async: false`, the default)
+persisted the metrics with the entity manager named by `connection` (default: your **default** entity manager) and
+flushed it at `kernel.terminate`, which also committed every change your code had left unflushed in that manager.
+From 3.16.0 metrics are written through a private entity manager on the same connection, so only the bundle's own
+rows are written.
+
+- If some code of yours modified or persisted entities **without calling `flush()`** and the data was nevertheless
+  saved, it was saved by this bundle by accident. Those changes are no longer written: add the missing `flush()`.
+- The bundle no longer calls `ManagerRegistry::resetManager()` on your entity manager when it is closed.
+- `PerformanceMetricsService::getEntityManager()` still returns the configured manager (reads, dashboard actions).
+  A new optional last constructor argument `?MetricsEntityManagerFactory $writeEntityManagerFactory` lets you
+  customise how the private write manager is created.
+- `AfterMetricsRecordedEvent::getRouteData()` is managed by the private manager while the event is dispatched and
+  detached right after (as before); do not persist it into your own entity manager.
 
 ## To 3.15.3
 

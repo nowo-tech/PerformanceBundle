@@ -90,6 +90,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Target 3.16.0 (minor: the bundle stops flushing / resetting the host's entity manager). See [UPGRADING](UPGRADING.md#to-3160).
+
+### Fixed
+
+- **Sync recording no longer flushes the host's entity manager (DDD audit 2026-11-10, G1):** in sync mode
+  `recordMetricsSync()` (called at `kernel.terminate` and by the Messenger handler) persisted and flushed the entity
+  manager named by `connection` (by default the application's **default** entity manager), committing every change
+  the application had left unflushed during the request. Metrics are now written through a **private entity manager**
+  on the same connection (new `MetricsEntityManagerFactory`, same configuration and event manager, own unit of work):
+  only `RouteData` / `RouteDataRecord` are flushed, and the private manager is cleared after each recording.
+- **The host's entity manager is no longer reset:** when the configured manager was closed (typically after an
+  application exception) the bundle called `ManagerRegistry::resetManager()` on it. The private manager does not
+  depend on it; after an error the bundle drops only its own manager (`\Throwable`, previously `\Exception` only).
+
 ## [3.15.3] - 2026-10-31
 
 Twig templates pass twig-cs-fixer (formatting only, rendered HTML unchanged); twig lint in CI and release-check. See [UPGRADING](UPGRADING.md#to-3153).
