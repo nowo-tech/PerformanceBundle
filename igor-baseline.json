@@ -1,0 +1,10 @@
+{
+  "files": {
+    "src/EventSubscriber/PerformanceMetricsSubscriber.php": [
+      {
+        "message": "Property 'dataCollector' of PerformanceMetricsSubscriber is mutated but not reset in reset().",
+        "reason": "False positive (2026-11-11 igor triage): the readonly collector only holds the current request's metrics; onKernelRequest() resets it at the start of every main request (FrankenPHP worker, no services resetter) and reset() calls $this->dataCollector->reset(). igor-php counts set*() calls on an injected service as mutations and only accepts a property assignment inside reset(), which a readonly property cannot have; @igor-ignore does not silence this rule."
+      }
+    ]
+  }
+}

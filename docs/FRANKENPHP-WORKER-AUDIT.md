@@ -22,6 +22,7 @@
   - [W-05 — Notifications block the worker thread in `kernel.terminate` (Low)](#w-05--notifications-block-the-worker-thread-in-kernelterminate-low)
   - [Info](#info)
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
+- [Igor findings triage (2026-11-11)](#igor-findings-triage-2026-11-11)
 - [Re-audit triggers](#re-audit-triggers)
 
 ## Execution model assumed
@@ -131,6 +132,15 @@ Entities (`RouteData`, `RouteDataRecord`), models, messages, events and `Perform
 - Set `enable_logging: false` in production and a low `notifications.http_timeout`.
 - Do not extend `PerformanceMetricsSubscriber`, `PerformanceMetricsService` or the notification channels with properties that store request data unless the class also implements `ResetInterface`.
 - Errors thrown by application listeners of the bundle events are logged and swallowed in `kernel.terminate` (W-02); setting FrankenPHP `max_requests` (or `FRANKENPHP_LOOP_MAX` with the Symfony runtime) to recycle workers periodically is still good practice.
+
+## Igor findings triage (2026-11-11)
+
+`composer igor` (igor-php 0.10.1) reported 1 warning on `main`; false positive. Igor now runs in CI (`igor` job) and
+reports 0 KO / 0 WARN.
+
+| Finding | Verdict | Resolution |
+|---------|---------|------------|
+| `PerformanceMetricsSubscriber::$dataCollector` "mutated but not reset in reset()" (`setRecordOperation()` etc.) | False positive | The collector holds the current request's metrics only and is reset at the start of every main `kernel.request` (scenario B). `reset()` (kernel.reset) now also calls `$this->dataCollector->reset()`, covered by `PerformanceMetricsSubscriberWorkerModeTest::testResetClearsPerRequestState`. igor only accepts a property assignment inside `reset()` (impossible on the readonly property) and `@igor-ignore` does not silence this rule, so the finding is recorded with its reason in `igor-baseline.json` (`igor.json` `baseline`). |
 
 ## Re-audit triggers
 

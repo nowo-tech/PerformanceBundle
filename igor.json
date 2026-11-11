@@ -21,5 +21,6 @@
   "ignore_vendors": true,
   "ignore_external_baseline": false,
   "env": "prod",
-  "verbose": false
+  "verbose": false,
+  "baseline": "igor-baseline.json"
 }
