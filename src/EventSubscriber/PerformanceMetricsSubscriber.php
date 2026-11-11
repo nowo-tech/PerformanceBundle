@@ -178,6 +178,8 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         $this->requestId                = null;
         $this->subRequestStates         = new WeakMap();
         $this->pendingSubRequestMetrics = [];
+        // The collector's per-request data goes too (also cleared at the start of every main request).
+        $this->dataCollector->reset();
     }
 
     /**

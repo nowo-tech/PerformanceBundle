@@ -91,6 +91,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Changed
+
+- FrankenPHP worker audit (igor): `PerformanceMetricsSubscriber::reset()` (kernel.reset) also resets the data collector, which was already reset at the start of every main request; the igor warning was a false positive, recorded with its reason in the new `igor-baseline.json`. See `docs/FRANKENPHP-WORKER-AUDIT.md`.
+- CI: new standalone `igor` job runs `composer igor` (REQ-CS-008).
+
 ## [3.16.0] - 2026-11-10
 
 Security: metrics are recorded through a private entity manager; the application's entity manager is never flushed or reset (validation bypass, GHSA). See [UPGRADING](https://github.com/nowo-tech/PerformanceBundle/blob/v3.16.0/docs/UPGRADING.md#to-3160).

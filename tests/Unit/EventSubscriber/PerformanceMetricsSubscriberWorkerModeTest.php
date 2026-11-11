@@ -222,11 +222,14 @@ final class PerformanceMetricsSubscriberWorkerModeTest extends TestCase
         set_error_handler($errorHandler);
         $errorReportingBefore = error_reporting();
 
+        $recordedNew = [];
         try {
             foreach (['first_route', 'second_route'] as $route) {
                 $request = $this->request($route);
                 $subscriber->onKernelRequest($this->requestEvent($request));
                 $subscriber->onKernelTerminate(new TerminateEvent($this->kernel, $request, new Response()));
+                // Read before reset(): kernel.reset clears the collector too.
+                $recordedNew[] = $collector->wasRecordNew();
                 $subscriber->reset();
             }
             $levelAfter = ob_get_level();
@@ -241,16 +244,20 @@ final class PerformanceMetricsSubscriberWorkerModeTest extends TestCase
         $this->assertSame(['first_route', 'second_route'], $routes);
         $this->assertSame(0, $levelAfter);
         $this->assertSame($errorReportingBefore, error_reporting());
-        $this->assertTrue($collector->wasRecordNew());
+        $this->assertSame([true, true], $recordedNew);
     }
 
     public function testResetClearsPerRequestState(): void
     {
-        $subscriber = $this->createSubscriber(new PerformanceDataCollector());
+        $collector  = new PerformanceDataCollector();
+        $subscriber = $this->createSubscriber($collector);
         $request    = $this->request('stateful_route');
         $subscriber->onKernelRequest($this->requestEvent($request));
+        $collector->setRouteName('stateful_route');
 
         $subscriber->reset();
+
+        $this->assertNull((new ReflectionProperty(PerformanceDataCollector::class, 'routeName'))->getValue($collector), 'reset() also clears the collector');
 
         foreach (['startTime', 'startMemory', 'routeName', 'routeParams', 'requestId'] as $property) {
             $this->assertNull((new ReflectionProperty(PerformanceMetricsSubscriber::class, $property))->getValue($subscriber), $property);
