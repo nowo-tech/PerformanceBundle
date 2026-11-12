@@ -4,7 +4,8 @@
 |-------|-------|
 | Package | `nowo-tech/performance-bundle` (`symfony-bundle`) |
 | Audited revision | `v3.4.7` (remediation of findings from `v3.4.6` / `77f2ae2`) |
-| Audit date | 2026-09-24 |
+| Reviewed version | `v3.16.1` (re-checked 2026-11-12 against the kept-alive test below) |
+| Audit date | 2026-11-12 (earlier audit date 2026-09-24 kept in the history) |
 | Method | Manual review of the runtime code under `src/` (kernel/Doctrine subscribers, DBAL middleware, data collector, services, notification channels, Twig extensions/components, controller, message handler, DI extension, compiler passes, `Resources/config/*.yaml`). Commands were skimmed (CLI only). |
 | **Verdict** | ✅ **Viable under scenario B** (after remediation in 3.4.7) — memory peak is reset per main request, no process-wide `error_reporting`/output-buffer mutation can leak, bundle entities are written through a private entity manager cleared after each write (3.16.0), and the profiler collector is reset per main request. Residual: notifications are still sent synchronously in `kernel.terminate` (W-05, accepted) |
 | Remediation (2026-09-24) | W-01…W-04 resolved in `PerformanceMetricsSubscriber` and `PerformanceMetricsService`; W-05 accepted; invalid YAML in `services_twig_component.yaml` fixed. Regression tests: `tests/Unit/EventSubscriber/PerformanceMetricsSubscriberWorkerModeTest.php`, `tests/Unit/Service/PerformanceMetricsServiceHostUnitOfWorkTest.php` (replaces `PerformanceMetricsServiceWorkerModeTest.php` since 3.16.0) |
@@ -23,6 +24,7 @@
   - [Info](#info)
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
 - [Igor findings triage (2026-11-11)](#igor-findings-triage-2026-11-11)
+- [Kept-alive test (REQ-RUNTIME-002)](#kept-alive-test-req-runtime-002)
 - [Re-audit triggers](#re-audit-triggers)
 
 ## Execution model assumed
@@ -141,6 +143,16 @@ reports 0 KO / 0 WARN.
 | Finding | Verdict | Resolution |
 |---------|---------|------------|
 | `PerformanceMetricsSubscriber::$dataCollector` "mutated but not reset in reset()" (`setRecordOperation()` etc.) | False positive | The collector holds the current request's metrics only and is reset at the start of every main `kernel.request` (scenario B). `reset()` (kernel.reset) now also calls `$this->dataCollector->reset()`, covered by `PerformanceMetricsSubscriberWorkerModeTest::testResetClearsPerRequestState`. igor only accepts a property assignment inside `reset()` (impossible on the readonly property) and `@igor-ignore` does not silence this rule, so the finding is recorded with its reason in `igor-baseline.json` (`igor.json` `baseline`). |
+
+## Kept-alive test (REQ-RUNTIME-002)
+
+Test: `Nowo\PerformanceBundle\Tests\Integration\Worker\WorkerKeptAliveKernelTest` (`tests/Integration/Worker/WorkerKeptAliveKernelTest.php`). It boots **one** production-mode kernel (`TestKernel`, SQLite in memory, tracking on, sync writes) and drives `http_kernel` `handle()` + `terminate()` 1,200 times, alternating two users (own client IP, own `Referer`) who open the dashboard filtered by their own route. Every request is also tracked by the bundle itself, so each iteration runs the subscriber, the query counters and the private-entity-manager write. `services_resetter` / `kernel.reset` is **never** called. Each response must show only the caller's own record row (never the other user's), the seeded rows must remain the same two rows, and memory growth after a 100-iteration warm-up must stay below 4 MiB.
+
+Result: no state is carried between requests, so the bundle is **safe with kernel reset false**.
+
+Note: the test deliberately uses `debug: false`. In a debug kernel Twig's profiler keeps one profile per render for the life of the process (about 330 KB per dashboard render); that is a development-only host setting (a dev worker should reset the kernel or not use worker mode), not bundle state.
+
+Rule 7: the bundle never clears, flushes or resets the host's default EntityManager: metrics are written through its own private entity manager (since 3.16.0), cleared after every recording; the dashboard only reads through the host's repositories.
 
 ## Re-audit triggers
 
