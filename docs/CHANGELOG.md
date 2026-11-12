@@ -92,6 +92,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tests
+
+- Added `WorkerKeptAliveKernelTest` (REQ-RUNTIME-002): one production-mode kernel, 1,200 alternating users on the dashboard with tracking on, no services resetter, flat memory.
+
+### Docs
+
+- Refreshed `docs/FRANKENPHP-WORKER-AUDIT.md` (reviewed version, kept-alive test, debug-profiler note, rule 7 note).
+
 ## [3.16.1] - 2026-11-11
 
 ### Changed
