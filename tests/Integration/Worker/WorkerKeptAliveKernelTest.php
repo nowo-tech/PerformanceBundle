@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\HttpKernel;
 
 use function gc_collect_cycles;
 use function memory_get_usage;
@@ -19,7 +20,7 @@ use function sprintf;
 use function str_contains;
 
 /**
- * REQ-RUNTIME-002: ONE booted production-mode kernel (`debug` false, SQLite in memory), `services_resetter` / `kernel.reset` never called (FrankenPHP
+ * REQ-RUNTIME-002: ONE booted production-mode kernel (`debug` false, SQLite in memory), `services_resetter` / `kernel.reset` never called (requests go through the `http_kernel` service, not `Kernel::handle()`, which resets services after a terminate()) (FrankenPHP
  * worker, kernel reset false). N iterations alternate two users through `http_kernel` `handle()` + `terminate()`: each
  * one opens the dashboard filtered by its own route name (and sends its own `Referer` / client IP). Every request is
  * also tracked by the bundle itself (`kernel.terminate` writes a `RouteDataRecord` through the private entity
@@ -44,6 +45,9 @@ final class WorkerKeptAliveKernelTest extends TestCase
     {
         $this->kernel = new TestKernel('test', false);
         $this->kernel->boot();
+        // The `http_kernel` service directly, never `Kernel::handle()`: after a terminate() that one runs the services resetter.
+        $httpKernel = $this->kernel->getContainer()->get('http_kernel');
+        self::assertInstanceOf(HttpKernel::class, $httpKernel);
 
         $app = new Application($this->kernel);
         $app->setAutoExit(false);
@@ -76,7 +80,7 @@ final class WorkerKeptAliveKernelTest extends TestCase
             $request = Request::create('/performance/?env=test&route=' . $mine, 'GET', [], [], [], ['REMOTE_ADDR' => $ip]);
             $request->headers->set('Referer', 'https://example.test/' . $mine);
 
-            $response = $this->kernel->handle($request);
+            $response = $httpKernel->handle($request);
             $content  = (string) $response->getContent();
             $context  = sprintf('iteration %d', $i);
 
@@ -84,7 +88,7 @@ final class WorkerKeptAliveKernelTest extends TestCase
             self::assertTrue(str_contains($content, $mine), $context . ': own route filter missing');
             self::assertTrue(str_contains($content, 'performance-review-form-' . $ids[$mine] . '"'), $context . ': own record row missing');
             self::assertFalse(str_contains($content, 'performance-review-form-' . $ids[$other] . '"'), $context . ': other user record row present');
-            $this->kernel->terminate($request, $response);
+            $httpKernel->terminate($request, $response);
         }
 
         gc_collect_cycles();
