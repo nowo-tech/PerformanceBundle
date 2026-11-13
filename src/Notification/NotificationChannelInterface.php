@@ -6,11 +6,15 @@ namespace Nowo\PerformanceBundle\Notification;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 
 /**
  * Interface for notification channels.
  *
- * Implement this interface to create custom notification channels.
+ * Implement this interface to create custom notification channels. Since 3.17.0, prefer
+ * {@see RouteMetricsNotificationChannelInterface}: it receives a framework-free
+ * {@see RouteMetricsSnapshot} instead of the bundle entity. The entity form of send()
+ * is replaced by it in 4.0.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech

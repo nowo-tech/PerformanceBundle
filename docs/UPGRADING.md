@@ -140,6 +140,12 @@
 
 ## Unreleased
 
+To the next minor (3.17.0): no action needed; events and notifications behave as before.
+
+- In event listeners, prefer `getRouteDataId()`, `getRouteName()`, `getEnv()` or `getRouteMetrics()` over `getRouteData()` (deprecated, removed in 4.0).
+- Custom notification channels: implement `RouteMetricsNotificationChannelInterface` and delegate `send()` to `sendRouteMetrics()` (example in [NOTIFICATIONS](NOTIFICATIONS.md#creating-custom-channels)).
+- Rule 6 (unchanged): dashboard writes and `nowo:performance:rebuild-aggregates` flush the manager named by `connection`; set a dedicated manager to keep them out of your unit of work.
+
 ## To 3.16.1
 
 From **3.16.0**:

@@ -92,6 +92,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Model\RouteMetricsSnapshot`: immutable, framework-free copy of a route row (id, name, env, method, review state, last access) plus the metrics just recorded when built from `AfterMetricsRecordedEvent` (REQ-ARCH-001 rules 3 and 4).
+- `BeforeRecordDeletedEvent`, `BeforeRecordReviewedEvent` and `AfterRecordReviewedEvent` gain `getRouteDataId()`, `getRouteName()`, `getEnv()` and `getRouteMetrics()`; `AfterMetricsRecordedEvent` gains `getRouteMetrics()`.
+- `Notification\RouteMetricsNotificationChannelInterface` (extends `NotificationChannelInterface`): `NotificationService` calls its `sendRouteMetrics(PerformanceAlert, RouteMetricsSnapshot)` instead of `send()`. Channels that only implement `NotificationChannelInterface` get exactly the same `send()` call as before.
+- `docs/ARCHITECTURE.md` with a "Standard Symfony and DDD hosts" section.
+
+### Deprecated
+
+- `getRouteData()` on `AfterMetricsRecordedEvent`, `BeforeRecordDeletedEvent`, `BeforeRecordReviewedEvent` and `AfterRecordReviewedEvent` (docblock only, no runtime notice): use the id accessors or `getRouteMetrics()`. Removed in 4.0.
+- The entity form of `NotificationChannelInterface::send()`: implement `RouteMetricsNotificationChannelInterface`. Replaced in 4.0.
+
 ### Tests
 
 - Added `WorkerKeptAliveKernelTest` (REQ-RUNTIME-002): one production-mode kernel, 1,200 alternating users on the dashboard with tracking on, no services resetter, flat memory.
