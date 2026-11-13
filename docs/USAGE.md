@@ -517,8 +517,10 @@ relation to your entities; with `track_user: true` it stores the user identifier
   `kernel.terminate` the metrics join it; use a dedicated `connection`, or `async: true` with `RecordMetricsMessage`
   routed to an asynchronous Messenger transport (not `sync://`), to separate them completely.
 - Integrate through its events (`BeforeMetricsRecordedEvent` to adjust or drop metrics, `AfterMetricsRecordedEvent`,
-  the `Before*/After*` record review, delete and clear events) and through `NotificationChannelInterface` for alerts
-  (for example to publish them on your own bus). Read scalar values in listeners.
+  the `Before*/After*` record review, delete and clear events) and through `RouteMetricsNotificationChannelInterface`
+  for alerts (for example to publish them on your own bus). Since 3.17.0 every event that carries a route also has
+  `getRouteDataId()`, `getRouteName()`, `getEnv()` and `getRouteMetrics()` (a framework-free `RouteMetricsSnapshot`);
+  read those, never the entity.
 - Dashboard access: implement `PerformanceAccessCheckerInterface::canAccess(?object $user)` and set
   `security.access_checker`.
 
@@ -544,11 +546,14 @@ managers, list that mapping under the manager you name in `connection`.
 
 Known limitations:
 
-- Dashboard actions (review, delete, clear) and the maintenance commands still flush the configured entity manager
-  in their own (admin / CLI) requests.
-- `NotificationChannelInterface::send()` passes the `RouteData` entity; read its scalar getters.
-  `AfterMetricsRecordedEvent` has scalar accessors (`getRouteDataId()`, `getRouteName()`, `getEnv()`); its
-  `getRouteData()` belongs to the bundle's private entity manager and is read-only (never persist it into yours).
+- Dashboard actions (review, delete, `save_access_records`) and `nowo:performance:rebuild-aggregates` still flush the
+  entity manager named by `connection`, in their own (admin / CLI) requests (clear and purge run DQL deletes;
+  `set-route-metrics` records through the private manager). With the default `connection: default` that is your default manager; give the bundle its
+  own manager (example above) to keep these writes out of your unit of work. Rule 6 of REQ-ARCH-001 is ⚠️ for this
+  path until 4.0, which moves the admin and CLI writes to the private manager.
+- `getRouteData()` on the events and the entity form of `NotificationChannelInterface::send()` are deprecated since
+  3.17.0 and removed in 4.0. `AfterMetricsRecordedEvent::getRouteData()` belongs to the bundle's private entity
+  manager and is read-only (never persist it into yours).
 - No unique index on `routes_data (env, name)`: two concurrent first hits of a route can create two rows (the writer
   uses the first one).
 - `track_status_codes` is not applied when recording: every status code is recorded.

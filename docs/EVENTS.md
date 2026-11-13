@@ -112,7 +112,8 @@ Dispatched after performance metrics are recorded to the database (after the bun
 - `getRouteName(): ?string` / `getEnv(): ?string` - Route name and environment just recorded (since 3.16.0)
 - `isNew(): bool` - Whether this was a new record (true) or an update (false)
 - `getRequestTime(): ?float`, `getTotalQueries(): ?int`, `getMemoryUsage(): ?int` - The metrics just recorded
-- `getRouteData(): RouteData` - The saved route data entity, **read-only** (see below)
+- `getRouteData(): RouteData` - The saved route data entity, **read-only** (see below). Deprecated since 3.17.0, removed in 4.0
+- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: the route row plus the metrics just recorded, framework free
 
 **`getRouteData()` belongs to the bundle's private entity manager.** Since 3.16.0 metrics are written through a
 private entity manager (see [CONFIGURATION: `connection`](CONFIGURATION.md)), which is cleared right after this
@@ -175,7 +176,9 @@ class MetricsNotificationListener
 Dispatched before a performance record is deleted.
 
 **Properties:**
-- `getRouteData(): RouteData` - The route data entity to be deleted
+- `getRouteData(): RouteData` - The route data entity to be deleted. Deprecated since 3.17.0, removed in 4.0
+- `getRouteDataId(): ?int`, `getRouteName(): ?string`, `getEnv(): ?string` - Since 3.17.0: ids and scalars of the route
+- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row (prefer it over the entity)
 - `preventDeletion(): void` - Prevent the deletion from happening
 - `isDeletionPrevented(): bool` - Check if deletion was prevented
 
@@ -323,7 +326,9 @@ class ClearingNotificationListener
 Dispatched before a performance record is marked as reviewed.
 
 **Properties:**
-- `getRouteData(): RouteData` - The route data entity to be reviewed
+- `getRouteData(): RouteData` - The route data entity to be reviewed. Deprecated since 3.17.0, removed in 4.0
+- `getRouteDataId(): ?int`, `getRouteName(): ?string`, `getEnv(): ?string` - Since 3.17.0: ids and scalars of the route
+- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row (prefer it over the entity)
 - `getQueriesImproved(): ?bool` - Whether queries improved (modifiable)
 - `setQueriesImproved(?bool $queriesImproved): void` - Modify queries improved flag
 - `getTimeImproved(): ?bool` - Whether time improved (modifiable)
@@ -375,7 +380,9 @@ class ReviewValidationListener
 Dispatched after a performance record is marked as reviewed.
 
 **Properties:**
-- `getRouteData(): RouteData` - The reviewed route data entity
+- `getRouteData(): RouteData` - The reviewed route data entity. Deprecated since 3.17.0, removed in 4.0
+- `getRouteDataId(): ?int`, `getRouteName(): ?string`, `getEnv(): ?string` - Since 3.17.0: ids and scalars of the route
+- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row (prefer it over the entity)
 
 **Use Cases:**
 - Send notifications

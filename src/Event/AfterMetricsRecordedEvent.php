@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Event;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Symfony\Contracts\EventDispatcher\Event;
 
 /**
@@ -46,6 +47,8 @@ final class AfterMetricsRecordedEvent extends Event
      * UPDATE by getRouteDataId(), or dispatch a message carrying the id. Never flush your application's entity manager
      * from a listener of this event: in sync mode it runs at kernel.terminate and would commit the changes the request
      * left pending.
+     *
+     * @deprecated since 3.17.0, removed in 4.0: use getRouteDataId(), getRouteName(), getEnv() or getRouteMetrics()
      */
     public function getRouteData(): RouteData
     {
@@ -97,5 +100,13 @@ final class AfterMetricsRecordedEvent extends Event
     public function getMemoryUsage(): ?int
     {
         return $this->memoryUsage;
+    }
+
+    /**
+     * Returns a framework-free copy of the route row plus the metrics just recorded (since 3.17.0), taken when called.
+     */
+    public function getRouteMetrics(): RouteMetricsSnapshot
+    {
+        return RouteMetricsSnapshot::fromRecordedEvent($this);
     }
 }

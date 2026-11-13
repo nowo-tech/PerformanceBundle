@@ -7,8 +7,10 @@ namespace Nowo\PerformanceBundle\Service;
 use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -41,6 +43,9 @@ class NotificationService
     /**
      * Send a performance alert to all enabled channels.
      *
+     * Channels implementing {@see RouteMetricsNotificationChannelInterface} (3.17.0) receive a {@see RouteMetricsSnapshot}
+     * of the context through sendRouteMetrics(); the others receive the context itself through send(), as before.
+     *
      * @param PerformanceAlert $alert The alert to send
      * @param AfterMetricsRecordedEvent|RouteData $context The route data or event (event carries just-recorded metrics)
      *
@@ -52,11 +57,19 @@ class NotificationService
             return [];
         }
 
-        $results = [];
+        $results  = [];
+        $snapshot = null;
 
         foreach ($this->channels as $channel) {
             if ($channel->isEnabled()) {
                 try {
+                    if ($channel instanceof RouteMetricsNotificationChannelInterface) {
+                        $snapshot ??= RouteMetricsSnapshot::fromContext($context);
+                        $results[$channel->getName()] = $channel->sendRouteMetrics($alert, $snapshot);
+
+                        continue;
+                    }
+
                     $results[$channel->getName()] = $channel->send($alert, $context);
                 } catch (Exception $e) {
                     // Log error but don't throw (logging enabled by default for backward compatibility)

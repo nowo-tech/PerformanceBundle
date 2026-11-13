@@ -186,7 +186,45 @@ nowo_performance:
 
 ## Creating Custom Channels
 
-You can create your own notification channels by implementing the `NotificationChannelInterface`:
+Since 3.17.0, implement `RouteMetricsNotificationChannelInterface`: the bundle then calls `sendRouteMetrics()` with a
+framework-free `RouteMetricsSnapshot` (route id, name, env, review state and the metrics just recorded) and never
+`send()`. Delegate the inherited `send()` to it until 4.0, where it replaces the entity form:
+
+```php
+<?php
+
+use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
+use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
+
+final class BusNotificationChannel implements RouteMetricsNotificationChannelInterface
+{
+    public function sendRouteMetrics(PerformanceAlert $alert, RouteMetricsSnapshot $route): bool
+    {
+        // e.g. publish ($alert->getType(), $route->routeDataId, $route->routeName, $route->requestTime) on your bus
+        return true;
+    }
+
+    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
+    {
+        return $this->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($context));
+    }
+
+    public function isEnabled(): bool
+    {
+        return true;
+    }
+
+    public function getName(): string
+    {
+        return 'bus';
+    }
+}
+```
+
+The entity form (`NotificationChannelInterface` alone) still works:
 
 ```php
 <?php
@@ -194,10 +232,11 @@ You can create your own notification channels by implementing the `NotificationC
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 
 class CustomNotificationChannel implements NotificationChannelInterface
 {
-    public function send(PerformanceAlert $alert, RouteData $routeData): bool
+    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
     {
         // Your sending logic here
         return true;

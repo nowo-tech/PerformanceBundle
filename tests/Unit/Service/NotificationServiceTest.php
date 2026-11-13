@@ -6,8 +6,10 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Nowo\PerformanceBundle\Service\NotificationService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -189,5 +191,53 @@ final class NotificationServiceTest extends TestCase
 
         $this->assertArrayHasKey('webhook', $results);
         $this->assertTrue($results['webhook']);
+    }
+
+    public function testSnapshotChannelGetsSnapshotAndLegacyChannelGetsTheSameContextAsBefore(): void
+    {
+        $route = (new RouteData())->setName('app_home')->setEnv('prod');
+        $event = new AfterMetricsRecordedEvent($route, false, 1.5, 40, 1024);
+        $alert = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_CRITICAL, 'Slow');
+
+        $legacy = $this->createMock(NotificationChannelInterface::class);
+        $legacy->method('isEnabled')->willReturn(true);
+        $legacy->method('getName')->willReturn('legacy');
+        $legacy->expects(self::once())->method('send')->with($alert, self::identicalTo($event))->willReturn(true);
+
+        $modern = new class implements RouteMetricsNotificationChannelInterface {
+            /** @var list<RouteMetricsSnapshot> */
+            public array $received = [];
+
+            public function sendRouteMetrics(PerformanceAlert $alert, RouteMetricsSnapshot $route): bool
+            {
+                $this->received[] = $route;
+
+                return true;
+            }
+
+            public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
+            {
+                throw new RuntimeException('send() must not be called for a snapshot channel');
+            }
+
+            public function isEnabled(): bool
+            {
+                return true;
+            }
+
+            public function getName(): string
+            {
+                return 'modern';
+            }
+        };
+
+        $results = (new NotificationService([$legacy, $modern], true))->sendAlert($alert, $event);
+
+        self::assertSame(['legacy' => true, 'modern' => true], $results);
+        $received = $modern->received;
+        self::assertCount(1, $received);
+        self::assertEquals(RouteMetricsSnapshot::fromRecordedEvent($event), $received[0]);
+        self::assertSame('app_home', $received[0]->routeName);
+        self::assertSame(1.5, $received[0]->requestTime);
     }
 }
