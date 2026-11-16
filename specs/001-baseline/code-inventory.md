@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/performance-bundle`  
-**Last audited**: 2026-10-20
+**Last audited**: 2026-11-16
 
 This file proves that **every production source artifact** under `src/` is referenced by the baseline specification. Test-only files under `tests/` and demo trees are out of Packagist scope unless promoted in the spec.
 
@@ -63,6 +63,7 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Event/AfterRecordsClearedEvent.php` | Bulk clear lifecycle | FR-EVT-001 |
 | `Notification/NotificationChannelInterface.php` | Alert channel contract | FR-NOTIF-001 |
 | `Notification/PerformanceAlert.php` | Alert payload | FR-NOTIF-001 |
+| `Notification/RouteMetricsNotificationChannelInterface.php` | Channel receiving a framework-free `RouteMetricsSnapshot` (3.17) | FR-NOTIF-001 |
 | `Notification/Channel/EmailNotificationChannel.php` | Email alerts | FR-NOTIF-002 |
 | `Notification/Channel/WebhookNotificationChannel.php` | Webhook/Slack/Teams alerts | FR-NOTIF-003 |
 | `Form/PerformanceFiltersType.php` | Dashboard filters | FR-FORM-001 |
@@ -73,17 +74,22 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Form/DeleteRecordsByFilterType.php` | Delete by filter | FR-FORM-001 |
 | `Form/ClearPerformanceDataType.php` | Clear all aggregates | FR-FORM-001 |
 | `Form/PurgeAccessRecordsType.php` | Purge access records | FR-FORM-001 |
+| `Form/ChartFiltersType.php` | Client-side filters of the trends chart (never submitted) | FR-FORM-001, FR-DASH-002 |
 | `Model/RecordFilters.php` | Filter model | FR-MDL-001 |
 | `Model/StatisticsEnvFilter.php` | Statistics filter model | FR-MDL-001 |
 | `Model/RouteDataWithAggregates.php` | Dashboard row DTO | FR-MDL-001 |
 | `Model/ClearPerformanceDataRequest.php` | Clear request DTO | FR-MDL-001 |
 | `Model/DeleteRecordsByFilterRequest.php` | Delete-by-filter DTO | FR-MDL-001 |
 | `Model/PurgeAccessRecordsRequest.php` | Purge request DTO | FR-MDL-001 |
+| `Model/RouteMetricsSnapshot.php` | Immutable framework-free copy of a route row + recorded metrics (3.17) | FR-EVT-001, FR-NOTIF-001 |
 | `Helper/LogHelper.php` | Conditional logging | FR-SVC-005 |
 | `Helper/DbalSchemaNameHelper.php` | DBAL schema asset names without deprecated APIs | FR-DBAL-002 |
+| `Service/MetricsEntityManagerFactory.php` | Private entity manager the bundle records metrics with (3.16) | FR-SVC-001, FR-WORKER-001 |
+| `Service/SensitiveDataRedactor.php` | Redacts secrets from stored query strings, referers and route parameters | FR-SVC-001, FR-SEC-002 |
 | `Security/PerformanceAccessCheckerInterface.php` | Dashboard access control contract (REQ-UI-002) | FR-SEC-001 |
 | `Security/ConfigurablePerformanceAccessChecker.php` | Role-based checker (`security.access_roles`) | FR-SEC-001 |
 | `Security/AllowAllPerformanceAccessChecker.php` | Permissive checker when `security.allow_unauthenticated` is true (demo/dev) | FR-SEC-001 |
+| `DependencyInjection/Compiler/CsrfProtectionPass.php` | Fails closed when the dashboard runs without form CSRF protection | FR-SEC-001 |
 | `Twig/ArrayExtension.php` | Array Twig helpers | FR-TWIG-001 |
 | `Twig/IconExtension.php` | Icon Twig helpers | FR-TWIG-001 |
 | `Twig/PerformanceLayoutExtension.php` | Deprecated dashboard layout Twig globals | FR-DASH-002, FR-TWIG-001 |
@@ -143,10 +149,10 @@ This file proves that **every production source artifact** under `src/` is refer
 
 | Category | Files | Mapped |
 | --- | ---: | ---: |
-| PHP classes (`src/**/*.php`) | 81 | 81 |
+| PHP classes (`src/**/*.php`) | 90 | 90 |
 | Symfony config (`src/Resources/config/`) | 3 | 3 |
 | Translations (`src/Resources/translations/`) | 12 | 12 |
-| Twig views (`src/Resources/views/`) | 24 | 24 |
-| **Total production files (`git ls-files src`)** | **120** | **120** |
+| Twig views (`src/Resources/views/`) | 17 | 17 |
+| **Total production files (`git ls-files src`)** | **122** | **122** |
 
-Audit: `git ls-files src | wc -l` → **120**.
+Audit: `git ls-files src | wc -l` → **122**.
