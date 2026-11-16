@@ -93,6 +93,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- The Flex recipe uninstall hook declares `strict_types=1` like every other PHP file of the package (REQ-CS-004).
+- Spec Kit baseline: `code-inventory.md` maps all 122 `src/` files again (six 3.16–3.17 files were missing: private metrics entity manager, `SensitiveDataRedactor`, `RouteMetricsSnapshot`, the route-metrics notification channel, `ChartFiltersType`, CSRF fail-closed pass), the PHP / Twig counts of the coverage summary are corrected, and `spec.md` gains `FR-SEC-002` (REQ-SPECKIT-001/003).
+
 ## [3.17.0] - 2026-11-13
 
 ### Added

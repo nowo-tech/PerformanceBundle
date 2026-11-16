@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Symfony Flex uninstall hook for Performance Bundle.
  *

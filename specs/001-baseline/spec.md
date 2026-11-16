@@ -140,6 +140,7 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 ### Security (dashboard access)
 
 - **FR-SEC-001**: Dashboard routes MUST be guarded by `PerformanceAccessCheckerInterface` (REQ-UI-002): the default `ConfigurablePerformanceAccessChecker` requires `security.access_roles`; `AllowAllPerformanceAccessChecker` is used only when `security.allow_unauthenticated` is true (demo/dev).
+- **FR-SEC-002**: `SensitiveDataRedactor` MUST redact secrets (reset / OAuth / signed-URL tokens and similar values) from the query string, referer and route parameters the bundle stores about a request, so they never reach the access records, the dashboard or the CSV / JSON exports.
 
 ### Web Profiler
 
@@ -188,7 +189,7 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 
 ## Success Criteria
 
-- **SC-001**: 100% of production files in `src/` mapped in [`code-inventory.md`](code-inventory.md) (**120/120**, `git ls-files src`).
+- **SC-001**: 100% of production files in `src/` mapped in [`code-inventory.md`](code-inventory.md) (**122/122**, `git ls-files src`).
 - **SC-002**: Configuration keys in `docs/CONFIGURATION.md` match `Configuration.php`.
 - **SC-003**: PHPUnit and PHPStan pass in CI (`composer qa`).
 - **SC-004**: Dashboard exports produce valid CSV/JSON for filtered datasets.
