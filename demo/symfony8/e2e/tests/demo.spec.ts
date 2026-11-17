@@ -18,6 +18,20 @@ test.describe('demo happy path', () => {
     await expect(page.getByTestId('demo-masthead')).toBeVisible();
   });
 
+  test('products: the FormKit product form creates a product and the delete form removes it', async ({ page }) => {
+    await page.goto('/product/new');
+    await expect(page.getByTestId('demo-masthead')).toBeVisible();
+    await page.getByLabel('Name', { exact: true }).fill('E2E product');
+    await page.getByLabel('Price').fill('12.5');
+    await page.getByLabel('Status').selectOption('draft');
+    await page.getByRole('button', { name: 'Create' }).click();
+    const row = page.locator('tbody tr', { hasText: 'E2E product' });
+    await expect(row).toBeVisible();
+    page.once('dialog', (dialog) => dialog.accept());
+    await row.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.locator('tbody tr', { hasText: 'E2E product' })).toHaveCount(0);
+  });
+
   test('routes page: scaffold, KPI tiles, area tabs, routes table', async ({ page }) => {
     const response = await page.goto('/demo/performance/');
     expect(response?.ok()).toBeTruthy();

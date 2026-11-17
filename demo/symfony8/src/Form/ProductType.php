@@ -5,52 +5,76 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Entity\Product;
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * Demo product form (REQ-DEMO-015): a FormKit form, profile `demo`.
+ *
+ * @extends AbstractType<Product>
+ */
+#[FormKitConfig('demo')]
 class ProductType extends AbstractType
 {
+    use FormOptionsTrait;
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('name', TextType::class, [
-                'required' => true,
-                'attr'     => ['class' => 'form-control'],
-            ])
-            ->add('description', TextareaType::class, [
-                'required' => false,
-                'attr'     => ['class' => 'form-control', 'rows' => 4],
-            ])
-            ->add('price', MoneyType::class, [
-                'required' => true,
-                'currency' => 'USD',
-                'attr'     => ['class' => 'form-control'],
-            ])
-            ->add('imageUrl', UrlType::class, [
-                'required' => false,
-                'attr'     => ['class' => 'form-control'],
-            ])
-            ->add('status', ChoiceType::class, [
-                'choices' => [
-                    'Active'   => 'active',
-                    'Inactive' => 'inactive',
-                    'Draft'    => 'draft',
-                ],
-                'required' => true,
-                'attr'     => ['class' => 'form-control'],
-            ])
-            ->add('createdAt', DateTimeType::class, [
-                'required' => false,
-                'widget'   => 'single_text',
-                'attr'     => ['class' => 'form-control'],
-            ]);
+        $this->addText($builder, 'name', [
+            'label'              => 'Name',
+            'required'           => true,
+            'translation_domain' => false,
+            'placeholder'        => false,
+            'help'               => false,
+        ]);
+        $this->addTextarea($builder, 'description', [
+            'label'              => 'Description',
+            'required'           => false,
+            'translation_domain' => false,
+            'placeholder'        => false,
+            'help'               => false,
+            'attr'               => ['rows' => 4],
+        ]);
+        $this->addWithDefaults($builder, 'price', MoneyType::class, [
+            'label'              => 'Price',
+            'required'           => true,
+            'currency'           => 'USD',
+            'translation_domain' => false,
+            'placeholder'        => false,
+            'help'               => false,
+        ]);
+        $this->addUrl($builder, 'imageUrl', [
+            'label'              => 'Image URL',
+            'required'           => false,
+            'translation_domain' => false,
+            'placeholder'        => false,
+            'help'               => false,
+        ]);
+        $this->addChoice($builder, 'status', [
+            'label'   => 'Status',
+            'choices' => [
+                'Active'   => 'active',
+                'Inactive' => 'inactive',
+                'Draft'    => 'draft',
+            ],
+            'required'           => true,
+            'translation_domain' => false,
+            'placeholder'        => false,
+            'help'               => false,
+        ]);
+        $this->addWithDefaults($builder, 'createdAt', DateTimeType::class, [
+            'label'              => 'Created at',
+            'required'           => false,
+            'widget'             => 'single_text',
+            'translation_domain' => false,
+            'placeholder'        => false,
+            'help'               => false,
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
