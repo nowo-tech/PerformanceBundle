@@ -93,6 +93,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Demo: the shell is UiKit's admin layout with the UiKit masthead and flashes (no Bootstrap or icon CDN, no inline style), the pages use UiKit classes, `demo/symfony8/composer.json` requires `nowo-tech/ui-kit-bundle` ^2.53 (REQ-DEMO-014).
+- Demo: the product form and the delete form are FormKit forms (profile `demo`); the e2e suite creates and deletes a product through them (REQ-DEMO-015).
+
 ### Documentation
 
 - The Flex recipe uninstall hook declares `strict_types=1` like every other PHP file of the package (REQ-CS-004).

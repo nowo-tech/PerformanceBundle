@@ -3,51 +3,59 @@
 {% block title %}Home - Performance Bundle Demo{% endblock %}
 
 {% block content %}
-    <h1>Performance Bundle Demo</h1>
-    <p class="lead">This demo shows how the Performance Bundle tracks route performance metrics.</p>
-
-    <div class="row mt-4">
-        <div class="col-md-6">
+    <section class="nowo-ui-card">
+        <div class="nowo-ui-card__header"><h1 class="nowo-ui-card__title">Performance Bundle Demo</h1></div>
+        <div class="nowo-ui-card__body">
+            <p class="nowo-ui-muted">This demo shows how the Performance Bundle tracks route performance metrics.</p>
             <h2>Quick Links</h2>
             <ul>
                 <li><a href="{{ path('product_index') }}">Products CRUD</a></li>
             </ul>
         </div>
-        <div class="col-md-6">
-            <h2>Performance Metrics ({{ env }})</h2>
+    </section>
+
+    <section class="nowo-ui-card">
+        <div class="nowo-ui-card__header"><h2 class="nowo-ui-card__title">Performance Metrics ({{ env }})</h2></div>
+        <div class="nowo-ui-card__body">
             {% if routes|length > 0 %}
                 <p>Total routes tracked: {{ routes|length }}</p>
-                <a href="{{ path('product_index') }}" class="btn btn-primary">View Products (will be tracked)</a>
-                <a href="{{ path('nowo_performance.index') }}" class="btn btn-info">View Performance Metrics</a>
+                <div class="nowo-ui-row-actions">
+                    <a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--primary">View Products (will be tracked)</a>
+                    <a href="{{ path('nowo_performance.index') }}" class="nowo-ui-btn nowo-ui-btn--outline">View Performance Metrics</a>
+                </div>
             {% else %}
                 <p>No routes tracked yet. Visit some routes to see metrics!</p>
             {% endif %}
         </div>
-    </div>
+    </section>
 
     {% if worstRoutes|length > 0 %}
-        <div class="mt-4">
-            <h2>Worst Performing Routes</h2>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Route</th>
-                        <th>Request Time</th>
-                        <th>Queries</th>
-                        <th>Query Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for route in worstRoutes %}
-                        <tr>
-                            <td>{{ route.name }}</td>
-                            <td>{{ route.requestTime ? route.requestTime|number_format(4) ~ 's' : 'N/A' }}</td>
-                            <td>{{ route.totalQueries ?? 'N/A' }}</td>
-                            <td>{{ route.queryTime ? route.queryTime|number_format(4) ~ 's' : 'N/A' }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <section class="nowo-ui-card">
+            <div class="nowo-ui-card__header"><h2 class="nowo-ui-card__title">Worst Performing Routes</h2></div>
+            <div class="nowo-ui-card__body">
+                <div class="nowo-ui-table-wrap">
+                    <table class="nowo-ui-table">
+                        <thead>
+                            <tr>
+                                <th>Route</th>
+                                <th>Request Time</th>
+                                <th>Queries</th>
+                                <th>Query Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for route in worstRoutes %}
+                                <tr>
+                                    <td>{{ route.name }}</td>
+                                    <td>{{ route.requestTime ? route.requestTime|number_format(4) ~ 's' : 'N/A' }}</td>
+                                    <td>{{ route.totalQueries ?? 'N/A' }}</td>
+                                    <td>{{ route.queryTime ? route.queryTime|number_format(4) ~ 's' : 'N/A' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     {% endif %}
 {% endblock %}

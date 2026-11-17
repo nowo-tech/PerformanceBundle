@@ -3,16 +3,21 @@
 {% block title %}New Product{% endblock %}
 
 {% block content %}
-    <h1>Create New Product</h1>
-
-    {{ form_start(form) }}
-        {# REQ-TWIG-003: child loop #}
-        {% for child in form %}
-            {% if not child.rendered %}
-                {{ form_row(child) }}
-            {% endif %}
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Create</button>
-        <a href="{{ path('product_index') }}" class="btn btn-secondary">Cancel</a>
-    {{ form_end(form) }}
+    <section class="nowo-ui-card">
+        <div class="nowo-ui-card__header"><h1 class="nowo-ui-card__title">Create New Product</h1></div>
+        <div class="nowo-ui-card__body">
+            {{ form_start(form) }}
+                {# REQ-TWIG-003: child loop #}
+                {% for child in form %}
+                    {% if not child.rendered %}
+                        {{ form_row(child) }}
+                    {% endif %}
+                {% endfor %}
+                <div class="nowo-ui-row-actions">
+                    <button type="submit" class="nowo-ui-btn nowo-ui-btn--primary">Create</button>
+                    <a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--outline">Cancel</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
 {% endblock %}

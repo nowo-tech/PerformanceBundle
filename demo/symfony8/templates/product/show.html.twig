@@ -3,39 +3,23 @@
 {% block title %}Product #{{ product.id }}{% endblock %}
 
 {% block content %}
-    <h1>Product #{{ product.id }}</h1>
-
-    <table class="table">
-        <tr>
-            <th>ID</th>
-            <td>{{ product.id }}</td>
-        </tr>
-        <tr>
-            <th>Name</th>
-            <td>{{ product.name }}</td>
-        </tr>
-        <tr>
-            <th>Description</th>
-            <td>{{ product.description ?? 'N/A' }}</td>
-        </tr>
-        <tr>
-            <th>Price</th>
-            <td>${{ product.price }}</td>
-        </tr>
-        <tr>
-            <th>Image URL</th>
-            <td>{{ product.imageUrl ?? 'N/A' }}</td>
-        </tr>
-        <tr>
-            <th>Status</th>
-            <td><span class="badge bg-{{ product.status == 'active' ? 'success' : (product.status == 'inactive' ? 'danger' : 'warning') }}">{{ product.status }}</span></td>
-        </tr>
-        <tr>
-            <th>Created At</th>
-            <td>{{ product.createdAt ? product.createdAt|date('Y-m-d H:i:s') : 'N/A' }}</td>
-        </tr>
-    </table>
-
-    <a href="{{ path('product_index') }}" class="btn btn-secondary">Back to list</a>
-    <a href="{{ path('product_edit', {'id': product.id}) }}" class="btn btn-warning">Edit</a>
+    {% set _badge = product.status == 'active' ? 'success' : (product.status == 'inactive' ? 'error' : 'warning') %}
+    <section class="nowo-ui-card">
+        <div class="nowo-ui-card__header"><h1 class="nowo-ui-card__title">Product #{{ product.id }}</h1></div>
+        <div class="nowo-ui-card__body">
+            <dl class="nowo-ui-detail-list">
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">ID</dt><dd class="nowo-ui-detail-list__value">{{ product.id }}</dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Name</dt><dd class="nowo-ui-detail-list__value">{{ product.name }}</dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Description</dt><dd class="nowo-ui-detail-list__value">{{ product.description ?? 'N/A' }}</dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Price</dt><dd class="nowo-ui-detail-list__value">${{ product.price }}</dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Image URL</dt><dd class="nowo-ui-detail-list__value">{{ product.imageUrl ?? 'N/A' }}</dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Status</dt><dd class="nowo-ui-detail-list__value"><span class="nowo-ui-badge nowo-ui-badge--{{ _badge }}">{{ product.status }}</span></dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Created At</dt><dd class="nowo-ui-detail-list__value">{{ product.createdAt ? product.createdAt|date('Y-m-d H:i:s') : 'N/A' }}</dd></div>
+            </dl>
+            <div class="nowo-ui-row-actions">
+                <a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--outline">Back to list</a>
+                <a href="{{ path('product_edit', {'id': product.id}) }}" class="nowo-ui-btn nowo-ui-btn--primary">Edit</a>
+            </div>
+        </div>
+    </section>
 {% endblock %}
