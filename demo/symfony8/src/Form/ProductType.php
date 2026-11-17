@@ -56,7 +56,7 @@ class ProductType extends AbstractType
             'help'               => false,
         ]);
         $this->addChoice($builder, 'status', [
-            'label'              => 'Status',
+            'label'   => 'Status',
             'choices' => [
                 'Active'   => 'active',
                 'Inactive' => 'inactive',
