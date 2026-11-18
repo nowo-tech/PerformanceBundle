@@ -114,6 +114,8 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 
 - **FR-WORKER-001**: Under FrankenPHP worker mode with no kernel reboot between requests (including when `services_resetter` does not run), the metrics path MUST: reset process peak memory at each tracked main request; avoid leaking process-wide `error_reporting` / output-buffer mutations; detach persisted `RouteData` / `RouteDataRecord` after each write; reset `PerformanceDataCollector` (and re-apply `async`) at each main request. Full audit: [`docs/FRANKENPHP-WORKER-AUDIT.md`](../../docs/FRANKENPHP-WORKER-AUDIT.md).
 
+- **FR-CONC-001**: Concurrent writes MUST stay correct (REQ-RUNTIME-003, [`docs/CONCURRENCY.md`](../../docs/CONCURRENCY.md)): one RouteData per (env, name) through the unique constraint `uniq_route_env_name` plus a write unit that re-reads after a unique violation; a request-id race saves the route metrics and logs a warning; lock conflicts are replayed in the metrics path and answer 409 + `Retry-After` + `CONFLICT_001` (nothing saved) or `CONFLICT_002` (part saved) on dashboard writes; the host's entity manager is never cleared or reset.
+
 ### DBAL & persistence
 
 - **FR-DBAL-001**: `QueryTrackingMiddleware`, `QueryTrackingMiddlewareRegistry`, `QueryTrackingConnectionSubscriber`, and `QueryLogger` MUST count/time queries when `track_queries=true`.
@@ -189,7 +191,7 @@ As a maintainer, I create/sync schema, diagnose table health, rebuild aggregates
 
 ## Success Criteria
 
-- **SC-001**: 100% of production files in `src/` mapped in [`code-inventory.md`](code-inventory.md) (**122/122**, `git ls-files src`).
+- **SC-001**: 100% of production files in `src/` mapped in [`code-inventory.md`](code-inventory.md) (**125/125**, `git ls-files src`).
 - **SC-002**: Configuration keys in `docs/CONFIGURATION.md` match `Configuration.php`.
 - **SC-003**: PHPUnit and PHPStan pass in CI (`composer qa`).
 - **SC-004**: Dashboard exports produce valid CSV/JSON for filtered datasets.

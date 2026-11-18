@@ -24,6 +24,9 @@ services:
             - method: setMessageBus
               arguments: ['@Nowo\PerformanceBundle\MessageBus\MessengerBusAdapter']
 
+    # Lock-conflict answer of the dashboard writes (409 + Retry-After, CONFLICT_001 / CONFLICT_002; REQ-RUNTIME-003)
+    Nowo\PerformanceBundle\Concurrency\WriteConflictMapper: ~
+
     # Cache Service - uses dedicated pool (configurable via nowo_performance.cache.pool)
     Nowo\PerformanceBundle\Service\PerformanceCacheService:
         public: true

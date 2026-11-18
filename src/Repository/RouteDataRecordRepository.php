@@ -11,7 +11,11 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use Nowo\TransactionDoctrine\TransientFailureClassifier;
+use Nowo\TransactionDoctrine\TransientFailureKind;
+use Nowo\TransactionDoctrine\WriteUnit\ConcurrencyConflict;
 use SortDirection;
+use Throwable;
 
 use function ceil;
 use function count;
@@ -281,14 +285,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
                 break;
             }
 
-            $deleted = $this->createQueryBuilder('r')
-                ->delete()
-                ->where('r.id IN (:ids)')
-                ->setParameter('ids', $ids)
-                ->getQuery()
-                ->execute();
-
-            $totalDeleted += $deleted;
+            $totalDeleted += $this->deleteBatch($ids, $totalDeleted);
         }
 
         return $totalDeleted;
@@ -327,17 +324,40 @@ class RouteDataRecordRepository extends ServiceEntityRepository
                 break;
             }
 
-            $deleted = $this->createQueryBuilder('r')
+            $totalDeleted += $this->deleteBatch($ids, $totalDeleted);
+        }
+
+        return $totalDeleted;
+    }
+
+    /**
+     * Deletes one batch of a chunked delete (each batch commits on its own: short locks, REQ-RUNTIME-003 rule 9).
+     *
+     * A lock conflict after earlier batches were committed becomes a ConcurrencyConflict marked `committed`, so the
+     * dashboard answers CONFLICT_002 (part of the records were deleted) instead of a safe-retry CONFLICT_001.
+     *
+     * @param array<int, int>|list<int> $ids Record ids
+     * @param int $alreadyDeleted Records deleted (committed) by the earlier batches
+     *
+     * @return int Number of deleted records
+     */
+    private function deleteBatch(array $ids, int $alreadyDeleted): int
+    {
+        try {
+            return $this->createQueryBuilder('r')
                 ->delete()
                 ->where('r.id IN (:ids)')
                 ->setParameter('ids', $ids)
                 ->getQuery()
                 ->execute();
+        } catch (Throwable $e) {
+            $kind = (new TransientFailureClassifier())->classify($e);
+            if ($alreadyDeleted > 0 && $kind instanceof TransientFailureKind) {
+                throw new ConcurrencyConflict(1, $kind, null, $e, true);
+            }
 
-            $totalDeleted += $deleted;
+            throw $e;
         }
-
-        return $totalDeleted;
     }
 
     /**
@@ -411,14 +431,7 @@ class RouteDataRecordRepository extends ServiceEntityRepository
                 break;
             }
 
-            $deleted = $this->createQueryBuilder('r')
-                ->delete()
-                ->where('r.id IN (:ids)')
-                ->setParameter('ids', $ids)
-                ->getQuery()
-                ->execute();
-
-            $totalDeleted += $deleted;
+            $totalDeleted += $this->deleteBatch($ids, $totalDeleted);
         }
 
         return $totalDeleted;

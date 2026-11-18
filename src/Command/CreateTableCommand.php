@@ -21,6 +21,7 @@ use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
+use Nowo\PerformanceBundle\Service\RouteDataDeduplicator;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -1279,6 +1280,18 @@ HELP
             }
         }
 
+        // Unique constraints (uniq_route_env_name, 3.18.0): duplicates are merged before the unique index is created.
+        $uniqueNames = [];
+        if (isset($metadata->table['uniqueConstraints']) && is_array($metadata->table['uniqueConstraints'])) {
+            foreach ($metadata->table['uniqueConstraints'] as $constraintName => $constraintDefinition) {
+                $columns = $constraintDefinition['columns'] ?? [];
+                if (!empty($columns)) {
+                    $expectedIndexes[$constraintName] = $columns;
+                    $uniqueNames[$constraintName]     = true;
+                }
+            }
+        }
+
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
             $indexName                               = $this->getAssetName($index);
@@ -1317,12 +1330,20 @@ HELP
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName);
 
-            $sql = sprintf(
-                'CREATE INDEX %s ON %s (%s)',
+            $unique = isset($uniqueNames[$indexName]);
+            $sql    = sprintf(
+                'CREATE %s %s ON %s (%s)',
+                $unique ? 'UNIQUE INDEX' : 'INDEX',
                 $this->quoteIdentifier($platform, $indexName),
                 $this->quoteIdentifier($platform, $actualTableName),
                 implode(', ', $quotedColumns),
             );
+
+            if ($unique) {
+                $this->createUniqueIndexAfterMerge($entityManager, $io, $sql, (string) $indexName, $columns);
+
+                continue;
+            }
 
             try {
                 $connection->executeStatement($sql);
@@ -1331,6 +1352,37 @@ HELP
                 $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
         }
+    }
+
+    /**
+     * Merges duplicate routes, then creates the unique index (uniq_route_env_name). Live traffic can insert a new
+     * duplicate between the two, so a failed creation merges and tries once more; if it fails again the command fails
+     * (the write path relies on the constraint), and running it again resumes where it stopped.
+     *
+     * @param list<string> $columns
+     *
+     * @throws RuntimeException When the unique index could not be created after the retry
+     */
+    private function createUniqueIndexAfterMerge(EntityManagerInterface $entityManager, SymfonyStyle $io, string $sql, string $indexName, array $columns): void
+    {
+        $failure = null;
+        for ($attempt = 1; $attempt <= 2; ++$attempt) {
+            try {
+                $merged = (new RouteDataDeduplicator())->merge($entityManager);
+                if ($merged > 0) {
+                    $io->text(sprintf('  ✓ Merged <info>%d</info> duplicate route row(s) into the oldest row of each route', $merged));
+                }
+                $entityManager->getConnection()->executeStatement($sql);
+                $io->text(sprintf('  ✓ Created unique index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
+
+                return;
+            } catch (Exception $e) {
+                $failure = $e;
+                $io->warning(sprintf('  ✗ Failed to create unique index %s (attempt %d of 2): %s', $indexName, $attempt, $e->getMessage()));
+            }
+        }
+
+        throw new RuntimeException(sprintf('The unique index %s could not be created (a concurrent write may have added a duplicate route); run the command again.', $indexName), 0, $failure);
     }
 
     /**

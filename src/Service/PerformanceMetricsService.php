@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
@@ -17,6 +19,10 @@ use Nowo\PerformanceBundle\MessageBus\MessageBusInterface;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\TransactionContract\TransientStorageFailure;
+use Nowo\TransactionDoctrine\DoctrineTransactionRunner;
+use Nowo\TransactionDoctrine\TransientFailureClassifier;
+use Nowo\TransactionDoctrine\TransientFailureKind;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\NativeClock;
@@ -26,7 +32,9 @@ use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
 
 use function in_array;
+use function random_int;
 use function sprintf;
+use function usleep;
 
 /**
  * Service for managing route performance metrics.
@@ -36,6 +44,12 @@ use function sprintf;
  */
 class PerformanceMetricsService
 {
+    /**
+     * Attempts of one metrics write unit (the first one and up to two replays after a unique violation or a lock
+     * conflict).
+     */
+    public const MAX_WRITE_ATTEMPTS = 3;
+
     /**
      * The entity manager for the configured connection.
      */
@@ -65,6 +79,11 @@ class PerformanceMetricsService
      * Message bus for async processing (optional).
      */
     private ?MessageBusInterface $messageBus = null;
+
+    /**
+     * Classifies lock conflicts (stateless).
+     */
+    private readonly TransientFailureClassifier $classifier;
 
     /**
      * Private entity manager of the write path (created on first write, dropped after an error).
@@ -104,6 +123,7 @@ class PerformanceMetricsService
             throw new LogicException('Expected EntityManagerInterface from registry.');
         }
         $this->entityManager = $manager;
+        $this->classifier    = new TransientFailureClassifier();
         $repository          = $this->entityManager->getRepository(RouteData::class);
         if (!$repository instanceof RouteDataRepository) {
             throw new LogicException('Expected RouteDataRepository.');
@@ -273,7 +293,9 @@ class PerformanceMetricsService
         // Otherwise, record synchronously
         $this->bundleLog('debug', '[PerformanceBundle] recordMetrics: Recording synchronously');
 
-        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $requestId, $referer, $userIdentifier, $userId, $routePath);
+        // kernel.terminate: the worker is busy until the unit is done, so only deadlocks are replayed, never a lock
+        // wait timeout (which already waited innodb_lock_wait_timeout / lock_timeout).
+        return $this->writeUnit($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $requestId, $referer, $userIdentifier, $userId, $routePath, false);
     }
 
     /**
@@ -312,10 +334,35 @@ class PerformanceMetricsService
         ?string $userId = null,
         ?string $routePath = null,
     ): array {
-        $isNew        = false;
-        $wasUpdated   = false;
-        $accessRecord = null;
+        // Messenger handler (async) and direct callers: every lock conflict kind is replayed.
+        return $this->writeUnit($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $requestId, $referer, $userIdentifier, $userId, $routePath, true);
+    }
 
+    /**
+     * The metrics write unit of recordMetrics() (sync mode) and recordMetricsSync().
+     *
+     * @param array<string, mixed>|null $params Route parameters
+     * @param bool $replayLockWaits Whether a lock wait timeout is replayed too (deadlocks and serialization failures always are)
+     *
+     * @return array{is_new: bool, was_updated: bool}
+     */
+    private function writeUnit(
+        string $routeName,
+        string $env,
+        ?float $requestTime,
+        ?int $totalQueries,
+        ?float $queryTime,
+        ?array $params,
+        ?int $memoryUsage,
+        ?string $httpMethod,
+        ?int $statusCode,
+        ?string $requestId,
+        ?string $referer,
+        ?string $userIdentifier,
+        ?string $userId,
+        ?string $routePath,
+        bool $replayLockWaits,
+    ): array {
         $this->bundleLog(
             'debug',
             '[PerformanceBundle] recordMetricsSync: Looking for existing record - route=%s, env=%s',
@@ -323,110 +370,106 @@ class PerformanceMetricsService
             $env,
         );
 
-        // A private entity manager on the configured connection: its unit of work only holds the bundle's entities,
-        // so the flush below never commits a change the host left pending, and a closed host manager is irrelevant.
-        $entityManager = $this->writeEntityManager();
-        $routeData     = $this->findRouteDataForWrite($entityManager, $routeName, $env);
+        // One write unit (REQ-RUNTIME-003): the RouteData (found or inserted) and the access record are committed in
+        // one transaction of the private entity manager. A unique violation means another worker inserted the same
+        // route (uniq_route_env_name) or saved the same request id (uniq_record_request_id) first: the unit is run
+        // again and re-reads what the other worker committed. A lock conflict (deadlock, lock wait timeout) is
+        // replayed too. Only the outermost transaction may replay (a host transaction may already be rolled back).
+        $uniqueConflicts = 0;
+        for ($attempt = 1;; ++$attempt) {
+            // A private entity manager on the configured connection: its unit of work only holds the bundle's
+            // entities, so its flush never commits a change the host left pending, and the host's manager is never
+            // flushed, cleared or reset by the bundle.
+            $entityManager = $this->writeEntityManager();
+            $replayable    = $entityManager->getConnection()->getTransactionNestingLevel() === 0;
 
-        if (!$routeData instanceof RouteData) {
-            $this->bundleLog(
-                'debug',
-                '[PerformanceBundle] recordMetricsSync: No existing record found, creating new - route=%s, env=%s',
-                $routeName,
-                $env,
-            );
-            // Create new RouteData (identity + lastAccessedAt only; metrics live in RouteDataRecord)
-            $routeData = new RouteData();
-            $routeData->setName($routeName);
-            $routeData->setEnv($env);
-            $routeData->setHttpMethod($httpMethod);
-            $routeData->setParams($params !== null ? SensitiveDataRedactor::redactParams($params) : null);
-            $routeData->setLastAccessedAt($this->clock->now());
+            try {
+                /** @var array{0: RouteData, 1: bool, 2: bool} $written */
+                $written = DoctrineTransactionRunner::forEntityManager($entityManager)->run(
+                    fn (): array => $this->writeMetrics(
+                        $entityManager,
+                        $routeName,
+                        $env,
+                        $requestTime,
+                        $totalQueries,
+                        $queryTime,
+                        $params,
+                        $memoryUsage,
+                        $httpMethod,
+                        $statusCode,
+                        $requestId,
+                        $referer,
+                        $userIdentifier,
+                        $userId,
+                        $routePath,
+                        $uniqueConflicts,
+                    ),
+                );
+            } catch (Throwable $e) {
+                // Drop the private manager after an error (it may be closed or hold half-written entities); the next
+                // attempt or recording creates a fresh one. The host's entity manager is never reset by the bundle.
+                // @igor-ignore - Private unit of work of the write path, cleared after every recording and dropped on error.
+                $this->writeEntityManager = null;
 
-            $entityManager->persist($routeData);
-            $isNew = true;
-        } else {
-            $this->bundleLog(
-                'debug',
-                '[PerformanceBundle] recordMetricsSync: Existing record found - route=%s, env=%s',
-                $routeName,
-                $env,
-            );
-            $routeData->setLastAccessedAt($this->clock->now());
-            $wasUpdated = true;
-        }
+                $unique     = $this->isKeyConflict($e);
+                $lockReplay = $e instanceof TransientStorageFailure
+                    && ($replayLockWaits || $this->classifier->classify($e) !== TransientFailureKind::LockWaitTimeout);
+                if (!$replayable || $attempt >= self::MAX_WRITE_ATTEMPTS || (!$unique && !$lockReplay)) {
+                    $this->bundleLog(
+                        'debug',
+                        '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, attempt=%d, exception=%s, message=%s',
+                        $routeName,
+                        $env,
+                        $attempt,
+                        $e::class,
+                        $e->getMessage(),
+                    );
 
-        try {
-            $this->bundleLog(
-                'debug',
-                '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s, entityManagerOpen=%s',
-                $routeName,
-                $env,
-                $isNew ? 'true' : 'false',
-                $entityManager->isOpen() ? 'true' : 'false',
-            );
-
-            // Create access record if enabled (one per request when requestId is set)
-            if ($this->enableAccessRecords) {
-                $skipAccessRecord = false;
-                // Skip if this route has "save access records" disabled
-                if (!$routeData->getSaveAccessRecords()) {
-                    $skipAccessRecord = true;
+                    // Re-throw: the subscriber logs it at warning level, Messenger retries the message.
+                    throw $e;
                 }
-                if (!$skipAccessRecord && $requestId !== null && $requestId !== '') {
-                    if ($this->accessRecordExistsForWrite($entityManager, $requestId)) {
-                        $skipAccessRecord = true;
-                    }
+
+                $this->logger?->notice('[PerformanceBundle] Concurrent metrics write; running the write unit again.', [
+                    'bundle'    => 'performance',
+                    'route'     => $routeName,
+                    'env'       => $env,
+                    'attempt'   => $attempt,
+                    'exception' => $e::class,
+                ]);
+
+                if ($unique) {
+                    ++$uniqueConflicts;
+                } else {
+                    $this->pauseBeforeReplay($attempt);
                 }
 
-                if (!$skipAccessRecord) {
-                    $accessRecord = new RouteDataRecord();
-                    $accessRecord->setRouteData($routeData);
-                    $accessRecord->setAccessedAt($this->clock->now());
-                    $accessRecord->setStatusCode($statusCode);
-
-                    // responseTime in RouteDataRecord is the per-request duration,
-                    // while RouteData::requestTime is an aggregate/representative value.
-                    // We store the raw per-request time here for temporal analysis.
-                    $accessRecord->setResponseTime($requestTime);
-                    $accessRecord->setTotalQueries($totalQueries);
-                    $accessRecord->setQueryTime($queryTime);
-                    $accessRecord->setMemoryUsage($memoryUsage);
-                    if ($requestId !== null && $requestId !== '') {
-                        $accessRecord->setRequestId($requestId);
-                    }
-                    if ($referer !== null && $referer !== '') {
-                        $accessRecord->setReferer(SensitiveDataRedactor::redactUrl($referer));
-                    }
-                    if ($userIdentifier !== null && $userIdentifier !== '') {
-                        $accessRecord->setUserIdentifier($userIdentifier);
-                    }
-                    if ($userId !== null && $userId !== '') {
-                        $accessRecord->setUserId($userId);
-                    }
-                    if ($params !== null && $params !== []) {
-                        $accessRecord->setRouteParams(SensitiveDataRedactor::redactParams($params));
-                    }
-                    if ($routePath !== null && $routePath !== '') {
-                        $accessRecord->setRoutePath(SensitiveDataRedactor::redactUrl($routePath));
-                    }
-
-                    $entityManager->persist($accessRecord);
-                }
+                continue;
             }
 
-            // Suppress any potential output from Doctrine ("@" is restored by the engine even on exceptions)
-            @$entityManager->flush();
+            break;
+        }
 
-            $this->bundleLog(
-                'debug',
-                '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
-                $routeName,
-                $env,
-                $isNew ? 'true' : 'false',
-            );
+        [$routeData, $isNew, $accessRecordSkippedByRace] = $written;
 
-            // Invalidate cache for this environment after update
+        if ($accessRecordSkippedByRace) {
+            // Not silent (rule 8): the route's metrics were saved, the access record of this request was not.
+            $this->logger?->warning('[PerformanceBundle] The access record of a request was not saved: a concurrent write used the same request id.', [
+                'bundle' => 'performance',
+                'route'  => $routeName,
+                'env'    => $env,
+            ]);
+        }
+
+        $this->bundleLog(
+            'debug',
+            '[PerformanceBundle] After flush SUCCESS: route=%s, env=%s, isNew=%s',
+            $routeName,
+            $env,
+            $isNew ? 'true' : 'false',
+        );
+
+        try {
+            // Side effects after the commit only (rule 1).
             if ($this->cacheService instanceof PerformanceCacheService) {
                 $this->cacheService->invalidateStatistics($env);
             }
@@ -435,48 +478,22 @@ class PerformanceMetricsService
                 $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew, $requestTime, $totalQueries, $memoryUsage);
                 $this->eventDispatcher->dispatch($afterEvent);
             }
-
-            // The private manager only holds the bundle's entities: clearing it keeps a long-running worker from
-            // accumulating one record per request or serving a stale RouteData changed by another worker.
+        } finally {
+            // The private manager only holds the bundle's entities: clearing it (even when a listener threw) keeps a
+            // long-running worker from accumulating one record per request or serving a stale RouteData.
             $entityManager->clear();
-
-            $this->bundleLog(
-                'debug',
-                '[PerformanceBundle] recordMetricsSync: SUCCESS - route=%s, env=%s, isNew=%s, wasUpdated=%s',
-                $routeName,
-                $env,
-                $isNew ? 'true' : 'false',
-                $wasUpdated ? 'true' : 'false',
-            );
-
-            return ['is_new' => $isNew, 'was_updated' => $wasUpdated];
-        } catch (Throwable $e) {
-            $this->bundleLog(
-                'debug',
-                '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, exception=%s, message=%s',
-                $routeName,
-                $env,
-                $e::class,
-                $e->getMessage(),
-            );
-
-            // Drop the private manager after an error (it may be closed or hold half-written entities); the next
-            // recording creates a fresh one. The host's entity manager is never reset by the bundle.
-            // @igor-ignore - Private unit of work of the write path, cleared after every recording and dropped on error.
-            $this->writeEntityManager = null;
-
-            // Log the error for debugging
-            $this->bundleLog(
-                'debug',
-                '[PerformanceBundle] Error in flush: route=%s, env=%s, error=%s',
-                $routeName,
-                $env,
-                $e->getMessage(),
-            );
-
-            // Re-throw to let the subscriber handle it
-            throw $e;
         }
+
+        $this->bundleLog(
+            'debug',
+            '[PerformanceBundle] recordMetricsSync: SUCCESS - route=%s, env=%s, isNew=%s, wasUpdated=%s',
+            $routeName,
+            $env,
+            $isNew ? 'true' : 'false',
+            $isNew ? 'false' : 'true',
+        );
+
+        return ['is_new' => $isNew, 'was_updated' => !$isNew];
     }
 
     /**
@@ -645,6 +662,184 @@ class PerformanceMetricsService
     public function getRepository(): RouteDataRepository
     {
         return $this->repository;
+    }
+
+    /**
+     * One attempt of the metrics write unit, run inside the private manager's transaction (flushed by the runner).
+     *
+     * @param array<string, mixed>|null $params Route parameters
+     * @param int $uniqueConflicts Unique violations met by the earlier attempts of this recording
+     *
+     * @return array{0: RouteData, 1: bool, 2: bool} The route, whether it was inserted, and whether the access record
+     *                                               was skipped because a concurrent write saved the same request id
+     */
+    private function writeMetrics(
+        EntityManagerInterface $entityManager,
+        string $routeName,
+        string $env,
+        ?float $requestTime,
+        ?int $totalQueries,
+        ?float $queryTime,
+        ?array $params,
+        ?int $memoryUsage,
+        ?string $httpMethod,
+        ?int $statusCode,
+        ?string $requestId,
+        ?string $referer,
+        ?string $userIdentifier,
+        ?string $userId,
+        ?string $routePath,
+        int $uniqueConflicts,
+    ): array {
+        $isNew     = false;
+        $routeData = $this->findRouteDataForWrite($entityManager, $routeName, $env);
+
+        if (!$routeData instanceof RouteData) {
+            $this->bundleLog(
+                'debug',
+                '[PerformanceBundle] recordMetricsSync: No existing record found, creating new - route=%s, env=%s',
+                $routeName,
+                $env,
+            );
+            // Create new RouteData (identity + lastAccessedAt only; metrics live in RouteDataRecord). A concurrent
+            // insert of the same (env, name) fails on uniq_route_env_name and the unit re-reads the committed row.
+            $routeData = new RouteData();
+            $routeData->setName($routeName);
+            $routeData->setEnv($env);
+            $routeData->setHttpMethod($httpMethod);
+            $routeData->setParams($params !== null ? SensitiveDataRedactor::redactParams($params) : null);
+            $routeData->setLastAccessedAt($this->clock->now());
+
+            $entityManager->persist($routeData);
+            $isNew = true;
+        } else {
+            $this->bundleLog(
+                'debug',
+                '[PerformanceBundle] recordMetricsSync: Existing record found - route=%s, env=%s',
+                $routeName,
+                $env,
+            );
+            $routeData->setLastAccessedAt($this->clock->now());
+        }
+
+        // Create access record if enabled (one per request when requestId is set), unless this route has
+        // "save access records" disabled.
+        $skippedByRace = false;
+        if ($this->enableAccessRecords && $routeData->getSaveAccessRecords()) {
+            $hasRequestId = $requestId !== null && $requestId !== '';
+            if ($uniqueConflicts >= self::MAX_WRITE_ATTEMPTS - 1) {
+                // Unique conflicts on every earlier attempt: save the route's metrics without the access record
+                // rather than lose both.
+                $skippedByRace = true;
+            } elseif ($hasRequestId && $this->accessRecordExistsForWrite($entityManager, $requestId)) {
+                // Already saved for this request id: by an earlier TERMINATE of the same request, or (after a unique
+                // violation) by a concurrent write that won the race on uniq_record_request_id.
+                $skippedByRace = $uniqueConflicts > 0;
+            } else {
+                $entityManager->persist($this->newAccessRecord(
+                    $routeData,
+                    $requestTime,
+                    $totalQueries,
+                    $queryTime,
+                    $params,
+                    $memoryUsage,
+                    $statusCode,
+                    $requestId,
+                    $referer,
+                    $userIdentifier,
+                    $userId,
+                    $routePath,
+                ));
+            }
+        }
+
+        $this->bundleLog(
+            'debug',
+            '[PerformanceBundle] Before flush: route=%s, env=%s, isNew=%s, entityManagerOpen=%s',
+            $routeName,
+            $env,
+            $isNew ? 'true' : 'false',
+            $entityManager->isOpen() ? 'true' : 'false',
+        );
+
+        return [$routeData, $isNew, $skippedByRace];
+    }
+
+    /**
+     * Builds the access record of one request (redacted referer, parameters and path).
+     *
+     * @param array<string, mixed>|null $params Route parameters
+     */
+    private function newAccessRecord(
+        RouteData $routeData,
+        ?float $requestTime,
+        ?int $totalQueries,
+        ?float $queryTime,
+        ?array $params,
+        ?int $memoryUsage,
+        ?int $statusCode,
+        ?string $requestId,
+        ?string $referer,
+        ?string $userIdentifier,
+        ?string $userId,
+        ?string $routePath,
+    ): RouteDataRecord {
+        $accessRecord = new RouteDataRecord();
+        $accessRecord->setRouteData($routeData);
+        $accessRecord->setAccessedAt($this->clock->now());
+        $accessRecord->setStatusCode($statusCode);
+
+        // responseTime in RouteDataRecord is the per-request duration, stored raw for temporal analysis.
+        $accessRecord->setResponseTime($requestTime);
+        $accessRecord->setTotalQueries($totalQueries);
+        $accessRecord->setQueryTime($queryTime);
+        $accessRecord->setMemoryUsage($memoryUsage);
+        if ($requestId !== null && $requestId !== '') {
+            $accessRecord->setRequestId($requestId);
+        }
+        if ($referer !== null && $referer !== '') {
+            $accessRecord->setReferer(SensitiveDataRedactor::redactUrl($referer));
+        }
+        if ($userIdentifier !== null && $userIdentifier !== '') {
+            $accessRecord->setUserIdentifier($userIdentifier);
+        }
+        if ($userId !== null && $userId !== '') {
+            $accessRecord->setUserId($userId);
+        }
+        if ($params !== null && $params !== []) {
+            $accessRecord->setRouteParams(SensitiveDataRedactor::redactParams($params));
+        }
+        if ($routePath !== null && $routePath !== '') {
+            $accessRecord->setRoutePath(SensitiveDataRedactor::redactUrl($routePath));
+        }
+
+        return $accessRecord;
+    }
+
+    /**
+     * Whether the failure (or anything in its previous chain) is a unique-constraint violation (a concurrent insert of
+     * the same route or request id) or a foreign-key violation (the route row was merged away by sync-schema while
+     * this unit ran): both are resolved by running the unit again, which re-reads the committed rows.
+     */
+    private function isKeyConflict(Throwable $failure): bool
+    {
+        for ($current = $failure; $current instanceof Throwable; $current = $current->getPrevious()) {
+            if ($current instanceof UniqueConstraintViolationException || $current instanceof ForeignKeyConstraintViolationException) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Short full-jitter pause before replaying a write unit after a lock conflict (20 ms to 50 ms × attempt).
+     *
+     * Runs on kernel.terminate (after the response was sent) or in a Messenger worker, never before the answer.
+     */
+    protected function pauseBeforeReplay(int $attempt): void
+    {
+        usleep(random_int(20_000, 50_000 * $attempt));
     }
 
     /**

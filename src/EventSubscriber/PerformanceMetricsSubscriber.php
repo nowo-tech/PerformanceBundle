@@ -630,8 +630,9 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
             // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
             $this->dataCollector->setRecordOperation(false, false);
 
-            // Silently fail to not break the application
-            // In production, you might want to log this
+            // Fire-and-forget: never break the host request, but never lose the metrics silently either
+            // (REQ-RUNTIME-003 rule 8). The message can hold SQL: only the class goes to the warning.
+            $this->warnMetricsLost($this->routeName ?? 'null', $e);
         } finally {
             // Output buffers are process-wide: always close ours, otherwise a long-running worker keeps it.
             if ($obStarted && ob_get_level() > 0) {
@@ -774,6 +775,7 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
                     $metrics['route'],
                     $e->getMessage(),
                 );
+                $this->warnMetricsLost($metrics['route'], $e);
             }
         }
     }
@@ -988,6 +990,19 @@ class PerformanceMetricsSubscriber implements EventSubscriberInterface, ResetInt
         }
 
         return false;
+    }
+
+    /**
+     * Logs, at warning level and whatever enable_logging says, that the metrics of a request were lost (a failure the
+     * subscriber swallows so the host request never breaks). Only the exception class is logged, never its message.
+     */
+    private function warnMetricsLost(string $routeName, Throwable $failure): void
+    {
+        $this->logger?->warning('[PerformanceBundle] The metrics of a request were not saved.', [
+            'bundle'    => 'performance',
+            'route'     => $routeName,
+            'exception' => $failure::class,
+        ]);
     }
 
     /**

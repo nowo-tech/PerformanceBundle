@@ -5,35 +5,29 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Command;
 
 use DateTimeImmutable;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\EntityManager;
 use Nowo\PerformanceBundle\Command\RebuildAggregatesCommand;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
-use PHPUnit\Framework\MockObject\MockObject;
+use Nowo\PerformanceBundle\Tests\Support\OrmTestSupport;
 use PHPUnit\Framework\TestCase;
-use ReflectionProperty;
 use Symfony\Component\Console\Tester\CommandTester;
 
+/**
+ * nowo:performance:rebuild-aggregates on a real ORM entity manager (SQLite in memory): DQL updates in one transaction
+ * per batch, and the (host's) entity manager is never flushed nor cleared (REQ-RUNTIME-003 rule 2).
+ */
 final class RebuildAggregatesCommandTest extends TestCase
 {
-    private MockObject $entityManager;
-    private MockObject $routeDataRepository;
-    private MockObject $recordRepository;
+    private EntityManager $entityManager;
     private RebuildAggregatesCommand $command;
 
     protected function setUp(): void
     {
-        $this->entityManager       = $this->createMock(EntityManagerInterface::class);
-        $this->routeDataRepository = $this->createMock(RouteDataRepository::class);
-        $this->recordRepository    = $this->createMock(RouteDataRecordRepository::class);
-        $this->command             = new RebuildAggregatesCommand(
-            $this->entityManager,
-            $this->routeDataRepository,
-            $this->recordRepository,
-        );
+        $this->entityManager = OrmTestSupport::entityManager($this);
+        $this->command       = new RebuildAggregatesCommand($this->entityManager);
     }
 
     public function testCommandName(): void
@@ -49,295 +43,156 @@ final class RebuildAggregatesCommandTest extends TestCase
         );
     }
 
-    public function testCommandHasEnvOption(): void
+    public function testCommandOptionsAndHelp(): void
     {
-        $this->assertTrue($this->command->getDefinition()->hasOption('env'));
-    }
+        $definition = $this->command->getDefinition();
+        $this->assertTrue($definition->hasOption('env'));
+        $this->assertFalse($definition->getOption('env')->isValueRequired());
+        $this->assertSame('200', $definition->getOption('batch-size')->getDefault());
+        $this->assertCount(0, $definition->getArguments());
 
-    public function testCommandHasBatchSizeOption(): void
-    {
-        $this->assertTrue($this->command->getDefinition()->hasOption('batch-size'));
-    }
-
-    public function testExecuteWhenNoRoutesFound(): void
-    {
-        $this->routeDataRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with([], ['env' => 'ASC', 'name' => 'ASC'])
-            ->willReturn([]);
-
-        $this->entityManager->expects($this->never())->method('flush');
-        $this->entityManager->expects($this->never())->method('clear');
-
-        $tester = new CommandTester($this->command);
-        $tester->execute([]);
-
-        $this->assertSame(0, $tester->getStatusCode());
-        $this->assertStringContainsString('No RouteData records found', $tester->getDisplay());
-    }
-
-    public function testExecuteWhenNoRoutesFoundWithEnvFilter(): void
-    {
-        $this->routeDataRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with(['env' => 'prod'], ['env' => 'ASC', 'name' => 'ASC'])
-            ->willReturn([]);
-
-        $tester = new CommandTester($this->command);
-        $tester->execute(['--env' => 'prod']);
-
-        $this->assertSame(0, $tester->getStatusCode());
-        $this->assertStringContainsString('Restricting rebuild to environment', $tester->getDisplay());
-        $this->assertStringContainsString('prod', $tester->getDisplay());
-    }
-
-    public function testExecuteRebuildsAggregatesAndFlushes(): void
-    {
-        $route = new RouteData();
-        $route->setName('app_home')->setEnv('dev');
-        $idRef = new ReflectionProperty(RouteData::class, 'id');
-        $idRef->setValue($route, 1);
-
-        $this->routeDataRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with([], ['env' => 'ASC', 'name' => 'ASC'])
-            ->willReturn([$route]);
-
-        $managed = new RouteData();
-        $managed->setName('app_home')->setEnv('dev');
-        $idRef->setValue($managed, 1);
-
-        $record = new RouteDataRecord();
-        $record->setRouteData($managed);
-        $record->setAccessedAt(new DateTimeImmutable('2024-01-15 12:00:00'));
-
-        $repo = $this->getMockBuilder(EntityRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repo->method('find')->with(1)->willReturn($managed);
-
-        $this->recordRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with($this->identicalTo(['routeData' => $managed]), $this->identicalTo(['accessedAt' => 'ASC']))
-            ->willReturn([$record]);
-
-        $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
-        $this->entityManager->expects($this->atLeastOnce())->method('flush');
-        $this->entityManager->expects($this->atLeastOnce())->method('clear');
-
-        $tester = new CommandTester($this->command);
-        $tester->execute([]);
-
-        $this->assertSame(0, $tester->getStatusCode());
-        $this->assertStringContainsString('Found 1 RouteData records', $tester->getDisplay());
-        $this->assertStringContainsString('Rebuilt aggregates for 1 RouteData records', $tester->getDisplay());
-        $this->assertNotNull($managed->getLastAccessedAt());
-        $this->assertSame('2024-01-15 12:00:00', $managed->getLastAccessedAt()->format('Y-m-d H:i:s'));
-    }
-
-    public function testExecuteBatchSizeLessThanOneNormalizedTo200(): void
-    {
-        $this->routeDataRepository->method('findBy')->willReturn([]);
-
-        $tester = new CommandTester($this->command);
-        $tester->execute(['--batch-size' => '0']);
-
-        $this->assertSame(0, $tester->getStatusCode());
-    }
-
-    public function testCommandHelpMentionsRebuildAndAggregates(): void
-    {
         $help = $this->command->getHelp();
         $this->assertStringContainsString('rebuild', strtolower($help));
         $this->assertStringContainsString('--env', $help);
         $this->assertStringContainsString('--batch-size', $help);
     }
 
-    public function testCommandHasNoArguments(): void
+    public function testLegacyConstructorArgumentsAreAccepted(): void
     {
-        $this->assertCount(0, $this->command->getDefinition()->getArguments());
-    }
+        $command = new RebuildAggregatesCommand(
+            $this->entityManager,
+            $this->createStub(RouteDataRepository::class),
+            $this->createStub(RouteDataRecordRepository::class),
+        );
 
-    public function testCommandEnvOptionHasDefault(): void
-    {
-        $definition = $this->command->getDefinition();
-        $option     = $definition->getOption('env');
-
-        $this->assertFalse($option->isValueRequired());
-    }
-
-    public function testCommandBatchSizeOptionHasDefault(): void
-    {
-        $definition = $this->command->getDefinition();
-        $option     = $definition->getOption('batch-size');
-
-        $this->assertTrue($definition->hasOption('batch-size'));
-        $this->assertSame('200', $option->getDefault());
-    }
-
-    public function testExecuteWithStageEnvFilter(): void
-    {
-        $this->routeDataRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with(['env' => 'stage'], ['env' => 'ASC', 'name' => 'ASC'])
-            ->willReturn([]);
-
-        $tester = new CommandTester($this->command);
-        $tester->execute(['--env' => 'stage']);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
 
         $this->assertSame(0, $tester->getStatusCode());
-        $this->assertStringContainsString('stage', $tester->getDisplay());
     }
 
-    public function testExecuteWithTestEnvFilter(): void
+    public function testExecuteWhenNoRoutesFound(): void
     {
-        $this->routeDataRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with(['env' => 'test'], ['env' => 'ASC', 'name' => 'ASC'])
-            ->willReturn([]);
-
         $tester = new CommandTester($this->command);
-        $tester->execute(['--env' => 'test']);
+        $tester->execute([]);
 
         $this->assertSame(0, $tester->getStatusCode());
-        $this->assertStringContainsString('test', $tester->getDisplay());
+        $this->assertStringContainsString('Rebuilding aggregates for all environments', $tester->getDisplay());
+        $this->assertStringContainsString('No RouteData records found', $tester->getDisplay());
     }
 
-    /** Multiple routes with batch-size 2 triggers batch flush and "Processed batch" message. */
-    public function testExecuteWithMultipleRoutesAndBatchSizeShowsBatchMessage(): void
+    public function testExecuteWhenNoRoutesFoundWithEnvFilter(): void
     {
-        $route1 = new RouteData();
-        $route1->setName('r1')->setEnv('dev');
-        $idRef = new ReflectionProperty(RouteData::class, 'id');
-        $idRef->setValue($route1, 1);
+        $this->route('home', 'dev');
 
-        $route2 = new RouteData();
-        $route2->setName('r2')->setEnv('dev');
-        $idRef->setValue($route2, 2);
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--env' => 'prod']);
 
-        $route3 = new RouteData();
-        $route3->setName('r3')->setEnv('dev');
-        $idRef->setValue($route3, 3);
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Restricting rebuild to environment: prod', $tester->getDisplay());
+        $this->assertStringContainsString('No RouteData records found', $tester->getDisplay());
+    }
 
-        $this->routeDataRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with([], ['env' => 'ASC', 'name' => 'ASC'])
-            ->willReturn([$route1, $route2, $route3]);
+    public function testExecuteSetsLastAccessedAtToTheLatestRecordWithoutTouchingTheEntityManager(): void
+    {
+        $home  = $this->route('home', 'prod', '2026-01-01 00:00:00');
+        $about = $this->route('about', 'prod', '2026-01-01 00:00:00');
+        $this->record($home, '2026-03-01 10:00:00');
+        $this->record($home, '2026-03-05 12:30:00');
+        $this->record($home, '2026-03-02 08:00:00');
+        $this->entityManager->clear();
 
-        $managed1 = new RouteData();
-        $managed1->setName('r1')->setEnv('dev');
-        $idRef->setValue($managed1, 1);
-        $managed2 = new RouteData();
-        $managed2->setName('r2')->setEnv('dev');
-        $idRef->setValue($managed2, 2);
-        $managed3 = new RouteData();
-        $managed3->setName('r3')->setEnv('dev');
-        $idRef->setValue($managed3, 3);
+        // Host state left in the entity manager: must stay managed and pending (never flushed, never cleared).
+        $pending = (new RouteData())->setName('host_pending')->setEnv('prod');
+        $this->entityManager->persist($pending);
 
-        $record1 = new RouteDataRecord();
-        $record1->setRouteData($managed1);
-        $record1->setAccessedAt(new DateTimeImmutable('2024-01-01 10:00:00'));
-        $record2 = new RouteDataRecord();
-        $record2->setRouteData($managed2);
-        $record2->setAccessedAt(new DateTimeImmutable('2024-01-01 11:00:00'));
-        $record3 = new RouteDataRecord();
-        $record3->setRouteData($managed3);
-        $record3->setAccessedAt(new DateTimeImmutable('2024-01-01 12:00:00'));
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
 
-        $repo = $this->createMock(EntityRepository::class);
-        $repo->method('find')
-            ->willReturnCallback(static fn (int $id): ?RouteData => match ($id) {
-                1       => $managed1,
-                2       => $managed2,
-                3       => $managed3,
-                default => null,
-            });
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Found 2 RouteData records', $tester->getDisplay());
+        $this->assertStringContainsString('Rebuilt aggregates for 2 RouteData records', $tester->getDisplay());
+        $this->assertSame('2026-03-05 12:30:00', $this->lastAccessed($home));
+        $this->assertSame('2026-01-01 00:00:00', $this->lastAccessed($about), 'A route without records keeps its value.');
+        $this->assertTrue($this->entityManager->getUnitOfWork()->isScheduledForInsert($pending));
+        $this->assertSame(0, (int) $this->entityManager->getConnection()->fetchOne("SELECT COUNT(*) FROM routes_data WHERE name = 'host_pending'"));
+        $this->assertSame(0, $this->entityManager->getConnection()->getTransactionNestingLevel());
+    }
 
-        $this->recordRepository
-            ->method('findBy')
-            ->willReturnOnConsecutiveCalls(
-                [$record1],
-                [$record2],
-                [$record3],
-            );
+    public function testExecuteWithEnvFilterOnlyRebuildsThatEnvironment(): void
+    {
+        $prod = $this->route('home', 'prod', '2026-01-01 00:00:00');
+        $dev  = $this->route('home', 'dev', '2026-01-01 00:00:00');
+        $this->record($prod, '2026-04-01 00:00:00');
+        $this->record($dev, '2026-04-02 00:00:00');
 
-        $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
-        $this->entityManager->expects($this->atLeastOnce())->method('flush');
-        $this->entityManager->expects($this->atLeastOnce())->method('clear');
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--env' => 'dev']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Found 1 RouteData records', $tester->getDisplay());
+        $this->assertSame('2026-01-01 00:00:00', $this->lastAccessed($prod));
+        $this->assertSame('2026-04-02 00:00:00', $this->lastAccessed($dev));
+    }
+
+    public function testExecuteWithBatchSizeShowsBatchMessages(): void
+    {
+        foreach (['a', 'b', 'c'] as $name) {
+            $this->record($this->route($name, 'prod'), '2026-05-01 00:00:00');
+        }
 
         $tester = new CommandTester($this->command);
         $tester->execute(['--batch-size' => '2']);
 
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('Found 3 RouteData records', $tester->getDisplay());
-        $this->assertStringContainsString('Processed batch 1 (2 records)', $tester->getDisplay());
-        $this->assertStringContainsString('Rebuilt aggregates for 3 RouteData records', $tester->getDisplay());
+        $this->assertStringContainsString('Processed batch 1 (2 records).', $tester->getDisplay());
+        $this->assertStringNotContainsString('Processed batch 2', $tester->getDisplay());
     }
 
-    /** When managed route is not found (find returns null), route is skipped. */
-    public function testExecuteWhenManagedNotFoundSkipsRoute(): void
+    public function testExecuteBatchSizeLessThanOneNormalizedTo200(): void
     {
-        $route = new RouteData();
-        $route->setName('orphan')->setEnv('dev');
-        $idRef = new ReflectionProperty(RouteData::class, 'id');
-        $idRef->setValue($route, 99);
-
-        $this->routeDataRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->willReturn([$route]);
-
-        $repo = $this->createMock(EntityRepository::class);
-        $repo->method('find')->with(99)->willReturn(null);
-
-        $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
-        $this->recordRepository->expects($this->never())->method('findBy');
+        $this->record($this->route('home', 'prod'), '2026-05-01 00:00:00');
 
         $tester = new CommandTester($this->command);
-        $tester->execute([]);
+        $tester->execute(['--batch-size' => '0']);
 
         $this->assertSame(0, $tester->getStatusCode());
-        $this->assertStringContainsString('Found 1 RouteData records', $tester->getDisplay());
+        $this->assertStringNotContainsString('Processed batch', $tester->getDisplay());
     }
 
-    /** When route has no records, rebuildAggregatesForRoute skips setLastAccessedAt (empty records path). */
-    public function testExecuteWhenNoRecordsForRouteCompletesWithoutError(): void
+    public function testBatchSizeIsCappedForThePostgreSqlParameterLimit(): void
     {
-        $route = new RouteData();
-        $route->setName('empty')->setEnv('dev');
-        $idRef = new ReflectionProperty(RouteData::class, 'id');
-        $idRef->setValue($route, 1);
-
-        $this->routeDataRepository->method('findBy')->willReturn([$route]);
-
-        $managed = new RouteData();
-        $managed->setName('empty')->setEnv('dev');
-        $idRef->setValue($managed, 1);
-
-        $repo = $this->createMock(EntityRepository::class);
-        $repo->method('find')->with(1)->willReturn($managed);
-
-        $this->recordRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with(['routeData' => $managed], ['accessedAt' => 'ASC'])
-            ->willReturn([]);
-
-        $this->entityManager->method('getRepository')->with(RouteData::class)->willReturn($repo);
-        $this->entityManager->expects($this->atLeastOnce())->method('flush');
-        $this->entityManager->expects($this->atLeastOnce())->method('clear');
+        $this->record($this->route('home', 'prod'), '2026-05-01 00:00:00');
 
         $tester = new CommandTester($this->command);
-        $tester->execute([]);
+        $tester->execute(['--batch-size' => '70000']);
 
         $this->assertSame(0, $tester->getStatusCode());
-        $this->assertStringContainsString('Found 1 RouteData records', $tester->getDisplay());
+        $this->assertSame(10000, RebuildAggregatesCommand::MAX_BATCH_SIZE);
+        $this->assertStringContainsString('at most 10000', $this->command->getDefinition()->getOption('batch-size')->getDescription());
+    }
+
+    private function route(string $name, string $env, string $lastAccessedAt = '2026-01-01 00:00:00'): RouteData
+    {
+        $route = (new RouteData())->setName($name)->setEnv($env)->setLastAccessedAt(new DateTimeImmutable($lastAccessedAt));
+        $this->entityManager->persist($route);
+        $this->entityManager->flush();
+
+        return $route;
+    }
+
+    private function record(RouteData $route, string $accessedAt): void
+    {
+        $record = new RouteDataRecord();
+        $record->setRouteData($this->entityManager->getReference(RouteData::class, $route->getId()));
+        $record->setAccessedAt(new DateTimeImmutable($accessedAt));
+        $this->entityManager->persist($record);
+        $this->entityManager->flush();
+    }
+
+    private function lastAccessed(RouteData $route): string
+    {
+        return (string) $this->entityManager->getConnection()->fetchOne('SELECT last_accessed_at FROM routes_data WHERE id = ?', [$route->getId()]);
     }
 }
