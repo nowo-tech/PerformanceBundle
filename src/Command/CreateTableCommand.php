@@ -21,6 +21,7 @@ use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Helper\DbalSchemaNameHelper;
+use Nowo\PerformanceBundle\Service\RouteDataDeduplicator;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -1279,6 +1280,18 @@ HELP
             }
         }
 
+        // Unique constraints (uniq_route_env_name, 3.18.0): duplicates are merged before the unique index is created.
+        $uniqueNames = [];
+        if (isset($metadata->table['uniqueConstraints']) && is_array($metadata->table['uniqueConstraints'])) {
+            foreach ($metadata->table['uniqueConstraints'] as $constraintName => $constraintDefinition) {
+                $columns = $constraintDefinition['columns'] ?? [];
+                if (!empty($columns)) {
+                    $expectedIndexes[$constraintName] = $columns;
+                    $uniqueNames[$constraintName]     = true;
+                }
+            }
+        }
+
         $existingIndexes = [];
         foreach ($table->getIndexes() as $index) {
             $indexName                               = $this->getAssetName($index);
@@ -1317,16 +1330,24 @@ HELP
                 ? $metadata->getTableName()
                 : ($metadata->table['name'] ?? $this->tableName);
 
-            $sql = sprintf(
-                'CREATE INDEX %s ON %s (%s)',
+            $unique = isset($uniqueNames[$indexName]);
+            $sql    = sprintf(
+                'CREATE %s %s ON %s (%s)',
+                $unique ? 'UNIQUE INDEX' : 'INDEX',
                 $this->quoteIdentifier($platform, $indexName),
                 $this->quoteIdentifier($platform, $actualTableName),
                 implode(', ', $quotedColumns),
             );
 
             try {
+                if ($unique) {
+                    $merged = (new RouteDataDeduplicator())->merge($entityManager);
+                    if ($merged > 0) {
+                        $io->text(sprintf('  ✓ Merged <info>%d</info> duplicate route row(s) into the oldest row of each route', $merged));
+                    }
+                }
                 $connection->executeStatement($sql);
-                $io->text(sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
+                $io->text(sprintf('  ✓ Created %s <info>%s</info> on columns: %s', $unique ? 'unique index' : 'index', $indexName, implode(', ', $columns)));
             } catch (Exception $e) {
                 $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }

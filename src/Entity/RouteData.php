@@ -21,6 +21,9 @@ use function sprintf;
  * All performance metrics (request time, query count, status codes, etc.) are derived
  * from RouteDataRecord; use aggregates from records for listings and rankings.
  *
+ * One row per (env, name): the unique constraint `uniq_route_env_name` (3.18.0) lets concurrent first requests of a
+ * route insert it once (REQ-RUNTIME-003); see docs/CONCURRENCY.md.
+ *
  * @see RouteDataRecord
  * @see docs/ENTITY_NORMALIZATION_PLAN.md
  *
@@ -31,8 +34,8 @@ use function sprintf;
 #[ORM\Table(name: 'routes_data')]
 #[ORM\Index(name: 'idx_route_name', columns: ['name'])]
 #[ORM\Index(name: 'idx_route_env', columns: ['env'])]
-#[ORM\Index(name: 'idx_route_env_name', columns: ['env', 'name'])]
 #[ORM\Index(name: 'idx_route_created_at', columns: ['created_at'])]
+#[ORM\UniqueConstraint(name: 'uniq_route_env_name', columns: ['env', 'name'])]
 class RouteData implements Stringable
 {
     /**

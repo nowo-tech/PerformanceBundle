@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Command;
 
+use DateTimeImmutable;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use Nowo\TransactionDoctrine\DoctrineTransactionRunner;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,6 +19,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+use function array_chunk;
+use function array_map;
 use function count;
 use function sprintf;
 
@@ -36,15 +41,19 @@ final class RebuildAggregatesCommand extends Command
     /**
      * Creates a new instance.
      *
+     * The repositories are no longer used (3.18.0: the command updates through DQL and loads no entity); the
+     * parameters stay for backward compatibility of the constructor.
+     *
      * @param EntityManagerInterface $entityManager Doctrine entity manager
-     * @param RouteDataRepository $routeDataRepository Repository for RouteData
-     * @param RouteDataRecordRepository $recordRepository Repository for RouteDataRecord
+     * @param RouteDataRepository|null $routeDataRepository Unused since 3.18.0
+     * @param RouteDataRecordRepository|null $recordRepository Unused since 3.18.0
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly RouteDataRepository $routeDataRepository,
-        private readonly RouteDataRecordRepository $recordRepository,
+        ?RouteDataRepository $routeDataRepository = null,
+        ?RouteDataRecordRepository $recordRepository = null,
     ) {
+        unset($routeDataRepository, $recordRepository);
         parent::__construct();
     }
 
@@ -89,17 +98,26 @@ HELP
 
         $io->title('[NowoPerformanceBundle] Rebuilding RouteData aggregates from RouteDataRecord');
 
-        $criteria = [];
         if ($envFilter !== null) {
-            $criteria['env'] = $envFilter;
             $io->text(sprintf('Restricting rebuild to environment: <info>%s</info>', $envFilter));
         } else {
             $io->text('Rebuilding aggregates for all environments.');
         }
 
-        /** @var list<RouteData> $routes */
-        $routes = $this->routeDataRepository->findBy($criteria, ['env' => 'ASC', 'name' => 'ASC']);
-        $total  = count($routes);
+        // Ids only: no RouteData or RouteDataRecord is loaded into the (host's) entity manager, which the command
+        // therefore never needs to flush or clear (REQ-RUNTIME-003 rule 2).
+        $idQuery = $this->entityManager->createQueryBuilder()
+            ->select('r.id')
+            ->from(RouteData::class, 'r')
+            ->orderBy('r.env', 'ASC')
+            ->addOrderBy('r.name', 'ASC');
+        if ($envFilter !== null) {
+            $idQuery->where('r.env = :env')->setParameter('env', $envFilter);
+        }
+
+        /** @var list<int> $ids */
+        $ids   = array_map(intval(...), $idQuery->getQuery()->getSingleColumnResult());
+        $total = count($ids);
 
         if ($total === 0) {
             $io->warning('No RouteData records found for the given criteria. Nothing to rebuild.');
@@ -110,27 +128,21 @@ HELP
         $io->text(sprintf('Found <info>%d</info> RouteData records to process.', $total));
         $io->progressStart($total);
 
-        $processed  = 0;
+        // One short transaction per batch (rule 9): DQL updates only, so nothing is left pending in the entity manager.
+        $runner     = DoctrineTransactionRunner::forConnection($this->entityManager->getConnection());
         $batchIndex = 0;
+        $processed  = 0;
 
-        foreach ($routes as $routeData) {
-            ++$processed;
+        foreach (array_chunk($ids, $batchSize) as $batch) {
+            $runner->run(fn () => $this->rebuildBatch($batch));
 
-            $this->rebuildAggregatesForRoute($routeData);
-
-            if ($processed % $batchSize === 0) {
+            $processed += count($batch);
+            $io->progressAdvance(count($batch));
+            if (count($batch) === $batchSize) {
                 ++$batchIndex;
-                $this->entityManager->flush();
-                $this->entityManager->clear();
                 $io->text(sprintf('Processed batch %d (%d records).', $batchIndex, $processed));
             }
-
-            $io->progressAdvance();
         }
-
-        // Flush remaining changes
-        $this->entityManager->flush();
-        $this->entityManager->clear();
 
         $io->progressFinish();
         $io->success(sprintf('Rebuilt aggregates for %d RouteData records.', $total));
@@ -139,32 +151,32 @@ HELP
     }
 
     /**
-     * Rebuild aggregate fields for a single RouteData using its associated RouteDataRecord entries.
+     * Sets lastAccessedAt of each RouteData of the batch to the time of its latest RouteDataRecord (routes without
+     * records keep their value).
+     *
+     * @param list<int> $ids RouteData ids
      */
-    private function rebuildAggregatesForRoute(RouteData $routeData): void
+    private function rebuildBatch(array $ids): void
     {
-        // Reload the managed instance from EntityManager in case we cleared earlier
-        /** @var RouteData|null $managed */
-        $managed = $this->entityManager->getRepository(RouteData::class)->find($routeData->getId());
-        if ($managed === null) {
-            return;
-        }
+        /** @var list<array{id: int|string, last: string}> $rows (accessedAt is never NULL) */
+        $rows = $this->entityManager->createQueryBuilder()
+            ->select('IDENTITY(rec.routeData) AS id', 'MAX(rec.accessedAt) AS last')
+            ->from(RouteDataRecord::class, 'rec')
+            ->where('rec.routeData IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->groupBy('rec.routeData')
+            ->getQuery()
+            ->getScalarResult();
 
-        // Fetch all records for this RouteData
-        /** @var list<RouteDataRecord> $records */
-        $records = $this->recordRepository->findBy(
-            ['routeData' => $managed],
-            ['accessedAt' => 'ASC'],
-        );
-
-        if (empty($records)) {
-            return;
-        }
-
-        // Normalized: RouteData only has lastAccessedAt; metrics live in RouteDataRecord
-        $lastRecord = end($records);
-        if ($lastRecord instanceof RouteDataRecord) {
-            $managed->setLastAccessedAt($lastRecord->getAccessedAt());
+        foreach ($rows as $row) {
+            $this->entityManager->createQueryBuilder()
+                ->update(RouteData::class, 'r')
+                ->set('r.lastAccessedAt', ':last')
+                ->where('r.id = :id')
+                ->setParameter('last', new DateTimeImmutable($row['last']), Types::DATETIME_IMMUTABLE)
+                ->setParameter('id', (int) $row['id'])
+                ->getQuery()
+                ->execute();
         }
     }
 }

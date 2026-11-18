@@ -287,6 +287,10 @@ nowo_performance:
 
 Enable or disable bundle logging. When disabled, no `error_log()` calls will be made by the bundle. Recommended to disable in production for better performance and reduced log noise.
 
+It gates the debug traces only: a request whose metrics could not be saved, and an access record skipped because a
+concurrent write used the same request id, are always logged at warning level (never silently lost; see
+[CONCURRENCY.md](CONCURRENCY.md)).
+
 ```yaml
 nowo_performance:
     enable_logging: false  # Disable logging in production

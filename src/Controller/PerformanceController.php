@@ -9,6 +9,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Schema\Column;
 use Exception;
+use Nowo\PerformanceBundle\Concurrency\WriteConflictException;
+use Nowo\PerformanceBundle\Concurrency\WriteConflictMapper;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Event\AfterRecordDeletedEvent;
 use Nowo\PerformanceBundle\Event\AfterRecordReviewedEvent;
@@ -41,6 +43,7 @@ use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Nowo\PerformanceBundle\Ui\PerformanceAreaNav;
 use Nowo\PerformanceBundle\Ui\PerformancePageFactory;
+use Nowo\TransactionDoctrine\DoctrineTransactionRunner;
 use Nowo\UiKitBundle\View\Pagination;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
@@ -167,6 +170,7 @@ class PerformanceController extends AbstractController
         private readonly ?PerformancePageFactory $pageFactory = null,
         private readonly ?ClockInterface $clock = null,
         private readonly ?TranslatorInterface $translator = null,
+        private readonly ?WriteConflictMapper $conflictMapper = null,
     ) {
     }
 
@@ -2081,6 +2085,7 @@ class PerformanceController extends AbstractController
 
             $this->addFlash('success', $message);
         } catch (Exception $e) {
+            $this->throwIfConflict($e);
             $this->addFlash('error', 'An error occurred while clearing performance data: ' . $e->getMessage());
         }
 
@@ -2171,6 +2176,7 @@ class PerformanceController extends AbstractController
                 $this->addFlash('error', 'Record not found.');
             }
         } catch (Exception $e) {
+            $this->throwIfConflict($e);
             $this->addFlash('error', 'An error occurred while deleting the record: ' . $e->getMessage());
         }
 
@@ -2266,16 +2272,28 @@ class PerformanceController extends AbstractController
             }
 
             $wasAlreadyReviewed = $routeData->isReviewed();
-            $updated            = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $this->now());
+            $reviewedAt         = $this->now();
+            $saveAccessRecords  = $this->enableAccessRecords && isset($formData['save_access_records'])
+                ? (bool) $formData['save_access_records']
+                : null;
 
-            // Update save_access_records per route when access records are enabled
-            if ($this->enableAccessRecords && isset($formData['save_access_records'])) {
-                $routeDataToUpdate = $repository->find($id);
-                if ($routeDataToUpdate !== null) {
-                    $routeDataToUpdate->setSaveAccessRecords((bool) $formData['save_access_records']);
-                    $this->metricsService->getEntityManager()->flush();
-                }
-            }
+            // The review and the "save access records" flag are one write unit: one transaction (REQ-RUNTIME-003).
+            $updated = DoctrineTransactionRunner::forConnection($this->metricsService->getConnection(), null)->run(
+                function () use ($repository, $id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt, $saveAccessRecords): bool {
+                    $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt);
+
+                    // Update save_access_records per route when access records are enabled
+                    if ($saveAccessRecords !== null) {
+                        $routeDataToUpdate = $repository->find($id);
+                        if ($routeDataToUpdate !== null) {
+                            $routeDataToUpdate->setSaveAccessRecords($saveAccessRecords);
+                            $this->metricsService->getEntityManager()->flush();
+                        }
+                    }
+
+                    return $updated;
+                },
+            );
 
             if ($updated) {
                 // Reload the updated record for the after event
@@ -2303,10 +2321,50 @@ class PerformanceController extends AbstractController
                 $this->addFlash('error', 'Record not found.');
             }
         } catch (Exception $e) {
+            $this->throwIfConflict($e);
             $this->addFlash('error', 'An error occurred while reviewing the record: ' . $e->getMessage());
         }
 
         return $this->redirectBack($request);
+    }
+
+    /**
+     * Answers a database lock conflict of a dashboard write with 409 (or the host's configured status): CONFLICT_001
+     * with Retry-After when nothing was committed, CONFLICT_002 without it when part of the work was (REQ-RUNTIME-003
+     * rule 6). Any other failure returns, for the action's own error flash.
+     *
+     * @param (callable(): mixed)|null $afterPartialCommit Runs before answering CONFLICT_002 (cache invalidation)
+     *
+     * @throws WriteConflictException When the failure is a lock conflict
+     */
+    private function throwIfConflict(Throwable $failure, ?callable $afterPartialCommit = null): void
+    {
+        $mapper = $this->conflictMapper ?? new WriteConflictMapper();
+        if (!$mapper->isConflict($failure)) {
+            return;
+        }
+
+        $conflict = $mapper->toHttpException($failure);
+        if ($conflict->isPartiallySaved() && $afterPartialCommit !== null) {
+            $afterPartialCommit();
+        }
+
+        throw $conflict;
+    }
+
+    /**
+     * Invalidates the cached statistics after access records were purged (all environments when $envFilter is null).
+     */
+    private function clearStatisticsAfterPurge(?string $envFilter): void
+    {
+        if ($this->cacheService instanceof PerformanceCacheService) {
+            // @igor-ignore - HTTP handler delegates to services; no controller worker state.
+            $this->cacheService->clearStatistics($envFilter ?? '');
+            if ($envFilter === null) {
+                // @igor-ignore - HTTP handler delegates to services; no controller worker state.
+                $this->cacheService->clearEnvironments();
+            }
+        }
     }
 
     /**
@@ -2835,17 +2893,11 @@ class PerformanceController extends AbstractController
                 $this->addFlash('success', sprintf('Purged %d access record(s) older than %d days.', $deleted, $days));
             }
         } catch (Exception $e) {
+            $this->throwIfConflict($e, fn () => $this->clearStatisticsAfterPurge($envFilter));
             $this->addFlash('error', 'Error purging records: ' . $e->getMessage());
         }
 
-        if ($this->cacheService instanceof PerformanceCacheService) {
-            // @igor-ignore - HTTP handler delegates to services; no controller worker state.
-            $this->cacheService->clearStatistics($envFilter ?? '');
-            if ($envFilter === null) {
-                // @igor-ignore - HTTP handler delegates to services; no controller worker state.
-                $this->cacheService->clearEnvironments();
-            }
-        }
+        $this->clearStatisticsAfterPurge($envFilter);
 
         return $this->redirectToRoute('nowo_performance.access_records', ['env' => $env ?: $currentEnv]);
     }
@@ -2948,6 +3000,7 @@ class PerformanceController extends AbstractController
                 $user,
             );
         } catch (Exception $e) {
+            $this->throwIfConflict($e, fn (): ?bool => $this->cacheService?->clearStatistics($env));
             $this->addFlash('error', 'Error deleting records: ' . $e->getMessage());
             $redirectParams = [
                 'env'         => $env,

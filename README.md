@@ -314,6 +314,7 @@ Listed metrics (request time, query counts, status code ratios, etc.) in the UI 
 - [PSR evaluation (REQ-CS-007)](docs/PSR.md)
 - [Demo with FrankenPHP (development and production)](docs/DEMO-FRANKENPHP.md)
 - [FrankenPHP worker audit (kernel not reset)](docs/FRANKENPHP-WORKER-AUDIT.md)
+- [Concurrency: safe writes under contention (REQ-RUNTIME-003)](docs/CONCURRENCY.md)
 - [Commands](docs/COMMANDS.md)
 - [Events & priorities](docs/EVENTS.md)
 - [Behaviour and notable changes](docs/BEHAVIOUR_AND_CHANGES.md)

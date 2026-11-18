@@ -141,6 +141,73 @@
 
 ## Unreleased
 
+### Unique route rows (REQ-RUNTIME-003)
+
+`routes_data` gets the unique constraint `uniq_route_env_name` on (`env`, `name`); it replaces the non-unique index
+`idx_route_env_name` on the same columns. Releases up to 3.17 could store one route twice when two workers recorded
+its first request at the same time, so existing tables may hold duplicates that must be merged before the constraint
+can be created.
+
+- **Bundle commands (recommended).** Run `php bin/console nowo:performance:sync-schema` (or
+  `nowo:performance:create-table --update`). Before creating the unique index it merges every duplicated route into
+  its oldest row (lowest id): the access records of the other rows are moved to it, it keeps the latest
+  `last_accessed_at` of the group, and the other rows are deleted. Its review state, HTTP method, parameters and
+  "save access records" flag stay as they were. Each route is merged in its own transaction. The old
+  `idx_route_env_name` index is left in place (harmless); drop it when convenient.
+- **Doctrine Migrations.** `doctrine:migrations:diff` generates `DROP INDEX idx_route_env_name` and
+  `CREATE UNIQUE INDEX uniq_route_env_name ON routes_data (env, name)`. Put the merge **before** the
+  `CREATE UNIQUE INDEX` in that migration (replace `routes_data` / `routes_data_records` if you configured
+  `table_name`):
+
+  ```sql
+  -- MySQL / MariaDB
+  CREATE TEMPORARY TABLE perf_route_keep AS
+      SELECT d.id AS dup_id, k.keep_id
+      FROM routes_data d
+      INNER JOIN (SELECT env, name, MIN(id) AS keep_id FROM routes_data
+                  WHERE env IS NOT NULL AND name IS NOT NULL GROUP BY env, name HAVING COUNT(*) > 1) k
+          ON k.env = d.env AND k.name = d.name AND d.id <> k.keep_id;
+  UPDATE routes_data_records r INNER JOIN perf_route_keep p ON p.dup_id = r.route_data_id SET r.route_data_id = p.keep_id;
+  UPDATE routes_data keep_row
+      INNER JOIN (SELECT p.keep_id, MAX(d.last_accessed_at) AS last_at FROM perf_route_keep p
+                  INNER JOIN routes_data d ON d.id = p.dup_id GROUP BY p.keep_id) m ON m.keep_id = keep_row.id
+      SET keep_row.last_accessed_at = GREATEST(COALESCE(keep_row.last_accessed_at, m.last_at), COALESCE(m.last_at, keep_row.last_accessed_at));
+  DELETE d FROM routes_data d INNER JOIN perf_route_keep p ON p.dup_id = d.id;
+  DROP TEMPORARY TABLE perf_route_keep;
+
+  -- PostgreSQL
+  CREATE TEMPORARY TABLE perf_route_keep AS
+      SELECT d.id AS dup_id, k.keep_id
+      FROM routes_data d
+      INNER JOIN (SELECT env, name, MIN(id) AS keep_id FROM routes_data
+                  WHERE env IS NOT NULL AND name IS NOT NULL GROUP BY env, name HAVING COUNT(*) > 1) k
+          ON k.env = d.env AND k.name = d.name AND d.id <> k.keep_id;
+  UPDATE routes_data_records r SET route_data_id = p.keep_id FROM perf_route_keep p WHERE p.dup_id = r.route_data_id;
+  UPDATE routes_data keep_row SET last_accessed_at = GREATEST(keep_row.last_accessed_at, m.last_at)
+      FROM (SELECT p.keep_id, MAX(d.last_accessed_at) AS last_at FROM perf_route_keep p
+            INNER JOIN routes_data d ON d.id = p.dup_id GROUP BY p.keep_id) m
+      WHERE m.keep_id = keep_row.id;
+  DELETE FROM routes_data d USING perf_route_keep p WHERE p.dup_id = d.id;
+  DROP TABLE perf_route_keep;
+  ```
+
+  Run the migration while traffic is low: until the unique index exists, a new duplicate can still be inserted.
+
+### Concurrency behaviour
+
+- New runtime dependencies: `nowo-tech/transaction-contract` ^1.0 and `nowo-tech/transaction-doctrine` ^1.4. No bundle
+  has to be registered; when the host registers `NowoTransactionDoctrineBundle`, its `conflict_response` (409 or 503,
+  `retry_after`) also drives the dashboard's conflict answer.
+- A dashboard write that meets a database lock conflict now answers **409** (with `Retry-After` and `CONFLICT_001`,
+  or `CONFLICT_002` without `Retry-After` after a partial purge) through the host's error page, instead of redirecting
+  with an error flash. Customise it with the host's `error409.html.twig` (or `error.html.twig`).
+- Lost metrics and request-id races are logged at **warning** level even with `enable_logging: false`; filter the
+  `performance` channel / `bundle` context if needed.
+- `RebuildAggregatesCommand` no longer uses its repository constructor arguments (kept, optional, for backward
+  compatibility).
+
+See [CONCURRENCY.md](CONCURRENCY.md).
+
 ## To 3.17.0
 
 From **3.16.1**:

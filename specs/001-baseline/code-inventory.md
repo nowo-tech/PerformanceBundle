@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/performance-bundle`  
-**Last audited**: 2026-11-16
+**Last audited**: 2026-11-18
 
 This file proves that **every production source artifact** under `src/` is referenced by the baseline specification. Test-only files under `tests/` and demo trees are out of Packagist scope unless promoted in the spec.
 
@@ -85,6 +85,9 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Helper/LogHelper.php` | Conditional logging | FR-SVC-005 |
 | `Helper/DbalSchemaNameHelper.php` | DBAL schema asset names without deprecated APIs | FR-DBAL-002 |
 | `Service/MetricsEntityManagerFactory.php` | Private entity manager the bundle records metrics with (3.16) | FR-SVC-001, FR-WORKER-001 |
+| `Service/RouteDataDeduplicator.php` | Merges duplicate routes before `uniq_route_env_name` is created (3.18) | FR-CONC-001, FR-CLI-001 |
+| `Concurrency/WriteConflictException.php` | 409 answer of a dashboard write lock conflict (`CONFLICT_001` / `CONFLICT_002`) | FR-CONC-001, FR-DASH-001 |
+| `Concurrency/WriteConflictMapper.php` | Maps lock conflicts to that answer with the host's conflict policy | FR-CONC-001, FR-DASH-001 |
 | `Service/SensitiveDataRedactor.php` | Redacts secrets from stored query strings, referers and route parameters | FR-SVC-001, FR-SEC-002 |
 | `Security/PerformanceAccessCheckerInterface.php` | Dashboard access control contract (REQ-UI-002) | FR-SEC-001 |
 | `Security/ConfigurablePerformanceAccessChecker.php` | Role-based checker (`security.access_roles`) | FR-SEC-001 |
@@ -149,10 +152,10 @@ This file proves that **every production source artifact** under `src/` is refer
 
 | Category | Files | Mapped |
 | --- | ---: | ---: |
-| PHP classes (`src/**/*.php`) | 90 | 90 |
+| PHP classes (`src/**/*.php`) | 93 | 93 |
 | Symfony config (`src/Resources/config/`) | 3 | 3 |
 | Translations (`src/Resources/translations/`) | 12 | 12 |
 | Twig views (`src/Resources/views/`) | 17 | 17 |
-| **Total production files (`git ls-files src`)** | **122** | **122** |
+| **Total production files (`git ls-files src`)** | **125** | **125** |
 
-Audit: `git ls-files src | wc -l` → **122**.
+Audit: `git ls-files src | wc -l` → **125**.

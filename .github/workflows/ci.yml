@@ -167,6 +167,87 @@ jobs:
           echo "✅ All tests passed, validating coverage (minimum 100%)..."
           php scripts/check-coverage.php coverage.xml --min-percent=100
 
+  # Real-database job (REQ-RUNTIME-003): the two-connection race tests (tests/Integration/Concurrency) and the
+  # table-command database tests on MySQL 8.4, MariaDB 11.4 and PostgreSQL 16. DBAL 4 only: the query-tracking
+  # middleware (src/DBAL/QueryTrackingConnection.php) does not load on DBAL 3 yet (see docs/CONCURRENCY.md).
+  # PERF_REQUIRE_DATABASES turns a missing or unreachable database into a failure instead of a skip.
+  databases-matrix:
+    name: Databases (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: ['mysql-8.4', 'mariadb-11.4', 'postgresql-16']
+        include:
+          - db: 'mysql-8.4'
+            image: 'mysql:8.4'
+            port: 3306
+            health: '--health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword" --health-interval=5s --health-timeout=3s --health-retries=30'
+            require: 'mysql'
+            urls: 'DATABASE_URL=mysql://root:password@127.0.0.1:3306/performance_test?serverVersion=8.4'
+          - db: 'mariadb-11.4'
+            image: 'mariadb:11.4'
+            port: 3306
+            health: '--health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-timeout=3s --health-retries=30'
+            require: 'mariadb'
+            # DATABASE_URL too: the table-command database tests read it for their MySQL-family cases.
+            urls: 'DATABASE_URL_MARIADB=mysql://root:password@127.0.0.1:3306/performance_test?serverVersion=11.4.2-MariaDB DATABASE_URL=mysql://root:password@127.0.0.1:3306/performance_test?serverVersion=11.4.2-MariaDB'
+          - db: 'postgresql-16'
+            image: 'postgres:16'
+            port: 5432
+            health: '--health-cmd="pg_isready -U postgres" --health-interval=5s --health-timeout=3s --health-retries=30'
+            require: 'postgresql'
+            urls: 'DATABASE_URL_PG=postgresql://postgres:password@127.0.0.1:5432/performance_test?serverVersion=16'
+    services:
+      db:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: performance_test
+          MARIADB_ROOT_PASSWORD: password
+          MARIADB_DATABASE: performance_test
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: performance_test
+        ports: ['${{ matrix.port }}:${{ matrix.port }}']
+        options: ${{ matrix.health }}
+    env:
+      PERF_REQUIRE_DATABASES: ${{ matrix.require }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: json, pdo, pdo_mysql, pdo_pgsql, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: |
+          composer config platform.php "8.4.99"
+          composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          composer show doctrine/dbal | grep -E '^versions'
+
+      - name: Race and database tests
+        run: env ${{ matrix.urls }} vendor/bin/phpunit --no-coverage tests/Integration/Concurrency tests/Integration/Command
+
+  # Single required check (REQ-GIT-002) for the whole real-database matrix.
+  databases:
+    name: Databases
+    runs-on: ubuntu-latest
+    needs: databases-matrix
+    if: always()
+    steps:
+      - name: Every database job passed
+        run: |
+          if [ "${{ needs.databases-matrix.result }}" != "success" ]; then
+            echo "Databases matrix result: ${{ needs.databases-matrix.result }}"
+            exit 1
+          fi
+
   static-analysis:
     name: PHPStan
     runs-on: ubuntu-latest
