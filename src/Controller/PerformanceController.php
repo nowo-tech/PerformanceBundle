@@ -2279,22 +2279,36 @@ class PerformanceController extends AbstractController
                 ? (bool) $formData['save_access_records']
                 : null;
 
-            // The review and the "save access records" flag are one write unit: one transaction, flushed by the runner
-            // before the commit (REQ-RUNTIME-003). After a storage failure the runner closes and resets the manager
-            // through the registry, so a worker never keeps a closed entity manager (kernel reset off).
-            $updated = DoctrineTransactionRunner::forEntityManager($this->metricsService->getEntityManager(), $this->managerRegistry, $this->connectionName, null)->run(
-                static function () use ($repository, $id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt, $saveAccessRecords): bool {
-                    $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt);
+            // The review and the "save access records" flag are one write unit: one transaction on the connection
+            // (REQ-RUNTIME-003). The runner never touches the entity manager, so an open manager keeps the host's
+            // pending changes after a failure; only a manager the ORM closed (a failed flush) is reset, so a worker
+            // with the kernel kept alive never keeps a closed entity manager.
+            $entityManager = $this->metricsService->getEntityManager();
 
-                    // Update save_access_records per route when access records are enabled
-                    if ($saveAccessRecords !== null) {
-                        $routeDataToUpdate = $repository->find($id);
-                        $routeDataToUpdate?->setSaveAccessRecords($saveAccessRecords);
-                    }
+            try {
+                $updated = DoctrineTransactionRunner::forConnection($entityManager->getConnection(), null)->run(
+                    static function () use ($repository, $entityManager, $id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt, $saveAccessRecords): bool {
+                        $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt);
 
-                    return $updated;
-                },
-            );
+                        // Update save_access_records per route when access records are enabled
+                        if ($saveAccessRecords !== null) {
+                            $routeDataToUpdate = $repository->find($id);
+                            if ($routeDataToUpdate !== null) {
+                                $routeDataToUpdate->setSaveAccessRecords($saveAccessRecords);
+                                $entityManager->flush();
+                            }
+                        }
+
+                        return $updated;
+                    },
+                );
+            } catch (Throwable $e) {
+                if (!$entityManager->isOpen() && $this->managerRegistry instanceof ManagerRegistry) {
+                    $this->managerRegistry->resetManager($this->connectionName);
+                }
+
+                throw $e;
+            }
 
             if ($updated) {
                 // Reload the updated record for the after event

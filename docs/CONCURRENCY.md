@@ -120,8 +120,9 @@ the lock, PostgreSQL (READ COMMITTED) would cascade-delete that record with the 
   connection: its flush only writes the bundle's entities, it is cleared after every recording and dropped after a
   failure. The host's manager is never flushed, cleared or reset by it.
 - The private manager is cleared in a `finally` after every recording, also when a post-commit listener throws.
-- The dashboard review runs through the runner with the Doctrine registry: after a storage failure the runner closes
-  and resets the manager through the registry, so a worker with the kernel kept alive never keeps a closed manager.
+- The dashboard review runs in one transaction on the connection (the runner never clears or resets the manager).
+  After a failure, only a manager the ORM closed (a failed flush) is reset through the Doctrine registry, so a worker
+  with the kernel kept alive never keeps a closed manager; an open one keeps the host's pending changes.
 - `nowo:performance:rebuild-aggregates` loads no entity and updates through DQL, so it never clears the injected
   manager (3.17 cleared it).
 - The bundle's own runner is used instead of the host's `TransactionRunnerInterface` on purpose: a host runner

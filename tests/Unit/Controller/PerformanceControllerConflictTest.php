@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
-use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\AbstractException;
 use Doctrine\DBAL\Exception\DeadlockException;
@@ -78,7 +77,7 @@ final class PerformanceControllerConflictTest extends TestCase
         self::assertSame(WriteConflictException::CODE_RETRY_SAFE, $conflict->errorCode);
     }
 
-    public function testReviewConflictAnswersTheHostPolicyAndTheClosedManagerIsRecreated(): void
+    public function testReviewConflictWithAClosedManagerAnswersTheHostPolicyAndResetsItOnce(): void
     {
         $routeData = (new RouteData())->setName('app_home')->setEnv('test');
         $this->repository->method('find')->willReturn($routeData);
@@ -86,7 +85,6 @@ final class PerformanceControllerConflictTest extends TestCase
         $entityManager = $this->reviewEntityManager(beginTimes: 1, commitTimes: 0);
         $entityManager->method('isOpen')->willReturn(false);
         $registry = $this->createMock(ManagerRegistry::class);
-        $registry->method('getManager')->with('default')->willReturn($entityManager);
         $registry->expects(self::once())->method('resetManager')->with('default');
         $controller = $this->controller(
             $this->form(['queries_improved' => '1', 'time_improved' => '0', 'save_access_records' => true]),
@@ -99,6 +97,24 @@ final class PerformanceControllerConflictTest extends TestCase
         self::assertSame(503, $conflict->getStatusCode());
         self::assertSame(WriteConflictException::CODE_RETRY_SAFE, $conflict->errorCode);
         self::assertSame('5', $conflict->getHeaders()['Retry-After'], 'The host policy gives Retry-After.');
+    }
+
+    public function testReviewStorageFailureWithAnOpenManagerNeverResetsIt(): void
+    {
+        $routeData = (new RouteData())->setName('app_home')->setEnv('test');
+        $this->repository->method('find')->willReturn($routeData);
+        $this->repository->method('markAsReviewed')->willThrowException($this->deadlock());
+        $entityManager = $this->reviewEntityManager(beginTimes: 1, commitTimes: 0);
+        $entityManager->method('isOpen')->willReturn(true);
+        $entityManager->expects(self::never())->method('clear');
+        $entityManager->expects(self::never())->method('close');
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->expects(self::never())->method('resetManager');
+        $controller = $this->controller($this->form(['queries_improved' => '1', 'time_improved' => '0']), null, $registry);
+
+        $conflict = $this->catchConflict(static fn (): RedirectResponse => $controller->review(1, Request::create('/performance/1/review', 'POST')));
+
+        self::assertSame(WriteConflictException::CODE_RETRY_SAFE, $conflict->errorCode);
     }
 
     public function testReviewSavesTheAccessRecordsFlagInTheSameTransaction(): void
@@ -122,7 +138,6 @@ final class PerformanceControllerConflictTest extends TestCase
         $connection->expects(self::exactly($commitTimes))->method('commit');
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->method('getConnection')->willReturn($connection);
-        $entityManager->method('getEventManager')->willReturn(new EventManager());
         $this->metricsService->method('getEntityManager')->willReturn($entityManager);
 
         return $entityManager;
