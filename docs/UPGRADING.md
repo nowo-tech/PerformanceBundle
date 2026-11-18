@@ -3,6 +3,10 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.18.0](#to-3180)
+  - [Unique route rows (REQ-RUNTIME-003)](#unique-route-rows-req-runtime-003)
+  - [DBAL 4 required](#dbal-4-required)
+  - [Concurrency behaviour](#concurrency-behaviour)
 - [To 3.17.0](#to-3170)
 - [To 3.16.1](#to-3161)
 - [To 3.16.0](#to-3160)
@@ -140,6 +144,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.18.0
+
+From **3.17.0**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 ### Unique route rows (REQ-RUNTIME-003)
 

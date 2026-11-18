@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[3.18.0] - 2026-11-18](#3180---2026-11-18)
 - [[3.17.0] - 2026-11-13](#3170---2026-11-13)
 - [[3.16.1] - 2026-11-11](#3161---2026-11-11)
 - [[3.16.0] - 2026-11-10](#3160---2026-11-10)
@@ -93,6 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.18.0] - 2026-11-18
+
 ### Changed
 
 - Demo: the shell is UiKit's admin layout with the UiKit masthead and flashes (no Bootstrap or icon CDN, no inline style), the pages use UiKit classes, `demo/symfony8/composer.json` requires `nowo-tech/ui-kit-bundle` ^2.53 (REQ-DEMO-014).
@@ -105,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Concurrent writes (REQ-RUNTIME-003, [`docs/CONCURRENCY.md`](CONCURRENCY.md)):
-  - **Duplicate routes.** Two first requests of a new route in two workers could insert two `RouteData` rows for the same environment and name (a check-then-insert with no unique key), splitting the route in the dashboard. `routes_data` now has the unique constraint `uniq_route_env_name` on (`env`, `name`), and the metrics write re-reads the row the other worker committed. Existing duplicates are merged by `sync-schema` / `create-table --update` before the constraint is added: each group is locked in id order first (`SELECT … FOR UPDATE`, so a live access record is never cascade-deleted with a duplicate), the records move to the oldest row, and the review state and the "save access records" choice of the merged rows are kept (`save_access_records` AND-ed, `reviewed` OR-ed, review fields from the most recent review). If live traffic adds a duplicate before the unique index is created, the command merges and tries once more, then exits with a failure. A metrics write whose route row was merged away meanwhile (foreign-key violation) runs again on the kept row. See [UPGRADING](UPGRADING.md#unreleased).
+  - **Duplicate routes.** Two first requests of a new route in two workers could insert two `RouteData` rows for the same environment and name (a check-then-insert with no unique key), splitting the route in the dashboard. `routes_data` now has the unique constraint `uniq_route_env_name` on (`env`, `name`), and the metrics write re-reads the row the other worker committed. Existing duplicates are merged by `sync-schema` / `create-table --update` before the constraint is added: each group is locked in id order first (`SELECT … FOR UPDATE`, so a live access record is never cascade-deleted with a duplicate), the records move to the oldest row, and the review state and the "save access records" choice of the merged rows are kept (`save_access_records` AND-ed, `reviewed` OR-ed, review fields from the most recent review). If live traffic adds a duplicate before the unique index is created, the command merges and tries once more, then exits with a failure. A metrics write whose route row was merged away meanwhile (foreign-key violation) runs again on the kept row. See [UPGRADING](UPGRADING.md#to-3180).
   - **Lost metrics on a request-id race.** A unique violation on `request_id` failed the whole flush, and the subscriber logged it at debug level only, so the request's metrics were lost silently. The route's metrics are now saved without the duplicate access record, and a warning is logged.
   - **One transaction per write unit.** The route row and its access record are committed in one transaction (`DoctrineTransactionRunner` on the private entity manager); a deadlock or lock wait timeout is replayed (3 attempts) and then rethrown (Messenger retries the message) instead of being swallowed.
   - **Lost metrics are never silent.** When the subscriber cannot save a request's metrics (it never breaks the host request) it logs a warning with the route and the exception class (never the message), whatever `enable_logging` says.
@@ -545,6 +548,7 @@ Allows nowo-tech/ui-kit-bundle 2.x (^1.4 || ^2.2) so hosts can move to UiKit 2.2
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[3.18.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.18.0
 [3.17.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.17.0
 [3.16.1]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.16.1
 [3.16.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.16.0
