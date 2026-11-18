@@ -39,6 +39,11 @@ use function sprintf;
 final class RebuildAggregatesCommand extends Command
 {
     /**
+     * Largest --batch-size (one IN list of RouteData ids per batch).
+     */
+    public const MAX_BATCH_SIZE = 10000;
+
+    /**
      * Creates a new instance.
      *
      * The repositories are no longer used (3.18.0: the command updates through DQL and loads no entity); the
@@ -80,7 +85,7 @@ HELP
                 'batch-size',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Number of RouteData records to process per batch.',
+                'Number of RouteData records to process per batch (at most 10000).',
                 '200',
             );
     }
@@ -94,6 +99,10 @@ HELP
 
         if ($batchSize < 1) {
             $batchSize = 200;
+        }
+        // PostgreSQL accepts at most 65,535 bound parameters per statement (the batch is one IN list).
+        if ($batchSize > self::MAX_BATCH_SIZE) {
+            $batchSize = self::MAX_BATCH_SIZE;
         }
 
         $io->title('[NowoPerformanceBundle] Rebuilding RouteData aggregates from RouteDataRecord');

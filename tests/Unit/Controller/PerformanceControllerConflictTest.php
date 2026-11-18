@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\AbstractException;
 use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Concurrency\WriteConflictException;
 use Nowo\PerformanceBundle\Concurrency\WriteConflictMapper;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
@@ -76,18 +78,20 @@ final class PerformanceControllerConflictTest extends TestCase
         self::assertSame(WriteConflictException::CODE_RETRY_SAFE, $conflict->errorCode);
     }
 
-    public function testReviewRunsInOneTransactionAndAConflictAnswersTheHostPolicy(): void
+    public function testReviewConflictAnswersTheHostPolicyAndTheClosedManagerIsRecreated(): void
     {
         $routeData = (new RouteData())->setName('app_home')->setEnv('test');
         $this->repository->method('find')->willReturn($routeData);
         $this->repository->method('markAsReviewed')->willThrowException($this->deadlock());
-        $connection = $this->createMock(Connection::class);
-        $connection->expects(self::once())->method('beginTransaction');
-        $connection->expects(self::never())->method('commit');
-        $this->metricsService->method('getConnection')->willReturn($connection);
+        $entityManager = $this->reviewEntityManager(beginTimes: 1, commitTimes: 0);
+        $entityManager->method('isOpen')->willReturn(false);
+        $registry = $this->createMock(ManagerRegistry::class);
+        $registry->method('getManager')->with('default')->willReturn($entityManager);
+        $registry->expects(self::once())->method('resetManager')->with('default');
         $controller = $this->controller(
             $this->form(['queries_improved' => '1', 'time_improved' => '0', 'save_access_records' => true]),
             new WriteConflictMapper(new ConflictResponsePolicy(503, 5)),
+            $registry,
         );
 
         $conflict = $this->catchConflict(static fn (): RedirectResponse => $controller->review(1, Request::create('/performance/1/review', 'POST')));
@@ -102,18 +106,26 @@ final class PerformanceControllerConflictTest extends TestCase
         $routeData = (new RouteData())->setName('app_home')->setEnv('test');
         $this->repository->method('find')->willReturn($routeData);
         $this->repository->method('markAsReviewed')->willReturn(true);
-        $connection = $this->createMock(Connection::class);
-        $connection->expects(self::once())->method('beginTransaction');
-        $connection->expects(self::once())->method('commit');
-        $this->metricsService->method('getConnection')->willReturn($connection);
-        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager = $this->reviewEntityManager(beginTimes: 1, commitTimes: 1);
         $entityManager->expects(self::once())->method('flush');
-        $this->metricsService->method('getEntityManager')->willReturn($entityManager);
-        $controller = $this->controller($this->form(['queries_improved' => '', 'time_improved' => '', 'save_access_records' => false]));
 
-        $controller->review(1, Request::create('/performance/1/review', 'POST'));
+        $this->controller($this->form(['queries_improved' => '', 'time_improved' => '', 'save_access_records' => false]))
+            ->review(1, Request::create('/performance/1/review', 'POST'));
 
         self::assertFalse($routeData->getSaveAccessRecords());
+    }
+
+    private function reviewEntityManager(int $beginTimes, int $commitTimes): EntityManagerInterface&MockObject
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::exactly($beginTimes))->method('beginTransaction');
+        $connection->expects(self::exactly($commitTimes))->method('commit');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->method('getEventManager')->willReturn(new EventManager());
+        $this->metricsService->method('getEntityManager')->willReturn($entityManager);
+
+        return $entityManager;
     }
 
     public function testPurgeThatAlreadyDeletedABatchAnswersConflict002AndClearsTheCache(): void
@@ -178,7 +190,7 @@ final class PerformanceControllerConflictTest extends TestCase
         return $form;
     }
 
-    private function controller(FormInterface $form, ?WriteConflictMapper $mapper = null): PerformanceController
+    private function controller(FormInterface $form, ?WriteConflictMapper $mapper = null, ?ManagerRegistry $registry = null): PerformanceController
     {
         $controller = $this->getMockBuilder(PerformanceController::class)
             ->setConstructorArgs([
@@ -192,6 +204,7 @@ final class PerformanceControllerConflictTest extends TestCase
                 'enableAccessRecords'    => true,
                 'accessChecker'          => new AllowAllPerformanceAccessChecker(),
                 'conflictMapper'         => $mapper,
+                'managerRegistry'        => $registry,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute', 'getUser'])
             ->getMock();

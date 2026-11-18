@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -20,6 +21,8 @@ use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\TransactionContract\TransientStorageFailure;
 use Nowo\TransactionDoctrine\DoctrineTransactionRunner;
+use Nowo\TransactionDoctrine\TransientFailureClassifier;
+use Nowo\TransactionDoctrine\TransientFailureKind;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\NativeClock;
@@ -78,6 +81,11 @@ class PerformanceMetricsService
     private ?MessageBusInterface $messageBus = null;
 
     /**
+     * Classifies lock conflicts (stateless).
+     */
+    private readonly TransientFailureClassifier $classifier;
+
+    /**
      * Private entity manager of the write path (created on first write, dropped after an error).
      */
     private ?EntityManagerInterface $writeEntityManager = null;
@@ -115,6 +123,7 @@ class PerformanceMetricsService
             throw new LogicException('Expected EntityManagerInterface from registry.');
         }
         $this->entityManager = $manager;
+        $this->classifier    = new TransientFailureClassifier();
         $repository          = $this->entityManager->getRepository(RouteData::class);
         if (!$repository instanceof RouteDataRepository) {
             throw new LogicException('Expected RouteDataRepository.');
@@ -284,7 +293,9 @@ class PerformanceMetricsService
         // Otherwise, record synchronously
         $this->bundleLog('debug', '[PerformanceBundle] recordMetrics: Recording synchronously');
 
-        return $this->recordMetricsSync($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $requestId, $referer, $userIdentifier, $userId, $routePath);
+        // kernel.terminate: the worker is busy until the unit is done, so only deadlocks are replayed, never a lock
+        // wait timeout (which already waited innodb_lock_wait_timeout / lock_timeout).
+        return $this->writeUnit($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $requestId, $referer, $userIdentifier, $userId, $routePath, false);
     }
 
     /**
@@ -322,6 +333,35 @@ class PerformanceMetricsService
         ?string $userIdentifier = null,
         ?string $userId = null,
         ?string $routePath = null,
+    ): array {
+        // Messenger handler (async) and direct callers: every lock conflict kind is replayed.
+        return $this->writeUnit($routeName, $env, $requestTime, $totalQueries, $queryTime, $params, $memoryUsage, $httpMethod, $statusCode, $requestId, $referer, $userIdentifier, $userId, $routePath, true);
+    }
+
+    /**
+     * The metrics write unit of recordMetrics() (sync mode) and recordMetricsSync().
+     *
+     * @param array<string, mixed>|null $params Route parameters
+     * @param bool $replayLockWaits Whether a lock wait timeout is replayed too (deadlocks and serialization failures always are)
+     *
+     * @return array{is_new: bool, was_updated: bool}
+     */
+    private function writeUnit(
+        string $routeName,
+        string $env,
+        ?float $requestTime,
+        ?int $totalQueries,
+        ?float $queryTime,
+        ?array $params,
+        ?int $memoryUsage,
+        ?string $httpMethod,
+        ?int $statusCode,
+        ?string $requestId,
+        ?string $referer,
+        ?string $userIdentifier,
+        ?string $userId,
+        ?string $routePath,
+        bool $replayLockWaits,
     ): array {
         $this->bundleLog(
             'debug',
@@ -371,8 +411,10 @@ class PerformanceMetricsService
                 // @igor-ignore - Private unit of work of the write path, cleared after every recording and dropped on error.
                 $this->writeEntityManager = null;
 
-                $unique = $this->isUniqueViolation($e);
-                if (!$replayable || $attempt >= self::MAX_WRITE_ATTEMPTS || (!$unique && !$e instanceof TransientStorageFailure)) {
+                $unique     = $this->isKeyConflict($e);
+                $lockReplay = $e instanceof TransientStorageFailure
+                    && ($replayLockWaits || $this->classifier->classify($e) !== TransientFailureKind::LockWaitTimeout);
+                if (!$replayable || $attempt >= self::MAX_WRITE_ATTEMPTS || (!$unique && !$lockReplay)) {
                     $this->bundleLog(
                         'debug',
                         '[PerformanceBundle] recordMetricsSync: ERROR - route=%s, env=%s, attempt=%d, exception=%s, message=%s',
@@ -426,19 +468,21 @@ class PerformanceMetricsService
             $isNew ? 'true' : 'false',
         );
 
-        // Side effects after the commit only (rule 1).
-        if ($this->cacheService instanceof PerformanceCacheService) {
-            $this->cacheService->invalidateStatistics($env);
-        }
+        try {
+            // Side effects after the commit only (rule 1).
+            if ($this->cacheService instanceof PerformanceCacheService) {
+                $this->cacheService->invalidateStatistics($env);
+            }
 
-        if ($this->eventDispatcher instanceof EventDispatcherInterface) {
-            $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew, $requestTime, $totalQueries, $memoryUsage);
-            $this->eventDispatcher->dispatch($afterEvent);
+            if ($this->eventDispatcher instanceof EventDispatcherInterface) {
+                $afterEvent = new AfterMetricsRecordedEvent($routeData, $isNew, $requestTime, $totalQueries, $memoryUsage);
+                $this->eventDispatcher->dispatch($afterEvent);
+            }
+        } finally {
+            // The private manager only holds the bundle's entities: clearing it (even when a listener threw) keeps a
+            // long-running worker from accumulating one record per request or serving a stale RouteData.
+            $entityManager->clear();
         }
-
-        // The private manager only holds the bundle's entities: clearing it keeps a long-running worker from
-        // accumulating one record per request or serving a stale RouteData changed by another worker.
-        $entityManager->clear();
 
         $this->bundleLog(
             'debug',
@@ -773,12 +817,14 @@ class PerformanceMetricsService
     }
 
     /**
-     * Whether the failure (or anything in its previous chain) is a unique-constraint violation.
+     * Whether the failure (or anything in its previous chain) is a unique-constraint violation (a concurrent insert of
+     * the same route or request id) or a foreign-key violation (the route row was merged away by sync-schema while
+     * this unit ran): both are resolved by running the unit again, which re-reads the committed rows.
      */
-    private function isUniqueViolation(Throwable $failure): bool
+    private function isKeyConflict(Throwable $failure): bool
     {
         for ($current = $failure; $current instanceof Throwable; $current = $current->getPrevious()) {
-            if ($current instanceof UniqueConstraintViolationException) {
+            if ($current instanceof UniqueConstraintViolationException || $current instanceof ForeignKeyConstraintViolationException) {
                 return true;
             }
         }

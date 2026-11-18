@@ -168,8 +168,7 @@ jobs:
           php scripts/check-coverage.php coverage.xml --min-percent=100
 
   # Real-database job (REQ-RUNTIME-003): the two-connection race tests (tests/Integration/Concurrency) and the
-  # table-command database tests on MySQL 8.4, MariaDB 11.4 and PostgreSQL 16. DBAL 4 only: the query-tracking
-  # middleware (src/DBAL/QueryTrackingConnection.php) does not load on DBAL 3 yet (see docs/CONCURRENCY.md).
+  # table-command database tests on MySQL 8.4, MariaDB 11.4 and PostgreSQL 16, on DBAL 4 (composer.json: ^4.0).
   # PERF_REQUIRE_DATABASES turns a missing or unreachable database into a failure instead of a skip.
   databases-matrix:
     name: Databases (${{ matrix.db }})

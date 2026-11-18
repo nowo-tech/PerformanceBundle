@@ -41,8 +41,8 @@ The bundle is compatible with the following versions:
 
 - **PHP**: `>=8.2, <8.6`
 - **Symfony**: `^7.0 || ^8.0`
-- **Doctrine ORM**: `^2.13 || ^3.0`
-- **Doctrine DBAL**: Included with ORM (2.x with ORM 2.x, 3.x with ORM 3.x)
+- **Doctrine ORM**: `^3.7`
+- **Doctrine DBAL**: `^4.0` (since 3.18.0; DBAL 3 never loaded the query-tracking middleware, see [UPGRADING.md](UPGRADING.md#dbal-4-required))
 - **DoctrineBundle**: `^2.8 || ^3.0`
 
 > Symfony 6.x and PHP 8.1 are no longer supported (see [UPGRADING.md](UPGRADING.md)).
@@ -52,10 +52,11 @@ The bundle is compatible with the following versions:
 
 | Symfony | Doctrine ORM | Doctrine DBAL | DoctrineBundle | Support | Notes |
 |---------|--------------|---------------|----------------|---------|-------|
-| 7.0+    | 2.13+        | 2.x           | 2.8+           | ✅      | Uses reflection-based middleware; requires PHP 8.2+ |
-| 7.0+    | 2.13+        | 2.x           | 2.17.1         | ✅      | Tested - no YAML config needed |
-| 7.0+    | 3.0+         | 3.x           | 3.0+           | ✅      | Uses reflection-based middleware |
-| 8.0+    | 3.0+         | 3.x           | 3.2+           | ✅      | PHP 8.4+; DoctrineBundle 3.2+ required |
+| 7.4     | 3.7+         | 4.x           | 2.18+          | ✅      | PHP 8.2+ |
+| 8.0+    | 3.7+         | 4.x           | 3.2+           | ✅      | PHP 8.4+; DoctrineBundle 3.2+ required |
+
+The sections below describe older DBAL / DoctrineBundle differences the code still tolerates; they are kept for
+reference.
 
 > **Note**: 
 > - DoctrineBundle 3.0 is required for Symfony 8.0+.

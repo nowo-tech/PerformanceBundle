@@ -1339,19 +1339,50 @@ HELP
                 implode(', ', $quotedColumns),
             );
 
+            if ($unique) {
+                $this->createUniqueIndexAfterMerge($entityManager, $io, $sql, (string) $indexName, $columns);
+
+                continue;
+            }
+
             try {
-                if ($unique) {
-                    $merged = (new RouteDataDeduplicator())->merge($entityManager);
-                    if ($merged > 0) {
-                        $io->text(sprintf('  ✓ Merged <info>%d</info> duplicate route row(s) into the oldest row of each route', $merged));
-                    }
-                }
                 $connection->executeStatement($sql);
-                $io->text(sprintf('  ✓ Created %s <info>%s</info> on columns: %s', $unique ? 'unique index' : 'index', $indexName, implode(', ', $columns)));
+                $io->text(sprintf('  ✓ Created index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
             } catch (Exception $e) {
                 $io->warning(sprintf('  ✗ Failed to create index %s: %s', $indexName, $e->getMessage()));
             }
         }
+    }
+
+    /**
+     * Merges duplicate routes, then creates the unique index (uniq_route_env_name). Live traffic can insert a new
+     * duplicate between the two, so a failed creation merges and tries once more; if it fails again the command fails
+     * (the write path relies on the constraint), and running it again resumes where it stopped.
+     *
+     * @param list<string> $columns
+     *
+     * @throws RuntimeException When the unique index could not be created after the retry
+     */
+    private function createUniqueIndexAfterMerge(EntityManagerInterface $entityManager, SymfonyStyle $io, string $sql, string $indexName, array $columns): void
+    {
+        $failure = null;
+        for ($attempt = 1; $attempt <= 2; ++$attempt) {
+            try {
+                $merged = (new RouteDataDeduplicator())->merge($entityManager);
+                if ($merged > 0) {
+                    $io->text(sprintf('  ✓ Merged <info>%d</info> duplicate route row(s) into the oldest row of each route', $merged));
+                }
+                $entityManager->getConnection()->executeStatement($sql);
+                $io->text(sprintf('  ✓ Created unique index <info>%s</info> on columns: %s', $indexName, implode(', ', $columns)));
+
+                return;
+            } catch (Exception $e) {
+                $failure = $e;
+                $io->warning(sprintf('  ✗ Failed to create unique index %s (attempt %d of 2): %s', $indexName, $attempt, $e->getMessage()));
+            }
+        }
+
+        throw new RuntimeException(sprintf('The unique index %s could not be created (a concurrent write may have added a duplicate route); run the command again.', $indexName), 0, $failure);
     }
 
     /**

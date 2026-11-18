@@ -15,6 +15,8 @@ use Nowo\PerformanceBundle\Concurrency\WriteConflictException;
 use Nowo\PerformanceBundle\Concurrency\WriteConflictMapper;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
+use Nowo\PerformanceBundle\Service\RouteDataDeduplicator;
+use Nowo\PerformanceBundle\Tests\Support\HookedConnection;
 use Nowo\PerformanceBundle\Tests\Support\PausingMetricsService;
 use Nowo\PerformanceBundle\Tests\Support\ScriptedMetricsEntityManagerFactory;
 use Nowo\TransactionContract\TransientStorageFailure;
@@ -98,7 +100,7 @@ final class MetricsWriteRaceTest extends TestCase
     }
 
     #[DataProvider('databases')]
-    public function testARealLockWaitIsReplayedThenReportedAndTheConnectionStaysUsable(string $driver): void
+    public function testARealLockWaitIsReplayedByTheAsyncPathOnlyThenReportedAndTheConnectionStaysUsable(string $driver): void
     {
         $em      = $this->connectBoth($driver);
         $service = $this->service($em);
@@ -110,7 +112,16 @@ final class MetricsWriteRaceTest extends TestCase
         $other->fetchOne("SELECT id FROM routes_data WHERE name = 'app_locked' FOR UPDATE");
 
         try {
-            $service->recordMetrics('app_locked', 'prod', 0.1, 1, null, null, null, 'GET', 200, [], 'blocked');
+            // kernel.terminate path: a lock wait timeout is not replayed (the worker already waited once).
+            try {
+                $service->recordMetrics('app_locked', 'prod', 0.1, 1, null, null, null, 'GET', 200, [], 'blocked');
+                self::fail('The lock conflict was expected.');
+            } catch (TransientStorageFailure) {
+                self::assertSame([], $service->pauses);
+            }
+
+            // Messenger handler path: replayed, then rethrown for the transport's retry.
+            $service->recordMetricsSync('app_locked', 'prod', 0.1, 1, null, null, null, 'GET', 200, 'blocked');
             self::fail('The lock conflict was expected.');
         } catch (TransientStorageFailure $e) {
             $answer = (new WriteConflictMapper())->toHttpException($e);
@@ -165,7 +176,7 @@ final class MetricsWriteRaceTest extends TestCase
     {
         $em     = $this->connectBoth($driver);
         $worker = $this->worker();
-        $worker->executeStatement($driver === 'postgresql' ? 'DROP INDEX uniq_route_env_name' : 'DROP INDEX uniq_route_env_name ON routes_data');
+        $this->dropUniqueIndex($driver);
 
         $keep = $this->insertRoute($worker, 'home', 'prod', '2026-01-01 00:00:00');
         $dup1 = $this->insertRoute($worker, 'home', 'prod', '2026-03-01 00:00:00');
@@ -194,6 +205,163 @@ final class MetricsWriteRaceTest extends TestCase
 
         $this->expectException(UniqueConstraintViolationException::class);
         $this->insertRoute($worker, 'home', 'prod');
+    }
+
+    #[DataProvider('databases')]
+    public function testAMergeUnderALiveWriteLosesNoAccessRecord(string $driver): void
+    {
+        $em     = $this->connectBoth($driver);
+        $worker = $this->worker();
+        $this->dropUniqueIndex($driver);
+        $keep = $this->insertRoute($worker, 'home', 'prod', '2026-01-01 00:00:00');
+        $dup  = $this->insertRoute($worker, 'home', 'prod', '2026-02-01 00:00:00');
+        $this->insertRecord($worker, $dup, 'old-1');
+
+        $other   = $this->other();
+        $outcome = 'not run';
+        $this->shortLockWait($other);
+        // A live worker records a request for the duplicate right before the merge deletes it.
+        HookedConnection::$hooks['DELETE FROM routes_data '] = function () use ($other, $dup, &$outcome): bool {
+            try {
+                $other->beginTransaction();
+                $this->insertRecord($other, $dup, 'live-1', '2026-12-01 00:00:00');
+                $other->commit();
+                $outcome = 'committed';
+            } catch (Throwable) {
+                if ($other->isTransactionActive()) {
+                    $other->rollBack();
+                }
+                $outcome = 'failed';
+            }
+
+            return false;
+        };
+
+        self::assertSame(1, (new RouteDataDeduplicator())->merge($em));
+
+        // The group is locked: the live write waits and fails loudly (its unit replays on the kept row); it is never
+        // committed and then cascade-deleted with the duplicate.
+        self::assertSame('failed', $outcome);
+        self::assertSame(1, $this->rows('SELECT COUNT(*) FROM routes_data_records'));
+        self::assertSame(1, $this->rows('SELECT COUNT(*) FROM routes_data_records WHERE route_data_id = ?', [$keep]));
+        self::assertSame(0, $worker->getTransactionNestingLevel());
+    }
+
+    #[DataProvider('databases')]
+    public function testAMergeKeepsTheReviewAndTheDoNotSaveChoiceOfTheMergedRows(string $driver): void
+    {
+        $em     = $this->connectBoth($driver);
+        $worker = $this->worker();
+        $this->dropUniqueIndex($driver);
+        $keep = $this->insertRoute($worker, 'home', 'prod', '2026-01-01 00:00:00');
+        $old  = $this->insertRoute($worker, 'home', 'prod', '2026-03-01 00:00:00');
+        $new  = $this->insertRoute($worker, 'home', 'prod', '2026-02-01 00:00:00');
+        $this->review($worker, $old, '2026-02-01 00:00:00', 'alice', true, false, false);
+        $this->review($worker, $new, '2026-04-01 00:00:00', 'bob', false, true, true);
+
+        self::assertSame(2, (new RouteDataDeduplicator())->merge($em));
+
+        $row = $this->other()->fetchAssociative('SELECT * FROM routes_data WHERE id = ?', [$keep]);
+        self::assertIsArray($row);
+        $bool = static fn (mixed $value): ?bool => $value === null ? null : (bool) $value;
+        self::assertTrue($bool($row['reviewed']), 'reviewed is OR-ed over the group.');
+        self::assertStringStartsWith('2026-04-01 00:00:00', (string) $row['reviewed_at'], 'The most recent review wins.');
+        self::assertSame('bob', $row['reviewed_by']);
+        self::assertFalse($bool($row['queries_improved']));
+        self::assertTrue($bool($row['time_improved']));
+        self::assertFalse($bool($row['save_access_records']), 'One "do not save access records" wins.');
+        self::assertStringStartsWith('2026-03-01 00:00:00', (string) $row['last_accessed_at']);
+    }
+
+    #[DataProvider('databases')]
+    public function testAForeignKeyViolationIsReplayedOnTheCurrentRouteRow(string $driver): void
+    {
+        $em    = $this->connectBoth($driver);
+        $other = $this->other();
+        $this->insertRoute($this->worker(), 'app_fk');
+        $factory = new ScriptedMetricsEntityManagerFactory([
+            // The route row read by this worker is merged away (deleted) before its access record is inserted.
+            ['onFlush' => static fn (): int|string => $other->executeStatement("DELETE FROM routes_data WHERE name = 'app_fk'")],
+        ]);
+        $service = $this->service($em, $factory);
+
+        $service->recordMetrics('app_fk', 'prod', 0.2, 1, null, null, null, 'GET', 200, [], 'req-fk');
+
+        self::assertSame(2, $factory->created);
+        self::assertSame(1, $this->rows("SELECT COUNT(*) FROM routes_data WHERE name = 'app_fk'"));
+        self::assertSame(1, $this->rows("SELECT COUNT(*) FROM routes_data_records rec INNER JOIN routes_data r ON r.id = rec.route_data_id WHERE r.name = 'app_fk' AND rec.request_id = 'req-fk'"));
+        $this->assertWorkerUsable($service);
+    }
+
+    #[DataProvider('databases')]
+    public function testCreateTableMergesAgainWhenLiveTrafficAddsADuplicateBeforeTheUniqueIndex(string $driver): void
+    {
+        $em = $this->connectBoth($driver);
+        $this->dropUniqueIndex($driver);
+        $this->insertRoute($this->worker(), 'home');
+        $this->insertRoute($this->worker(), 'home');
+        $other                                          = $this->other();
+        HookedConnection::$hooks['CREATE UNIQUE INDEX'] = function () use ($other): bool {
+            $this->insertRoute($other, 'home');
+
+            return false;
+        };
+
+        $tester = $this->createTable($em);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('attempt 1 of 2', preg_replace('/\s+/', ' ', $tester->getDisplay()) ?? '');
+        self::assertSame(1, $this->rows("SELECT COUNT(*) FROM routes_data WHERE name = 'home'"));
+        self::assertTrue($this->worker()->createSchemaManager()->introspectTable('routes_data')->getIndex('uniq_route_env_name')->isUnique());
+    }
+
+    #[DataProvider('databases')]
+    public function testCreateTableFailsWhenTheUniqueIndexCannotBeCreated(string $driver): void
+    {
+        $em = $this->connectBoth($driver);
+        $this->dropUniqueIndex($driver);
+        $other                                          = $this->other();
+        HookedConnection::$hooks['CREATE UNIQUE INDEX'] = function () use ($other): bool {
+            // Two live inserts of the same new route, every time: the unique index can never be created.
+            $this->insertRoute($other, 'busy');
+            $this->insertRoute($other, 'busy');
+
+            return true;
+        };
+
+        $tester = $this->createTable($em);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('could not be created', preg_replace('/\s+/', ' ', $tester->getDisplay()) ?? '');
+        self::assertFalse($this->worker()->createSchemaManager()->introspectTable('routes_data')->hasIndex('uniq_route_env_name'));
+    }
+
+    private function createTable(EntityManager $em): CommandTester
+    {
+        $registry = $this->createStub(ManagerRegistry::class);
+        $registry->method('getManager')->willReturn($em);
+        $registry->method('getConnection')->willReturn($this->worker());
+        $tester = new CommandTester(new CreateTableCommand($registry, 'default', 'routes_data', true));
+        $tester->execute(['--update' => true]);
+
+        return $tester;
+    }
+
+    private function dropUniqueIndex(string $driver): void
+    {
+        $this->worker()->executeStatement($driver === 'postgresql' ? 'DROP INDEX uniq_route_env_name' : 'DROP INDEX uniq_route_env_name ON routes_data');
+    }
+
+    private function review(Connection $connection, int $id, string $at, string $by, bool $queries, bool $time, bool $save): void
+    {
+        $connection->update('routes_data', [
+            'reviewed'            => true,
+            'reviewed_at'         => $at,
+            'reviewed_by'         => $by,
+            'queries_improved'    => $queries,
+            'time_improved'       => $time,
+            'save_access_records' => $save,
+        ], ['id' => $id], ['reviewed' => 'boolean', 'queries_improved' => 'boolean', 'time_improved' => 'boolean', 'save_access_records' => 'boolean']);
     }
 
     private function service(EntityManager $em, ?ScriptedMetricsEntityManagerFactory $factory = null): PausingMetricsService

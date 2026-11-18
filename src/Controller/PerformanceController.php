@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Schema\Column;
+use Doctrine\Persistence\ManagerRegistry;
 use Exception;
 use Nowo\PerformanceBundle\Concurrency\WriteConflictException;
 use Nowo\PerformanceBundle\Concurrency\WriteConflictMapper;
@@ -171,6 +172,7 @@ class PerformanceController extends AbstractController
         private readonly ?ClockInterface $clock = null,
         private readonly ?TranslatorInterface $translator = null,
         private readonly ?WriteConflictMapper $conflictMapper = null,
+        private readonly ?ManagerRegistry $managerRegistry = null,
     ) {
     }
 
@@ -2277,18 +2279,17 @@ class PerformanceController extends AbstractController
                 ? (bool) $formData['save_access_records']
                 : null;
 
-            // The review and the "save access records" flag are one write unit: one transaction (REQ-RUNTIME-003).
-            $updated = DoctrineTransactionRunner::forConnection($this->metricsService->getConnection(), null)->run(
-                function () use ($repository, $id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt, $saveAccessRecords): bool {
+            // The review and the "save access records" flag are one write unit: one transaction, flushed by the runner
+            // before the commit (REQ-RUNTIME-003). After a storage failure the runner closes and resets the manager
+            // through the registry, so a worker never keeps a closed entity manager (kernel reset off).
+            $updated = DoctrineTransactionRunner::forEntityManager($this->metricsService->getEntityManager(), $this->managerRegistry, $this->connectionName, null)->run(
+                static function () use ($repository, $id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt, $saveAccessRecords): bool {
                     $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt);
 
                     // Update save_access_records per route when access records are enabled
                     if ($saveAccessRecords !== null) {
                         $routeDataToUpdate = $repository->find($id);
-                        if ($routeDataToUpdate !== null) {
-                            $routeDataToUpdate->setSaveAccessRecords($saveAccessRecords);
-                            $this->metricsService->getEntityManager()->flush();
-                        }
+                        $routeDataToUpdate?->setSaveAccessRecords($saveAccessRecords);
                     }
 
                     return $updated;

@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Tools\DsnParser;
 use Doctrine\ORM\EntityManager;
+use Nowo\PerformanceBundle\Tests\Support\HookedConnection;
 use Nowo\PerformanceBundle\Tests\Support\OrmTestSupport;
 use Throwable;
 
@@ -19,7 +20,7 @@ use function is_string;
 
 /**
  * Two connections on one dedicated real database (REQ-RUNTIME-003 race tests): `$this->worker` is the connection the
- * bundle writes with, `$this->other` plays a second worker. MySQL 8.4 (DATABASE_URL), MariaDB 11 (DATABASE_URL_MARIADB)
+ * bundle writes with (a {@see HookedConnection}, so a test can act right before one of its statements), `$this->other` plays a second worker. MySQL 8.4 (DATABASE_URL), MariaDB 11 (DATABASE_URL_MARIADB)
  * and PostgreSQL 16 (DATABASE_URL_PG); a driver without a URL is skipped, unless it is listed in
  * PERF_REQUIRE_DATABASES (comma-separated: mysql,mariadb,postgresql), as the "Databases" CI job does.
  *
@@ -69,15 +70,17 @@ trait TwoConnectionsTrait
         // Only now: tearDown drops the database of a driver that was actually set up.
         $this->driver = $driver;
 
-        $this->worker   = DriverManager::getConnection(['dbname' => self::databaseName()] + $params);
-        $this->other    = DriverManager::getConnection(['dbname' => self::databaseName()] + $params);
-        $this->workerEm = OrmTestSupport::entityManager($this, $this->worker);
+        HookedConnection::$hooks = [];
+        $this->worker            = DriverManager::getConnection(['dbname' => self::databaseName(), 'wrapperClass' => HookedConnection::class] + $params);
+        $this->other             = DriverManager::getConnection(['dbname' => self::databaseName()] + $params);
+        $this->workerEm          = OrmTestSupport::entityManager($this, $this->worker);
 
         return $this->workerEm;
     }
 
     protected function dropBoth(): void
     {
+        HookedConnection::$hooks = [];
         $this->workerEm?->close();
         $this->worker?->close();
         $this->other?->close();

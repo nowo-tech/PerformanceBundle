@@ -161,6 +161,18 @@ final class RebuildAggregatesCommandTest extends TestCase
         $this->assertStringNotContainsString('Processed batch', $tester->getDisplay());
     }
 
+    public function testBatchSizeIsCappedForThePostgreSqlParameterLimit(): void
+    {
+        $this->record($this->route('home', 'prod'), '2026-05-01 00:00:00');
+
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--batch-size' => '70000']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertSame(10000, RebuildAggregatesCommand::MAX_BATCH_SIZE);
+        $this->assertStringContainsString('at most 10000', $this->command->getDefinition()->getOption('batch-size')->getDescription());
+    }
+
     private function route(string $name, string $env, string $lastAccessedAt = '2026-01-01 00:00:00'): RouteData
     {
         $route = (new RouteData())->setName($name)->setEnv($env)->setLastAccessedAt(new DateTimeImmutable($lastAccessedAt));

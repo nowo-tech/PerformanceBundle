@@ -38,7 +38,7 @@
     ],
     "require": {
         "php": ">=8.2 <8.6",
-        "doctrine/dbal": "^3.8.2 || ^4.0",
+        "doctrine/dbal": "^4.0",
         "doctrine/doctrine-bundle": "^2.8 || ^3.0",
         "doctrine/orm": "^3.7",
         "nowo-tech/form-kit-bundle": "^2.2",

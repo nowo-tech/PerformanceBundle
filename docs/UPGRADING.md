@@ -148,50 +148,96 @@
 its first request at the same time, so existing tables may hold duplicates that must be merged before the constraint
 can be created.
 
-- **Bundle commands (recommended).** Run `php bin/console nowo:performance:sync-schema` (or
-  `nowo:performance:create-table --update`). Before creating the unique index it merges every duplicated route into
-  its oldest row (lowest id): the access records of the other rows are moved to it, it keeps the latest
-  `last_accessed_at` of the group, and the other rows are deleted. Its review state, HTTP method, parameters and
-  "save access records" flag stay as they were. Each route is merged in its own transaction. The old
-  `idx_route_env_name` index is left in place (harmless); drop it when convenient.
-- **Doctrine Migrations.** `doctrine:migrations:diff` generates `DROP INDEX idx_route_env_name` and
-  `CREATE UNIQUE INDEX uniq_route_env_name ON routes_data (env, name)`. Put the merge **before** the
-  `CREATE UNIQUE INDEX` in that migration (replace `routes_data` / `routes_data_records` if you configured
-  `table_name`):
+Each duplicated route is merged into its oldest row (lowest id):
 
-  ```sql
-  -- MySQL / MariaDB
-  CREATE TEMPORARY TABLE perf_route_keep AS
-      SELECT d.id AS dup_id, k.keep_id
-      FROM routes_data d
-      INNER JOIN (SELECT env, name, MIN(id) AS keep_id FROM routes_data
-                  WHERE env IS NOT NULL AND name IS NOT NULL GROUP BY env, name HAVING COUNT(*) > 1) k
-          ON k.env = d.env AND k.name = d.name AND d.id <> k.keep_id;
-  UPDATE routes_data_records r INNER JOIN perf_route_keep p ON p.dup_id = r.route_data_id SET r.route_data_id = p.keep_id;
-  UPDATE routes_data keep_row
-      INNER JOIN (SELECT p.keep_id, MAX(d.last_accessed_at) AS last_at FROM perf_route_keep p
-                  INNER JOIN routes_data d ON d.id = p.dup_id GROUP BY p.keep_id) m ON m.keep_id = keep_row.id
-      SET keep_row.last_accessed_at = GREATEST(COALESCE(keep_row.last_accessed_at, m.last_at), COALESCE(m.last_at, keep_row.last_accessed_at));
-  DELETE d FROM routes_data d INNER JOIN perf_route_keep p ON p.dup_id = d.id;
-  DROP TEMPORARY TABLE perf_route_keep;
+- the access records of the other rows are moved to it;
+- it keeps the latest `last_accessed_at` of the group;
+- `save_access_records` is AND-ed over the group: if any row had "do not save access records", the merged route keeps
+  it;
+- `reviewed` is OR-ed over the group, and `reviewed_at`, `reviewed_by`, `queries_improved` and `time_improved` come
+  from the most recently reviewed row;
+- its HTTP method and parameters stay as they were, and the other rows are deleted.
 
-  -- PostgreSQL
-  CREATE TEMPORARY TABLE perf_route_keep AS
-      SELECT d.id AS dup_id, k.keep_id
-      FROM routes_data d
-      INNER JOIN (SELECT env, name, MIN(id) AS keep_id FROM routes_data
-                  WHERE env IS NOT NULL AND name IS NOT NULL GROUP BY env, name HAVING COUNT(*) > 1) k
-          ON k.env = d.env AND k.name = d.name AND d.id <> k.keep_id;
-  UPDATE routes_data_records r SET route_data_id = p.keep_id FROM perf_route_keep p WHERE p.dup_id = r.route_data_id;
-  UPDATE routes_data keep_row SET last_accessed_at = GREATEST(keep_row.last_accessed_at, m.last_at)
-      FROM (SELECT p.keep_id, MAX(d.last_accessed_at) AS last_at FROM perf_route_keep p
-            INNER JOIN routes_data d ON d.id = p.dup_id GROUP BY p.keep_id) m
-      WHERE m.keep_id = keep_row.id;
-  DELETE FROM routes_data d USING perf_route_keep p WHERE p.dup_id = d.id;
-  DROP TABLE perf_route_keep;
-  ```
+**Bundle commands (recommended).** Run `php bin/console nowo:performance:sync-schema` (or
+`nowo:performance:create-table --update`):
 
-  Run the migration while traffic is low: until the unique index exists, a new duplicate can still be inserted.
+- Each route is merged in its own transaction, after locking the group's rows in id order (`SELECT … FOR UPDATE`).
+  A worker that records a request for a duplicate row meanwhile waits, then fails on the foreign key; the metrics write
+  unit then runs again on the kept row. No access record is deleted with a duplicate.
+- The commands can still race with live traffic: a new duplicate can be inserted between the merge and
+  `CREATE UNIQUE INDEX`. The command then merges and tries once more; if that fails too, it **exits with a failure**.
+  Run it again (it resumes), or run it while traffic is low.
+- The old `idx_route_env_name` index is left in place (harmless); drop it when convenient.
+
+**Doctrine Migrations.** `doctrine:migrations:diff` generates `DROP INDEX idx_route_env_name` and
+`CREATE UNIQUE INDEX uniq_route_env_name ON routes_data (env, name)`. Put the merge **before** the
+`CREATE UNIQUE INDEX` in that migration, and run it while traffic is low: the SQL takes no row locks, and until the
+unique index exists a new duplicate can still be inserted. Replace `routes_data` / `routes_data_records` if you
+configured `table_name`.
+
+```sql
+-- MySQL / MariaDB
+CREATE TEMPORARY TABLE perf_route_group AS
+    SELECT d.id AS member_id, k.keep_id
+    FROM routes_data d
+    INNER JOIN (SELECT env, name, MIN(id) AS keep_id FROM routes_data
+                WHERE env IS NOT NULL AND name IS NOT NULL GROUP BY env, name HAVING COUNT(*) > 1) k
+        ON k.env = d.env AND k.name = d.name;
+CREATE TEMPORARY TABLE perf_route_review AS
+    SELECT keep_id, member_id AS src_id FROM (
+        SELECT p.keep_id, p.member_id,
+               ROW_NUMBER() OVER (PARTITION BY p.keep_id ORDER BY d.reviewed_at IS NULL, d.reviewed_at DESC, d.id DESC) AS rn
+        FROM perf_route_group p INNER JOIN routes_data d ON d.id = p.member_id
+        WHERE d.reviewed = 1) ranked
+    WHERE rn = 1;
+UPDATE routes_data_records r INNER JOIN perf_route_group p ON p.member_id = r.route_data_id AND p.member_id <> p.keep_id
+    SET r.route_data_id = p.keep_id;
+UPDATE routes_data keep_row
+    INNER JOIN (SELECT p.keep_id, MAX(d.last_accessed_at) AS last_at, MIN(d.save_access_records) AS save_all
+                FROM perf_route_group p INNER JOIN routes_data d ON d.id = p.member_id GROUP BY p.keep_id) m
+        ON m.keep_id = keep_row.id
+    SET keep_row.last_accessed_at = m.last_at, keep_row.save_access_records = m.save_all;
+UPDATE routes_data keep_row
+    INNER JOIN perf_route_review rv ON rv.keep_id = keep_row.id
+    INNER JOIN routes_data src ON src.id = rv.src_id
+    SET keep_row.reviewed = 1, keep_row.reviewed_at = src.reviewed_at, keep_row.reviewed_by = src.reviewed_by,
+        keep_row.queries_improved = src.queries_improved, keep_row.time_improved = src.time_improved;
+DELETE d FROM routes_data d INNER JOIN perf_route_group p ON p.member_id = d.id AND p.member_id <> p.keep_id;
+DROP TEMPORARY TABLE perf_route_review;
+DROP TEMPORARY TABLE perf_route_group;
+
+-- PostgreSQL
+CREATE TEMPORARY TABLE perf_route_group AS
+    SELECT d.id AS member_id, k.keep_id
+    FROM routes_data d
+    INNER JOIN (SELECT env, name, MIN(id) AS keep_id FROM routes_data
+                WHERE env IS NOT NULL AND name IS NOT NULL GROUP BY env, name HAVING COUNT(*) > 1) k
+        ON k.env = d.env AND k.name = d.name;
+CREATE TEMPORARY TABLE perf_route_review AS
+    SELECT DISTINCT ON (p.keep_id) p.keep_id, p.member_id AS src_id
+    FROM perf_route_group p INNER JOIN routes_data d ON d.id = p.member_id
+    WHERE d.reviewed
+    ORDER BY p.keep_id, d.reviewed_at IS NULL, d.reviewed_at DESC, d.id DESC;
+UPDATE routes_data_records r SET route_data_id = p.keep_id
+    FROM perf_route_group p WHERE p.member_id = r.route_data_id AND p.member_id <> p.keep_id;
+UPDATE routes_data keep_row SET last_accessed_at = m.last_at, save_access_records = m.save_all
+    FROM (SELECT p.keep_id, MAX(d.last_accessed_at) AS last_at, BOOL_AND(d.save_access_records) AS save_all
+          FROM perf_route_group p INNER JOIN routes_data d ON d.id = p.member_id GROUP BY p.keep_id) m
+    WHERE m.keep_id = keep_row.id;
+UPDATE routes_data keep_row SET reviewed = TRUE, reviewed_at = src.reviewed_at, reviewed_by = src.reviewed_by,
+        queries_improved = src.queries_improved, time_improved = src.time_improved
+    FROM perf_route_review rv INNER JOIN routes_data src ON src.id = rv.src_id
+    WHERE rv.keep_id = keep_row.id;
+DELETE FROM routes_data d USING perf_route_group p WHERE p.member_id = d.id AND p.member_id <> p.keep_id;
+DROP TABLE perf_route_review;
+DROP TABLE perf_route_group;
+```
+
+### DBAL 4 required
+
+`doctrine/dbal` is narrowed to `^4.0`. Earlier releases allowed `^3.8.2`, but the query-tracking middleware only works
+with the DBAL 4 driver interface: a DBAL 3 host failed with a fatal error on its first database connection. If you are
+still on DBAL 3, Composer keeps you on 3.17 until you upgrade DBAL.
 
 ### Concurrency behaviour
 
@@ -201,6 +247,9 @@ can be created.
 - A dashboard write that meets a database lock conflict now answers **409** (with `Retry-After` and `CONFLICT_001`,
   or `CONFLICT_002` without `Retry-After` after a partial purge) through the host's error page, instead of redirecting
   with an error flash. Customise it with the host's `error409.html.twig` (or `error.html.twig`).
+- On the `kernel.terminate` path a lock wait timeout is reported once and not replayed (the worker already waited for
+  the lock); deadlocks are replayed. With `async: true` the Messenger handler replays every lock-conflict kind.
+- `rebuild-aggregates --batch-size` is capped at 10,000.
 - Lost metrics and request-id races are logged at **warning** level even with `enable_logging: false`; filter the
   `performance` channel / `bundle` context if needed.
 - `RebuildAggregatesCommand` no longer uses its repository constructor arguments (kept, optional, for backward

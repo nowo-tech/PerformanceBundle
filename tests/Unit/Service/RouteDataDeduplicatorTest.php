@@ -55,6 +55,51 @@ final class RouteDataDeduplicatorTest extends TestCase
         self::assertSame(0, (new RouteDataDeduplicator())->merge($this->em), 'A second run has nothing to merge.');
     }
 
+    public function testTheMergedRowKeepsTheMostRecentReviewAndADoNotSaveChoice(): void
+    {
+        $keep = $this->route('home', 'prod', '2026-01-01 00:00:00');
+        $old  = $this->route('home', 'prod', null);
+        $new  = $this->route('home', 'prod', null);
+        $late = $this->route('home', 'prod', null);
+        $this->connection->update('routes_data', ['reviewed' => 1, 'reviewed_at' => '2026-02-01 00:00:00', 'reviewed_by' => 'alice', 'queries_improved' => 1, 'time_improved' => 0, 'save_access_records' => 0], ['id' => $old]);
+        $this->connection->update('routes_data', ['reviewed' => 1, 'reviewed_at' => '2026-04-01 00:00:00', 'reviewed_by' => 'bob', 'queries_improved' => 0, 'time_improved' => 1], ['id' => $new]);
+        // Reviewed without a known time: older than any dated review.
+        $this->connection->update('routes_data', ['reviewed' => 1, 'reviewed_by' => 'carol'], ['id' => $late]);
+
+        self::assertSame(3, (new RouteDataDeduplicator())->merge($this->em));
+
+        $row = $this->connection->fetchAssociative('SELECT * FROM routes_data WHERE id = ?', [$keep]);
+        self::assertIsArray($row);
+        self::assertSame(1, (int) $row['reviewed']);
+        self::assertSame('2026-04-01 00:00:00', $row['reviewed_at']);
+        self::assertSame('bob', $row['reviewed_by']);
+        self::assertSame(0, (int) $row['queries_improved']);
+        self::assertSame(1, (int) $row['time_improved']);
+        self::assertSame(0, (int) $row['save_access_records']);
+    }
+
+    public function testAnUnreviewedGroupStaysUnreviewedAndAnUndatedReviewIsKept(): void
+    {
+        $keep = $this->route('about', 'prod', null);
+        $this->route('about', 'prod', null);
+        $dated    = $this->route('team', 'prod', null);
+        $undated1 = $this->route('team', 'prod', null);
+        $undated2 = $this->route('team', 'prod', null);
+        $this->connection->update('routes_data', ['reviewed' => 1, 'reviewed_by' => 'carol'], ['id' => $undated1]);
+        $this->connection->update('routes_data', ['reviewed' => 1, 'reviewed_by' => 'dave'], ['id' => $undated2]);
+
+        (new RouteDataDeduplicator())->merge($this->em);
+
+        $about = $this->connection->fetchAssociative('SELECT * FROM routes_data WHERE id = ?', [$keep]);
+        self::assertIsArray($about);
+        self::assertSame(0, (int) $about['reviewed']);
+        self::assertNull($about['reviewed_by']);
+        self::assertSame(1, (int) $about['save_access_records']);
+        $team = $this->connection->fetchAssociative('SELECT * FROM routes_data WHERE id = ?', [$dated]);
+        self::assertIsArray($team);
+        self::assertSame('dave', $team['reviewed_by'], 'Among undated reviews, the higher id wins.');
+    }
+
     public function testWorksWithoutTheAccessRecordsTable(): void
     {
         $this->connection->executeStatement('DROP TABLE routes_data_records');

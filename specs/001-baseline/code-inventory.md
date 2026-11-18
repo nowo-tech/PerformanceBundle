@@ -85,7 +85,7 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Helper/LogHelper.php` | Conditional logging | FR-SVC-005 |
 | `Helper/DbalSchemaNameHelper.php` | DBAL schema asset names without deprecated APIs | FR-DBAL-002 |
 | `Service/MetricsEntityManagerFactory.php` | Private entity manager the bundle records metrics with (3.16) | FR-SVC-001, FR-WORKER-001 |
-| `Service/RouteDataDeduplicator.php` | Merges duplicate routes before `uniq_route_env_name` is created (3.18) | FR-CONC-001, FR-CLI-001 |
+| `Service/RouteDataDeduplicator.php` | Merges duplicate routes (group locked, review and flags kept) before `uniq_route_env_name` is created (3.18) | FR-CONC-001, FR-CLI-001 |
 | `Concurrency/WriteConflictException.php` | 409 answer of a dashboard write lock conflict (`CONFLICT_001` / `CONFLICT_002`) | FR-CONC-001, FR-DASH-001 |
 | `Concurrency/WriteConflictMapper.php` | Maps lock conflicts to that answer with the host's conflict policy | FR-CONC-001, FR-DASH-001 |
 | `Service/SensitiveDataRedactor.php` | Redacts secrets from stored query strings, referers and route parameters | FR-SVC-001, FR-SEC-002 |

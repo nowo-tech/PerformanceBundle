@@ -7,18 +7,24 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\AbstractException;
 use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
+use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
 use Nowo\PerformanceBundle\Tests\Support\OrmTestSupport;
 use Nowo\PerformanceBundle\Tests\Support\PausingMetricsService;
 use Nowo\PerformanceBundle\Tests\Support\ScriptedMetricsEntityManagerFactory;
 use Nowo\TransactionContract\TransientStorageFailure;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
+use ReflectionProperty;
+use RuntimeException;
 use Stringable;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use function sprintf;
 
@@ -132,7 +138,7 @@ final class PerformanceMetricsServiceConcurrencyTest extends TestCase
         self::assertLogged('notice', 'running the write unit again', TransientStorageFailure::class);
     }
 
-    public function testLockWaitTimeoutOnEveryAttemptThrowsTheTransientFailure(): void
+    public function testAsyncPathReplaysALockWaitTimeoutThenThrowsTheTransientFailure(): void
     {
         $timeout = fn (): LockWaitTimeoutException => new LockWaitTimeoutException($this->driverException(1205, 'HY000'), null);
         $factory = new ScriptedMetricsEntityManagerFactory([
@@ -143,7 +149,7 @@ final class PerformanceMetricsServiceConcurrencyTest extends TestCase
         $service = $this->service($factory);
 
         try {
-            $service->recordMetrics('app_locked', 'prod', 0.2);
+            $service->recordMetricsSync('app_locked', 'prod', 0.2);
             self::fail('The transient failure was expected.');
         } catch (TransientStorageFailure $e) {
             self::assertInstanceOf(LockWaitTimeoutException::class, $e->getPrevious());
@@ -152,6 +158,61 @@ final class PerformanceMetricsServiceConcurrencyTest extends TestCase
         self::assertSame([1, 2], $service->pauses);
         self::assertSame(0, $this->rows('SELECT COUNT(*) FROM routes_data'));
         self::assertSame(0, $this->connection->getTransactionNestingLevel());
+    }
+
+    public function testTerminatePathDoesNotReplayALockWaitTimeout(): void
+    {
+        $factory = new ScriptedMetricsEntityManagerFactory([
+            ['throw' => new LockWaitTimeoutException($this->driverException(1205, 'HY000'), null)],
+        ]);
+        $service = $this->service($factory);
+
+        try {
+            $service->recordMetrics('app_locked', 'prod', 0.2);
+            self::fail('The transient failure was expected.');
+        } catch (TransientStorageFailure) {
+        }
+
+        self::assertSame(1, $factory->created);
+        self::assertSame([], $service->pauses);
+    }
+
+    public function testForeignKeyViolationIsReplayedLikeAUniqueOne(): void
+    {
+        $factory = new ScriptedMetricsEntityManagerFactory([
+            ['throw' => new ForeignKeyConstraintViolationException($this->driverException(1452, '23000'), null)],
+        ]);
+        $service = $this->service($factory);
+
+        $service->recordMetrics('app_fk', 'prod', 0.2, 1, null, null, null, 'GET', 200, [], 'req-fk');
+
+        self::assertSame(2, $factory->created);
+        self::assertSame([], $service->pauses);
+        self::assertSame(1, $this->rows('SELECT COUNT(*) FROM routes_data_records WHERE request_id = ?', ['req-fk']));
+        self::assertLogged('notice', 'running the write unit again', ForeignKeyConstraintViolationException::class);
+    }
+
+    public function testThePrivateManagerIsClearedEvenWhenAnAfterCommitListenerThrows(): void
+    {
+        $factory    = new ScriptedMetricsEntityManagerFactory([]);
+        $service    = $this->service($factory);
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(AfterMetricsRecordedEvent::class, static function (): never {
+            throw new RuntimeException('listener failure');
+        });
+        $service->setEventDispatcher($dispatcher);
+
+        try {
+            $service->recordMetrics('app_listener', 'prod', 0.2);
+            self::fail('The listener failure was expected.');
+        } catch (RuntimeException $e) {
+            self::assertSame('listener failure', $e->getMessage());
+        }
+
+        $writeEm = (new ReflectionProperty(PerformanceMetricsService::class, 'writeEntityManager'))->getValue($service);
+        self::assertInstanceOf(EntityManager::class, $writeEm);
+        self::assertSame([], $writeEm->getUnitOfWork()->getIdentityMap(), 'No stale RouteData kept for the next request.');
+        self::assertSame(1, $this->rows('SELECT COUNT(*) FROM routes_data WHERE name = ?', ['app_listener']), 'Committed before the listener ran.');
     }
 
     public function testInsideAHostTransactionAConflictIsNotReplayed(): void
