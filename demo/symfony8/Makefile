@@ -83,7 +83,7 @@ ensure-up:
 # Update bundle from path repo and clear cache
 update-bundle: ensure-up
 	@echo "🔄 Updating nowo-tech/performance-bundle..."
-	$(COMPOSE) exec -T php composer update nowo-tech/performance-bundle --no-interaction
+	$(COMPOSE) exec -T php composer update nowo-tech/performance-bundle -w --no-interaction
 	$(COMPOSE) exec -T php php bin/console cache:clear
 	@echo "✅ Bundle updated. Reload the page in the browser."
 
