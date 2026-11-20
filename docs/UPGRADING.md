@@ -4,6 +4,7 @@
 
 - [Unreleased](#unreleased)
 - [To 3.19.0](#to-3190)
+- [To 3.19.0](#to-3190-1)
   - [Preparing for 4.0](#preparing-for-40)
 - [To 3.18.0](#to-3180)
   - [Unique route rows (REQ-RUNTIME-003)](#unique-route-rows-req-runtime-003)
@@ -146,6 +147,14 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.19.0
+
+From **3.18.0**:
+
+```bash
+composer update nowo-tech/performance-bundle
+```
 
 ## To 3.19.0
 
