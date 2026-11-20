@@ -34,7 +34,7 @@ Not committed; pick up only if they serve real traffic:
 
 ## Non-goals
 
-- Replacing APM products (New Relic, Datadog, Blackfire)
+- Replacing APM products (external profilers and hosted monitoring services)
 - Storing full SQL text or request bodies in this bundle (see HttpLogBundle)
 
 ---
