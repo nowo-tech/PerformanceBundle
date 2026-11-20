@@ -94,11 +94,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `RouteDataWithAggregates::getAccessRecordList(): list<RouteDataRecord>`, the form `getAccessRecords()` returns in 4.0.
+
+### Deprecated
+
+- `Notification\NotificationChannelInterface` (not `@deprecated` until now). Implement `RouteMetricsNotificationChannelInterface` (`sendRouteMetrics(PerformanceAlert, RouteMetricsSnapshot)`, since 3.17.0). A container build with a host channel tagged `nowo_performance.notification_channel` that implements only the old interface triggers one deprecation notice per channel; the bundle's own channels are exempt. 4.0 removes the `RouteData|AfterMetricsRecordedEvent` form of `send()`.
+- `RouteDataWithAggregates::getAccessRecords()` returning a Doctrine `Collection`: it triggers a deprecation when called. Use `getAccessRecordList()`; 4.0 makes `getAccessRecords()` return the list.
+
 ### Changed
 
 - CI: new `deps-floor` job (as in BreadcrumbKit). It checks that the demo lock installs every nowo-tech requirement of the bundle (`.scripts/check-demo-lock.py`), then downgrades nowo-tech/transaction-* to the lowest versions composer.json allows (`composer update 'nowo-tech/transaction-*' --prefer-lowest`) and runs PHPStan and the tests there, so a call to a newer API than the constraint allows fails the pull request.
 - Demo: `make update-bundle` runs `composer update nowo-tech/performance-bundle -w`, so the bundle's new or raised requirements reach the demo lock too.
-- Requires `nowo-tech/transaction-doctrine` ^1.8.1 (fixes GHSA-9wh3-m3m5-jffx and GHSA-65w2-9r4h-848g).
+- Requires `nowo-tech/transaction-doctrine` ^1.9 (was ^1.8.1, which fixed GHSA-9wh3-m3m5-jffx and GHSA-65w2-9r4h-848g). Performance does not use its host-flush probe: metrics are written through a private entity manager (see UPGRADING "To 3.19.0").
 
 ### Fixed
 
