@@ -5,12 +5,21 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\DependencyInjection\Compiler;
 
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
+use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
+use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
+use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Nowo\PerformanceBundle\Service\NotificationService;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+
+use const E_USER_DEPRECATED;
 
 final class NotificationChannelsPassTest extends TestCase
 {
@@ -55,7 +64,7 @@ final class NotificationChannelsPassTest extends TestCase
             $messages[] = $msg;
 
             return true;
-        }, \E_USER_DEPRECATED);
+        }, E_USER_DEPRECATED);
 
         try {
             (new NotificationChannelsPass())->process($container);
@@ -71,7 +80,7 @@ final class NotificationChannelsPassTest extends TestCase
     {
         $container = $this->containerWith([
             'app.new' => SnapshotHostChannel::class,
-            'bundle'  => \Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel::class,
+            'bundle'  => EmailNotificationChannel::class,
         ]);
 
         $messages = [];
@@ -79,7 +88,30 @@ final class NotificationChannelsPassTest extends TestCase
             $messages[] = $msg;
 
             return true;
-        }, \E_USER_DEPRECATED);
+        }, E_USER_DEPRECATED);
+
+        try {
+            (new NotificationChannelsPass())->process($container);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $messages);
+    }
+
+    public function testChannelsWithoutAResolvableClassAreSkipped(): void
+    {
+        $container = $this->containerWith([]);
+        $container->setParameter('app.channel_class', ['not', 'a', 'class']);
+        $container->setDefinition('app.missing', (new Definition('App\\Missing\\Channel'))->addTag('nowo_performance.notification_channel'));
+        $container->setDefinition('app.parameter', (new Definition('%app.channel_class%'))->addTag('nowo_performance.notification_channel'));
+
+        $messages = [];
+        set_error_handler(static function (int $no, string $msg) use (&$messages): bool {
+            $messages[] = $msg;
+
+            return true;
+        }, E_USER_DEPRECATED);
 
         try {
             (new NotificationChannelsPass())->process($container);
@@ -105,9 +137,9 @@ final class NotificationChannelsPassTest extends TestCase
     }
 }
 
-final class LegacyHostChannel implements \Nowo\PerformanceBundle\Notification\NotificationChannelInterface
+final class LegacyHostChannel implements NotificationChannelInterface
 {
-    public function send(\Nowo\PerformanceBundle\Notification\PerformanceAlert $alert, \Nowo\PerformanceBundle\Entity\RouteData|\Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent $context): bool
+    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
     {
         return true;
     }
@@ -123,14 +155,14 @@ final class LegacyHostChannel implements \Nowo\PerformanceBundle\Notification\No
     }
 }
 
-final class SnapshotHostChannel implements \Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface
+final class SnapshotHostChannel implements RouteMetricsNotificationChannelInterface
 {
-    public function send(\Nowo\PerformanceBundle\Notification\PerformanceAlert $alert, \Nowo\PerformanceBundle\Entity\RouteData|\Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent $context): bool
+    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
     {
         return true;
     }
 
-    public function sendRouteMetrics(\Nowo\PerformanceBundle\Notification\PerformanceAlert $alert, \Nowo\PerformanceBundle\Model\RouteMetricsSnapshot $route): bool
+    public function sendRouteMetrics(PerformanceAlert $alert, RouteMetricsSnapshot $route): bool
     {
         return true;
     }

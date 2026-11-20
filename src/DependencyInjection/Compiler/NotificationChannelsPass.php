@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
+use function is_string;
 use function trigger_deprecation;
 
 /**
@@ -46,7 +47,7 @@ final class NotificationChannelsPass implements CompilerPassInterface
             $class = $container->getDefinition($id)->getClass() ?? $id;
             $class = $container->getParameterBag()->resolveValue($class);
 
-            if (!\is_string($class) || !class_exists($class)) {
+            if (!is_string($class) || !class_exists($class)) {
                 continue;
             }
 

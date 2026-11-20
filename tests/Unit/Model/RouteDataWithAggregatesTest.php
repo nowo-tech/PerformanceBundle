@@ -7,9 +7,12 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Model;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Nowo\PerformanceBundle\Model\RouteDataWithAggregates;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+
+use const E_USER_DEPRECATED;
 
 final class RouteDataWithAggregatesTest extends TestCase
 {
@@ -251,7 +254,7 @@ final class RouteDataWithAggregatesTest extends TestCase
             $messages[] = $msg;
 
             return true;
-        }, \E_USER_DEPRECATED);
+        }, E_USER_DEPRECATED);
 
         try {
             $records = $dto->getAccessRecords();
@@ -470,8 +473,8 @@ final class RouteDataWithAggregatesTest extends TestCase
 
     public function testAccessRecordListReturnsListWithoutDeprecation(): void
     {
-        $record = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
-        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
+        $record    = $this->createMock(RouteDataRecord::class);
+        $routeData = $this->createMock(RouteData::class);
         $routeData->method('getAccessRecords')->willReturn(new ArrayCollection([5 => $record]));
 
         $dto = new RouteDataWithAggregates($routeData, ['request_time' => null, 'total_queries' => null, 'query_time' => null, 'memory_usage' => null, 'access_count' => 0, 'status_codes' => []]);
