@@ -103,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Demo: `demo/symfony8/composer.lock` now installs nowo-tech/transaction-doctrine 1.6.0. The lock of 3.18.0 did not install nowo-tech/transaction-doctrine or nowo-tech/transaction-contract, which the bundle already required (^1.4): the demo installs from its lock, so it would fail with class not found on the first lock conflict. The bundle's composer.json constraint was already right; hosts are not affected.
+- Configuration tree split for headroom on PHP 8.3+ thread stacks of 512 KiB (FrankenPHP Alpine images): the tree was one long fluent chain that still compiled at 512 KiB but failed at 384 KiB ("Maximum call stack size ... reached during compilation"). It is now built by one private method per section, with the same builder calls in the same order, so the tree, its defaults, validation and reference dumps are unchanged. A test compiles the sources and builds the tree under a 512 KiB stack.
 
 ## [3.18.0] - 2026-11-18
 
