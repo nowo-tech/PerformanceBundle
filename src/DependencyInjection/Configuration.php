@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\DependencyInjection;
 
 use Nowo\PerformanceBundle\Ui\PerformancePages;
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -79,7 +80,22 @@ final class Configuration implements ConfigurationInterface
 
                     return self::mapDeprecatedDashboardKeys($v);
                 })
-            ->end()
+            ->end();
+        $this->addEnabledToCacheSections($rootNode);
+        $this->addThresholdsSection($rootNode);
+        $this->addDashboardSection($rootNode);
+        $this->addWebUiToExportSections($rootNode);
+        $this->addNotificationsSection($rootNode);
+
+        return $treeBuilder;
+    }
+
+    /**
+     * Adds the `enabled` to `cache` settings.
+     */
+    private function addEnabledToCacheSections(ArrayNodeDefinition $rootNode): void
+    {
+        $rootNode
             ->children()
                 ->booleanNode('enabled')
                     ->info('Enable or disable performance tracking')
@@ -168,6 +184,16 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+            ->end();
+    }
+
+    /**
+     * Adds the `thresholds` section.
+     */
+    private function addThresholdsSection(ArrayNodeDefinition $rootNode): void
+    {
+        $rootNode
+            ->children()
                 ->arrayNode('thresholds')
                     ->info('Performance thresholds for warning and critical levels')
                     ->addDefaultsIfNotSet()
@@ -216,6 +242,16 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+            ->end();
+    }
+
+    /**
+     * Adds the `dashboard` section.
+     */
+    private function addDashboardSection(ArrayNodeDefinition $rootNode): void
+    {
+        $rootNode
+            ->children()
                 ->arrayNode('dashboard')
                     ->info('Performance dashboard configuration')
                     ->addDefaultsIfNotSet()
@@ -321,6 +357,16 @@ final class Configuration implements ConfigurationInterface
                         })
                     ->end()
                 ->end()
+            ->end();
+    }
+
+    /**
+     * Adds the `web_ui` to `export` settings.
+     */
+    private function addWebUiToExportSections(ArrayNodeDefinition $rootNode): void
+    {
+        $rootNode
+            ->children()
                 ->arrayNode('web_ui')
                     ->info('Dashboard Web UI (REQ-UI-003 canonical keys). The pages extend the UiKit page scaffolds; the CSS stack, icon set and row-action display are inherited from nowo_ui_kit.')
                     ->addDefaultsIfNotSet()
@@ -386,6 +432,16 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+            ->end();
+    }
+
+    /**
+     * Adds the `notifications` section.
+     */
+    private function addNotificationsSection(ArrayNodeDefinition $rootNode): void
+    {
+        $rootNode
+            ->children()
                 ->arrayNode('notifications')
                     ->info('Performance alert notifications configuration')
                     ->addDefaultsIfNotSet()
@@ -472,8 +528,6 @@ final class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
             ->end();
-
-        return $treeBuilder;
     }
 
     /**
