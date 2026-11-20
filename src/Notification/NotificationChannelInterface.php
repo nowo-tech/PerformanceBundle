@@ -16,6 +16,11 @@ use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
  * {@see RouteMetricsSnapshot} instead of the bundle entity. The entity form of send()
  * is replaced by it in 4.0.
  *
+ * @deprecated since nowo-tech/performance-bundle 3.19.0, implement {@see RouteMetricsNotificationChannelInterface}
+ *             (`sendRouteMetrics(PerformanceAlert, RouteMetricsSnapshot)`) instead. In 4.0 the entity / event form of
+ *             send() is removed and this interface is replaced by it. A container build with a host channel that only
+ *             implements this interface triggers a deprecation notice.
+ *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */

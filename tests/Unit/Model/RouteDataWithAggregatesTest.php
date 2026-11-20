@@ -246,7 +246,22 @@ final class RouteDataWithAggregatesTest extends TestCase
         $this->assertFalse($dto->getTimeImproved());
         $this->assertSame('admin@example.com', $dto->getReviewedBy());
         $this->assertSame($params, $dto->getParams());
-        $this->assertSame($this->routeData->getAccessRecords(), $dto->getAccessRecords());
+        $messages = [];
+        set_error_handler(static function (int $no, string $msg) use (&$messages): bool {
+            $messages[] = $msg;
+
+            return true;
+        }, \E_USER_DEPRECATED);
+
+        try {
+            $records = $dto->getAccessRecords();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame($this->routeData->getAccessRecords(), $records);
+        $this->assertCount(1, $messages);
+        $this->assertMatchesRegularExpression('/getAccessRecords\(\).*getAccessRecordList\(\)/', $messages[0]);
     }
 
     public function testAggregatesWithoutStatusCodesKey(): void
@@ -451,5 +466,16 @@ final class RouteDataWithAggregatesTest extends TestCase
         $dto = new RouteDataWithAggregates($this->routeData, $aggregates);
 
         $this->assertSame(0.0, $dto->getStatusCodeRatio(200));
+    }
+
+    public function testAccessRecordListReturnsListWithoutDeprecation(): void
+    {
+        $record = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteDataRecord::class);
+        $routeData = $this->createMock(\Nowo\PerformanceBundle\Entity\RouteData::class);
+        $routeData->method('getAccessRecords')->willReturn(new ArrayCollection([5 => $record]));
+
+        $dto = new RouteDataWithAggregates($routeData, ['request_time' => null, 'total_queries' => null, 'query_time' => null, 'memory_usage' => null, 'access_count' => 0, 'status_codes' => []]);
+
+        $this->assertSame([$record], $dto->getAccessRecordList());
     }
 }

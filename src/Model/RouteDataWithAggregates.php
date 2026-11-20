@@ -10,6 +10,8 @@ use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
 use Stringable;
 
+use function trigger_deprecation;
+
 /**
  * Route data with aggregates computed from RouteDataRecord.
  *
@@ -97,11 +99,27 @@ final readonly class RouteDataWithAggregates implements Stringable
     }
 
     /**
+     * @deprecated since nowo-tech/performance-bundle 3.19.0, use {@see getAccessRecordList()}; 4.0 returns a list.
+     *
      * @return Collection<int, RouteDataRecord>
      */
     public function getAccessRecords(): Collection
     {
+        trigger_deprecation('nowo-tech/performance-bundle', '3.19.0', 'RouteDataWithAggregates::getAccessRecords() returning a Doctrine Collection is deprecated; use getAccessRecordList(), which returns a list of RouteDataRecord (4.0 changes getAccessRecords() to return that list).');
+
         return $this->routeData->getAccessRecords();
+    }
+
+    /**
+     * Access records as a plain list (the form getAccessRecords() returns in 4.0).
+     *
+     * @since 3.19.0
+     *
+     * @return list<RouteDataRecord>
+     */
+    public function getAccessRecordList(): array
+    {
+        return array_values($this->routeData->getAccessRecords()->toArray());
     }
 
     /** From aggregates (max response_time from records). */

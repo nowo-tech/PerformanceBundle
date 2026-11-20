@@ -3,6 +3,8 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 3.19.0](#to-3190)
+  - [Preparing for 4.0](#preparing-for-40)
 - [To 3.18.0](#to-3180)
   - [Unique route rows (REQ-RUNTIME-003)](#unique-route-rows-req-runtime-003)
   - [DBAL 4 required](#dbal-4-required)
@@ -144,6 +146,19 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 3.19.0
+
+Backwards compatible. 3.19.0 announces what 4.0 removes.
+
+- **Notification channels.** `NotificationChannelInterface` is deprecated. A host channel that implements only it triggers one deprecation notice when the container is built ("The notification channel ... implements only NotificationChannelInterface ..."). Fix: implement `RouteMetricsNotificationChannelInterface` and move the body of `send()` to `sendRouteMetrics(PerformanceAlert, RouteMetricsSnapshot)`. Until 4.0 the inherited `send()` must still exist; delegate it with `RouteMetricsSnapshot::fromContext($context)`.
+- **Access records.** `RouteDataWithAggregates::getAccessRecords()` (a Doctrine `Collection`) triggers a deprecation when called. Use `getAccessRecordList()` (a list of `RouteDataRecord`); in 4.0 `getAccessRecords()` returns that list.
+- **Host flush.** Performance does not flush the application's pending changes when it records metrics: it writes through its own private entity manager on the same connection, so there is no host-flush probe and nothing to migrate. Only the dashboard actions (delete, mark as reviewed, per-route access-record switch) flush the configured manager, inside the dashboard request.
+- **Floor.** `nowo-tech/transaction-doctrine` is now `^1.9`.
+
+### Preparing for 4.0
+
+4.0 contains only the deprecations announced in 3.x (the channel interface, the `Collection` return, event `getRouteData()`, Twig components, `ChartFiltersType`, `LogHelper`, deprecated keys). Run your test suite and a deploy cycle on 3.19.0, fix every deprecation it reports, then upgrade. 1.x-style support continues for the 3.x line for 6 months after 4.0: Moderate and higher security fixes are backported.
 
 ## To 3.18.0
 
