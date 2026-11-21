@@ -180,7 +180,7 @@ make -C demo/symfony8 demo-screenshots  # recaptures docs/images/demo/*.webp (PN
 ```
 
 Both targets first run `assets:install` and `app:demo:seed-metrics` (a deterministic week of demo access records for
-`demo_*` routes, re-runnable). The screenshots show the demo masthead, the page and the Symfony WebProfiler toolbar.
+`demo_*` routes, re-runnable). The screenshots show the demo platform shell and the page, without the Symfony WebProfiler toolbar.
 Refresh the screenshots when the dashboard changes and commit only the `.webp` files.
 
 ## Available Make Commands

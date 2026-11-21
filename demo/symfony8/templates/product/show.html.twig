@@ -2,11 +2,18 @@
 
 {% block title %}Product #{{ product.id }}{% endblock %}
 
+{% block nowo_ui_page_header %}
+    {% set _toolbar %}
+        <a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--outline">Back to list</a>
+        <a href="{{ path('product_edit', {'id': product.id}) }}" class="nowo-ui-btn nowo-ui-btn--primary">Edit</a>
+    {% endset %}
+    {{ include(nowo_ui_partial('page_header'), {title: 'Product #' ~ product.id, toolbar: _toolbar|trim}) }}
+{% endblock %}
+
 {% block content %}
-    {% set _badge = product.status == 'active' ? 'success' : (product.status == 'inactive' ? 'error' : 'warning') %}
-    <section class="nowo-ui-card">
-        <div class="nowo-ui-card__header"><h1 class="nowo-ui-card__title">Product #{{ product.id }}</h1></div>
-        <div class="nowo-ui-card__body">
+    {% set _badge = product.status == 'active' ? 'success' : (product.status == 'inactive' ? 'danger' : 'warning') %}
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Details', kind: 'detail'} %}
+        {% block section_body %}
             <dl class="nowo-ui-detail-list">
                 <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">ID</dt><dd class="nowo-ui-detail-list__value">{{ product.id }}</dd></div>
                 <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Name</dt><dd class="nowo-ui-detail-list__value">{{ product.name }}</dd></div>
@@ -14,12 +21,8 @@
                 <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Price</dt><dd class="nowo-ui-detail-list__value">${{ product.price }}</dd></div>
                 <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Image URL</dt><dd class="nowo-ui-detail-list__value">{{ product.imageUrl ?? 'N/A' }}</dd></div>
                 <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Status</dt><dd class="nowo-ui-detail-list__value"><span class="nowo-ui-badge nowo-ui-badge--{{ _badge }}">{{ product.status }}</span></dd></div>
-                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Created At</dt><dd class="nowo-ui-detail-list__value">{{ product.createdAt ? product.createdAt|date('Y-m-d H:i:s') : 'N/A' }}</dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Created at</dt><dd class="nowo-ui-detail-list__value">{% if product.createdAt %}<time datetime="{{ product.createdAt|date('c') }}">{{ product.createdAt|date('Y-m-d H:i:s') }}</time>{% else %}N/A{% endif %}</dd></div>
             </dl>
-            <div class="nowo-ui-row-actions">
-                <a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--outline">Back to list</a>
-                <a href="{{ path('product_edit', {'id': product.id}) }}" class="nowo-ui-btn nowo-ui-btn--primary">Edit</a>
-            </div>
-        </div>
-    </section>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

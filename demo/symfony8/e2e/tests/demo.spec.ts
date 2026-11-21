@@ -12,23 +12,31 @@ async function expectNoInlineScripts(page: Page): Promise<void> {
 }
 
 test.describe('demo happy path', () => {
-  test('home responds with the demo masthead', async ({ page }) => {
+  test('home responds inside the demo platform shell', async ({ page }) => {
     const response = await page.goto('/');
     expect(response?.ok()).toBeTruthy();
-    await expect(page.getByTestId('demo-masthead')).toBeVisible();
+    await expect(page.getByTestId('demo-platform')).toBeVisible();
   });
 
   test('products: the FormKit product form creates a product and the delete form removes it', async ({ page }) => {
     await page.goto('/product/new');
-    await expect(page.getByTestId('demo-masthead')).toBeVisible();
+    await expect(page.getByTestId('demo-platform')).toBeVisible();
     await page.getByLabel('Name', { exact: true }).fill('E2E product');
     await page.getByLabel('Price').fill('12.5');
     await page.getByLabel('Status').selectOption('draft');
     await page.getByRole('button', { name: 'Create' }).click();
     const row = page.locator('tbody tr', { hasText: 'E2E product' });
     await expect(row).toBeVisible();
-    page.once('dialog', (dialog) => dialog.accept());
-    await row.getByRole('button', { name: 'Delete' }).click();
+    // The delete asks first in the UiKit confirm dialog (no native confirm()): Cancel keeps the row, Delete removes it.
+    await row.locator('[data-nowo-confirm-open]').click();
+    const dialog = page.locator('dialog[open]');
+    await expect(dialog).toContainText('Delete “E2E product”?');
+    await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+    await expect(row).toBeVisible();
+    await row.locator('[data-nowo-confirm-open]').click();
+    await page.locator('dialog[open]').getByRole('button', { name: 'Delete' }).click();
     await expect(page.locator('tbody tr', { hasText: 'E2E product' })).toHaveCount(0);
   });
 

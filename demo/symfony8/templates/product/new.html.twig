@@ -2,22 +2,26 @@
 
 {% block title %}New Product{% endblock %}
 
+{% block nowo_ui_page_header %}
+    {% set _toolbar %}<a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--outline">Back to list</a>{% endset %}
+    {{ include(nowo_ui_partial('page_header'), {title: 'Create new product', toolbar: _toolbar|trim}) }}
+{% endblock %}
+
 {% block content %}
-    <section class="nowo-ui-card">
-        <div class="nowo-ui-card__header"><h1 class="nowo-ui-card__title">Create New Product</h1></div>
-        <div class="nowo-ui-card__body">
-            {{ form_start(form) }}
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Product', kind: 'form'} %}
+        {% block section_body %}
+            {{ form_start(form, {attr: {id: 'product-form', class: 'nowo-ui-form'}}) }}
                 {# REQ-TWIG-003: child loop #}
                 {% for child in form %}
                     {% if not child.rendered %}
                         {{ form_row(child) }}
                     {% endif %}
                 {% endfor %}
-                <div class="nowo-ui-row-actions">
-                    <button type="submit" class="nowo-ui-btn nowo-ui-btn--primary">Create</button>
-                    <a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--outline">Cancel</a>
-                </div>
             {{ form_end(form) }}
-        </div>
-    </section>
+        {% endblock %}
+        {% block section_footer %}
+            <a href="{{ path('product_index') }}" class="nowo-ui-btn nowo-ui-btn--outline">Cancel</a>
+            <button type="submit" form="product-form" class="nowo-ui-btn nowo-ui-btn--primary">Create</button>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}
