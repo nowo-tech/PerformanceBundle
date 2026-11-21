@@ -1,30 +1,17 @@
-{#- REQ-DEMO-014: the demo shell is UiKit's admin layout with UiKit's default theme (nowo-ui.css from the bundle's own
-    asset package, no CSS framework, no CDN). The performance dashboard pages reach it through layouts/admin.html.twig. -#}
-{% extends '@NowoUiKit/layout/admin.html.twig' %}
-
+{#- REQ-DEMO-014: the demo runs inside UiKit's shared demo platform shell. This file only declares the demo; the
+    performance dashboard pages reach it through nowo_ui_kit.layouts.admin. -#}
+{% extends '@NowoUiKit/demo_platform/layout.html.twig' %}
+{% set nowo_ui_demo_platform = {
+    bundle: 'Performance',
+    home_route: 'home',
+    repository: 'https://github.com/nowo-tech/PerformanceBundle',
+    translation_domain: false,
+    nav: [
+        {label: 'Home', route: 'home'},
+        {label: 'Products', route: 'product_index', active: ['product_*'], section: 'Demo app'},
+        {label: 'Performance dashboard', route: 'nowo_performance.index', active: ['nowo_performance*'], section: 'Bundle', testid: 'nav-performance'},
+    ],
+} %}
 {% block nowo_ui_document_title %}{% block title %}Performance Bundle Demo{% endblock %}{% endblock %}
-
-{% block nowo_ui_navigation %}
-    {% set _route = app.request.attributes.get('_route')|default('') %}
-    <header class="nowo-ui-header" data-testid="demo-masthead">
-        <a class="nowo-ui-brand" href="{{ path('home') }}">Performance Bundle Demo</a>
-        <nav class="nowo-ui-menu" aria-label="Demo">
-            <a class="nowo-ui-link" href="{{ path('home') }}"{% if _route == 'home' %} aria-current="page"{% endif %}>Home</a>
-            <a class="nowo-ui-link" href="{{ path('product_index') }}"{% if _route starts with 'product_' %} aria-current="page"{% endif %}>Products</a>
-            <a class="nowo-ui-link" href="{{ path('nowo_performance.index') }}" data-testid="nav-performance"{% if _route starts with 'nowo_performance' %} aria-current="page"{% endif %}>Performance</a>
-        </nav>
-        <div class="nowo-ui-header__end">
-            <span class="nowo-ui-badge nowo-ui-badge--neutral">Symfony 8 · FrankenPHP</span>
-        </div>
-    </header>
-{% endblock %}
-
-{% block nowo_ui_flashes %}
-    {% for type, css in {success: 'success', error: 'error', warning: 'warning', info: 'info'} %}
-        {% for message in app.flashes(type) %}
-            <div class="nowo-ui-flash nowo-ui-flash--{{ css }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</div>
-        {% endfor %}
-    {% endfor %}
-{% endblock %}
 
 {% block nowo_ui_content %}{% block content %}{% endblock %}{% endblock %}

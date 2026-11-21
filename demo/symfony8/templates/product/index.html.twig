@@ -2,57 +2,70 @@
 
 {% block title %}Products{% endblock %}
 
+{% block nowo_ui_page_header %}
+    {% set _toolbar %}<a href="{{ path('product_new') }}" class="nowo-ui-btn nowo-ui-btn--primary">Create new</a>{% endset %}
+    {{ include(nowo_ui_partial('page_header'), {title: 'Products', intro: 'Demo CRUD whose routes the bundle tracks.', toolbar: _toolbar|trim}) }}
+{% endblock %}
+
 {% block content %}
-    <section class="nowo-ui-card">
-        <div class="nowo-ui-card__header">
-            <h1 class="nowo-ui-card__title">Products</h1>
-            <a href="{{ path('product_new') }}" class="nowo-ui-btn nowo-ui-btn--primary">Create New</a>
-        </div>
-        <div class="nowo-ui-card__body">
-            {% if products|length > 0 %}
-                <div class="nowo-ui-table-wrap">
-                    <table class="nowo-ui-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                                <th>Created At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for product in products %}
-                                <tr>
-                                    <td>{{ product.id }}</td>
-                                    <td>{{ product.name }}</td>
-                                    <td>${{ product.price }}</td>
-                                    <td><span class="nowo-ui-badge nowo-ui-badge--{{ product.status == 'active' ? 'success' : (product.status == 'inactive' ? 'error' : 'warning') }}">{{ product.status }}</span></td>
-                                    <td>{{ product.createdAt ? product.createdAt|date('Y-m-d H:i') : 'N/A' }}</td>
-                                    <td>
-                                        <div class="nowo-ui-row-actions">
-                                            <a href="{{ path('product_show', {'id': product.id}) }}" class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm">Show</a>
-                                            <a href="{{ path('product_edit', {'id': product.id}) }}" class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm">Edit</a>
-                                            {% set delete_form = delete_forms[product.id] %}
-                                            {{ form_start(delete_form, {attr: {class: 'nowo-ui-row-actions__form', onsubmit: "return confirm('Are you sure?');"}}) }}
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Products', kind: 'table', empty: products|length == 0, state_message: 'No products found.'} %}
+        {% block section_empty_action %}<a href="{{ path('product_new') }}" class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm">Create one</a>{% endblock %}
+        {% block section_body %}
+            <table class="nowo-ui-data-table">
+                <thead>
+                    <tr>
+                        <th class="nowo-ui-cell--num">ID</th>
+                        <th>Name</th>
+                        <th class="nowo-ui-cell--num">Price</th>
+                        <th>Status</th>
+                        <th class="nowo-ui-cell--date">Created at</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                        <tr>
+                            <td class="nowo-ui-cell--num">{{ product.id }}</td>
+                            <td>{{ product.name }}</td>
+                            <td class="nowo-ui-cell--num">${{ product.price }}</td>
+                            <td><span class="nowo-ui-badge nowo-ui-badge--{{ product.status == 'active' ? 'success' : (product.status == 'inactive' ? 'danger' : 'warning') }}">{{ product.status }}</span></td>
+                            <td class="nowo-ui-cell--date">{% if product.createdAt %}<time datetime="{{ product.createdAt|date('c') }}">{{ product.createdAt|date('Y-m-d H:i') }}</time>{% else %}N/A{% endif %}</td>
+                            <td>
+                                <div class="nowo-ui-row-actions">
+                                    <a href="{{ path('product_show', {'id': product.id}) }}" class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm">Show</a>
+                                    <a href="{{ path('product_edit', {'id': product.id}) }}" class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm">Edit</a>
+                                    {% set delete_form = delete_forms[product.id] %}
+                                    {% embed nowo_ui_partial('confirm_dialog') with {
+                                        trigger_label: 'Delete',
+                                        trigger_class: 'nowo-ui-btn nowo-ui-btn--danger nowo-ui-btn--sm',
+                                        trigger_testid: 'product-delete-' ~ product.id,
+                                        dialog_id: 'product-delete-dialog-' ~ product.id,
+                                        dialog_testid: 'product-delete-dialog-' ~ product.id,
+                                        product: product,
+                                        delete_form: delete_form,
+                                    } %}
+                                        {% block form %}
+                                            <h2 class="nowo-ui-card__title">Delete “{{ product.name }}”?</h2>
+                                            <p class="nowo-ui-muted">This removes the product. It cannot be undone.</p>
+                                            {{ form_start(delete_form, {attr: {class: 'nowo-ui-form'}}) }}
                                                 {% for child in delete_form %}
                                                     {% if not child.rendered %}
                                                         {{ form_row(child) }}
                                                     {% endif %}
                                                 {% endfor %}
-                                                <button type="submit" class="nowo-ui-btn nowo-ui-btn--danger nowo-ui-btn--sm">Delete</button>
+                                                <div class="nowo-ui-row-actions">
+                                                    <button type="button" class="nowo-ui-btn nowo-ui-btn--outline" data-nowo-confirm-close autofocus>Cancel</button>
+                                                    <button type="submit" class="nowo-ui-btn nowo-ui-btn--danger">Delete</button>
+                                                </div>
                                             {{ form_end(delete_form) }}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p>No products found. <a href="{{ path('product_new') }}">Create one</a>!</p>
-            {% endif %}
-        </div>
-    </section>
+                                        {% endblock %}
+                                    {% endembed %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}
