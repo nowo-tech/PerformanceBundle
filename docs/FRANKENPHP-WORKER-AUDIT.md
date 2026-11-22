@@ -41,7 +41,7 @@ A bundle that is safe under **B** is safe under **A** and under classic mode / P
 | Area | Status | Notes |
 |------|--------|-------|
 | Mutable state in shared services | ✅ | `PerformanceMetricsSubscriber` overwrites its per-request fields in `onKernelRequest`; it now also resets `PerformanceDataCollector` (and re-applies `async`) at the start of every main request |
-| Static properties / `static` locals | ✅ | No static properties; `LogHelper` and `QueryTrackingMiddlewareRegistry` only have stateless static methods |
+| Static properties / `static` locals | ✅ | No static properties; `QueryTrackingMiddlewareRegistry` only has stateless static methods |
 | `ResetInterface` / `kernel.reset` coverage | ✅ | `QueryTrackingCounters` and `QueryTrackingMiddlewareResetter` are tagged and also reset per request by `QueryTrackingConnectionSubscriber`; the collector is reset through `DataCollectorInterface` (A) and by the subscriber per main request (B); the bundle's own entities live in a private entity manager cleared after each write (3.16.0) |
 | Request / user / locale captured in services | ✅ | Request, user and route are read per event; nothing is captured in a constructor |
 | Superglobals, `$_ENV`, `putenv`, `ini_set`, `setlocale`, timezone | ✅ | No `error_reporting()` mutation any more (warnings are silenced with `@`, restored by the engine even on exceptions); `$_SERVER['APP_ENV']` / `getenv()` are only a fallback when no kernel is injected |

@@ -19,7 +19,7 @@ final class BeforeRecordDeletedEventTest extends TestCase
 
         $event = new BeforeRecordDeletedEvent($routeData);
 
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
         $this->assertFalse($event->isDeletionPrevented());
     }
 
@@ -46,14 +46,14 @@ final class BeforeRecordDeletedEventTest extends TestCase
         $this->assertTrue($event->isDeletionPrevented());
     }
 
-    public function testGetRouteDataReturnsSameInstanceOnMultipleCalls(): void
+    public function testRouteMetricsAreEqualOnMultipleCalls(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_foo')->setEnv('prod');
         $event = new BeforeRecordDeletedEvent($routeData);
 
-        $this->assertSame($event->getRouteData(), $event->getRouteData());
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertEquals($event->getRouteMetrics(), $event->getRouteMetrics());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
     }
 
     public function testExtendsSymfonyEvent(): void
@@ -64,37 +64,37 @@ final class BeforeRecordDeletedEventTest extends TestCase
         $this->assertInstanceOf(Event::class, $event);
     }
 
-    public function testGetRouteDataReturnsRouteWithNameAndEnv(): void
+    public function testRouteAccessorsReturnsRouteWithNameAndEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_users')->setEnv('prod');
 
         $event = new BeforeRecordDeletedEvent($routeData);
 
-        $this->assertSame('api_users', $event->getRouteData()->getName());
-        $this->assertSame('prod', $event->getRouteData()->getEnv());
+        $this->assertSame('api_users', $event->getRouteName());
+        $this->assertSame('prod', $event->getEnv());
     }
 
-    public function testGetRouteDataReturnsRouteWithStageEnv(): void
+    public function testRouteAccessorsReturnsRouteWithStageEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_dashboard')->setEnv('stage');
 
         $event = new BeforeRecordDeletedEvent($routeData);
 
-        $this->assertSame('api_dashboard', $event->getRouteData()->getName());
-        $this->assertSame('stage', $event->getRouteData()->getEnv());
+        $this->assertSame('api_dashboard', $event->getRouteName());
+        $this->assertSame('stage', $event->getEnv());
     }
 
-    public function testGetRouteDataReturnsRouteWithTestEnv(): void
+    public function testRouteAccessorsReturnsRouteWithTestEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_health')->setEnv('test');
 
         $event = new BeforeRecordDeletedEvent($routeData);
 
-        $this->assertSame('api_health', $event->getRouteData()->getName());
-        $this->assertSame('test', $event->getRouteData()->getEnv());
+        $this->assertSame('api_health', $event->getRouteName());
+        $this->assertSame('test', $event->getEnv());
     }
 
     public function testPreventDeletionWithStageEnvRoute(): void
@@ -103,7 +103,7 @@ final class BeforeRecordDeletedEventTest extends TestCase
         $routeData->setName('api_dashboard')->setEnv('stage');
         $event = new BeforeRecordDeletedEvent($routeData);
 
-        $this->assertSame('stage', $event->getRouteData()->getEnv());
+        $this->assertSame('stage', $event->getEnv());
         $this->assertFalse($event->isDeletionPrevented());
 
         $event->preventDeletion();

@@ -95,9 +95,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+4.0.0 removes the 3.x deprecations (REQ-ARCH-001 rules 1 and 3) and nothing else: same PHP and Symfony ranges, no new
+feature. Migration: [UPGRADING "To 4.0.0"](UPGRADING.md#to-400).
+
+### Removed
+
+- **BREAKING:** `Notification\NotificationChannelInterface` and its `send(PerformanceAlert, RouteData|AfterMetricsRecordedEvent)` (deprecated since 3.19.0; entity form since 3.17.0). `RouteMetricsNotificationChannelInterface` stands alone (`sendRouteMetrics(PerformanceAlert, RouteMetricsSnapshot)`, `isEnabled()`, `getName()`): no public signature of the channel port names the `RouteData` entity, the event or a Doctrine type any more. The built-in `EmailNotificationChannel` and `WebhookNotificationChannel` implement it (their `send()` is gone; payloads unchanged). A service tagged `nowo_performance.notification_channel` that still implements the removed interface (or no channel port), and an autodiscovered class that still implements it, fail the container build with a `LogicException` instead of being dropped silently (`DependencyInjection\Compiler\RemovedNotificationChannelPass`, `@internal`).
+- **BREAKING:** `getRouteData()` on `AfterMetricsRecordedEvent`, `BeforeRecordDeletedEvent`, `BeforeRecordReviewedEvent` and `AfterRecordReviewedEvent` (deprecated since 3.17.0). The id accessors and `getRouteMetrics()` stay; the constructors are unchanged.
+- **BREAKING:** the Twig components `nowo_performance.Statistics`, `.Filters`, `.Charts`, `.RoutesTable` (`Twig\Component\*`, `components/*.html.twig`, `services_twig_component.yaml`), `Form\ChartFiltersType` (deprecated since 3.15.0) and `Helper\LogHelper` (deprecated since 3.8). `symfony/ux-twig-component` is no longer suggested.
+- **BREAKING:** the configuration keys `query_tracking_threshold` (since 3.6.0), `dashboard.enabled`, `dashboard.path`, `dashboard.prefix`, `dashboard.layout_template`, `dashboard.css_framework`, `dashboard.template` (since 3.15.0) and `dashboard.roles` (documented as deprecated, no runtime notice; not in 3.19's "Preparing for 4.0" list). A leftover key fails the build with an `InvalidConfigurationException` naming its replacement; the bundle no longer copies `dashboard.css_framework` into `nowo_ui_kit`. The BC container parameters keep existing (`dashboard.css_framework` / `.template` / `query_tracking_threshold` at their former defaults).
+- **BREAKING:** the `DeleteRecordType` option `submit_attr_class` (deprecated and ignored since 3.15.0): passing it throws `UndefinedOptionsException`.
+- **BREAKING:** the 3.14 layout bridge `Performance/_legacy_layout.html.twig` (deprecated since 3.15.0) with `PerformancePages::LEGACY_LAYOUT_BRIDGE`, `LEGACY_LAYOUT_VARIABLE` and `legacyLayout()`. A `web_ui.layout_template` that does not render the UiKit canonical blocks now fails with a `LogicException` when a dashboard page renders.
+
 ### Changed
 
+- **BREAKING:** `Model\RouteDataWithAggregates::getAccessRecords()` returns `list<RouteDataRecord>` instead of a Doctrine `Collection` (announced in 3.19.0) and no longer triggers a deprecation; `getAccessRecordList()` stays and returns the same list.
+- `NotificationService` hands every enabled channel one `RouteMetricsSnapshot` of the alert context (`sendAlert()` keeps its signature); `PerformanceAlertSubscriber` reads the route name from the event's id accessors.
+- Docs: USAGE "Known limitations" and ARCHITECTURE no longer say that 4.0 moves the dashboard and `rebuild-aggregates` writes to the private manager: they keep flushing the `connection` manager in their own admin / CLI requests, unchanged.
+- CI: the `3.x` maintenance branch runs the CI workflow.
 - Demo: runs in UiKit's demo platform shell (`nowo-tech/ui-kit-bundle` ^2.60); the demo's own header is gone and the pages use the shell page headers and section cards. The product delete asks in the UiKit confirm dialog instead of a native `confirm()`. Demo only, no bundle change.
+
+### Security
+
+- 3.x support: security fixes for 6 months after 4.0.0 (Moderate and above backported to the last 3.x minor; Low fixed in 4.x only).
 
 ## [3.19.0] - 2026-11-20
 

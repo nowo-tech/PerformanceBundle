@@ -18,7 +18,7 @@ final class BeforeRecordReviewedEventTest extends TestCase
 
         $event = new BeforeRecordReviewedEvent($routeData, true, false, 'admin');
 
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
         $this->assertTrue($event->getQueriesImproved());
         $this->assertFalse($event->getTimeImproved());
         $this->assertSame('admin', $event->getReviewedBy());
@@ -61,14 +61,14 @@ final class BeforeRecordReviewedEventTest extends TestCase
         $this->assertTrue($event->isReviewPrevented());
     }
 
-    public function testGetRouteDataReturnsSameInstanceOnMultipleCalls(): void
+    public function testRouteMetricsAreEqualOnMultipleCalls(): void
     {
         $routeData = new RouteData();
         $routeData->setName('test_route');
         $event = new BeforeRecordReviewedEvent($routeData, true, false, 'reviewer');
 
-        $this->assertSame($event->getRouteData(), $event->getRouteData());
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertEquals($event->getRouteMetrics(), $event->getRouteMetrics());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
     }
 
     public function testExtendsSymfonyEvent(): void
@@ -113,14 +113,14 @@ final class BeforeRecordReviewedEventTest extends TestCase
         $this->assertTrue($event->getTimeImproved());
     }
 
-    public function testGetRouteDataWithStageEnv(): void
+    public function testRouteAccessorsWithStageEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_dashboard')->setEnv('stage');
         $event = new BeforeRecordReviewedEvent($routeData, true, false, 'admin');
 
-        $this->assertSame('api_dashboard', $event->getRouteData()->getName());
-        $this->assertSame('stage', $event->getRouteData()->getEnv());
+        $this->assertSame('api_dashboard', $event->getRouteName());
+        $this->assertSame('stage', $event->getEnv());
     }
 
     public function testSetReviewedByWithNull(): void

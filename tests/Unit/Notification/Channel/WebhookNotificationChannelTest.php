@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Notification\Channel;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use PHPUnit\Framework\TestCase;
@@ -59,17 +60,17 @@ final class WebhookNotificationChannelTest extends TestCase
         $this->assertTrue($channel->isEnabled());
     }
 
-    public function testSendReturnsFalseWhenNotEnabled(): void
+    public function testSendRouteMetricsReturnsFalseWhenNotEnabled(): void
     {
         $channel = new WebhookNotificationChannel(null, '', 'json', [], false);
         $alert   = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'msg');
         $route   = new RouteData();
         $route->setName('app_home')->setEnv('dev');
 
-        $this->assertFalse($channel->send($alert, $route));
+        $this->assertFalse($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendWithRouteDataContextCallsHttpClient(): void
+    public function testSendRouteMetricsWithRouteDataContextCallsHttpClient(): void
     {
         if (!interface_exists(self::RESPONSE_INTERFACE) && !class_exists(self::RESPONSE_INTERFACE)) {
             $this->markTestSkipped('Symfony HttpClient ResponseInterface is not available.');
@@ -87,10 +88,10 @@ final class WebhookNotificationChannelTest extends TestCase
         $route   = new RouteData();
         $route->setName('app_home')->setEnv('dev');
 
-        $this->assertTrue($channel->send($alert, $route));
+        $this->assertTrue($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendDisablesRedirects(): void
+    public function testSendRouteMetricsDisablesRedirects(): void
     {
         $response = $this->createMock(self::RESPONSE_INTERFACE);
         $client   = $this->createMock(self::HTTP_CLIENT_INTERFACE);
@@ -105,10 +106,10 @@ final class WebhookNotificationChannelTest extends TestCase
         $route = new RouteData();
         $route->setName('app_home')->setEnv('dev');
 
-        $this->assertTrue($channel->send($alert, $route));
+        $this->assertTrue($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendBlocksHttpAndPrivateHosts(): void
+    public function testSendRouteMetricsBlocksHttpAndPrivateHosts(): void
     {
         $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
         $client->expects($this->never())->method('request');
@@ -118,13 +119,13 @@ final class WebhookNotificationChannelTest extends TestCase
         $route->setName('app_home')->setEnv('dev');
 
         $http = new WebhookNotificationChannel($client, 'http://hooks.example.com', 'json', [], true);
-        $this->assertFalse($http->send($alert, $route));
+        $this->assertFalse($http->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
 
         $loopback = new WebhookNotificationChannel($client, 'https://127.0.0.1/hooks', 'json', [], true);
-        $this->assertFalse($loopback->send($alert, $route));
+        $this->assertFalse($loopback->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendWithAfterMetricsRecordedEventContext(): void
+    public function testSendRouteMetricsWithAfterMetricsRecordedEventContext(): void
     {
         if (!interface_exists(self::RESPONSE_INTERFACE) && !class_exists(self::RESPONSE_INTERFACE)) {
             $this->markTestSkipped('Symfony HttpClient ResponseInterface is not available.');
@@ -139,10 +140,10 @@ final class WebhookNotificationChannelTest extends TestCase
         $route->setName('api_foo')->setEnv('prod');
         $event = new AfterMetricsRecordedEvent($route, true, 0.3, 10);
 
-        $this->assertTrue($channel->send($alert, $event));
+        $this->assertTrue($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($event)));
     }
 
-    public function testSendReturnsFalseWhenHttpClientThrows(): void
+    public function testSendRouteMetricsReturnsFalseWhenHttpClientThrows(): void
     {
         $client = $this->createMock(self::HTTP_CLIENT_INTERFACE);
         $client->method('request')->willThrowException(new RuntimeException('Connection refused'));
@@ -152,10 +153,10 @@ final class WebhookNotificationChannelTest extends TestCase
         $route   = new RouteData();
         $route->setName('app_home')->setEnv('dev');
 
-        $this->assertFalse($channel->send($alert, $route));
+        $this->assertFalse($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendWithSlackFormatBuildsSlackPayload(): void
+    public function testSendRouteMetricsWithSlackFormatBuildsSlackPayload(): void
     {
         if (!interface_exists(self::RESPONSE_INTERFACE) && !class_exists(self::RESPONSE_INTERFACE)) {
             $this->markTestSkipped('Symfony HttpClient ResponseInterface is not available.');
@@ -179,10 +180,10 @@ final class WebhookNotificationChannelTest extends TestCase
         $route   = new RouteData();
         $route->setName('api')->setEnv('prod');
 
-        $this->assertTrue($channel->send($alert, $route));
+        $this->assertTrue($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendWithTeamsFormatBuildsTeamsPayload(): void
+    public function testSendRouteMetricsWithTeamsFormatBuildsTeamsPayload(): void
     {
         if (!interface_exists(self::RESPONSE_INTERFACE) && !class_exists(self::RESPONSE_INTERFACE)) {
             $this->markTestSkipped('Symfony HttpClient ResponseInterface is not available.');
@@ -199,16 +200,16 @@ final class WebhookNotificationChannelTest extends TestCase
         $route   = new RouteData();
         $route->setName('admin')->setEnv('dev');
 
-        $this->assertTrue($channel->send($alert, $route));
+        $this->assertTrue($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendReturnsFalseWhenWebhookUrlIsZero(): void
+    public function testSendRouteMetricsReturnsFalseWhenWebhookUrlIsZero(): void
     {
         $client  = $this->createMock(self::HTTP_CLIENT_INTERFACE);
         $channel = new WebhookNotificationChannel($client, '0', 'json', [], true);
         $alert   = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'Test');
         $route   = new RouteData();
 
-        $this->assertFalse($channel->send($alert, $route));
+        $this->assertFalse($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 }

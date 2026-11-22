@@ -11,6 +11,7 @@ use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Security\ConfigurablePerformanceAccessChecker;
 use Nowo\PerformanceBundle\Security\PerformanceAccessCheckerInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
@@ -82,7 +83,7 @@ final class PerformanceExtensionTest extends TestCase
     public function testLoadCustomLayoutTemplate(): void
     {
         $this->extension->load([
-            ['dashboard' => ['layout_template' => 'base.html.twig']],
+            ['web_ui' => ['layout_template' => 'base.html.twig']],
         ], $this->container);
 
         $this->assertSame(
@@ -101,11 +102,12 @@ final class PerformanceExtensionTest extends TestCase
             'track_queries'      => false,
             'track_request_time' => false,
             'ignore_routes'      => ['_custom'],
-            'dashboard'          => [
-                'enabled' => false,
-                'path'    => '/metrics',
-                'prefix'  => '/admin',
-                'roles'   => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
+            'web_ui'             => [
+                'enabled'     => false,
+                'path_prefix' => '/admin/metrics',
+            ],
+            'security' => [
+                'access_roles' => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
             ],
         ];
 
@@ -119,9 +121,8 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertFalse($this->container->getParameter('nowo_performance.track_request_time'));
         $this->assertSame(['_custom'], $this->container->getParameter('nowo_performance.ignore_routes'));
 
-        // Dashboard configuration — roles BC maps into security.access_roles and dashboard.roles param
+        // BC container parameters (kept in 4.0): dashboard.* are fed from web_ui / security.access_roles
         $this->assertFalse($this->container->getParameter('nowo_performance.dashboard.enabled'));
-        // BC: the deprecated dashboard.prefix + dashboard.path become web_ui.path_prefix (dashboard.path carries it all)
         $this->assertSame('/admin/metrics', $this->container->getParameter('nowo_performance.web_ui.path_prefix'));
         $this->assertSame('/admin/metrics', $this->container->getParameter('nowo_performance.dashboard.path'));
         $this->assertSame('', $this->container->getParameter('nowo_performance.dashboard.prefix'));
@@ -139,30 +140,30 @@ final class PerformanceExtensionTest extends TestCase
         $this->expectExceptionMessage('requires symfony/security-bundle');
 
         $extension->load([[
-            'dashboard' => ['enabled' => true],
-            'security'  => ['allow_unauthenticated' => false],
+            'web_ui'   => ['enabled' => true],
+            'security' => ['allow_unauthenticated' => false],
         ]], $container);
     }
 
     public function testLoadRejectsEmptyAccessRolesWhenDashboardEnabled(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('security.access_roles (or the deprecated dashboard.roles) is empty');
+        $this->expectExceptionMessage('NowoPerformanceBundle: security.access_roles is empty');
 
         $this->extension->load([['security' => ['access_roles' => []]]], $this->container);
     }
 
-    public function testLoadRejectsEmptyDeprecatedDashboardRoles(): void
+    public function testLoadRejectsTheRemovedDashboardRolesKey(): void
     {
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('security.access_roles (or the deprecated dashboard.roles) is empty');
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('The option "nowo_performance.dashboard.roles" was removed in 4.0. Use nowo_performance.security.access_roles');
 
         $this->extension->load([['dashboard' => ['roles' => []]]], $this->container);
     }
 
     public function testLoadAcceptsEmptyAccessRolesWhenDashboardDisabled(): void
     {
-        $this->extension->load([['dashboard' => ['enabled' => false], 'security' => ['access_roles' => []]]], $this->container);
+        $this->extension->load([['web_ui' => ['enabled' => false], 'security' => ['access_roles' => []]]], $this->container);
 
         self::assertSame([], $this->container->getParameter('nowo_performance.security.access_roles'));
     }
@@ -348,26 +349,29 @@ final class PerformanceExtensionTest extends TestCase
         $this->assertFalse($profileReseed);
     }
 
-    public function testPrependSeedsUiKitFromDashboardWhenHostUnset(): void
+    public function testPrependNeverSeedsUiKit(): void
     {
         $this->registerStubExtension($this->container, 'nowo_ui_kit');
         $this->container->registerExtension($this->extension);
         $this->container->prependExtensionConfig('nowo_performance', [
-            'dashboard' => ['css_framework' => 'bootstrap'],
+            'dashboard' => ['enable_review_system' => true],
         ]);
 
         $this->extension->prepend($this->container);
 
-        $found = false;
-        foreach ($this->container->getExtensionConfig('nowo_ui_kit') as $cfg) {
-            if (($cfg['css_framework'] ?? null) === 'bootstrap5'
-                && ($cfg['icon_set'] ?? null) === 'bootstrap-icons'
-            ) {
-                $found = true;
-                break;
-            }
-        }
-        $this->assertTrue($found);
+        $this->assertSame([], $this->container->getExtensionConfig('nowo_ui_kit'));
+    }
+
+    public function testBcParametersOfTheRemovedKeysKeepTheirFormerDefaults(): void
+    {
+        $this->extension->load([['web_ui' => ['path_prefix' => '/admin/perf']]], $this->container);
+
+        $this->assertSame(0, $this->container->getParameter('nowo_performance.query_tracking_threshold'));
+        $this->assertSame('bootstrap5', $this->container->getParameter('nowo_performance.dashboard.css_framework'));
+        $this->assertSame('bootstrap', $this->container->getParameter('nowo_performance.dashboard.template'));
+        $this->assertSame('/admin/perf', $this->container->getParameter('nowo_performance.dashboard.path'));
+        $this->assertSame(['ROLE_ADMIN'], $this->container->getParameter('nowo_performance.dashboard.roles'));
+        $this->assertFileDoesNotExist(__DIR__ . '/../../../src/Resources/config/services_twig_component.yaml');
     }
 
     public function testPrependDoesNotOverrideExplicitUiKitHostConfig(): void

@@ -3,6 +3,16 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 4.0.0](#to-400)
+  - [Before you upgrade](#before-you-upgrade)
+  - [Notification channels (implementors)](#notification-channels-implementors)
+  - [Access records (callers of `getAccessRecords()`)](#access-records-callers-of-getaccessrecords)
+  - [Event accessors](#event-accessors)
+  - [Configuration keys](#configuration-keys)
+  - [Layout](#layout)
+  - [Removed](#removed)
+  - [Unchanged in 4.0](#unchanged-in-40)
+  - [3.x support](#3x-support)
 - [To 3.19.0](#to-3190)
 - [To 3.19.0](#to-3190-1)
   - [Preparing for 4.0](#preparing-for-40)
@@ -147,6 +157,207 @@
   - [Troubleshooting](#troubleshooting-14)
 
 ## Unreleased
+
+## To 4.0.0
+
+```bash
+composer require nowo-tech/performance-bundle:^4.0 -W
+```
+
+4.0 contains only changes that 3.x announced through deprecations: an application that runs 3.19 without deprecation
+notices from this bundle, and does not call the accessors deprecated without a runtime notice (listed below), upgrades
+without code changes. Same PHP (8.2–8.5) and Symfony (7.4 / 8.x) ranges, same database matrix, no new feature. After
+4.0.0 is released, the 3.x line receives security fixes for 6 months: fixes rated Moderate and above are backported to
+the last 3.x minor; Low ones are fixed in 4.x only.
+
+### Before you upgrade
+
+On **3.19.0**, run your test suite and one deploy cycle, then clear every deprecation of this bundle:
+
+| 3.x deprecation notice (exact text, abbreviated) | Since | What to change |
+| --- | --- | --- |
+| `The notification channel "…" (service "…") implements only NotificationChannelInterface, whose send(PerformanceAlert, RouteData\|AfterMetricsRecordedEvent) form is removed in 4.0. …` (container build) | 3.19.0 | [Notification channels](#notification-channels-implementors) |
+| `RouteDataWithAggregates::getAccessRecords() returning a Doctrine Collection is deprecated; use getAccessRecordList() …` | 3.19.0 | [Access records](#access-records-callers-of-getaccessrecords) |
+| `The "nowo_performance.dashboard.enabled" option is deprecated, use "nowo_performance.web_ui.enabled" instead (REQ-UI-003).` (and the same for `dashboard.path`, `dashboard.prefix`, `dashboard.layout_template`, `dashboard.css_framework`, `dashboard.template`) | 3.15.0 | [Configuration keys](#configuration-keys) |
+| `The "query_tracking_threshold" option at path "nowo_performance.query_tracking_threshold" is deprecated and ignored …` | 3.6.0 | Delete the key. |
+| `The layout "…" does not render the UiKit canonical blocks (nowo_ui_page_header, nowo_ui_content, ...); it is wrapped in the deprecated bridge "@NowoPerformanceBundle/Performance/_legacy_layout.html.twig" …` | 3.15.0 | [Layout](#layout) |
+| `The option "submit_attr_class" is deprecated and ignored: the delete button is a UiKit Action (theme slots).` | 3.15.0 | Stop passing the option to `DeleteRecordType`. |
+
+These were deprecated **without a runtime notice**: search your code for them.
+
+- `getRouteData()` on `AfterMetricsRecordedEvent`, `BeforeRecordDeletedEvent`, `BeforeRecordReviewedEvent`,
+  `AfterRecordReviewedEvent` (since 3.17.0): use `getRouteDataId()`, `getRouteName()`, `getEnv()` or
+  `getRouteMetrics()` (a `RouteMetricsSnapshot`).
+- `nowo_performance.dashboard.roles` (documented as deprecated, mapped to `security.access_roles`): move the list to
+  `security.access_roles`. 3.19's "Preparing for 4.0" did not list this key; the removal follows the rule that 4.0
+  removes every 3.x deprecation, and a leftover key fails the build (below).
+- The Twig components `nowo_performance.Statistics`, `.Filters`, `.Charts`, `.RoutesTable` (`{{ component(…) }}`,
+  since 3.15.0), the form type `Form\ChartFiltersType` (since 3.15.0) and `Helper\LogHelper` (since 3.8).
+
+### Notification channels (implementors)
+
+`Notification\NotificationChannelInterface` is removed. `RouteMetricsNotificationChannelInterface` no longer extends
+it: it declares `sendRouteMetrics()`, `isEnabled()` and `getName()` itself, and `send(PerformanceAlert,
+RouteData|AfterMetricsRecordedEvent)` is gone. Your channel receives a framework-free `RouteMetricsSnapshot`, never the
+`RouteData` entity or the event. The built-in email and webhook (Slack, Teams, JSON) channels moved to the new
+interface; their payloads are unchanged.
+
+Before (3.x):
+
+```php
+use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+
+final class SlackOpsChannel implements NotificationChannelInterface
+{
+    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
+    {
+        $route = $context instanceof AfterMetricsRecordedEvent ? $context->getRouteData() : $context;
+        $time  = $context instanceof AfterMetricsRecordedEvent ? $context->getRequestTime() : null;
+
+        return $this->post($alert->getMessage(), $route->getName(), $route->getEnv(), $time);
+    }
+
+    public function isEnabled(): bool { return true; }
+
+    public function getName(): string { return 'slack_ops'; }
+}
+```
+
+After (4.0; also works on 3.17–3.19 if you keep a `send()` delegating to `sendRouteMetrics()` there):
+
+```php
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
+use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
+
+final class SlackOpsChannel implements RouteMetricsNotificationChannelInterface
+{
+    public function sendRouteMetrics(PerformanceAlert $alert, RouteMetricsSnapshot $route): bool
+    {
+        // $route->requestTime / totalQueries / memoryUsage / isNew are set when the alert comes from a recording
+        return $this->post($alert->getMessage(), $route->routeName, $route->env, $route->requestTime);
+    }
+
+    public function isEnabled(): bool { return true; }
+
+    public function getName(): string { return 'slack_ops'; }
+}
+```
+
+Keep the tag `nowo_performance.notification_channel` on the service. What changes for you:
+
+- move the body of `send()` to `sendRouteMetrics()`, read the snapshot's public properties (`routeDataId`,
+  `routeName`, `env`, `httpMethod`, `reviewed`, `reviewedAt`, `reviewedBy`, `queriesImproved`, `timeImproved`,
+  `lastAccessedAt`, plus `isNew`, `requestTime`, `totalQueries`, `memoryUsage` for a just-recorded access) instead of
+  the entity and the event, and delete `send()` and the `RouteData` / `AfterMetricsRecordedEvent` imports;
+- `isEnabled()` and `getName()` stay as they are;
+- if the channel changed bundle data through the entity it received, it must now do that itself by
+  `$route->routeDataId` (a DQL / DBAL `UPDATE`); nothing the channel does is flushed by the bundle.
+
+**A channel still written for the removed interface fails the container build** (it would otherwise be dropped
+silently and its alerts would stop): a tagged service, and also a class registered by resource autodiscovery
+(`App\: resource: ../src/`) that still implements `NotificationChannelInterface`. The `LogicException` names the
+service and points here. Decorating a built-in channel is unchanged: decorate the service id and implement
+`RouteMetricsNotificationChannelInterface`.
+
+`NotificationService::sendAlert(PerformanceAlert, RouteData|AfterMetricsRecordedEvent)` is unchanged (it is called by
+the bundle's alert subscriber; it hands every channel one `RouteMetricsSnapshot` of the context).
+
+### Access records (callers of `getAccessRecords()`)
+
+`Model\RouteDataWithAggregates::getAccessRecords()` returns a `list<RouteDataRecord>` (a PHP array) instead of a
+Doctrine `Collection`, and no longer triggers a deprecation. `getAccessRecordList()` (3.19) stays and returns the same
+list.
+
+| 3.x call on the `Collection` | 4.0 |
+| --- | --- |
+| `$row->getAccessRecords()->toArray()` | `$row->getAccessRecords()` |
+| `$row->getAccessRecords()->count()`, `count($row->getAccessRecords())` | `count($row->getAccessRecords())` |
+| `$row->getAccessRecords()->isEmpty()` | `$row->getAccessRecords() === []` |
+| `->first()`, `->last()` | `$records[0] ?? null`, `$records === [] ? null : $records[array_key_last($records)]` |
+| `->filter($fn)`, `->map($fn)` | `array_values(array_filter($records, $fn))`, `array_map($fn, $records)` |
+| `foreach ($row->getAccessRecords() as $record)` | unchanged |
+| Twig `row.accessRecords\|length`, `for record in row.accessRecords` | unchanged |
+
+The keys are `0…n-1` (the `Collection` kept the ORM keys). `Entity\RouteData::getAccessRecords()` (the entity itself)
+still returns its `Collection`.
+
+### Event accessors
+
+`getRouteData()` is removed from `AfterMetricsRecordedEvent`, `BeforeRecordDeletedEvent`, `BeforeRecordReviewedEvent`
+and `AfterRecordReviewedEvent`. Use `getRouteDataId()`, `getRouteName()`, `getEnv()` or `getRouteMetrics()`; the
+constructors are unchanged.
+
+### Configuration keys
+
+A removed key now fails the container build with an `InvalidConfigurationException` that names its replacement:
+
+| Removed key | Deprecated since | Use instead |
+| --- | --- | --- |
+| `query_tracking_threshold` | 3.6.0 | nothing (it never had any effect) |
+| `dashboard.enabled` | 3.15.0 | `web_ui.enabled` |
+| `dashboard.prefix` + `dashboard.path` | 3.15.0 | `web_ui.path_prefix` (= prefix + path, e.g. `/admin/performance`) |
+| `dashboard.layout_template` | 3.15.0 | `web_ui.layout_template` |
+| `dashboard.css_framework`, `dashboard.template` | 3.15.0 | `nowo_ui_kit.css_framework` (the bundle no longer copies them to `nowo_ui_kit`) |
+| `dashboard.roles` | documented as deprecated in 3.x | `security.access_roles` |
+
+The other `dashboard.*` keys (`enable_record_management`, `enable_review_system`, `date_formats`,
+`auto_refresh_interval`, `enable_ranking_queries`) are unchanged. The container parameters
+`nowo_performance.dashboard.enabled`, `.path`, `.prefix`, `.roles`, `.layout_template`, `.css_framework`, `.template`
+and `nowo_performance.query_tracking_threshold` still exist: the first ones are fed from `web_ui.*` /
+`security.access_roles` as in 3.x; `.css_framework` is always `bootstrap5`, `.template` `bootstrap` and
+`query_tracking_threshold` `0` (their former defaults).
+
+### Layout
+
+The bridge `Performance/_legacy_layout.html.twig`, which wrapped a 3.14 layout (a project `base.html.twig` with
+`body` / `stylesheets` / `javascripts` but no UiKit canonical blocks), is removed, together with
+`PerformancePages::LEGACY_LAYOUT_BRIDGE`, `PerformancePages::LEGACY_LAYOUT_VARIABLE`, `PerformancePages::legacyLayout()`
+and the Twig variable `nowo_performance_legacy_layout`. A `web_ui.layout_template` that does not render the canonical
+blocks now fails with a `LogicException` when a dashboard page renders (instead of a page without content). Render the
+canonical blocks (or extend `@NowoUiKit/layout/admin.html.twig`, or a one-file bridge as in UiKit
+`layout/_bridge.html.twig`), or set `web_ui.layout_template: null` to use `nowo_ui_kit.layouts.admin`.
+
+### Removed
+
+| Removed | Deprecated since | Replacement |
+| --- | --- | --- |
+| `Notification\NotificationChannelInterface` (and its `send(PerformanceAlert, RouteData\|AfterMetricsRecordedEvent)`) | 3.19.0 (entity form since 3.17.0) | `Notification\RouteMetricsNotificationChannelInterface::sendRouteMetrics(PerformanceAlert, RouteMetricsSnapshot)` |
+| `send()` of `EmailNotificationChannel` and `WebhookNotificationChannel` | 3.19.0 | their `sendRouteMetrics()` |
+| `RouteDataWithAggregates::getAccessRecords(): Collection` | 3.19.0 | `getAccessRecords(): list<RouteDataRecord>` / `getAccessRecordList()` |
+| `getRouteData()` on the four route events | 3.17.0 | `getRouteDataId()`, `getRouteName()`, `getEnv()`, `getRouteMetrics()` |
+| Twig components `nowo_performance.Statistics`, `.Filters`, `.Charts`, `.RoutesTable` (`Twig\Component\*Component`, `components/*.html.twig`) | 3.15.0 | the dashboard pages (`web_ui.templates.<page>` overrides, data blocks in [TEMPLATES](TEMPLATES.md)) |
+| `Form\ChartFiltersType` | 3.15.0 | none (only the Charts component used it) |
+| `Helper\LogHelper` | 3.8 | inject a `Psr\Log\LoggerInterface` |
+| Configuration keys above | 3.6.0 / 3.15.0 | see [Configuration keys](#configuration-keys) |
+| `DeleteRecordType` option `submit_attr_class` (passing it now throws `UndefinedOptionsException`) | 3.15.0 | none (UiKit Action theme slots) |
+| Layout bridge `Performance/_legacy_layout.html.twig` and its `PerformancePages` constants / method | 3.15.0 | see [Layout](#layout) |
+
+`symfony/ux-twig-component` is no longer suggested (nothing in the bundle uses it any more); `DependencyChecker` and
+`nowo:performance:check-dependencies` still report whether it is installed.
+
+### Unchanged in 4.0
+
+- **Dashboard and CLI writes.** The dashboard actions (review, delete, the per-route access-record switch) and
+  `nowo:performance:rebuild-aggregates` still flush the entity manager named by `connection`, inside their own
+  (admin / CLI) request, as in 3.x; metrics recording keeps its private manager. Give the bundle its own manager
+  (`connection: performance`) to keep these writes out of your unit of work. 4.0 does not move them (no 3.x notice
+  announced such a change).
+- `NotificationService::sendAlert()`, `RouteMetricsSnapshot::fromRouteData()` / `fromRecordedEvent()` /
+  `fromContext()`, `RouteDataWithAggregates::getRouteData()` and the event constructors keep their signatures.
+- The Twig globals `nowo_performance_layout_template` and `nowo_performance_css_framework` stay (no bundle page reads
+  them); `nowo_performance_css_framework` is now always `bootstrap5`, since its source key `dashboard.css_framework`
+  was removed: read `nowo_ui_kit.css_framework` instead.
+- The classes listed as open in [USAGE — Extension points](USAGE.md#extension-points-non-final-classes) stay
+  non-final.
+
+### 3.x support
+
+The 3.x line (branch `3.x`) receives security fixes for 6 months after 4.0.0: Moderate and higher are backported to
+the last 3.x minor as a patch; Low ones are fixed in 4.x only, with the advice to upgrade.
 
 ## To 3.19.0
 

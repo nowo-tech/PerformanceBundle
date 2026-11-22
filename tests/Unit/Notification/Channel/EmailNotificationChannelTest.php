@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Notification\Channel;
 
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use PHPUnit\Framework\TestCase;
@@ -58,17 +59,17 @@ final class EmailNotificationChannelTest extends TestCase
         $this->assertTrue($channel->isEnabled());
     }
 
-    public function testSendReturnsFalseWhenNotEnabled(): void
+    public function testSendRouteMetricsReturnsFalseWhenNotEnabled(): void
     {
         $channel = new EmailNotificationChannel(null, 'a@b.com', [], false);
         $alert   = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'msg');
         $route   = new RouteData();
         $route->setName('app_home')->setEnv('dev');
 
-        $this->assertFalse($channel->send($alert, $route));
+        $this->assertFalse($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendReturnsFalseWhenToEmailsEmpty(): void
+    public function testSendRouteMetricsReturnsFalseWhenToEmailsEmpty(): void
     {
         $mailer  = $this->createMock(self::MAILER_INTERFACE);
         $channel = new EmailNotificationChannel($mailer, 'from@x.com', [], true);
@@ -76,10 +77,10 @@ final class EmailNotificationChannelTest extends TestCase
         $route   = new RouteData();
         $route->setName('r')->setEnv('dev');
 
-        $this->assertFalse($channel->send($alert, $route));
+        $this->assertFalse($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendWithRouteDataContextCallsMailer(): void
+    public function testSendRouteMetricsWithRouteDataContextCallsMailer(): void
     {
         if (!class_exists(self::EMAIL_CLASS)) {
             $this->markTestSkipped('Symfony\Component\Mime\Email is not available.');
@@ -92,10 +93,10 @@ final class EmailNotificationChannelTest extends TestCase
         $route   = new RouteData();
         $route->setName('app_home')->setEnv('dev');
 
-        $this->assertTrue($channel->send($alert, $route));
+        $this->assertTrue($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 
-    public function testSendWithAfterMetricsRecordedEventContext(): void
+    public function testSendRouteMetricsWithAfterMetricsRecordedEventContext(): void
     {
         if (!class_exists(self::EMAIL_CLASS)) {
             $this->markTestSkipped('Symfony\Component\Mime\Email is not available.');
@@ -109,10 +110,10 @@ final class EmailNotificationChannelTest extends TestCase
         $route->setName('api_foo')->setEnv('prod');
         $event = new AfterMetricsRecordedEvent($route, true, 0.5, 25, 1024 * 1024);
 
-        $this->assertTrue($channel->send($alert, $event));
+        $this->assertTrue($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($event)));
     }
 
-    public function testSendReturnsFalseWhenMailerThrows(): void
+    public function testSendRouteMetricsReturnsFalseWhenMailerThrows(): void
     {
         $mailer = $this->createMock(self::MAILER_INTERFACE);
         $mailer->method('send')->willThrowException(new RuntimeException('SMTP error'));
@@ -122,6 +123,6 @@ final class EmailNotificationChannelTest extends TestCase
         $route   = new RouteData();
         $route->setName('app_home')->setEnv('dev');
 
-        $this->assertFalse($channel->send($alert, $route));
+        $this->assertFalse($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($route)));
     }
 }

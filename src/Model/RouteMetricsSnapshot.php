@@ -7,15 +7,15 @@ namespace Nowo\PerformanceBundle\Model;
 use DateTimeImmutable;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 
 /**
  * Immutable, framework-free copy of a `routes_data` row (plus the metrics just recorded, when known).
  *
- * Carried by the bundle events and the notification SPI next to the entity (REQ-ARCH-001 rules 1, 3 and 4): listeners
- * and channels of a DDD host read ids and values from it and never touch the bundle's Doctrine entity. The entity
- * accessors (`getRouteData()`, the `RouteData` form of `NotificationChannelInterface::send()`) stay for standard
- * hosts and are removed in 4.0.
+ * Carried by the bundle events and the notification SPI (REQ-ARCH-001 rules 1, 3 and 4): listeners and channels read
+ * ids and values from it and never touch the bundle's Doctrine entity. Since 4.0 it is the only route value a channel
+ * receives ({@see RouteMetricsNotificationChannelInterface::sendRouteMetrics()}) and the events no longer expose the
+ * entity (`getRouteData()` was removed). The static factories are the bundle's own adapters from the entity.
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
@@ -80,28 +80,11 @@ final readonly class RouteMetricsSnapshot
      */
     public static function fromRecordedEvent(AfterMetricsRecordedEvent $event): self
     {
-        $route = self::fromRouteData($event->getRouteData());
-
-        return new self(
-            routeDataId: $route->routeDataId,
-            routeName: $route->routeName,
-            env: $route->env,
-            httpMethod: $route->httpMethod,
-            reviewed: $route->reviewed,
-            reviewedAt: $route->reviewedAt,
-            reviewedBy: $route->reviewedBy,
-            queriesImproved: $route->queriesImproved,
-            timeImproved: $route->timeImproved,
-            lastAccessedAt: $route->lastAccessedAt,
-            isNew: $event->isNew(),
-            requestTime: $event->getRequestTime(),
-            totalQueries: $event->getTotalQueries(),
-            memoryUsage: $event->getMemoryUsage(),
-        );
+        return $event->getRouteMetrics();
     }
 
     /**
-     * Snapshot of a notification context (the two forms {@see NotificationChannelInterface::send()} receives).
+     * Snapshot of a notification context (the route row, or the event carrying the metrics just recorded).
      */
     public static function fromContext(RouteData|AfterMetricsRecordedEvent $context): self
     {

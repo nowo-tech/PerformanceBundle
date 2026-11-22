@@ -1,6 +1,5 @@
 # Usage Guide
 
-
 ## Table of contents
 
 - [Automatic Tracking](#automatic-tracking)
@@ -12,12 +11,9 @@
   - [Command Options](#command-options)
 - [Overriding templates (REQ-TWIG-001)](#overriding-templates-req-twig-001)
 - [Customizing the Dashboard View](#customizing-the-dashboard-view)
-- [Extension points (non-final classes)](#extension-points-non-final-classes)
-  - [CSS Framework Selection](#css-framework-selection)
-  - [Component Structure](#component-structure)
-  - [Overriding Components](#overriding-components)
-  - [Overriding the Complete Template](#overriding-the-complete-template)
-  - [Available Variables](#available-variables)
+  - [Pages, scaffolds and view models](#pages-scaffolds-and-view-models)
+  - [Available variables](#available-variables)
+  - [Twig components (removed in 4.0)](#twig-components-removed-in-40)
   - [Translation Overrides](#translation-overrides)
 - [Dashboard Features](#dashboard-features)
   - [Data Export](#data-export)
@@ -42,6 +38,7 @@
   - [Example 1: Track API Endpoints](#example-1-track-api-endpoints)
   - [Example 2: Production Monitoring](#example-2-production-monitoring)
   - [Example 3: Custom Connection](#example-3-custom-connection)
+- [Extension points (non-final classes)](#extension-points-non-final-classes)
 
 ## Automatic Tracking
 
@@ -154,8 +151,6 @@ templates/bundles/NowoPerformanceBundle/Performance/index.html.twig
 | `Performance/access_records.html.twig` | Access records: `@NowoUiKit/page/list` — filters, sortable columns, pagination, purge dialog. |
 | `Performance/diagnose.html.twig` | Diagnose: `@NowoUiKit/page/show` — findings and one detail section per diagnostic group. |
 | `Performance/_kpis.html.twig`, `_card.html.twig`, `_bar_chart.html.twig`, `_heatmap.html.twig` | Shared slot-based partials (KPI tiles, cards, inline SVG charts — no JavaScript, no CDN). |
-| `Performance/_legacy_layout.html.twig` | Deprecated bridge around a 3.14-style layout (see `web_ui.layout_template`). |
-| `components/*.html.twig` | Deprecated Twig components (`nowo_performance.Statistics`, `.Filters`, `.Charts`, `.RoutesTable`; removed in 4.0). |
 
 **Layout and theme without copying files (REQ-UI-001 / REQ-UI-003):** the pages extend the UiKit scaffolds, which extend
 `nowo_ui_kit.layouts.admin` — set your project layout (or a one-file bridge rendering the canonical blocks) there,
@@ -212,11 +207,10 @@ Besides `page`, the controller keeps passing the 3.14 variables so overrides kee
 `autoRefreshInterval`, plus the new `kpis` and `trend`. The same FormViews back the page actions: render each only once.
 `chartFiltersForm` is no longer passed (the client-side chart was removed).
 
-### Twig components (deprecated)
+### Twig components (removed in 4.0)
 
-With `symfony/ux-twig-component`, `{{ component('nowo_performance.Statistics', {stats: stats}) }}` (and `.Filters`,
-`.Charts`, `.RoutesTable`) still render, now through the same slot-based partials; they are deprecated since 3.15 and
-removed in 4.0 — the dashboard pages no longer use them.
+The Twig components `nowo_performance.Statistics`, `.Filters`, `.Charts` and `.RoutesTable` (deprecated since 3.15)
+were removed in 4.0: override a dashboard page or one of its data blocks instead ([TEMPLATES](TEMPLATES.md)).
 
 #### Forms (REQ-TWIG-005)
 
@@ -546,14 +540,14 @@ managers, list that mapping under the manager you name in `connection`.
 
 Known limitations:
 
-- Dashboard actions (review, delete, `save_access_records`) and `nowo:performance:rebuild-aggregates` still flush the
+- Dashboard actions (review, delete, `save_access_records`) and `nowo:performance:rebuild-aggregates` flush the
   entity manager named by `connection`, in their own (admin / CLI) requests (clear and purge run DQL deletes;
-  `set-route-metrics` records through the private manager). With the default `connection: default` that is your default manager; give the bundle its
-  own manager (example above) to keep these writes out of your unit of work. Rule 6 of REQ-ARCH-001 is ⚠️ for this
-  path until 4.0, which moves the admin and CLI writes to the private manager.
-- `getRouteData()` on the events and the entity form of `NotificationChannelInterface::send()` are deprecated since
-  3.17.0 and removed in 4.0. `AfterMetricsRecordedEvent::getRouteData()` belongs to the bundle's private entity
-  manager and is read-only (never persist it into yours).
+  `set-route-metrics` records through the private manager). With the default `connection: default` that is your
+  default manager; give the bundle its own manager (example above) to keep these writes out of your unit of work.
+  4.0 leaves these writes as they are (no 3.x release announced a change); rule 6 of REQ-ARCH-001 stays ⚠️ for this
+  path.
+- The events carry ids and a `RouteMetricsSnapshot`, and notification channels receive only the snapshot: the entity
+  accessors (`getRouteData()` on the events, the entity form of the channel `send()`) were removed in 4.0.
 - No unique index on `routes_data (env, name)`: two concurrent first hits of a route can create two rows (the writer
   uses the first one).
 - `track_status_codes` is not applied when recording: every status code is recorded.

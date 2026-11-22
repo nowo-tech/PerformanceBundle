@@ -8,11 +8,11 @@ nowo_performance:
     enable_access_records: true
     check_table_status: true
     ignore_routes: []
-    dashboard:
+    web_ui:
         enabled: false
-        path: /performance
-        prefix: ''
-        roles: []
-        template: bootstrap
+        path_prefix: /performance
+    dashboard:
         enable_record_management: true
         enable_review_system: true
+    security:
+        access_roles: []

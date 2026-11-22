@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Ui;
 
+use LogicException;
 use Nowo\PerformanceBundle\Ui\PerformancePages;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
+
+use function defined;
 
 final class PerformancePagesTest extends TestCase
 {
@@ -17,10 +19,9 @@ final class PerformancePagesTest extends TestCase
         $pages = new PerformancePages();
 
         self::assertNull($pages->layout());
-        self::assertNull($pages->legacyLayout());
         self::assertSame(PerformancePages::TEMPLATES['index'], $pages->template('index'));
         self::assertSame('unknown', $pages->template('unknown'));
-        self::assertSame(['page' => 1, PerformancePages::LEGACY_LAYOUT_VARIABLE => null], $pages->context(['page' => 1]));
+        self::assertSame(['page' => 1], $pages->context(['page' => 1]));
 
         $label = PerformancePages::label('dashboard.title', ['%x%' => 1]);
         self::assertSame('dashboard.title', $label->key);
@@ -44,7 +45,6 @@ final class PerformancePagesTest extends TestCase
         $pages = new PerformancePages('admin.html.twig', [], $twig);
 
         self::assertSame('admin.html.twig', $pages->layout());
-        self::assertNull($pages->legacyLayout());
         // Without Twig the configured layout is trusted as a canonical one.
         self::assertSame('base.html.twig', (new PerformancePages('base.html.twig'))->layout());
     }
@@ -53,18 +53,24 @@ final class PerformancePagesTest extends TestCase
     {
         $pages = new PerformancePages('missing.html.twig', [], new Environment(new ArrayLoader([])));
 
-        self::assertNull($pages->legacyLayout());
         self::assertSame('missing.html.twig', $pages->layout());
     }
 
-    #[IgnoreDeprecations]
-    public function testLegacyLayoutIsWrappedInTheBridge(): void
+    public function testLayoutWithoutTheCanonicalBlocksFailsClearly(): void
     {
         $twig  = new Environment(new ArrayLoader(['base.html.twig' => '{% block body %}{% endblock %}']));
         $pages = new PerformancePages('base.html.twig', [], $twig);
 
-        self::assertSame(PerformancePages::LEGACY_LAYOUT_BRIDGE, $pages->layout());
-        self::assertSame('base.html.twig', $pages->legacyLayout());
-        self::assertSame('base.html.twig', $pages->context([])[PerformancePages::LEGACY_LAYOUT_VARIABLE]);
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('The layout "base.html.twig" (nowo_performance.web_ui.layout_template) does not render the UiKit canonical blocks');
+
+        $pages->layout();
+    }
+
+    public function testTheLayoutBridgeIsGone(): void
+    {
+        self::assertFalse(defined(PerformancePages::class . '::LEGACY_LAYOUT_BRIDGE'));
+        self::assertFalse(method_exists(PerformancePages::class, 'legacyLayout'));
+        self::assertFileDoesNotExist(__DIR__ . '/../../../src/Resources/views/Performance/_legacy_layout.html.twig');
     }
 }

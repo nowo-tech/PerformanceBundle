@@ -7,8 +7,10 @@ namespace Nowo\PerformanceBundle;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
+use Nowo\PerformanceBundle\DependencyInjection\Compiler\RemovedNotificationChannelPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -35,6 +37,9 @@ final class NowoPerformanceBundle extends Bundle
 
         $container->addCompilerPass(new CsrfProtectionPass());
         $container->addCompilerPass(new NotificationChannelsPass());
+        // 4.0: refuse channels still written for the removed NotificationChannelInterface (loading errors first, then tags)
+        $container->addCompilerPass(new RemovedNotificationChannelPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 1000);
+        $container->addCompilerPass(new RemovedNotificationChannelPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 0);
         $container->addCompilerPass(new QueryTrackingMiddlewarePass());
         $container->addCompilerPass(new TwigPathsPass());
     }

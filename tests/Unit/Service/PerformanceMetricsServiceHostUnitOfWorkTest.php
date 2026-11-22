@@ -179,7 +179,7 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
         $service->recordMetrics('evented', 'prod', 0.1, 1);
 
         self::assertCount(1, $events);
-        self::assertSame('evented', $events[0]->getRouteData()->getName());
+        self::assertSame('evented', $events[0]->getRouteName());
         self::assertTrue($events[0]->isNew());
     }
 
@@ -196,7 +196,7 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
             self::assertNotNull($event->getRouteDataId());
             self::assertSame('by_id', $event->getRouteName());
             self::assertSame('prod', $event->getEnv());
-            self::assertFalse($hostEm->contains($event->getRouteData()), 'The event entity belongs to the private manager.');
+            self::assertFalse($hostEm->getUnitOfWork()->tryGetById($event->getRouteDataId(), RouteData::class), 'The recorded row belongs to the private manager, not to the host one.');
 
             // Documented pattern: an UPDATE by id, never a flush of the application's entity manager.
             $connection->update('routes_data', ['reviewed' => 1], ['id' => $event->getRouteDataId()]);

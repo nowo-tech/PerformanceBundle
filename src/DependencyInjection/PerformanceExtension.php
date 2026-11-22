@@ -17,7 +17,6 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 use function array_key_exists;
 use function is_array;
@@ -51,12 +50,6 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
 
-        // Optional: Symfony UX Twig Component (deprecated nowo_performance.* components). The former check on a
-        // ComponentInterface that ux-twig-component never shipped meant the components were never registered.
-        if (class_exists(AsTwigComponent::class)) {
-            $loader->load('services_twig_component.yaml');
-        }
-
         $configuration = $this->getConfiguration($configs, $container);
         $config        = $this->processConfiguration($configuration, $configs);
 
@@ -69,7 +62,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
 
         // SEC-004 (BP L1 / I1): both switches decide at compile time which routes, access checker and CSRF checks are
         // registered, so an %env()% placeholder (a truthy string here) is refused instead of silently meaning "true".
-        $this->assertLiteralBoolean($config['web_ui']['enabled'] ?? true, 'web_ui.enabled (or the deprecated dashboard.enabled)');
+        $this->assertLiteralBoolean($config['web_ui']['enabled'] ?? true, 'web_ui.enabled');
         $this->assertLiteralBoolean($securityConfig['allow_unauthenticated'] ?? false, 'security.allow_unauthenticated');
 
         if (
@@ -91,7 +84,8 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter(Configuration::ALIAS . '.ignore_routes', $config['ignore_routes'] ?? []);
         $container->setParameter(Configuration::ALIAS . '.async', $config['async'] ?? false);
         $container->setParameter(Configuration::ALIAS . '.sampling_rate', $config['sampling_rate'] ?? 1.0);
-        $container->setParameter(Configuration::ALIAS . '.query_tracking_threshold', $config['query_tracking_threshold'] ?? 0);
+        // BC parameter of the query_tracking_threshold key removed in 4.0 (it never had any effect): always 0.
+        $container->setParameter(Configuration::ALIAS . '.query_tracking_threshold', 0);
         $container->setParameter(Configuration::ALIAS . '.track_status_codes', $config['track_status_codes'] ?? [200, 404, 500, 503]);
         $container->setParameter(Configuration::ALIAS . '.enable_access_records', $config['enable_access_records'] ?? false);
         $container->setParameter(Configuration::ALIAS . '.access_records_retention_days', $config['access_records_retention_days'] ?? null);
@@ -116,7 +110,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($thresholdsPath . '.memory_usage.warning', $memoryUsageThresholds['warning'] ?? 20.0);
         $container->setParameter($thresholdsPath . '.memory_usage.critical', $memoryUsageThresholds['critical'] ?? 50.0);
 
-        // Web UI (REQ-UI-003 canonical keys; the deprecated dashboard.* UI keys are mapped in Configuration)
+        // Web UI (REQ-UI-003 canonical keys; the dashboard.* UI keys were removed in 4.0)
         $webUiConfig = $config['web_ui'] ?? [];
         $webUiPath   = Configuration::ALIAS . '.web_ui';
         $uiEnabled   = ($webUiConfig['enabled'] ?? true) === true;
@@ -135,15 +129,13 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         $container->setParameter($dashboardPath . '.prefix', '');
         // BC: keep dashboard.roles in sync with effective security.access_roles
         $container->setParameter($dashboardPath . '.roles', $accessRoles);
-        // Configuration normalises the deprecated css_framework alias bootstrap → bootstrap5
-        $cssFramework = $dashboardConfig['css_framework'] ?? 'bootstrap5';
-        // BC: keep dashboard.template as bootstrap|tailwind markup family synced from css_framework
-        $templateFamily = $cssFramework === 'tailwind' ? 'tailwind' : 'bootstrap';
-        $container->setParameter($dashboardPath . '.css_framework', $cssFramework);
-        $container->setParameter($dashboardPath . '.template', $templateFamily);
+        // BC parameters of the dashboard.css_framework / dashboard.template keys removed in 4.0: their former defaults
+        // (the CSS stack comes from nowo_ui_kit.css_framework since 3.15).
+        $container->setParameter($dashboardPath . '.css_framework', 'bootstrap5');
+        $container->setParameter($dashboardPath . '.template', 'bootstrap');
         $container->setParameter($dashboardPath . '.enable_record_management', $dashboardConfig['enable_record_management'] ?? false);
         $container->setParameter($dashboardPath . '.enable_review_system', $dashboardConfig['enable_review_system'] ?? false);
-        // BC (deprecated Twig global nowo_performance_layout_template): the resolved layout of the pages
+        // BC (Twig global nowo_performance_layout_template): the resolved layout of the pages
         $container->setParameter($dashboardPath . '.layout_template', is_string($layout) && $layout !== '' ? $layout : PerformancePages::UI_KIT_ADMIN_LAYOUT);
 
         $dateFormatsConfig = $dashboardConfig['date_formats'] ?? [];
@@ -239,7 +231,7 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         }
 
         if (($security['access_roles'] ?? ['ROLE_ADMIN']) === [] && $dashboardEnabled) {
-            throw new LogicException('NowoPerformanceBundle: security.access_roles (or the deprecated dashboard.roles) is empty, so nobody could use the dashboard (an empty list denies). Configure at least one role, set security.access_checker, set web_ui.enabled: false, or set security.allow_unauthenticated: true (demo/dev only).');
+            throw new LogicException('NowoPerformanceBundle: security.access_roles is empty, so nobody could use the dashboard (an empty list denies). Configure at least one role, set security.access_checker, set web_ui.enabled: false, or set security.allow_unauthenticated: true (demo/dev only).');
         }
 
         $hasAuthorizationChecker = $container->hasDefinition('security.authorization_checker')
@@ -307,8 +299,6 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         // This approach works across all DoctrineBundle versions (2.x and 3.x)
         // and avoids configuration issues with YAML middleware options that may
         // not be available in all versions.
-
-        $this->prependUiKitDefaults($container);
     }
 
     /**
@@ -358,54 +348,6 @@ final class PerformanceExtension extends Extension implements PrependExtensionIn
         if ($seed !== []) {
             $container->prependExtensionConfig('nowo_form_kit', $seed);
         }
-    }
-
-    /**
-     * REQ-UI-003: the dashboard inherits the CSS stack and icon set from nowo_ui_kit. Only when the host still sets the
-     * deprecated dashboard.css_framework (or dashboard.template) and nowo_ui_kit has no css_framework of its own, that
-     * value is copied to nowo_ui_kit.css_framework (and the matching icon set when nowo_ui_kit has none).
-     */
-    private function prependUiKitDefaults(ContainerBuilder $container): void
-    {
-        if (!$container->hasExtension('nowo_ui_kit')) {
-            return;
-        }
-
-        $hostSetsFramework = false;
-        foreach ($container->getExtensionConfig(Configuration::ALIAS) as $cfg) {
-            $dashboard = is_array($cfg) && is_array($cfg['dashboard'] ?? null) ? $cfg['dashboard'] : [];
-            if (array_key_exists('css_framework', $dashboard) || array_key_exists('template', $dashboard)) {
-                $hostSetsFramework = true;
-            }
-        }
-        if (!$hostSetsFramework) {
-            return;
-        }
-
-        $hostHasCssFramework = false;
-        $hostHasIconSet      = false;
-        foreach ($container->getExtensionConfig('nowo_ui_kit') as $cfg) {
-            if (array_key_exists('css_framework', $cfg)) {
-                $hostHasCssFramework = true;
-            }
-            if (array_key_exists('icon_set', $cfg)) {
-                $hostHasIconSet = true;
-            }
-        }
-
-        if ($hostHasCssFramework) {
-            return;
-        }
-
-        $config   = $this->processConfiguration(new Configuration(), $container->getExtensionConfig(Configuration::ALIAS));
-        $fw       = (string) ($config['dashboard']['css_framework'] ?? 'bootstrap5');
-        $fw       = $fw === 'bootstrap' ? 'bootstrap5' : $fw;
-        $defaults = ['css_framework' => $fw];
-        if (!$hostHasIconSet) {
-            $defaults['icon_set'] = $fw === 'tabler' ? 'tabler-icons' : 'bootstrap-icons';
-        }
-
-        $container->prependExtensionConfig('nowo_ui_kit', $defaults);
     }
 
     /**

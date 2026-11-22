@@ -7,7 +7,6 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Service;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Nowo\PerformanceBundle\Service\NotificationService;
@@ -35,15 +34,15 @@ final class NotificationServiceTest extends TestCase
 
     public function testSendAlertWithEnabledChannels(): void
     {
-        $channel1 = $this->createMock(NotificationChannelInterface::class);
+        $channel1 = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel1->method('isEnabled')->willReturn(true);
         $channel1->method('getName')->willReturn('channel1');
-        $channel1->method('send')->willReturn(true);
+        $channel1->method('sendRouteMetrics')->willReturn(true);
 
-        $channel2 = $this->createMock(NotificationChannelInterface::class);
+        $channel2 = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel2->method('isEnabled')->willReturn(true);
         $channel2->method('getName')->willReturn('channel2');
-        $channel2->method('send')->willReturn(false);
+        $channel2->method('sendRouteMetrics')->willReturn(false);
 
         $service = new NotificationService([$channel1, $channel2], true);
 
@@ -65,12 +64,12 @@ final class NotificationServiceTest extends TestCase
 
     public function testSendAlertSkipsDisabledChannels(): void
     {
-        $enabledChannel = $this->createMock(NotificationChannelInterface::class);
+        $enabledChannel = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $enabledChannel->method('isEnabled')->willReturn(true);
         $enabledChannel->method('getName')->willReturn('enabled');
-        $enabledChannel->method('send')->willReturn(true);
+        $enabledChannel->method('sendRouteMetrics')->willReturn(true);
 
-        $disabledChannel = $this->createMock(NotificationChannelInterface::class);
+        $disabledChannel = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $disabledChannel->method('isEnabled')->willReturn(false);
         $disabledChannel->method('getName')->willReturn('disabled');
 
@@ -92,10 +91,10 @@ final class NotificationServiceTest extends TestCase
 
     public function testSendAlertHandlesExceptions(): void
     {
-        $channel = $this->createMock(NotificationChannelInterface::class);
+        $channel = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel->method('isEnabled')->willReturn(true);
         $channel->method('getName')->willReturn('channel');
-        $channel->method('send')->willThrowException(new RuntimeException('Channel error'));
+        $channel->method('sendRouteMetrics')->willThrowException(new RuntimeException('Channel error'));
 
         $service = new NotificationService([$channel], true);
 
@@ -124,15 +123,15 @@ final class NotificationServiceTest extends TestCase
 
     public function testGetEnabledChannels(): void
     {
-        $channel1 = $this->createMock(NotificationChannelInterface::class);
+        $channel1 = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel1->method('isEnabled')->willReturn(true);
         $channel1->method('getName')->willReturn('channel1');
 
-        $channel2 = $this->createMock(NotificationChannelInterface::class);
+        $channel2 = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel2->method('isEnabled')->willReturn(false);
         $channel2->method('getName')->willReturn('channel2');
 
-        $channel3 = $this->createMock(NotificationChannelInterface::class);
+        $channel3 = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel3->method('isEnabled')->willReturn(true);
         $channel3->method('getName')->willReturn('channel3');
 
@@ -155,7 +154,7 @@ final class NotificationServiceTest extends TestCase
 
     public function testGetEnabledChannelsWithSingleChannel(): void
     {
-        $channel = $this->createMock(NotificationChannelInterface::class);
+        $channel = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel->method('isEnabled')->willReturn(true);
         $channel->method('getName')->willReturn('email');
 
@@ -166,14 +165,14 @@ final class NotificationServiceTest extends TestCase
 
     public function testSendAlertWithAfterMetricsRecordedEventContext(): void
     {
-        $channel = $this->createMock(NotificationChannelInterface::class);
+        $channel = $this->createMock(RouteMetricsNotificationChannelInterface::class);
         $channel->method('isEnabled')->willReturn(true);
         $channel->method('getName')->willReturn('webhook');
         $channel->expects($this->once())
-            ->method('send')
+            ->method('sendRouteMetrics')
             ->with(
                 $this->isInstanceOf(PerformanceAlert::class),
-                $this->isInstanceOf(AfterMetricsRecordedEvent::class),
+                $this->callback(static fn (RouteMetricsSnapshot $route): bool => $route->routeName === 'api_slow' && $route->requestTime === 0.5 && $route->totalQueries === 50 && $route->isNew === true),
             )
             ->willReturn(true);
 
@@ -193,31 +192,25 @@ final class NotificationServiceTest extends TestCase
         $this->assertTrue($results['webhook']);
     }
 
-    public function testSnapshotChannelGetsSnapshotAndLegacyChannelGetsTheSameContextAsBefore(): void
+    public function testEveryChannelGetsTheSameSnapshotAndNeverTheEntity(): void
     {
         $route = (new RouteData())->setName('app_home')->setEnv('prod');
         $event = new AfterMetricsRecordedEvent($route, false, 1.5, 40, 1024);
         $alert = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_CRITICAL, 'Slow');
 
-        $legacy = $this->createMock(NotificationChannelInterface::class);
-        $legacy->method('isEnabled')->willReturn(true);
-        $legacy->method('getName')->willReturn('legacy');
-        $legacy->expects(self::once())->method('send')->with($alert, self::identicalTo($event))->willReturn(true);
-
-        $modern = new class implements RouteMetricsNotificationChannelInterface {
+        $channel = static fn (string $name): RouteMetricsNotificationChannelInterface => new class($name) implements RouteMetricsNotificationChannelInterface {
             /** @var list<RouteMetricsSnapshot> */
             public array $received = [];
+
+            public function __construct(private readonly string $name)
+            {
+            }
 
             public function sendRouteMetrics(PerformanceAlert $alert, RouteMetricsSnapshot $route): bool
             {
                 $this->received[] = $route;
 
                 return true;
-            }
-
-            public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
-            {
-                throw new RuntimeException('send() must not be called for a snapshot channel');
             }
 
             public function isEnabled(): bool
@@ -227,17 +220,19 @@ final class NotificationServiceTest extends TestCase
 
             public function getName(): string
             {
-                return 'modern';
+                return $this->name;
             }
         };
+        $first  = $channel('first');
+        $second = $channel('second');
 
-        $results = (new NotificationService([$legacy, $modern], true))->sendAlert($alert, $event);
+        $results = (new NotificationService([$first, $second], true))->sendAlert($alert, $event);
 
-        self::assertSame(['legacy' => true, 'modern' => true], $results);
-        $received = $modern->received;
-        self::assertCount(1, $received);
-        self::assertEquals(RouteMetricsSnapshot::fromRecordedEvent($event), $received[0]);
-        self::assertSame('app_home', $received[0]->routeName);
-        self::assertSame(1.5, $received[0]->requestTime);
+        self::assertSame(['first' => true, 'second' => true], $results);
+        self::assertCount(1, $first->received);
+        self::assertSame($first->received[0], $second->received[0], 'one snapshot per alert, shared by the channels');
+        self::assertEquals(RouteMetricsSnapshot::fromRecordedEvent($event), $first->received[0]);
+        self::assertSame('app_home', $first->received[0]->routeName);
+        self::assertSame(1.5, $first->received[0]->requestTime);
     }
 }

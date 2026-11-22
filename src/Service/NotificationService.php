@@ -8,7 +8,6 @@ use Exception;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Psr\Log\LoggerInterface;
@@ -29,7 +28,7 @@ class NotificationService
     /**
      * Creates a new instance.
      *
-     * @param iterable<NotificationChannelInterface> $channels Notification channels
+     * @param iterable<RouteMetricsNotificationChannelInterface> $channels Notification channels (services tagged nowo_performance.notification_channel)
      * @param bool $enabled Whether notifications are enabled
      */
     public function __construct(
@@ -43,8 +42,9 @@ class NotificationService
     /**
      * Send a performance alert to all enabled channels.
      *
-     * Channels implementing {@see RouteMetricsNotificationChannelInterface} (3.17.0) receive a {@see RouteMetricsSnapshot}
-     * of the context through sendRouteMetrics(); the others receive the context itself through send(), as before.
+     * Every enabled channel receives one {@see RouteMetricsSnapshot} of the context through
+     * {@see RouteMetricsNotificationChannelInterface::sendRouteMetrics()} (the only channel port since 4.0); the entity
+     * never reaches a channel.
      *
      * @param PerformanceAlert $alert The alert to send
      * @param AfterMetricsRecordedEvent|RouteData $context The route data or event (event carries just-recorded metrics)
@@ -63,14 +63,8 @@ class NotificationService
         foreach ($this->channels as $channel) {
             if ($channel->isEnabled()) {
                 try {
-                    if ($channel instanceof RouteMetricsNotificationChannelInterface) {
-                        $snapshot ??= RouteMetricsSnapshot::fromContext($context);
-                        $results[$channel->getName()] = $channel->sendRouteMetrics($alert, $snapshot);
-
-                        continue;
-                    }
-
-                    $results[$channel->getName()] = $channel->send($alert, $context);
+                    $snapshot ??= RouteMetricsSnapshot::fromContext($context);
+                    $results[$channel->getName()] = $channel->sendRouteMetrics($alert, $snapshot);
                 } catch (Exception $e) {
                     // Log error but don't throw (logging enabled by default for backward compatibility)
                     $this->bundleLog(

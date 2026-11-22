@@ -8,7 +8,6 @@ use LogicException;
 use Nowo\PerformanceBundle\DependencyInjection\Configuration;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Nowo\PerformanceBundle\Ui\PerformancePages;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -18,7 +17,7 @@ use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * REQ-UI-003 canonical web_ui keys, the deprecated dashboard.* bridges and the UiKit css_framework seed.
+ * REQ-UI-003 canonical web_ui keys; the dashboard.* UI keys and the UiKit css_framework seed were removed in 4.0.
  */
 final class WebUiConfigurationTest extends TestCase
 {
@@ -27,7 +26,7 @@ final class WebUiConfigurationTest extends TestCase
         $config = $this->process([]);
 
         self::assertSame(['enabled' => true, 'path_prefix' => '/performance', 'layout_template' => null, 'templates' => []], $config['web_ui']);
-        self::assertNull($config['dashboard']['layout_template']);
+        self::assertArrayNotHasKey('layout_template', $config['dashboard']);
     }
 
     public function testCanonicalKeys(): void
@@ -56,30 +55,12 @@ final class WebUiConfigurationTest extends TestCase
         $this->process(['web_ui' => ['templates' => ['board' => 'x.html.twig']]]);
     }
 
-    #[IgnoreDeprecations]
-    public function testDeprecatedDashboardKeysAreMapped(): void
+    public function testRemovedDashboardKeysAreNotMappedAnyMore(): void
     {
-        $config = $this->process(['dashboard' => ['enabled' => false, 'prefix' => '/admin', 'path' => '/metrics', 'layout_template' => 'base.html.twig']]);
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('The option "nowo_performance.dashboard.enabled" was removed in 4.0. Use nowo_performance.web_ui.enabled');
 
-        self::assertFalse($config['web_ui']['enabled']);
-        self::assertSame('/admin/metrics', $config['web_ui']['path_prefix']);
-        self::assertSame('base.html.twig', $config['web_ui']['layout_template']);
-
-        self::assertSame('/x/performance', $this->process(['dashboard' => ['prefix' => '/x']])['web_ui']['path_prefix']);
-        self::assertSame('/only', $this->process(['dashboard' => ['path' => '/only']])['web_ui']['path_prefix']);
-    }
-
-    #[IgnoreDeprecations]
-    public function testCanonicalKeysWinOverDeprecatedOnes(): void
-    {
-        $config = $this->process([
-            'dashboard' => ['enabled' => false, 'path' => '/old', 'layout_template' => 'old.html.twig'],
-            'web_ui'    => ['enabled' => true, 'path_prefix' => '/new', 'layout_template' => 'new.html.twig'],
-        ]);
-
-        self::assertTrue($config['web_ui']['enabled']);
-        self::assertSame('/new', $config['web_ui']['path_prefix']);
-        self::assertSame('new.html.twig', $config['web_ui']['layout_template']);
+        $this->process(['dashboard' => ['enabled' => false, 'prefix' => '/admin', 'path' => '/metrics', 'layout_template' => 'base.html.twig']]);
     }
 
     public function testNullRootConfiguration(): void
@@ -91,16 +72,6 @@ final class WebUiConfigurationTest extends TestCase
     {
         self::assertSame('/performance', $this->process(['dashboard' => ['enable_record_management' => true]])['web_ui']['path_prefix']);
         self::assertTrue($this->process(['dashboard' => null])['web_ui']['enabled']);
-    }
-
-    #[IgnoreDeprecations]
-    public function testDeprecatedTemplateAliases(): void
-    {
-        self::assertSame('tailwind', $this->process(['dashboard' => ['template' => 'tailwind']])['dashboard']['css_framework']);
-        self::assertSame('bootstrap5', $this->process(['dashboard' => ['css_framework' => 'bootstrap']])['dashboard']['css_framework']);
-
-        $this->expectException(InvalidConfigurationException::class);
-        $this->process(['dashboard' => ['template' => 'foundation6']]);
     }
 
     public function testExtensionSetsWebUiParametersAndRoutePrefix(): void
@@ -141,7 +112,7 @@ final class WebUiConfigurationTest extends TestCase
         (new PerformanceExtension())->load([[]], $bare);
     }
 
-    public function testPrependDoesNotSeedUiKitWithoutDeprecatedFramework(): void
+    public function testPrependDoesNotSeedUiKit(): void
     {
         $container = $this->container(true);
         $container->prependExtensionConfig('nowo_performance', ['web_ui' => ['path_prefix' => '/p']]);
@@ -151,39 +122,15 @@ final class WebUiConfigurationTest extends TestCase
         self::assertSame([], $container->getExtensionConfig('nowo_ui_kit'));
     }
 
-    #[IgnoreDeprecations]
-    public function testPrependSeedsUiKitFromTheDeprecatedTemplateKey(): void
+    public function testPrependNeverSeedsUiKitAnyMore(): void
     {
         $container = $this->container(true);
         $container->prependExtensionConfig('nowo_ui_kit', ['icon_set' => 'none']);
-        $container->prependExtensionConfig('nowo_performance', ['dashboard' => ['template' => 'tailwind']]);
+        $container->prependExtensionConfig('nowo_performance', ['dashboard' => ['enable_record_management' => true]]);
 
         (new PerformanceExtension())->prepend($container);
 
-        self::assertSame([['css_framework' => 'tailwind'], ['icon_set' => 'none']], $container->getExtensionConfig('nowo_ui_kit'));
-    }
-
-    #[IgnoreDeprecations]
-    public function testPrependKeepsTheHostUiKitFramework(): void
-    {
-        $container = $this->container(true);
-        $container->prependExtensionConfig('nowo_ui_kit', ['css_framework' => 'none']);
-        $container->prependExtensionConfig('nowo_performance', ['dashboard' => ['css_framework' => 'tabler']]);
-
-        (new PerformanceExtension())->prepend($container);
-
-        self::assertSame([['css_framework' => 'none']], $container->getExtensionConfig('nowo_ui_kit'));
-    }
-
-    #[IgnoreDeprecations]
-    public function testPrependSeedsTablerIcons(): void
-    {
-        $container = $this->container(true);
-        $container->prependExtensionConfig('nowo_performance', ['dashboard' => ['css_framework' => 'tabler']]);
-
-        (new PerformanceExtension())->prepend($container);
-
-        self::assertSame([['css_framework' => 'tabler', 'icon_set' => 'tabler-icons']], $container->getExtensionConfig('nowo_ui_kit'));
+        self::assertSame([['icon_set' => 'none']], $container->getExtensionConfig('nowo_ui_kit'));
     }
 
     /**

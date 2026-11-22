@@ -2,7 +2,6 @@
 
 The bundle includes a full notification system for performance alerts, supporting multiple channels.
 
-
 ## Table of contents
 
 - [Available Channels](#available-channels)
@@ -186,15 +185,14 @@ nowo_performance:
 
 ## Creating Custom Channels
 
-Since 3.17.0, implement `RouteMetricsNotificationChannelInterface`: the bundle then calls `sendRouteMetrics()` with a
-framework-free `RouteMetricsSnapshot` (route id, name, env, review state and the metrics just recorded) and never
-`send()`. Delegate the inherited `send()` to it until 4.0, where it replaces the entity form:
+Implement `RouteMetricsNotificationChannelInterface` (the only channel port since 4.0): the bundle calls
+`isEnabled()` and then `sendRouteMetrics()` with a framework-free `RouteMetricsSnapshot` (route id, name, env, review
+state and, for an alert raised while recording, the metrics just recorded). A channel never receives the `RouteData`
+entity or the event:
 
 ```php
 <?php
 
-use Nowo\PerformanceBundle\Entity\RouteData;
-use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
 use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
@@ -205,11 +203,6 @@ final class BusNotificationChannel implements RouteMetricsNotificationChannelInt
     {
         // e.g. publish ($alert->getType(), $route->routeDataId, $route->routeName, $route->requestTime) on your bus
         return true;
-    }
-
-    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
-    {
-        return $this->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext($context));
     }
 
     public function isEnabled(): bool
@@ -224,43 +217,17 @@ final class BusNotificationChannel implements RouteMetricsNotificationChannelInt
 }
 ```
 
-The entity form (`NotificationChannelInterface` alone) still works:
-
-```php
-<?php
-
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
-use Nowo\PerformanceBundle\Notification\PerformanceAlert;
-use Nowo\PerformanceBundle\Entity\RouteData;
-use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-
-class CustomNotificationChannel implements NotificationChannelInterface
-{
-    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
-    {
-        // Your sending logic here
-        return true;
-    }
-
-    public function isEnabled(): bool
-    {
-        return true;
-    }
-
-    public function getName(): string
-    {
-        return 'custom';
-    }
-}
-```
+The 3.x `NotificationChannelInterface` (`send(PerformanceAlert, RouteData|AfterMetricsRecordedEvent)`) was removed in
+4.0: a tagged service, or an autodiscovered class, that still implements it fails the container build. Migration:
+[UPGRADING "To 4.0.0"](UPGRADING.md#notification-channels-implementors).
 
 Register your channel in `services.yaml`:
 
 ```yaml
 services:
-    App\Notification\CustomNotificationChannel:
+    App\Notification\BusNotificationChannel:
         tags:
-            - { name: 'nowo_performance.notification_channel', alias: 'custom' }
+            - { name: 'nowo_performance.notification_channel', alias: 'bus' }
 ```
 
 ## Email Template Customization

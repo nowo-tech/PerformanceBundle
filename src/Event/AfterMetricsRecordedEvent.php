@@ -14,8 +14,10 @@ use Symfony\Contracts\EventDispatcher\Event;
  * Carries the route and the metrics that were just recorded (for alerts).
  * RouteData no longer stores metrics; they are in RouteDataRecord.
  *
- * Dispatched after the bundle's private write entity manager was flushed. Prefer getRouteDataId(), getRouteName() and
- * getEnv() over the entity: getRouteData() is read-only (see its description).
+ * Dispatched after the bundle's private write entity manager was flushed. Read getRouteDataId(), getRouteName(),
+ * getEnv() or getRouteMetrics(); the entity accessor getRouteData() was removed in 4.0 (deprecated since 3.17.0). To
+ * change bundle data from a listener, run a DQL / DBAL UPDATE by getRouteDataId() or dispatch a message carrying the
+ * id; never flush your application's entity manager here (in sync mode this event runs at kernel.terminate).
  *
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
@@ -36,23 +38,6 @@ final class AfterMetricsRecordedEvent extends Event
         private readonly ?int $totalQueries = null,
         private readonly ?int $memoryUsage = null,
     ) {
-    }
-
-    /**
-     * Returns the route entity just written.
-     *
-     * Since 3.16.0 it belongs to the bundle's private write entity manager, which is cleared right after this event:
-     * treat it as read-only. Do not persist() / flush() it through your entity manager (persist() would insert a
-     * second routes_data row) and do not expect changes to it to be saved. To change bundle data, run a DQL / DBAL
-     * UPDATE by getRouteDataId(), or dispatch a message carrying the id. Never flush your application's entity manager
-     * from a listener of this event: in sync mode it runs at kernel.terminate and would commit the changes the request
-     * left pending.
-     *
-     * @deprecated since 3.17.0, removed in 4.0: use getRouteDataId(), getRouteName(), getEnv() or getRouteMetrics()
-     */
-    public function getRouteData(): RouteData
-    {
-        return $this->routeData;
     }
 
     /**
@@ -107,6 +92,23 @@ final class AfterMetricsRecordedEvent extends Event
      */
     public function getRouteMetrics(): RouteMetricsSnapshot
     {
-        return RouteMetricsSnapshot::fromRecordedEvent($this);
+        $route = RouteMetricsSnapshot::fromRouteData($this->routeData);
+
+        return new RouteMetricsSnapshot(
+            routeDataId: $route->routeDataId,
+            routeName: $route->routeName,
+            env: $route->env,
+            httpMethod: $route->httpMethod,
+            reviewed: $route->reviewed,
+            reviewedAt: $route->reviewedAt,
+            reviewedBy: $route->reviewedBy,
+            queriesImproved: $route->queriesImproved,
+            timeImproved: $route->timeImproved,
+            lastAccessedAt: $route->lastAccessedAt,
+            isNew: $this->isNew,
+            requestTime: $this->requestTime,
+            totalQueries: $this->totalQueries,
+            memoryUsage: $this->memoryUsage,
+        );
     }
 }

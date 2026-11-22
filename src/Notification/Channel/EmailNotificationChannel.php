@@ -6,10 +6,9 @@ namespace Nowo\PerformanceBundle\Notification\Channel;
 
 use DateTimeImmutable;
 use Exception;
-use Nowo\PerformanceBundle\Entity\RouteData;
-use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
@@ -24,7 +23,7 @@ use function sprintf;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-final readonly class EmailNotificationChannel implements NotificationChannelInterface
+final readonly class EmailNotificationChannel implements RouteMetricsNotificationChannelInterface
 {
     /**
      * Creates a new instance.
@@ -43,23 +42,21 @@ final readonly class EmailNotificationChannel implements NotificationChannelInte
     ) {
     }
 
-    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
+    public function sendRouteMetrics(PerformanceAlert $alert, RouteMetricsSnapshot $route): bool
     {
         if (!$this->isEnabled() || !$this->mailer instanceof MailerInterface || $this->toEmails === []) {
             return false;
         }
 
-        $routeData = $context instanceof AfterMetricsRecordedEvent ? $context->getRouteData() : $context;
-
         try {
             $subject = sprintf(
                 '[Performance Alert] %s: %s - %s',
                 strtoupper($alert->getSeverity()),
-                $routeData->getName() ?? 'Unknown Route',
+                $route->routeName ?? 'Unknown Route',
                 $alert->getType(),
             );
 
-            $body = $this->buildEmailBody($alert, $context);
+            $body = $this->buildEmailBody($alert, $route);
 
             $email = (new Email())
                 ->from($this->fromEmail)
@@ -93,27 +90,26 @@ final readonly class EmailNotificationChannel implements NotificationChannelInte
      * Build the email body HTML.
      *
      * @param PerformanceAlert $alert The alert
-     * @param AfterMetricsRecordedEvent|RouteData $context Route or event (event has just-recorded metrics)
+     * @param RouteMetricsSnapshot $route Route (with the metrics just recorded, when known)
      *
      * @return string HTML email body
      */
-    private function buildEmailBody(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): string
+    private function buildEmailBody(PerformanceAlert $alert, RouteMetricsSnapshot $route): string
     {
-        $routeData    = $context instanceof AfterMetricsRecordedEvent ? $context->getRouteData() : $context;
-        $requestTime  = $context instanceof AfterMetricsRecordedEvent ? $context->getRequestTime() : null;
-        $totalQueries = $context instanceof AfterMetricsRecordedEvent ? $context->getTotalQueries() : null;
-        $memoryUsage  = $context instanceof AfterMetricsRecordedEvent ? $context->getMemoryUsage() : null;
+        $requestTime  = $route->requestTime;
+        $totalQueries = $route->totalQueries;
+        $memoryUsage  = $route->memoryUsage;
 
         $severityColor = $alert->isCritical() ? '#dc3545' : '#ffc107';
         $severityLabel = ucfirst($alert->getSeverity());
 
-        $httpMethod     = $routeData->getHttpMethod() ?? 'N/A';
+        $httpMethod     = $route->httpMethod ?? 'N/A';
         $requestTimeStr = $requestTime !== null ? number_format($requestTime, 4) . 's' : 'N/A';
         $queryCountStr  = $totalQueries !== null ? (string) $totalQueries : 'N/A';
         $queryTimeStr   = 'N/A';
         $memoryUsageStr = $memoryUsage !== null ? number_format($memoryUsage / 1024 / 1024, 2) . ' MB' : 'N/A';
-        $lastAccessed   = $routeData->getLastAccessedAt() instanceof DateTimeImmutable ? $routeData->getLastAccessedAt()->format('Y-m-d H:i:s') : 'N/A';
-        $accessCountStr = $context instanceof AfterMetricsRecordedEvent ? '1' : 'N/A';
+        $lastAccessed   = $route->lastAccessedAt instanceof DateTimeImmutable ? $route->lastAccessedAt->format('Y-m-d H:i:s') : 'N/A';
+        $accessCountStr = $route->isNew !== null ? '1' : 'N/A'; // set only for a just-recorded access
 
         return <<<HTML
 <!DOCTYPE html>
@@ -139,8 +135,8 @@ final readonly class EmailNotificationChannel implements NotificationChannelInte
     <h3>Route Information</h3>
     <table>
         <tr><th>Property</th><th>Value</th></tr>
-        <tr><td>Route Name</td><td><code>{$routeData->getName()}</code></td></tr>
-        <tr><td>Environment</td><td>{$routeData->getEnv()}</td></tr>
+        <tr><td>Route Name</td><td><code>{$route->routeName}</code></td></tr>
+        <tr><td>Environment</td><td>{$route->env}</td></tr>
         <tr><td>HTTP Method</td><td>{$httpMethod}</td></tr>
         <tr><td>Request Time</td><td>{$requestTimeStr}</td></tr>
         <tr><td>Query Count</td><td>{$queryCountStr}</td></tr>

@@ -20,7 +20,7 @@ final class AfterMetricsRecordedEventTest extends TestCase
 
         $event = new AfterMetricsRecordedEvent($routeData, true);
 
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
         $this->assertTrue($event->isNew());
     }
 
@@ -77,14 +77,14 @@ final class AfterMetricsRecordedEventTest extends TestCase
         $this->assertNull($event->getMemoryUsage());
     }
 
-    public function testGetRouteDataReturnsSameInstanceOnMultipleCalls(): void
+    public function testRouteMetricsAreEqualOnMultipleCalls(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_foo')->setEnv('prod');
         $event = new AfterMetricsRecordedEvent($routeData, true);
 
-        $this->assertSame($event->getRouteData(), $event->getRouteData());
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertEquals($event->getRouteMetrics(), $event->getRouteMetrics());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
     }
 
     public function testGetMemoryUsageWithZero(): void
@@ -136,24 +136,24 @@ final class AfterMetricsRecordedEventTest extends TestCase
         $this->assertSame(0, $event->getTotalQueries());
     }
 
-    public function testGetRouteDataWithStageEnv(): void
+    public function testRouteAccessorsWithStageEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_dashboard')->setEnv('stage');
         $event = new AfterMetricsRecordedEvent($routeData, true);
 
-        $this->assertSame('api_dashboard', $event->getRouteData()->getName());
-        $this->assertSame('stage', $event->getRouteData()->getEnv());
+        $this->assertSame('api_dashboard', $event->getRouteName());
+        $this->assertSame('stage', $event->getEnv());
     }
 
-    public function testGetRouteDataWithTestEnv(): void
+    public function testRouteAccessorsWithTestEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_health')->setEnv('test');
         $event = new AfterMetricsRecordedEvent($routeData, false);
 
-        $this->assertSame('api_health', $event->getRouteData()->getName());
-        $this->assertSame('test', $event->getRouteData()->getEnv());
+        $this->assertSame('api_health', $event->getRouteName());
+        $this->assertSame('test', $event->getEnv());
         $this->assertFalse($event->isNew());
     }
 }

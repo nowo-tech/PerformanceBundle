@@ -2,7 +2,6 @@
 
 The Performance Bundle dispatches custom events that allow you to extend its functionality by listening to these events in your application.
 
-
 ## Table of contents
 
 - [Internal event flow and priorities](#internal-event-flow-and-priorities)
@@ -112,17 +111,11 @@ Dispatched after performance metrics are recorded to the database (after the bun
 - `getRouteName(): ?string` / `getEnv(): ?string` - Route name and environment just recorded (since 3.16.0)
 - `isNew(): bool` - Whether this was a new record (true) or an update (false)
 - `getRequestTime(): ?float`, `getTotalQueries(): ?int`, `getMemoryUsage(): ?int` - The metrics just recorded
-- `getRouteData(): RouteData` - The saved route data entity, **read-only** (see below). Deprecated since 3.17.0, removed in 4.0
 - `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: the route row plus the metrics just recorded, framework free
 
-**`getRouteData()` belongs to the bundle's private entity manager.** Since 3.16.0 metrics are written through a
-private entity manager (see [CONFIGURATION: `connection`](CONFIGURATION.md)), which is cleared right after this
-event. The entity is not managed by your entity manager:
-
-- do **not** `persist()` it into your entity manager: Doctrine sees a new object and inserts a **second
-  `routes_data` row** for the same route;
-- changes you make to it are **not saved** (neither by the bundle nor by your `flush()`);
-- read its scalar getters, or better the scalar accessors above.
+**The event carries ids and values, not the entity.** `getRouteData()` (deprecated since 3.17.0) was removed in 4.0.
+Since 3.16.0 metrics are written through a private entity manager (see [CONFIGURATION: `connection`](CONFIGURATION.md)),
+which is cleared right after this event; read the accessors above.
 
 **Never call `flush()` on your application's entity manager from this listener.** In sync mode (the default) it
 runs at `kernel.terminate`, so that flush would commit every change the request left pending (for example the values
@@ -176,9 +169,8 @@ class MetricsNotificationListener
 Dispatched before a performance record is deleted.
 
 **Properties:**
-- `getRouteData(): RouteData` - The route data entity to be deleted. Deprecated since 3.17.0, removed in 4.0
 - `getRouteDataId(): ?int`, `getRouteName(): ?string`, `getEnv(): ?string` - Since 3.17.0: ids and scalars of the route
-- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row (prefer it over the entity)
+- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row 
 - `preventDeletion(): void` - Prevent the deletion from happening
 - `isDeletionPrevented(): bool` - Check if deletion was prevented
 
@@ -198,15 +190,13 @@ class DeletionProtectionListener
 {
     public function onBeforeRecordDeleted(BeforeRecordDeletedEvent $event): void
     {
-        $routeData = $event->getRouteData();
-        
         // Prevent deletion of production routes
-        if ($routeData->getEnv() === 'prod') {
+        if ($event->getEnv() === 'prod') {
             $event->preventDeletion();
         }
 
         // Log deletion attempt
-        // logger->info('Deletion attempted', ['route' => $routeData->getName()]);
+        // logger->info('Deletion attempted', ['route' => $event->getRouteName()]);
     }
 }
 ```
@@ -326,9 +316,8 @@ class ClearingNotificationListener
 Dispatched before a performance record is marked as reviewed.
 
 **Properties:**
-- `getRouteData(): RouteData` - The route data entity to be reviewed. Deprecated since 3.17.0, removed in 4.0
 - `getRouteDataId(): ?int`, `getRouteName(): ?string`, `getEnv(): ?string` - Since 3.17.0: ids and scalars of the route
-- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row (prefer it over the entity)
+- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row 
 - `getQueriesImproved(): ?bool` - Whether queries improved (modifiable)
 - `setQueriesImproved(?bool $queriesImproved): void` - Modify queries improved flag
 - `getTimeImproved(): ?bool` - Whether time improved (modifiable)
@@ -355,20 +344,15 @@ class ReviewValidationListener
 {
     public function onBeforeRecordReviewed(BeforeRecordReviewedEvent $event): void
     {
-        $routeData = $event->getRouteData();
-        
-        // Auto-detect improvements based on metrics
-        if ($routeData->getRequestTime() < 0.5) {
-            $event->setTimeImproved(true);
-        }
-        
-        if ($routeData->getTotalQueries() < 5) {
-            $event->setQueriesImproved(true);
+        $route = $event->getRouteMetrics();
+
+        // Default the reviewer when the form left it empty
+        if ($event->getReviewedBy() === null) {
+            $event->setReviewedBy('performance-bot');
         }
 
-        // Prevent review if route is too new
-        $daysSinceCreation = (time() - $routeData->getCreatedAt()->getTimestamp()) / 86400;
-        if ($daysSinceCreation < 7) {
+        // Prevent review if the route was never accessed in the last 7 days
+        if ($route->lastAccessedAt === null || $route->lastAccessedAt < new \DateTimeImmutable('-7 days')) {
             $event->preventReview();
         }
     }
@@ -380,9 +364,8 @@ class ReviewValidationListener
 Dispatched after a performance record is marked as reviewed.
 
 **Properties:**
-- `getRouteData(): RouteData` - The reviewed route data entity. Deprecated since 3.17.0, removed in 4.0
 - `getRouteDataId(): ?int`, `getRouteName(): ?string`, `getEnv(): ?string` - Since 3.17.0: ids and scalars of the route
-- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row (prefer it over the entity)
+- `getRouteMetrics(): RouteMetricsSnapshot` - Since 3.17.0: framework-free copy of the route row 
 
 **Use Cases:**
 - Send notifications
@@ -401,15 +384,15 @@ class ReviewNotificationListener
 {
     public function onAfterRecordReviewed(AfterRecordReviewedEvent $event): void
     {
-        $routeData = $event->getRouteData();
-        
+        $route = $event->getRouteMetrics();
+
         // Notify team if improvements were made
-        if ($routeData->getQueriesImproved() === true || $routeData->getTimeImproved() === true) {
+        if ($route->queriesImproved === true || $route->timeImproved === true) {
             // Send notification...
         }
 
         // Update external tracking system
-        // tracker->markReviewed($routeData->getId());
+        // tracker->markReviewed($event->getRouteDataId());
     }
 }
 ```
@@ -497,13 +480,11 @@ class PerformanceMetricsListener
     #[AsEventListener(priority: 100)]
     public function onBeforeRecordDeleted(BeforeRecordDeletedEvent $event): void
     {
-        $routeData = $event->getRouteData();
-        
         // Prevent deletion of important routes
-        if (in_array($routeData->getName(), ['app_home', 'app_api_status'])) {
+        if (in_array($event->getRouteName(), ['app_home', 'app_api_status'], true)) {
             $event->preventDeletion();
             $this->logger->warning('Deletion prevented for important route', [
-                'route' => $routeData->getName(),
+                'route' => $event->getRouteName(),
             ]);
         }
     }

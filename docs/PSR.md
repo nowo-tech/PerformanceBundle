@@ -23,7 +23,7 @@ Others are **N/A** (or already covered by Symfony) so the decision stays auditab
 
 | PSR | Decision | Notes |
 | --- | -------- | ----- |
-| PSR-3 Logger | **Adopted** | `PerformanceMetricsSubscriber`, `PerformanceMetricsService`, `NotificationService` and the email / webhook notification channels take an optional `Psr\Log\LoggerInterface` (autowired `logger`); diagnostics go to `debug` (gated by `enable_logging`), delivery failures to `warning`. The static `LogHelper` (`error_log`) is deprecated. `psr/log` in `require`. |
+| PSR-3 Logger | **Adopted** | `PerformanceMetricsSubscriber`, `PerformanceMetricsService`, `NotificationService` and the email / webhook notification channels take an optional `Psr\Log\LoggerInterface` (autowired `logger`); diagnostics go to `debug` (gated by `enable_logging`), delivery failures to `warning`. The static `LogHelper` (`error_log`) was removed in 4.0. `psr/log` in `require`. |
 | PSR-6 Caching | **Adopted** | Uses `Psr\Cache\` contracts where item metadata/tags matter. |
 | PSR-7 / PSR-17 HTTP messages | **N/A** | Symfony HttpFoundation (or no HTTP messages API) is the correct surface; a PSR-7 bridge would not help consumers. |
 | PSR-18 HTTP client | **N/A** | Outbound HTTP uses Symfony `HttpClientInterface` (or a package transport) as the supported SPI instead of PSR-18. |

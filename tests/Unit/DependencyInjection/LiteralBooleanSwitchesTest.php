@@ -6,7 +6,6 @@ namespace Nowo\PerformanceBundle\Tests\Unit\DependencyInjection;
 
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Compiler\MergeExtensionConfigurationPass;
@@ -14,7 +13,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
 /**
- * SEC-004 (Appendix BP, L1 / I1): web_ui.enabled (also through the deprecated dashboard.enabled) and
+ * SEC-004 (Appendix BP, L1 / I1): web_ui.enabled and
  * security.allow_unauthenticated decide at compile time which routes, access checker and CSRF checks exist, so an
  * %env()% placeholder is refused instead of silently meaning "true". Runs the real config merge
  * (MergeExtensionConfigurationPass), where env placeholders reach the extension.
@@ -27,7 +26,6 @@ final class LiteralBooleanSwitchesTest extends TestCase
     public static function envPlaceholders(): iterable
     {
         yield 'web_ui.enabled' => [['web_ui' => ['enabled' => '%env(bool:PERFORMANCE_UI)%']], 'web_ui.enabled'];
-        yield 'dashboard.enabled (deprecated)' => [['dashboard' => ['enabled' => '%env(bool:PERFORMANCE_UI)%']], 'web_ui.enabled'];
         yield 'security.allow_unauthenticated' => [['security' => ['allow_unauthenticated' => '%env(bool:PERFORMANCE_OPEN)%']], 'security.allow_unauthenticated'];
     }
 
@@ -35,7 +33,6 @@ final class LiteralBooleanSwitchesTest extends TestCase
      * @param array<string, mixed> $config
      */
     #[DataProvider('envPlaceholders')]
-    #[IgnoreDeprecations]
     public function testEnvPlaceholdersAreRefused(array $config, string $path): void
     {
         $this->expectException(InvalidConfigurationException::class);

@@ -57,7 +57,7 @@ final readonly class PerformanceAlertSubscriber
             return;
         }
 
-        $routeData    = $event->getRouteData();
+        $routeName    = $event->getRouteName() ?? 'Unknown';
         $requestTime  = $event->getRequestTime();
         $totalQueries = $event->getTotalQueries();
         $memoryUsage  = $event->getMemoryUsage();
@@ -70,7 +70,7 @@ final readonly class PerformanceAlertSubscriber
                     PerformanceAlert::SEVERITY_CRITICAL,
                     sprintf(
                         'Critical: Route "%s" has request time of %.4fs (threshold: %.2fs)',
-                        $routeData->getName() ?? 'Unknown',
+                        $routeName,
                         $requestTime,
                         $this->requestTimeCritical,
                     ),
@@ -86,7 +86,7 @@ final readonly class PerformanceAlertSubscriber
                     PerformanceAlert::SEVERITY_WARNING,
                     sprintf(
                         'Warning: Route "%s" has request time of %.4fs (threshold: %.2fs)',
-                        $routeData->getName() ?? 'Unknown',
+                        $routeName,
                         $requestTime,
                         $this->requestTimeWarning,
                     ),
@@ -106,7 +106,7 @@ final readonly class PerformanceAlertSubscriber
                     PerformanceAlert::SEVERITY_CRITICAL,
                     sprintf(
                         'Critical: Route "%s" has %d queries (threshold: %d)',
-                        $routeData->getName() ?? 'Unknown',
+                        $routeName,
                         $totalQueries,
                         $this->queryCountCritical,
                     ),
@@ -122,7 +122,7 @@ final readonly class PerformanceAlertSubscriber
                     PerformanceAlert::SEVERITY_WARNING,
                     sprintf(
                         'Warning: Route "%s" has %d queries (threshold: %d)',
-                        $routeData->getName() ?? 'Unknown',
+                        $routeName,
                         $totalQueries,
                         $this->queryCountWarning,
                     ),
@@ -143,7 +143,7 @@ final readonly class PerformanceAlertSubscriber
                     PerformanceAlert::SEVERITY_CRITICAL,
                     sprintf(
                         'Critical: Route "%s" uses %.2f MB of memory (threshold: %.2f MB)',
-                        $routeData->getName() ?? 'Unknown',
+                        $routeName,
                         $memoryMB,
                         $this->memoryUsageCritical,
                     ),
@@ -159,7 +159,7 @@ final readonly class PerformanceAlertSubscriber
                     PerformanceAlert::SEVERITY_WARNING,
                     sprintf(
                         'Warning: Route "%s" uses %.2f MB of memory (threshold: %.2f MB)',
-                        $routeData->getName() ?? 'Unknown',
+                        $routeName,
                         $memoryMB,
                         $this->memoryUsageWarning,
                     ),

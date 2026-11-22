@@ -249,22 +249,7 @@ final class RouteDataWithAggregatesTest extends TestCase
         $this->assertFalse($dto->getTimeImproved());
         $this->assertSame('admin@example.com', $dto->getReviewedBy());
         $this->assertSame($params, $dto->getParams());
-        $messages = [];
-        set_error_handler(static function (int $no, string $msg) use (&$messages): bool {
-            $messages[] = $msg;
-
-            return true;
-        }, E_USER_DEPRECATED);
-
-        try {
-            $records = $dto->getAccessRecords();
-        } finally {
-            restore_error_handler();
-        }
-
-        $this->assertSame($this->routeData->getAccessRecords(), $records);
-        $this->assertCount(1, $messages);
-        $this->assertMatchesRegularExpression('/getAccessRecords\(\).*getAccessRecordList\(\)/', $messages[0]);
+        $this->assertSame(array_values($this->routeData->getAccessRecords()->toArray()), $dto->getAccessRecords());
     }
 
     public function testAggregatesWithoutStatusCodesKey(): void
@@ -471,7 +456,7 @@ final class RouteDataWithAggregatesTest extends TestCase
         $this->assertSame(0.0, $dto->getStatusCodeRatio(200));
     }
 
-    public function testAccessRecordListReturnsListWithoutDeprecation(): void
+    public function testAccessRecordsAndTheirTwinReturnTheSameList(): void
     {
         $record    = $this->createMock(RouteDataRecord::class);
         $routeData = $this->createMock(RouteData::class);
@@ -479,6 +464,20 @@ final class RouteDataWithAggregatesTest extends TestCase
 
         $dto = new RouteDataWithAggregates($routeData, ['request_time' => null, 'total_queries' => null, 'query_time' => null, 'memory_usage' => null, 'access_count' => 0, 'status_codes' => []]);
 
-        $this->assertSame([$record], $dto->getAccessRecordList());
+        $messages = [];
+        set_error_handler(static function (int $no, string $msg) use (&$messages): bool {
+            $messages[] = $msg;
+
+            return true;
+        }, E_USER_DEPRECATED);
+
+        try {
+            $this->assertSame([$record], $dto->getAccessRecords());
+            $this->assertSame([$record], $dto->getAccessRecordList());
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $messages, 'getAccessRecords() no longer triggers a deprecation');
     }
 }
