@@ -225,7 +225,8 @@ jobs:
                 repo: context.repo.repo,
                 release_id: releaseId,
                 body: releaseBody,
-                prerelease: isPrerelease
+                prerelease: isPrerelease,
+                make_latest: 'false'  // 3.x maintenance line: a 3.x release is never "Latest" (4.x is)
               });
               if (hasChangelog && changelogEntry) {
                 console.log('✅ Updated release ' + tagName + ' with complete changelog');
@@ -233,10 +234,9 @@ jobs:
                 console.log('✅ Updated release ' + tagName + ' (no changelog available)');
               }
 
-              // Note: make_latest is not available in REST API for updateRelease
-              // Latest release is determined automatically by GitHub based on tag date
+              // 3.x maintenance branch: make_latest 'false' above keeps the 4.x release as "Latest"
               if (!isPrerelease) {
-                console.log('✅ Release ' + tagName + ' updated (will be marked as latest if newest)');
+                console.log('✅ Release ' + tagName + ' updated (not marked as latest: 3.x maintenance line)');
               }
             } catch (error) {
               console.error('❌ Error updating release ' + tagName + ':', error.message);
@@ -295,7 +295,8 @@ jobs:
                 body: releaseBody,
                 draft: false,
                 prerelease: isPrerelease,
-                generate_release_notes: false  // Don't generate auto notes, we have our own changelog
+                generate_release_notes: false,  // Don't generate auto notes, we have our own changelog
+                make_latest: 'false'  // 3.x maintenance line: a 3.x release is never "Latest" (4.x is)
               });
               if (hasChangelog && changelogEntry) {
                 console.log('✅ Created release ' + tagName + ' with complete changelog' + (!isPrerelease ? ' (will be marked as latest if newest)' : ''));
@@ -303,11 +304,9 @@ jobs:
                 console.log('✅ Created release ' + tagName + ' (no changelog available)' + (!isPrerelease ? ' (will be marked as latest if newest)' : ''));
               }
 
-              // Note: make_latest is not available in REST API for createRelease
-              // Latest release is determined automatically by GitHub based on tag date
-              // If this is the newest non-prerelease, it will be marked as latest automatically
+              // 3.x maintenance branch: make_latest 'false' above keeps the 4.x release as "Latest"
               if (!isPrerelease) {
-                console.log('✅ Release ' + tagName + ' created (will be marked as latest if newest)');
+                console.log('✅ Release ' + tagName + ' created (not marked as latest: 3.x maintenance line)');
               }
             } catch (error) {
               console.error('❌ Error creating release ' + tagName + ':', error.message);
