@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[4.0.0] - 2026-11-23](#400---2026-11-23)
 - [[3.19.0] - 2026-11-20](#3190---2026-11-20)
 - [[3.18.0] - 2026-11-18](#3180---2026-11-18)
 - [[3.17.0] - 2026-11-13](#3170---2026-11-13)
@@ -94,6 +95,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[0.0.1] - 2026-01-26](#001---2026-01-26)
 
 ## [Unreleased]
+
+## [4.0.0] - 2026-11-23
 
 4.0.0 removes the 3.x deprecations (REQ-ARCH-001 rules 1 and 3) and nothing else: same PHP and Symfony ranges, no new
 feature. Migration: [UPGRADING "To 4.0.0"](UPGRADING.md#to-400).
@@ -605,6 +608,7 @@ Allows nowo-tech/ui-kit-bundle 2.x (^1.4 || ^2.2) so hosts can move to UiKit 2.2
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
+[4.0.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v4.0.0
 [3.19.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.19.0
 [3.18.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.18.0
 [3.17.0]: https://github.com/nowo-tech/PerformanceBundle/releases/tag/v3.17.0
