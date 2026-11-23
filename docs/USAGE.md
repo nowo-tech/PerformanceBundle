@@ -547,13 +547,17 @@ Known limitations:
   **Accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23):** these are the bundle's own writes,
   started from its own admin screen or its own console command, never called by the host in the middle of its unit of
   work, so there are no pending host changes to commit or lose. Covered: only the writes the bundle's admin UI
-  (dashboard actions) and its console command (`nowo:performance:rebuild-aggregates`) start. Not covered: the
-  public, autowirable `Repository\RouteDataRepository::deleteById()` and `markAsReviewed()` (which the dashboard uses
-  for delete and review) call `flush()` on the manager that maps `RouteData` — your default manager with
-  `connection: default`. Called from your own code they commit every change your unit of work holds; rule 6 of
-  REQ-ARCH-001 is ⚠️ for these two methods (unchanged in 4.0, decision pending). Call them only where nothing of yours
-  is pending, or give the bundle its own manager. The other paths your code calls (events, notification channels,
-  metrics recording) never flush your manager.
+  (the dashboard actions) and its console command (`nowo:performance:rebuild-aggregates`) start. Since 4.0 the
+  dashboard delete and review go through `Service\RouteDataWriterInterface`, which writes through the bundle's private
+  entity manager.
+- `Repository\RouteDataRepository::deleteById()` and `markAsReviewed()` are **deprecated since 4.0** (removed in a
+  future major): they `flush()` the manager that maps `RouteData` — your default manager with `connection: default` —
+  so, called from your own code, they commit every change your unit of work holds. Use
+  `RouteDataWriterInterface::delete()` / `markAsReviewed()` instead (private manager; your pending changes stay
+  pending). **Accepted exception to REQ-ARCH-001 rule 6 for these two methods (owner decision, 2026-11-23):** they
+  have been host-callable since 3.x, so removing their flush silently would break hosts that rely on it; they keep
+  their behaviour, with a deprecation notice. Rule 6 stays ⚠️ for these two methods only. The other paths your code
+  calls (events, notification channels, metrics recording, the writer) never flush your manager.
 - The events carry ids and a `RouteMetricsSnapshot`, and notification channels receive only the snapshot: the entity
   accessors (`getRouteData()` on the events, the entity form of the channel `send()`) were removed in 4.0.
 - No unique index on `routes_data (env, name)`: two concurrent first hits of a route can create two rows (the writer

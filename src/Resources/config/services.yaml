@@ -24,6 +24,11 @@ services:
             - method: setMessageBus
               arguments: ['@Nowo\PerformanceBundle\MessageBus\MessengerBusAdapter']
 
+    # Dashboard writes by id through a private entity manager (4.0; replaces RouteDataRepository::deleteById() /
+    # markAsReviewed(), deprecated since 4.0)
+    Nowo\PerformanceBundle\Service\RouteDataWriter: ~
+    Nowo\PerformanceBundle\Service\RouteDataWriterInterface: '@Nowo\PerformanceBundle\Service\RouteDataWriter'
+
     # Lock-conflict answer of the dashboard writes (409 + Retry-After, CONFLICT_001 / CONFLICT_002; REQ-RUNTIME-003)
     Nowo\PerformanceBundle\Concurrency\WriteConflictMapper: ~
 

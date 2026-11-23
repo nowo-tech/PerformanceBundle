@@ -113,9 +113,17 @@ feature. Migration: [UPGRADING "To 4.0.0"](UPGRADING.md#to-400).
 - `RemovedNotificationChannelPass` also loads every autoconfigured service and every decorator of a channel: a legacy channel tagged only by `#[AutoconfigureTag]`, or an explicit override of an autodiscovered legacy class, fails the build with the upgrade hint instead of being dropped (audit, Medium).
 - `NotificationService` hands every enabled channel one `RouteMetricsSnapshot` of the alert context (`sendAlert()` keeps its signature); `PerformanceAlertSubscriber` reads the route name from the event's id accessors.
 - Docs: USAGE "Known limitations" and ARCHITECTURE no longer say that 4.0 moves the dashboard and `rebuild-aggregates` writes to the private manager: they keep flushing the `connection` manager in their own admin / CLI requests, unchanged.
-- Docs: the dashboard actions' and `rebuild-aggregates` writes (the bundle's own admin screen and console command flushing the `connection` manager) are documented as an accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23); it does not cover `RouteDataRepository::deleteById()` and `markAsReviewed()`, which are public and flush the manager mapping `RouteData` (the host default manager with `connection: default`) when called from host code: documented as rule 6 ⚠️, behaviour unchanged. No code change.
+- Docs: the dashboard actions' and `rebuild-aggregates` writes (the bundle's own admin screen and console command) are documented as an accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23).
 - CI: the `3.x` maintenance branch runs the CI workflow.
 - Demo: runs in UiKit's demo platform shell (`nowo-tech/ui-kit-bundle` ^2.60); the demo's own header is gone and the pages use the shell page headers and section cards. The product delete asks in the UiKit confirm dialog instead of a native `confirm()`. Demo only, no bundle change.
+
+### Added
+
+- `Service\RouteDataWriterInterface` / `RouteDataWriter`: delete and review a route row by id through the bundle's private entity manager (never the application's). The dashboard delete and review actions use it; the review and the per-route access-record switch are one flush of the private manager.
+
+### Deprecated
+
+- `RouteDataRepository::deleteById()` and `markAsReviewed()` (removed in a future major): they flush the manager that maps `RouteData` (the application's default manager with `connection: default`). Use `RouteDataWriterInterface::delete()` / `markAsReviewed()`. Behaviour unchanged, with a deprecation notice: accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23), because they are host-callable since 3.x and removing the flush silently would break hosts.
 
 ### Security
 

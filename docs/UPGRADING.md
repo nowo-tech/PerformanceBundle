@@ -10,6 +10,7 @@
   - [Event accessors](#event-accessors)
   - [Configuration keys](#configuration-keys)
   - [Layout](#layout)
+  - [Deprecated](#deprecated)
   - [Removed](#removed)
   - [Unchanged in 4.0](#unchanged-in-40)
   - [3.x support](#3x-support)
@@ -323,6 +324,20 @@ blocks now fails with a `LogicException` when a dashboard page renders (instead 
 canonical blocks (or extend `@NowoUiKit/layout/admin.html.twig`, or a one-file bridge as in UiKit
 `layout/_bridge.html.twig`), or set `web_ui.layout_template: null` to use `nowo_ui_kit.layouts.admin`.
 
+### Deprecated
+
+| Deprecated in 4.0 (removed in a future major) | Use instead |
+| --- | --- |
+| `Repository\RouteDataRepository::deleteById(int $id)` | `Service\RouteDataWriterInterface::delete(int $id)` |
+| `Repository\RouteDataRepository::markAsReviewed($id, $queriesImproved, $timeImproved, $reviewedBy, $reviewedAt)` | `Service\RouteDataWriterInterface::markAsReviewed($id, $queriesImproved, $timeImproved, $reviewedBy, $reviewedAt, $saveAccessRecords = null)` |
+
+Both repository methods trigger a deprecation notice and still `flush()` the manager that maps `RouteData` (your default
+manager with `connection: default`), committing every change your unit of work holds; the writer (autowire
+`RouteDataWriterInterface`) writes through the bundle's private entity manager, so your pending changes stay pending
+and your own `flush()` still writes them. If your code relied on the repository method also flushing your own changes,
+flush your manager yourself after the call. This is an accepted exception to REQ-ARCH-001 rule 6 (owner decision,
+2026-11-23): the methods have been host-callable since 3.x, so removing their flush silently would break hosts.
+
 ### Removed
 
 | Removed | Deprecated since | Replacement |
@@ -348,11 +363,10 @@ canonical blocks (or extend `@NowoUiKit/layout/admin.html.twig`, or a one-file b
   (admin / CLI) request, as in 3.x; metrics recording keeps its private manager. Give the bundle its own manager
   (`connection: performance`) to keep these writes out of your unit of work. 4.0 does not move them: they are
   an accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23), because they are the bundle's own
-  admin-screen and console-command writes, never called inside your unit of work. That exception does **not** cover
-  `RouteDataRepository::deleteById()` and `markAsReviewed()` called from your own code: both are public and
-  autowirable and `flush()` the manager that maps `RouteData` (your default manager with `connection: default`), so
-  they commit whatever your unit of work holds. Rule 6 is ⚠️ for them; their behaviour is unchanged in 4.0. Events,
-  notification channels and metrics recording never flush your manager.
+  admin-screen and console-command writes, never called inside your unit of work. Since 4.0 the dashboard delete and
+  review write through the bundle's private manager (`RouteDataWriterInterface`).
+- `RouteDataRepository::deleteById()` and `markAsReviewed()` keep their 3.x behaviour (they flush the manager that maps
+  `RouteData`) and are deprecated: see [Deprecated](#deprecated).
 - `NotificationService::sendAlert()`, `RouteMetricsSnapshot::fromRouteData()` / `fromRecordedEvent()` /
   `fromContext()`, `RouteDataWithAggregates::getRouteData()` and the event constructors keep their signatures.
 - The Twig globals `nowo_performance_layout_template` and `nowo_performance_css_framework` stay (no bundle page reads

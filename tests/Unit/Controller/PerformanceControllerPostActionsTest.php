@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
 use DateTimeImmutable;
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Nowo\PerformanceBundle\Controller\PerformanceController;
 use Nowo\PerformanceBundle\Entity\RouteData;
@@ -23,6 +24,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Service\RouteDataWriterInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Form\FormInterface;
@@ -43,6 +45,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
     private MockObject&RouteDataRecordRepository $recordRepository;
     private MockObject&EventDispatcherInterface $eventDispatcher;
     private MockObject&PerformanceCacheService $cacheService;
+    private MockObject&RouteDataWriterInterface $writer;
 
     protected function setUp(): void
     {
@@ -52,6 +55,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
         $this->metricsService->method('getRepository')->willReturn($this->repository);
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->cacheService    = $this->createMock(PerformanceCacheService::class);
+        $this->writer          = $this->createMock(RouteDataWriterInterface::class);
     }
 
     private function createController(
@@ -146,7 +150,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -218,7 +223,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -279,7 +285,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -342,7 +349,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -404,7 +412,13 @@ final class PerformanceControllerPostActionsTest extends TestCase
         $routeData->method('getEnv')->willReturn('test');
         $routeData->method('getName')->willReturn('app_home');
         $this->repository->method('find')->with(1)->willReturn($routeData);
-        $this->repository->method('deleteById')->with(1)->willReturn(true);
+        $this->writer->method('delete')->with(1)->willReturn(true);
+        // The row was deleted through the private manager: the stale copy the action loaded is detached, never flushed.
+        $hostManager = $this->createMock(EntityManagerInterface::class);
+        $hostManager->method('contains')->with($routeData)->willReturn(true);
+        $hostManager->expects(self::once())->method('detach')->with($routeData);
+        $hostManager->expects(self::never())->method('flush');
+        $this->metricsService->method('getEntityManager')->willReturn($hostManager);
         $this->eventDispatcher->expects(self::exactly(2))->method('dispatch');
         $this->cacheService->expects(self::once())->method('clearStatistics')->with('test');
         $this->cacheService->expects(self::once())->method('clearEnvironments');
@@ -450,7 +464,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -473,7 +488,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
         $routeData->method('getEnv')->willReturn('test');
         $routeData->method('getName')->willReturn('app_home');
         $this->repository->method('find')->with(1)->willReturn($routeData);
-        $this->repository->expects(self::never())->method('deleteById');
+        $this->writer->expects(self::never())->method('delete');
         $this->eventDispatcher->method('dispatch')->willReturnCallback(static function ($event) {
             if ($event instanceof BeforeRecordDeletedEvent) {
                 $event->preventDeletion();
@@ -523,7 +538,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -544,7 +560,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
         $routeData->method('getEnv')->willReturn('test');
         $routeData->method('getName')->willReturn('app_home');
         $this->repository->method('find')->with(1)->willReturn($routeData);
-        $this->repository->method('deleteById')->with(1)->willReturn(false);
+        $this->writer->method('delete')->with(1)->willReturn(false);
 
         $form = $this->createMock(FormInterface::class);
         $form->method('isSubmitted')->willReturn(true);
@@ -587,7 +603,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -605,7 +622,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
     public function testDeleteWhenRecordNotFoundAddsFlashAndRedirects(): void
     {
         $this->repository->method('find')->with(999)->willReturn(null);
-        $this->repository->expects(self::never())->method('deleteById');
+        $this->writer->expects(self::never())->method('delete');
 
         $form = $this->createMock(FormInterface::class);
         $form->method('isSubmitted')->willReturn(true);
@@ -648,7 +665,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -669,7 +687,7 @@ final class PerformanceControllerPostActionsTest extends TestCase
         $routeData->method('getEnv')->willReturn('test');
         $routeData->method('getName')->willReturn('app_home');
         $this->repository->method('find')->with(1)->willReturn($routeData);
-        $this->repository->expects(self::once())->method('markAsReviewed')->with(
+        $this->writer->expects(self::once())->method('markAsReviewed')->with(
             1,
             true,
             true,
@@ -724,7 +742,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getUser', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -790,7 +809,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -859,7 +879,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -920,7 +941,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -981,7 +1003,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -1058,7 +1081,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute'])
             ->getMock();
@@ -1206,7 +1230,8 @@ final class PerformanceControllerPostActionsTest extends TestCase
                 true,
                 true,
                 null,
-                'accessChecker' => new AllowAllPerformanceAccessChecker(),
+                'accessChecker'   => new AllowAllPerformanceAccessChecker(),
+                'routeDataWriter' => $this->writer,
             ])
             ->onlyMethods(['getParameter'])
             ->getMock();

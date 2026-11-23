@@ -9,11 +9,13 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Entity\RouteDataRecord;
+use Nowo\PerformanceBundle\Service\RouteDataWriterInterface;
 use SortDirection;
 
 use function in_array;
 use function is_array;
 use function is_string;
+use function trigger_deprecation;
 
 use const PHP_URL_PATH;
 
@@ -293,12 +295,20 @@ class RouteDataRepository extends ServiceEntityRepository
     /**
      * Delete a single route data record by ID.
      *
+     * Flushes the entity manager that maps RouteData (with `connection: default`, the application's default manager),
+     * committing every change it holds.
+     *
+     * @deprecated since 4.0, use {@see RouteDataWriterInterface::delete()} (writes through the bundle's
+     *             private entity manager); removed in a future major
+     *
      * @param int $id The record ID
      *
      * @return bool True if deleted, false if not found
      */
     public function deleteById(int $id): bool
     {
+        trigger_deprecation('nowo-tech/performance-bundle', '4.0', 'RouteDataRepository::deleteById() is deprecated: it flushes the entity manager that maps RouteData (your default manager with connection: default). Use Nowo\\PerformanceBundle\\Service\\RouteDataWriterInterface::delete(), which writes through the bundle\'s private entity manager; see docs/UPGRADING.md "To 4.0.0".');
+
         $routeData = $this->find($id);
         if ($routeData === null) {
             return false;
@@ -378,9 +388,15 @@ class RouteDataRepository extends ServiceEntityRepository
      * @param DateTimeImmutable|null $reviewedAt Review time (default: system time)
      *
      * @return bool True if updated, false if not found
+     *
+     * @deprecated since 4.0, use {@see RouteDataWriterInterface::markAsReviewed()} (writes through the
+     *             bundle's private entity manager); removed in a future major. Flushes the entity manager that maps
+     *             RouteData (with `connection: default`, the application's default manager)
      */
     public function markAsReviewed(int $id, ?bool $queriesImproved = null, ?bool $timeImproved = null, ?string $reviewedBy = null, ?DateTimeImmutable $reviewedAt = null): bool
     {
+        trigger_deprecation('nowo-tech/performance-bundle', '4.0', 'RouteDataRepository::markAsReviewed() is deprecated: it flushes the entity manager that maps RouteData (your default manager with connection: default). Use Nowo\\PerformanceBundle\\Service\\RouteDataWriterInterface::markAsReviewed(), which writes through the bundle\'s private entity manager; see docs/UPGRADING.md "To 4.0.0".');
+
         $routeData = $this->find($id);
         if ($routeData === null) {
             return false;

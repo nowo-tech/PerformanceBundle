@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\PerformanceBundle\Tests\Unit\Controller;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\AbstractException;
 use Doctrine\DBAL\Exception\DeadlockException;
@@ -22,6 +23,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Security\AllowAllPerformanceAccessChecker;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Service\RouteDataWriterInterface;
 use Nowo\TransactionDoctrine\Symfony\Conflict\ConflictResponsePolicy;
 use Nowo\TransactionDoctrine\TransientFailureKind;
 use Nowo\TransactionDoctrine\WriteUnit\ConcurrencyConflict;
@@ -43,6 +45,7 @@ final class PerformanceControllerConflictTest extends TestCase
     private MockObject&RouteDataRepository $repository;
     private MockObject&RouteDataRecordRepository $recordRepository;
     private MockObject&PerformanceCacheService $cacheService;
+    private MockObject&RouteDataWriterInterface $writer;
 
     protected function setUp(): void
     {
@@ -51,6 +54,7 @@ final class PerformanceControllerConflictTest extends TestCase
         $this->metricsService   = $this->createMock(PerformanceMetricsService::class);
         $this->metricsService->method('getRepository')->willReturn($this->repository);
         $this->cacheService = $this->createMock(PerformanceCacheService::class);
+        $this->writer       = $this->createMock(RouteDataWriterInterface::class);
     }
 
     public function testClearDeadlockAnswersConflict001(): void
@@ -69,7 +73,7 @@ final class PerformanceControllerConflictTest extends TestCase
     {
         $routeData = (new RouteData())->setName('app_home')->setEnv('test');
         $this->repository->method('find')->willReturn($routeData);
-        $this->repository->method('deleteById')->willThrowException(new LockWaitTimeoutException($this->driverException(1205, 'HY000'), null));
+        $this->writer->method('delete')->willThrowException(new LockWaitTimeoutException($this->driverException(1205, 'HY000'), null));
         $controller = $this->controller($this->form(null));
 
         $conflict = $this->catchConflict(static fn (): RedirectResponse => $controller->delete(1, Request::create('/performance/1/delete', 'POST')));
@@ -81,7 +85,7 @@ final class PerformanceControllerConflictTest extends TestCase
     {
         $routeData = (new RouteData())->setName('app_home')->setEnv('test');
         $this->repository->method('find')->willReturn($routeData);
-        $this->repository->method('markAsReviewed')->willThrowException($this->deadlock());
+        $this->writer->method('markAsReviewed')->willThrowException($this->deadlock());
         $entityManager = $this->reviewEntityManager(beginTimes: 1, commitTimes: 0);
         $entityManager->method('isOpen')->willReturn(false);
         $registry = $this->createMock(ManagerRegistry::class);
@@ -103,7 +107,7 @@ final class PerformanceControllerConflictTest extends TestCase
     {
         $routeData = (new RouteData())->setName('app_home')->setEnv('test');
         $this->repository->method('find')->willReturn($routeData);
-        $this->repository->method('markAsReviewed')->willThrowException($this->deadlock());
+        $this->writer->method('markAsReviewed')->willThrowException($this->deadlock());
         $entityManager = $this->reviewEntityManager(beginTimes: 1, commitTimes: 0);
         $entityManager->method('isOpen')->willReturn(true);
         $entityManager->expects(self::never())->method('clear');
@@ -121,14 +125,14 @@ final class PerformanceControllerConflictTest extends TestCase
     {
         $routeData = (new RouteData())->setName('app_home')->setEnv('test');
         $this->repository->method('find')->willReturn($routeData);
-        $this->repository->method('markAsReviewed')->willReturn(true);
+        $this->writer->expects(self::once())->method('markAsReviewed')
+            ->with(1, null, null, null, self::isInstanceOf(DateTimeImmutable::class), false)
+            ->willReturn(true);
         $entityManager = $this->reviewEntityManager(beginTimes: 1, commitTimes: 1);
-        $entityManager->expects(self::once())->method('flush');
+        $entityManager->expects(self::never())->method('flush');
 
         $this->controller($this->form(['queries_improved' => '', 'time_improved' => '', 'save_access_records' => false]))
             ->review(1, Request::create('/performance/1/review', 'POST'));
-
-        self::assertFalse($routeData->getSaveAccessRecords());
     }
 
     private function reviewEntityManager(int $beginTimes, int $commitTimes): EntityManagerInterface&MockObject
@@ -220,6 +224,7 @@ final class PerformanceControllerConflictTest extends TestCase
                 'accessChecker'          => new AllowAllPerformanceAccessChecker(),
                 'conflictMapper'         => $mapper,
                 'managerRegistry'        => $registry,
+                'routeDataWriter'        => $this->writer,
             ])
             ->onlyMethods(['createForm', 'getParameter', 'addFlash', 'redirectToRoute', 'getUser'])
             ->getMock();

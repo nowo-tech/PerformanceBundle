@@ -9,12 +9,15 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\PerformanceBundle\Entity\RouteData;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests for RouteDataRepository::deleteById() method.
+ * Tests for RouteDataRepository::deleteById() method (deprecated since 4.0, behaviour unchanged; notice asserted in
+ * PerformanceMetricsServiceHostUnitOfWorkTest).
  */
+#[IgnoreDeprecations]
 final class RouteDataRepositoryDeleteByIdTest extends TestCase
 {
     private MockObject $registry;
