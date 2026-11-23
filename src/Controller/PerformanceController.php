@@ -41,6 +41,8 @@ use Nowo\PerformanceBundle\Service\DependencyChecker;
 use Nowo\PerformanceBundle\Service\PerformanceAnalysisService;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Service\RouteDataWriter;
+use Nowo\PerformanceBundle\Service\RouteDataWriterInterface;
 use Nowo\PerformanceBundle\Service\TableStatusChecker;
 use Nowo\PerformanceBundle\Ui\PerformanceAreaNav;
 use Nowo\PerformanceBundle\Ui\PerformancePageFactory;
@@ -173,7 +175,17 @@ class PerformanceController extends AbstractController
         private readonly ?TranslatorInterface $translator = null,
         private readonly ?WriteConflictMapper $conflictMapper = null,
         private readonly ?ManagerRegistry $managerRegistry = null,
+        private readonly ?RouteDataWriterInterface $routeDataWriter = null,
     ) {
+    }
+
+    /**
+     * Writer of the delete and review actions (4.0): writes through the bundle's private entity manager. Without the
+     * service (a controller built by hand), the default writer on the metrics service.
+     */
+    private function routeDataWriter(): RouteDataWriterInterface
+    {
+        return $this->routeDataWriter ?? new RouteDataWriter($this->metricsService);
     }
 
     /**
@@ -2154,7 +2166,14 @@ class PerformanceController extends AbstractController
                 }
             }
 
-            $deleted = $repository->deleteById($id);
+            $deleted = $this->routeDataWriter()->delete($id);
+            if ($deleted) {
+                // The row was removed through the private manager: drop the stale copy this action loaded itself.
+                $hostManager = $this->metricsService->getEntityManager();
+                if ($hostManager->contains($routeData)) {
+                    $hostManager->detach($routeData);
+                }
+            }
 
             if ($deleted) {
                 // Dispatch after event
@@ -2284,23 +2303,13 @@ class PerformanceController extends AbstractController
             // pending changes after a failure; only a manager the ORM closed (a failed flush) is reset, so a worker
             // with the kernel kept alive never keeps a closed entity manager.
             $entityManager = $this->metricsService->getEntityManager();
+            $writer        = $this->routeDataWriter();
 
             try {
                 $updated = DoctrineTransactionRunner::forConnection($entityManager->getConnection(), null)->run(
-                    static function () use ($repository, $entityManager, $id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt, $saveAccessRecords): bool {
-                        $updated = $repository->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt);
-
-                        // Update save_access_records per route when access records are enabled
-                        if ($saveAccessRecords !== null) {
-                            $routeDataToUpdate = $repository->find($id);
-                            if ($routeDataToUpdate !== null) {
-                                $routeDataToUpdate->setSaveAccessRecords($saveAccessRecords);
-                                $entityManager->flush();
-                            }
-                        }
-
-                        return $updated;
-                    },
+                    // Review and save_access_records in one flush of the bundle's private manager (4.0): the host manager
+                    // is never flushed.
+                    static fn (): bool => $writer->markAsReviewed($id, $queriesImprovedBool, $timeImprovedBool, $reviewedBy, $reviewedAt, $saveAccessRecords),
                 );
             } catch (Throwable $e) {
                 if (!$entityManager->isOpen() && $this->managerRegistry instanceof ManagerRegistry) {
@@ -2311,8 +2320,12 @@ class PerformanceController extends AbstractController
             }
 
             if ($updated) {
-                // Reload the updated record for the after event
+                // Reload the updated record for the after event: the copy this action loaded through the connection
+                // manager is refreshed from the row the private manager wrote.
                 $updatedRouteData = $repository->find($id);
+                if ($updatedRouteData !== null && $entityManager->contains($updatedRouteData)) {
+                    $entityManager->refresh($updatedRouteData);
+                }
 
                 // Dispatch after event
                 if ($this->eventDispatcher instanceof EventDispatcherInterface && $updatedRouteData !== null) {

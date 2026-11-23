@@ -7,6 +7,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Form;
 use Nowo\PerformanceBundle\Form\DeleteRecordType;
 use Nowo\PerformanceBundle\Tests\Support\FormKitTestSupport;
 use Symfony\Component\Form\Test\TypeTestCase;
+use Symfony\Component\OptionsResolver\Exception\UndefinedOptionsException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function array_key_exists;
@@ -52,9 +53,9 @@ final class DeleteRecordTypeTest extends TypeTestCase
                 && isset($defaults['csrf_protection']) && $defaults['csrf_protection'] === true
                 && isset($defaults['csrf_field_name']) && $defaults['csrf_field_name'] === '_token'
                 && isset($defaults['csrf_token_id']) && $defaults['csrf_token_id'] === 'delete_performance_record'
-                && array_key_exists('submit_attr_class', $defaults) && $defaults['submit_attr_class'] === null));
-        $resolver->expects($this->once())->method('setAllowedTypes')->with('submit_attr_class', ['string', 'null']);
-        $resolver->expects($this->once())->method('setDeprecated')->with('submit_attr_class', 'nowo-tech/performance-bundle', '3.15.0', $this->isType('string'));
+                && !array_key_exists('submit_attr_class', $defaults)));
+        $resolver->expects($this->never())->method('setAllowedTypes');
+        $resolver->expects($this->never())->method('setDeprecated');
         $resolver->expects($this->once())
             ->method('setRequired')
             ->with('csrf_token_id');
@@ -67,17 +68,17 @@ final class DeleteRecordTypeTest extends TypeTestCase
         $this->assertSame('delete_record', $this->formType->getBlockPrefix());
     }
 
-    /** Form accepts submit_attr_class option (used when submit is present); no submit child in current build. */
-    public function testFormAcceptsSubmitAttrClassOption(): void
+    /** The submit_attr_class option (deprecated and ignored since 3.15.0) was removed in 4.0: passing it fails. */
+    public function testRemovedSubmitAttrClassOptionIsRefused(): void
     {
-        $form = $this->factory->create(DeleteRecordType::class, null, [
+        $this->expectException(UndefinedOptionsException::class);
+        $this->expectExceptionMessage('submit_attr_class');
+
+        $this->factory->create(DeleteRecordType::class, null, [
             'csrf_protection'   => false,
             'csrf_token_id'     => 'delete_performance_record',
             'submit_attr_class' => 'custom-btn custom-danger',
         ]);
-
-        $this->assertFalse($form->has('submit'));
-        $this->assertCount(0, $form);
     }
 
     public function testFormBuildsWithCustomCsrfTokenId(): void

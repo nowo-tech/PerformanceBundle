@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Tests\Unit\DependencyInjection;
 
 use Nowo\PerformanceBundle\DependencyInjection\Configuration;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
-use const E_USER_DEPRECATED;
+use function sprintf;
 
 final class ConfigurationTest extends TestCase
 {
@@ -34,11 +35,13 @@ final class ConfigurationTest extends TestCase
         $this->assertTrue($config['check_table_status']);
         $this->assertSame(['_wdt', '_profiler', 'web_profiler*', '_error'], $config['ignore_routes']);
 
-        // Dashboard configuration defaults
-        $this->assertTrue($config['dashboard']['enabled']);
-        $this->assertSame('/performance', $config['dashboard']['path']);
-        $this->assertSame('', $config['dashboard']['prefix']);
-        $this->assertSame(['ROLE_ADMIN'], $config['dashboard']['roles']);
+        // Dashboard configuration defaults (web_ui / security since 4.0; the dashboard.* UI keys are gone)
+        $this->assertTrue($config['web_ui']['enabled']);
+        $this->assertSame('/performance', $config['web_ui']['path_prefix']);
+        foreach (['enabled', 'path', 'prefix', 'roles', 'css_framework', 'template', 'layout_template'] as $removed) {
+            $this->assertArrayNotHasKey($removed, $config['dashboard']);
+        }
+        $this->assertArrayNotHasKey('query_tracking_threshold', $config);
         $this->assertSame('nowo_performance.cache', $config['cache']['pool']);
         $this->assertSame(['ROLE_ADMIN'], $config['security']['access_roles']);
         $this->assertNull($config['security']['access_checker']);
@@ -57,11 +60,12 @@ final class ConfigurationTest extends TestCase
             'track_queries'      => false,
             'track_request_time' => false,
             'ignore_routes'      => ['_custom'],
-            'dashboard'          => [
-                'enabled' => false,
-                'path'    => '/metrics',
-                'prefix'  => '/admin',
-                'roles'   => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
+            'web_ui'             => [
+                'enabled'     => false,
+                'path_prefix' => '/admin/metrics',
+            ],
+            'security' => [
+                'access_roles' => ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'],
             ],
         ]]);
 
@@ -74,40 +78,9 @@ final class ConfigurationTest extends TestCase
         $this->assertSame(['_custom'], $config['ignore_routes']);
 
         // Dashboard configuration
-        $this->assertFalse($config['dashboard']['enabled']);
-        $this->assertSame('/metrics', $config['dashboard']['path']);
-        $this->assertSame('/admin', $config['dashboard']['prefix']);
-        $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $config['dashboard']['roles']);
+        $this->assertFalse($config['web_ui']['enabled']);
+        $this->assertSame('/admin/metrics', $config['web_ui']['path_prefix']);
         $this->assertSame(['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER'], $config['security']['access_roles']);
-    }
-
-    public function testDashboardRolesMapsToSecurityAccessRolesWhenAccessRolesNotSet(): void
-    {
-        $configuration = new Configuration();
-        $config        = $this->processor->processConfiguration($configuration, [[
-            'dashboard' => [
-                'roles' => ['ROLE_MONITORING'],
-            ],
-        ]]);
-
-        $this->assertSame(['ROLE_MONITORING'], $config['dashboard']['roles']);
-        $this->assertSame(['ROLE_MONITORING'], $config['security']['access_roles']);
-    }
-
-    public function testExplicitSecurityAccessRolesWinsOverDashboardRoles(): void
-    {
-        $configuration = new Configuration();
-        $config        = $this->processor->processConfiguration($configuration, [[
-            'dashboard' => [
-                'roles' => ['ROLE_LEGACY'],
-            ],
-            'security' => [
-                'access_roles' => ['ROLE_ADMIN'],
-            ],
-        ]]);
-
-        $this->assertSame(['ROLE_LEGACY'], $config['dashboard']['roles']);
-        $this->assertSame(['ROLE_ADMIN'], $config['security']['access_roles']);
     }
 
     public function testPartialConfiguration(): void
@@ -122,24 +95,10 @@ final class ConfigurationTest extends TestCase
         $this->assertSame('default', $config['connection']); // Default
 
         // Dashboard should have defaults even when not specified
-        $this->assertTrue($config['dashboard']['enabled']);
-        $this->assertSame('/performance', $config['dashboard']['path']);
-        $this->assertSame('', $config['dashboard']['prefix']);
-        $this->assertSame(['ROLE_ADMIN'], $config['dashboard']['roles']);
-    }
-
-    public function testDashboardConfigurationWithRoles(): void
-    {
-        $configuration = new Configuration();
-        $config        = $this->processor->processConfiguration($configuration, [[
-            'dashboard' => [
-                'roles' => ['ROLE_ADMIN'],
-            ],
-        ]]);
-
-        $this->assertSame(['ROLE_ADMIN'], $config['dashboard']['roles']);
-        $this->assertTrue($config['dashboard']['enabled']); // Default
-        $this->assertSame('/performance', $config['dashboard']['path']); // Default
+        $this->assertTrue($config['web_ui']['enabled']);
+        $this->assertSame('/performance', $config['web_ui']['path_prefix']);
+        $this->assertSame(['ROLE_ADMIN'], $config['security']['access_roles']);
+        $this->assertFalse($config['dashboard']['enable_record_management']);
     }
 
     public function testTrackUserDefaultIsFalse(): void
@@ -226,68 +185,6 @@ final class ConfigurationTest extends TestCase
         $this->assertSame('', $config['notifications']['slack']['webhook_url']);
     }
 
-    public function testDashboardTemplateDefault(): void
-    {
-        $configuration = new Configuration();
-        $config        = $this->processor->processConfiguration($configuration, []);
-
-        $this->assertSame('bootstrap5', $config['dashboard']['css_framework']);
-        $this->assertSame('bootstrap', $config['dashboard']['template']);
-    }
-
-    public function testDashboardCssFrameworkAcceptsCanonicalValues(): void
-    {
-        foreach (Configuration::CSS_FRAMEWORKS as $framework) {
-            $expected = $framework === 'bootstrap' ? 'bootstrap5' : $framework;
-            $config   = $this->processor->processConfiguration(new Configuration(), [[
-                'dashboard' => ['css_framework' => $framework],
-            ]]);
-
-            $this->assertSame($expected, $config['dashboard']['css_framework']);
-            $this->assertSame(
-                $expected === 'tailwind' ? 'tailwind' : 'bootstrap',
-                $config['dashboard']['template'],
-            );
-        }
-    }
-
-    public function testDashboardTemplateBcMapsToCssFramework(): void
-    {
-        $bootstrap = $this->processor->processConfiguration(new Configuration(), [[
-            'dashboard' => ['template' => 'bootstrap'],
-        ]]);
-        $this->assertSame('bootstrap5', $bootstrap['dashboard']['css_framework']);
-        $this->assertSame('bootstrap', $bootstrap['dashboard']['template']);
-
-        $tailwind = $this->processor->processConfiguration(new Configuration(), [[
-            'dashboard' => ['template' => 'tailwind'],
-        ]]);
-        $this->assertSame('tailwind', $tailwind['dashboard']['css_framework']);
-        $this->assertSame('tailwind', $tailwind['dashboard']['template']);
-    }
-
-    public function testDashboardCssFrameworkWinsOverTemplate(): void
-    {
-        $config = $this->processor->processConfiguration(new Configuration(), [[
-            'dashboard' => [
-                'template'      => 'bootstrap',
-                'css_framework' => 'tailwind',
-            ],
-        ]]);
-
-        $this->assertSame('tailwind', $config['dashboard']['css_framework']);
-        $this->assertSame('tailwind', $config['dashboard']['template']);
-    }
-
-    public function testInvalidDashboardCssFrameworkFails(): void
-    {
-        $this->expectException(InvalidConfigurationException::class);
-
-        $this->processor->processConfiguration(new Configuration(), [[
-            'dashboard' => ['css_framework' => 'bulma'],
-        ]]);
-    }
-
     public function testDashboardEnableRecordManagementDefault(): void
     {
         $configuration = new Configuration();
@@ -307,35 +204,6 @@ final class ConfigurationTest extends TestCase
         $config        = $this->processor->processConfiguration($configuration, []);
 
         $this->assertTrue($config['enable_logging']);
-    }
-
-    public function testQueryTrackingThresholdDefaultIsZero(): void
-    {
-        $configuration = new Configuration();
-        $config        = $this->processor->processConfiguration($configuration, []);
-
-        $this->assertSame(0, $config['query_tracking_threshold']);
-    }
-
-    public function testQueryTrackingThresholdIsDeprecatedWhenSet(): void
-    {
-        $deprecations = [];
-        set_error_handler(static function (int $errno, string $message) use (&$deprecations): bool {
-            $deprecations[] = $message;
-
-            return true;
-        }, E_USER_DEPRECATED);
-
-        try {
-            $config = $this->processor->processConfiguration(new Configuration(), [['query_tracking_threshold' => 5]]);
-        } finally {
-            restore_error_handler();
-        }
-
-        $this->assertSame(5, $config['query_tracking_threshold']);
-        $this->assertCount(1, $deprecations);
-        $this->assertStringContainsString('query_tracking_threshold', $deprecations[0]);
-        $this->assertStringContainsString('deprecated and ignored', $deprecations[0]);
     }
 
     public function testNotificationsWebhookDefaults(): void
@@ -416,5 +284,50 @@ final class ConfigurationTest extends TestCase
         ]]);
 
         $this->assertSame(['dev', 'stage', 'prod'], $config['environments']);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string, string}>
+     */
+    public static function removedKeys(): iterable
+    {
+        yield 'query_tracking_threshold' => [['query_tracking_threshold' => 5], 'query_tracking_threshold', 'never had any effect'];
+        yield 'dashboard.enabled' => [['dashboard' => ['enabled' => false]], 'dashboard.enabled', 'nowo_performance.web_ui.enabled'];
+        yield 'dashboard.path' => [['dashboard' => ['path' => '/metrics']], 'dashboard.path', 'nowo_performance.web_ui.path_prefix'];
+        yield 'dashboard.prefix' => [['dashboard' => ['prefix' => '/admin']], 'dashboard.prefix', 'nowo_performance.web_ui.path_prefix'];
+        yield 'dashboard.layout_template' => [['dashboard' => ['layout_template' => 'base.html.twig']], 'dashboard.layout_template', 'nowo_performance.web_ui.layout_template'];
+        yield 'dashboard.css_framework' => [['dashboard' => ['css_framework' => 'tailwind']], 'dashboard.css_framework', 'nowo_ui_kit.css_framework'];
+        yield 'dashboard.template' => [['dashboard' => ['template' => 'bootstrap']], 'dashboard.template', 'nowo_ui_kit.css_framework'];
+        yield 'dashboard.roles' => [['dashboard' => ['roles' => ['ROLE_ADMIN']]], 'dashboard.roles', 'nowo_performance.security.access_roles'];
+    }
+
+    /**
+     * 4.0 removes the keys deprecated in 3.x: a leftover key fails loudly with the replacement and UPGRADING.
+     *
+     * @param array<string, mixed> $config
+     */
+    #[DataProvider('removedKeys')]
+    public function testRemovedKeysFailWithTheirReplacement(array $config, string $path, string $replacement): void
+    {
+        try {
+            $this->processor->processConfiguration(new Configuration(), [$config]);
+            $this->fail('The removed key was accepted.');
+        } catch (InvalidConfigurationException $e) {
+            $this->assertStringContainsString(sprintf('The option "nowo_performance.%s" was removed in 4.0.', $path), $e->getMessage());
+            $this->assertStringContainsString($replacement, $e->getMessage());
+            $this->assertStringContainsString('UPGRADING.md "To 4.0.0"', $e->getMessage());
+        }
+    }
+
+    public function testCssFrameworksConstantIsKept(): void
+    {
+        $this->assertContains('bootstrap5', Configuration::CSS_FRAMEWORKS);
+    }
+
+    public function testNonArrayRootConfigurationIsLeftToSymfony(): void
+    {
+        $config = $this->processor->processConfiguration(new Configuration(), [null]);
+
+        $this->assertTrue($config['enabled']);
     }
 }

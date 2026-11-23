@@ -52,8 +52,6 @@ the scaffold: an override must not render them a second time.
 | `Performance/_card.html.twig` | Card through the `card` / `card_header` / `card_title` / `card_intro` / `card_body` slots. |
 | `Performance/_bar_chart.html.twig` | Server-rendered bar chart (inline SVG, `currentColor`, `<title>` per bar; no JavaScript). |
 | `Performance/_heatmap.html.twig` | Server-rendered access heatmap (inline SVG, 7 × 24). |
-| `Performance/_legacy_layout.html.twig` | Deprecated bridge around a 3.14 layout (see [Layout](#layout)). |
-| `components/Statistics.html.twig`, `Filters.html.twig`, `Charts.html.twig`, `RoutesTable.html.twig` | Deprecated Twig components (`nowo_performance.*`), rendered through the partials above; removed in 4.0. |
 
 Modals use the UiKit `dialog` partial (review, purge); destructive actions use the UiKit confirm `<dialog>`; flashes,
 empty states and pagination come from UiKit. The bundle ships no local copy of those partials.
@@ -72,8 +70,9 @@ block. Unknown page ids fail the container build.
 
 The scaffolds extend `page.layout ?? nowo_ui_layout.admin`. `web_ui.layout_template: null` (default) uses
 `nowo_ui_kit.layouts.admin`. A configured layout that defines `nowo_ui_content` is used as is; one that does not (a
-3.14-style project `base.html.twig` with `title` / `stylesheets` / `body` / `javascripts`) is wrapped in
-`Performance/_legacy_layout.html.twig` with a deprecation (removed in 4.0).
+3.14-style project `base.html.twig` with `title` / `stylesheets` / `body` / `javascripts`) fails with a
+`LogicException` when a page renders. The bridge `Performance/_legacy_layout.html.twig` that wrapped such a layout
+(deprecated since 3.15) and the Twig components `nowo_performance.*` were removed in 4.0.
 
 ## Allowed exceptions
 

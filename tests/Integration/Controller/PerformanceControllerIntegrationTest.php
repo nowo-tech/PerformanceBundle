@@ -1068,8 +1068,7 @@ final class PerformanceControllerIntegrationTest extends TestCase
         }
         $formFactory = $container->get('form.factory');
         $form        = $formFactory->create(DeleteRecordType::class, null, [
-            'csrf_token_id'     => 'delete_performance_record_999999',
-            'submit_attr_class' => 'btn btn-danger btn-sm',
+            'csrf_token_id' => 'delete_performance_record_999999',
         ]);
         $view  = $form->createView();
         $token = $view['_token']->vars['value'] ?? null;
@@ -1096,8 +1095,7 @@ final class PerformanceControllerIntegrationTest extends TestCase
         }
         $formFactory = $container->get('form.factory');
         $form        = $formFactory->create(DeleteRecordType::class, null, [
-            'csrf_token_id'     => 'delete_performance_record_' . $routeId,
-            'submit_attr_class' => 'btn btn-danger btn-sm',
+            'csrf_token_id' => 'delete_performance_record_' . $routeId,
         ]);
         $view  = $form->createView();
         $token = $view['_token']->vars['value'] ?? null;

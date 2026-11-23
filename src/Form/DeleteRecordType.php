@@ -29,7 +29,7 @@ class DeleteRecordType extends AbstractType
      * Builds a CSRF-only form (no fields).
      *
      * @param FormBuilderInterface<mixed> $builder The form builder
-     * @param array<string, mixed> $options Options (submit_attr_class: deprecated, ignored)
+     * @param array<string, mixed> $options Options
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -37,21 +37,18 @@ class DeleteRecordType extends AbstractType
     }
 
     /**
-     * Configures options (method POST, CSRF, deprecated submit_attr_class).
+     * Configures options (method POST, CSRF; the submit_attr_class option was removed in 4.0).
      *
      * @param OptionsResolver $resolver The options resolver
      */
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'method'            => 'POST',
-            'csrf_protection'   => true,
-            'csrf_field_name'   => '_token',
-            'csrf_token_id'     => 'delete_performance_record',
-            'submit_attr_class' => null,
+            'method'          => 'POST',
+            'csrf_protection' => true,
+            'csrf_field_name' => '_token',
+            'csrf_token_id'   => 'delete_performance_record',
         ]);
-        $resolver->setAllowedTypes('submit_attr_class', ['string', 'null']);
-        $resolver->setDeprecated('submit_attr_class', 'nowo-tech/performance-bundle', '3.15.0', 'The option "%name%" is deprecated and ignored: the delete button is a UiKit Action (theme slots).');
         $resolver->setRequired('csrf_token_id');
     }
 

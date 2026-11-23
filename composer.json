@@ -80,8 +80,7 @@
     },
     "suggest": {
         "symfony/http-client": "For webhook notifications (Slack, Teams, custom webhooks)",
-        "symfony/mailer": "For email notifications",
-        "symfony/ux-twig-component": "For dashboard Twig Component mode ({{ component() }}); without it, the bundle uses traditional Twig includes"
+        "symfony/mailer": "For email notifications"
     },
     "autoload": {
         "psr-4": {

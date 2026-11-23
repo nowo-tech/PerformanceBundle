@@ -7,12 +7,14 @@ namespace Nowo\PerformanceBundle\Tests\Unit;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\NotificationChannelsPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\QueryTrackingMiddlewarePass;
+use Nowo\PerformanceBundle\DependencyInjection\Compiler\RemovedNotificationChannelPass;
 use Nowo\PerformanceBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\PerformanceBundle\DependencyInjection\PerformanceExtension;
 use Nowo\PerformanceBundle\NowoPerformanceBundle;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionProperty;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -72,21 +74,27 @@ final class NowoPerformanceBundleTest extends TestCase
         $container  = $this->createMock(ContainerBuilder::class);
         $registered = [];
 
-        $container->expects($this->exactly(4))
+        $container->expects($this->exactly(6))
             ->method('addCompilerPass')
-            ->willReturnCallback(static function (object $pass) use (&$registered, $container): ContainerBuilder {
+            ->willReturnCallback(static function (object $pass, string $type = PassConfig::TYPE_BEFORE_OPTIMIZATION, int $priority = 0) use (&$registered, $container): ContainerBuilder {
                 $registered[] = $pass;
+                if ($pass instanceof RemovedNotificationChannelPass) {
+                    self::assertSame(PassConfig::TYPE_BEFORE_OPTIMIZATION, $type);
+                    self::assertContains($priority, [1000, 0]);
+                }
 
                 return $container;
             });
 
         $bundle->build($container);
 
-        $this->assertCount(4, $registered);
+        $this->assertCount(6, $registered);
         $this->assertInstanceOf(CsrfProtectionPass::class, $registered[0]);
         $this->assertInstanceOf(NotificationChannelsPass::class, $registered[1]);
-        $this->assertInstanceOf(QueryTrackingMiddlewarePass::class, $registered[2]);
-        $this->assertInstanceOf(TwigPathsPass::class, $registered[3]);
+        $this->assertInstanceOf(RemovedNotificationChannelPass::class, $registered[2]);
+        $this->assertInstanceOf(RemovedNotificationChannelPass::class, $registered[3]);
+        $this->assertInstanceOf(QueryTrackingMiddlewarePass::class, $registered[4]);
+        $this->assertInstanceOf(TwigPathsPass::class, $registered[5]);
     }
 
     public function testBuildCallsParentBuild(): void
@@ -94,7 +102,7 @@ final class NowoPerformanceBundleTest extends TestCase
         $bundle    = new NowoPerformanceBundle();
         $container = $this->createMock(ContainerBuilder::class);
 
-        $container->expects($this->exactly(4))
+        $container->expects($this->exactly(6))
             ->method('addCompilerPass')
             ->willReturnSelf();
 

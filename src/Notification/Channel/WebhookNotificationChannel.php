@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Nowo\PerformanceBundle\Notification\Channel;
 
 use Exception;
-use Nowo\PerformanceBundle\Entity\RouteData;
-use Nowo\PerformanceBundle\Event\AfterMetricsRecordedEvent;
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -32,7 +31,7 @@ use const FILTER_VALIDATE_IP;
  * @author Héctor Franco Aceituno <hectorfranco@nowo.tech>
  * @copyright 2026 Nowo.tech
  */
-final readonly class WebhookNotificationChannel implements NotificationChannelInterface
+final readonly class WebhookNotificationChannel implements RouteMetricsNotificationChannelInterface
 {
     /**
      * Creates a new instance.
@@ -55,7 +54,7 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
     ) {
     }
 
-    public function send(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): bool
+    public function sendRouteMetrics(PerformanceAlert $alert, RouteMetricsSnapshot $route): bool
     {
         if (!$this->isEnabled() || !$this->httpClient instanceof HttpClientInterface || ($this->webhookUrl === '' || $this->webhookUrl === '0')) {
             return false;
@@ -68,7 +67,7 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
                 return false;
             }
 
-            $payload = $this->buildPayload($alert, $context);
+            $payload = $this->buildPayload($alert, $route);
             $headers = array_merge(['Content-Type' => 'application/json'], $this->headers);
             $timeout = max(0.1, $this->timeout);
 
@@ -129,16 +128,16 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
      * Build the webhook payload based on format.
      *
      * @param PerformanceAlert $alert The alert
-     * @param AfterMetricsRecordedEvent|RouteData $context Route or event
+     * @param RouteMetricsSnapshot $route Route (with the metrics just recorded, when known)
      *
      * @return array<string, mixed> Payload array
      */
-    private function buildPayload(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): array
+    private function buildPayload(PerformanceAlert $alert, RouteMetricsSnapshot $route): array
     {
         return match ($this->format) {
-            'slack' => $this->buildSlackPayload($alert, $context),
-            'teams' => $this->buildTeamsPayload($alert, $context),
-            default => $this->buildJsonPayload($alert, $context),
+            'slack' => $this->buildSlackPayload($alert, $route),
+            'teams' => $this->buildTeamsPayload($alert, $route),
+            default => $this->buildJsonPayload($alert, $route),
         };
     }
 
@@ -146,17 +145,12 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
      * Build JSON payload (generic format).
      *
      * @param PerformanceAlert $alert The alert
-     * @param AfterMetricsRecordedEvent|RouteData $context Route or event
+     * @param RouteMetricsSnapshot $route Route (with the metrics just recorded, when known)
      *
      * @return array<string, mixed>
      */
-    private function buildJsonPayload(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): array
+    private function buildJsonPayload(PerformanceAlert $alert, RouteMetricsSnapshot $route): array
     {
-        $routeData    = $context instanceof AfterMetricsRecordedEvent ? $context->getRouteData() : $context;
-        $requestTime  = $context instanceof AfterMetricsRecordedEvent ? $context->getRequestTime() : null;
-        $totalQueries = $context instanceof AfterMetricsRecordedEvent ? $context->getTotalQueries() : null;
-        $memoryUsage  = $context instanceof AfterMetricsRecordedEvent ? $context->getMemoryUsage() : null;
-
         return [
             'alert' => [
                 'type'     => $alert->getType(),
@@ -165,15 +159,15 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
                 'context'  => $alert->getContext(),
             ],
             'route' => [
-                'name'             => $routeData->getName(),
-                'env'              => $routeData->getEnv(),
-                'http_method'      => $routeData->getHttpMethod(),
-                'request_time'     => $requestTime,
-                'query_count'      => $totalQueries,
+                'name'             => $route->routeName,
+                'env'              => $route->env,
+                'http_method'      => $route->httpMethod,
+                'request_time'     => $route->requestTime,
+                'query_count'      => $route->totalQueries,
                 'query_time'       => null,
-                'memory_usage'     => $memoryUsage,
+                'memory_usage'     => $route->memoryUsage,
                 'access_count'     => 1,
-                'last_accessed_at' => $routeData->getLastAccessedAt()?->format('c'),
+                'last_accessed_at' => $route->lastAccessedAt?->format('c'),
             ],
             'timestamp' => date('c'),
         ];
@@ -183,16 +177,12 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
      * Build Slack webhook payload.
      *
      * @param PerformanceAlert $alert The alert
-     * @param AfterMetricsRecordedEvent|RouteData $context Route or event
+     * @param RouteMetricsSnapshot $route Route (with the metrics just recorded, when known)
      *
      * @return array<string, mixed>
      */
-    private function buildSlackPayload(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): array
+    private function buildSlackPayload(PerformanceAlert $alert, RouteMetricsSnapshot $route): array
     {
-        $routeData    = $context instanceof AfterMetricsRecordedEvent ? $context->getRouteData() : $context;
-        $requestTime  = $context instanceof AfterMetricsRecordedEvent ? $context->getRequestTime() : null;
-        $totalQueries = $context instanceof AfterMetricsRecordedEvent ? $context->getTotalQueries() : null;
-
         $color = $alert->isCritical() ? 'danger' : 'warning';
         $emoji = $alert->isCritical() ? '🚨' : '⚠️';
 
@@ -201,26 +191,26 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
             'attachments' => [
                 [
                     'color'  => $color,
-                    'title'  => sprintf('%s Alert - %s', ucfirst($alert->getSeverity()), $routeData->getName()),
+                    'title'  => sprintf('%s Alert - %s', ucfirst($alert->getSeverity()), $route->routeName),
                     'fields' => [
                         [
                             'title' => 'Route',
-                            'value' => $routeData->getName() ?? 'Unknown',
+                            'value' => $route->routeName ?? 'Unknown',
                             'short' => true,
                         ],
                         [
                             'title' => 'Environment',
-                            'value' => $routeData->getEnv() ?? 'Unknown',
+                            'value' => $route->env ?? 'Unknown',
                             'short' => true,
                         ],
                         [
                             'title' => 'Request Time',
-                            'value' => $requestTime !== null ? number_format($requestTime, 4) . 's' : 'N/A',
+                            'value' => $route->requestTime !== null ? number_format($route->requestTime, 4) . 's' : 'N/A',
                             'short' => true,
                         ],
                         [
                             'title' => 'Query Count',
-                            'value' => (string) ($totalQueries ?? 'N/A'),
+                            'value' => (string) ($route->totalQueries ?? 'N/A'),
                             'short' => true,
                         ],
                         [
@@ -245,16 +235,12 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
      * Build Microsoft Teams webhook payload.
      *
      * @param PerformanceAlert $alert The alert
-     * @param AfterMetricsRecordedEvent|RouteData $context Route or event
+     * @param RouteMetricsSnapshot $route Route (with the metrics just recorded, when known)
      *
      * @return array<string, mixed>
      */
-    private function buildTeamsPayload(PerformanceAlert $alert, RouteData|AfterMetricsRecordedEvent $context): array
+    private function buildTeamsPayload(PerformanceAlert $alert, RouteMetricsSnapshot $route): array
     {
-        $routeData    = $context instanceof AfterMetricsRecordedEvent ? $context->getRouteData() : $context;
-        $requestTime  = $context instanceof AfterMetricsRecordedEvent ? $context->getRequestTime() : null;
-        $totalQueries = $context instanceof AfterMetricsRecordedEvent ? $context->getTotalQueries() : null;
-
         $color    = $alert->isCritical() ? 'FF0000' : 'FFA500';
         $severity = ucfirst($alert->getSeverity());
 
@@ -270,19 +256,19 @@ final readonly class WebhookNotificationChannel implements NotificationChannelIn
                     'facts'         => [
                         [
                             'name'  => 'Route',
-                            'value' => $routeData->getName() ?? 'Unknown',
+                            'value' => $route->routeName ?? 'Unknown',
                         ],
                         [
                             'name'  => 'Environment',
-                            'value' => $routeData->getEnv() ?? 'Unknown',
+                            'value' => $route->env ?? 'Unknown',
                         ],
                         [
                             'name'  => 'Request Time',
-                            'value' => $requestTime !== null ? number_format($requestTime, 4) . 's' : 'N/A',
+                            'value' => $route->requestTime !== null ? number_format($route->requestTime, 4) . 's' : 'N/A',
                         ],
                         [
                             'name'  => 'Query Count',
-                            'value' => (string) ($totalQueries ?? 'N/A'),
+                            'value' => (string) ($route->totalQueries ?? 'N/A'),
                         ],
                         [
                             'name'  => 'Alert Type',

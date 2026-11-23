@@ -8,7 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Twig\Environment;
@@ -128,7 +128,7 @@ class DynamicNotificationConfiguration
      *
      * This method creates channel instances with credentials fetched from the database.
      *
-     * @return array<NotificationChannelInterface> Array of configured channels
+     * @return array<RouteMetricsNotificationChannelInterface> Array of configured channels
      */
     public function createChannelsFromDatabase(): array
     {

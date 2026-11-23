@@ -29,6 +29,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\MetricsEntityManagerFactory;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Service\RouteDataWriter;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
@@ -36,6 +37,7 @@ use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use const CASE_LOWER;
+use const E_USER_DEPRECATED;
 use const PHP_VERSION_ID;
 
 /**
@@ -179,7 +181,7 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
         $service->recordMetrics('evented', 'prod', 0.1, 1);
 
         self::assertCount(1, $events);
-        self::assertSame('evented', $events[0]->getRouteData()->getName());
+        self::assertSame('evented', $events[0]->getRouteName());
         self::assertTrue($events[0]->isNew());
     }
 
@@ -196,7 +198,7 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
             self::assertNotNull($event->getRouteDataId());
             self::assertSame('by_id', $event->getRouteName());
             self::assertSame('prod', $event->getEnv());
-            self::assertFalse($hostEm->contains($event->getRouteData()), 'The event entity belongs to the private manager.');
+            self::assertFalse($hostEm->getUnitOfWork()->tryGetById($event->getRouteDataId(), RouteData::class), 'The recorded row belongs to the private manager, not to the host one.');
 
             // Documented pattern: an UPDATE by id, never a flush of the application's entity manager.
             $connection->update('routes_data', ['reviewed' => 1], ['id' => $event->getRouteDataId()]);
@@ -350,6 +352,81 @@ final class PerformanceMetricsServiceHostUnitOfWorkTest extends TestCase
         // No user data carried over from the previous recording.
         $last = $this->connection->fetchAllAssociative('SELECT request_id, user_identifier FROM routes_data_records WHERE request_id IN (?, ?) ORDER BY request_id', ['req-4998', 'req-4999']);
         self::assertSame([['request_id' => 'req-4998', 'user_identifier' => 'alice@example.test'], ['request_id' => 'req-4999', 'user_identifier' => 'bob@example.test']], $last);
+    }
+
+    public function testWriterReviewsThroughThePrivateManagerAndKeepsTheHostChangesPending(): void
+    {
+        $route    = $this->insertRoute('to_review');
+        $existing = $this->insertRoute('host_edit');
+        $existing->setReviewed(true);
+        $pending = (new RouteData())->setName('host_pending_review')->setEnv('prod');
+        $this->hostEm->persist($pending);
+
+        $updated = (new RouteDataWriter($this->service()))->markAsReviewed((int) $route->getId(), true, false, 'alice', new DateTimeImmutable('2026-11-23 10:00:00'), false);
+
+        self::assertTrue($updated);
+        $row = $this->connection->fetchAssociative('SELECT reviewed, queries_improved, time_improved, reviewed_by, save_access_records FROM routes_data WHERE name = ?', ['to_review']);
+        self::assertIsArray($row);
+        self::assertSame([1, 1, 0, 'alice', 0], [(int) $row['reviewed'], (int) $row['queries_improved'], (int) $row['time_improved'], $row['reviewed_by'], (int) $row['save_access_records']]);
+        self::assertSame(0, $this->countRoutes('host_pending_review'), 'The writer must not flush the host insert.');
+        self::assertSame(0, (int) $this->connection->fetchOne('SELECT reviewed FROM routes_data WHERE name = ?', ['host_edit']), 'The writer must not flush the host update.');
+        self::assertTrue($this->hostEm->getUnitOfWork()->isScheduledForInsert($pending));
+
+        // The host's own flush still writes its changes.
+        $this->hostEm->flush();
+        self::assertSame(1, $this->countRoutes('host_pending_review'));
+        self::assertSame(1, (int) $this->connection->fetchOne('SELECT reviewed FROM routes_data WHERE name = ?', ['host_edit']));
+    }
+
+    public function testWriterDeletesThroughThePrivateManagerAndKeepsTheHostChangesPending(): void
+    {
+        $route   = $this->insertRoute('to_delete');
+        $pending = (new RouteData())->setName('host_pending_delete')->setEnv('prod');
+        $this->hostEm->persist($pending);
+        $writer = new RouteDataWriter($this->service(), new MetricsEntityManagerFactory());
+
+        self::assertTrue($writer->delete((int) $route->getId()));
+        self::assertFalse($writer->delete((int) $route->getId()), 'A second delete finds no row.');
+        self::assertFalse($writer->markAsReviewed(999_999), 'An unknown id is not reviewed.');
+
+        self::assertSame(0, $this->countRoutes('to_delete'));
+        self::assertSame(0, $this->countRoutes('host_pending_delete'), 'The writer must not flush the host insert.');
+        $this->hostEm->flush();
+        self::assertSame(1, $this->countRoutes('host_pending_delete'));
+    }
+
+    public function testDeprecatedRepositoryMethodsKeepFlushingTheirManagerAndTriggerANotice(): void
+    {
+        $review  = $this->insertRoute('deprecated_review');
+        $delete  = $this->insertRoute('deprecated_delete');
+        $pending = (new RouteData())->setName('host_pending_deprecated')->setEnv('prod');
+        $this->hostEm->persist($pending);
+        $repository = $this->hostEm->getRepository(RouteData::class);
+        self::assertInstanceOf(RouteDataRepository::class, $repository);
+
+        $messages = [];
+        set_error_handler(static function (int $no, string $message) use (&$messages): bool {
+            $messages[] = $message;
+
+            return true;
+        }, E_USER_DEPRECATED);
+
+        try {
+            self::assertTrue($repository->markAsReviewed((int) $review->getId(), true, true, 'bob'));
+            self::assertTrue($repository->deleteById((int) $delete->getId()));
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertCount(2, $messages);
+        self::assertStringContainsString('RouteDataRepository::markAsReviewed() is deprecated', $messages[0]);
+        self::assertStringContainsString('RouteDataWriterInterface::markAsReviewed()', $messages[0]);
+        self::assertStringContainsString('RouteDataRepository::deleteById() is deprecated', $messages[1]);
+        self::assertStringContainsString('RouteDataWriterInterface::delete()', $messages[1]);
+        // Unchanged 3.x behaviour: they flush the manager that maps RouteData, the host's pending insert included.
+        self::assertSame(1, (int) $this->connection->fetchOne('SELECT reviewed FROM routes_data WHERE name = ?', ['deprecated_review']));
+        self::assertSame(0, $this->countRoutes('deprecated_delete'));
+        self::assertSame(1, $this->countRoutes('host_pending_deprecated'));
     }
 
     private function service(?MetricsEntityManagerFactory $factory = null): PerformanceMetricsService

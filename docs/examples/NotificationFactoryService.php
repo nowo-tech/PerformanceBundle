@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use Nowo\PerformanceBundle\Notification\NotificationChannelInterface;
+use Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface;
 use Nowo\PerformanceBundle\Service\NotificationService;
 
 /**
@@ -51,7 +51,7 @@ class NotificationFactoryService
      *
      * Useful to add channels that are not in the database configuration.
      *
-     * @param array<NotificationChannelInterface> $additionalChannels Additional channels
+     * @param array<RouteMetricsNotificationChannelInterface> $additionalChannels Additional channels
      */
     public function createNotificationServiceWithAdditionalChannels(array $additionalChannels): NotificationService
     {

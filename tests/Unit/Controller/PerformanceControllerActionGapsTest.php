@@ -24,6 +24,7 @@ use Nowo\PerformanceBundle\Repository\RouteDataRecordRepository;
 use Nowo\PerformanceBundle\Repository\RouteDataRepository;
 use Nowo\PerformanceBundle\Service\PerformanceCacheService;
 use Nowo\PerformanceBundle\Service\PerformanceMetricsService;
+use Nowo\PerformanceBundle\Service\RouteDataWriterInterface;
 use Nowo\PerformanceBundle\Tests\Support\PageFixtures;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -146,14 +147,16 @@ final class PerformanceControllerActionGapsTest extends TestCase
         $route = (new RouteData())->setEnv('test')->setName('app_home');
         $route->markAsReviewed(true, true);
         $this->repository->method('find')->willReturn($route);
-        $this->repository->method('markAsReviewed')->willReturnCallback(static function (int $id, ?bool $queries, ?bool $time): bool {
+        $writer = $this->createMock(RouteDataWriterInterface::class);
+        $writer->expects(self::once())->method('markAsReviewed')->willReturnCallback(static function (int $id, ?bool $queries, ?bool $time, ?string $by, ?DateTimeImmutable $at, ?bool $saveAccessRecords): bool {
             self::assertNull($queries);
             self::assertNull($time);
+            self::assertFalse($saveAccessRecords);
 
             return true;
         });
         $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects(self::once())->method('flush');
+        $em->expects(self::never())->method('flush');
         $this->metrics->method('getEntityManager')->willReturn($em);
         $this->forms[ReviewRouteDataType::class] = $this->form(['queries_improved' => 'maybe', 'time_improved' => 'banana', 'save_access_records' => false]);
 
@@ -161,13 +164,12 @@ final class PerformanceControllerActionGapsTest extends TestCase
         $translator->method('trans')->willReturnCallback(static fn (string $id, array $parameters, ?string $domain): string => $domain . ':' . $id);
         $controller = $this->controller(
             $this->metrics,
-            ['enableReviewSystem' => true, 'enableAccessRecords' => true, 'clock' => new MockClock('2026-10-30 12:00:00'), 'translator' => $translator],
+            ['enableReviewSystem' => true, 'enableAccessRecords' => true, 'clock' => new MockClock('2026-10-30 12:00:00'), 'translator' => $translator, 'routeDataWriter' => $writer],
             ['getUser'],
         );
 
         $controller->review(1, Request::create('/x', 'POST'));
 
-        self::assertFalse($route->getSaveAccessRecords());
         self::assertTrue($this->flashed('success', 'NowoPerformanceBundle:flash.review_updated'));
     }
 
@@ -183,9 +185,10 @@ final class PerformanceControllerActionGapsTest extends TestCase
 
             return $event;
         });
-        $this->repository->expects(self::never())->method('markAsReviewed');
+        $writer = $this->createMock(RouteDataWriterInterface::class);
+        $writer->expects(self::never())->method('markAsReviewed');
 
-        $this->controller($this->metrics, ['enableReviewSystem' => true, 'eventDispatcher' => $dispatcher], ['getUser'])->review(1, Request::create('/x', 'POST'));
+        $this->controller($this->metrics, ['enableReviewSystem' => true, 'eventDispatcher' => $dispatcher, 'routeDataWriter' => $writer], ['getUser'])->review(1, Request::create('/x', 'POST'));
 
         self::assertTrue($this->flashed('warning', 'prevented'));
     }

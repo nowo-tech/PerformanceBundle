@@ -6,6 +6,7 @@ namespace Nowo\PerformanceBundle\Tests\Unit\Notification\Channel;
 
 use LogicException;
 use Nowo\PerformanceBundle\Entity\RouteData;
+use Nowo\PerformanceBundle\Model\RouteMetricsSnapshot;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Notification\PerformanceAlert;
 use PHPUnit\Framework\TestCase;
@@ -58,7 +59,7 @@ final class WebhookNotificationChannelTimeoutTest extends TestCase
         $channel = new WebhookNotificationChannel($client, 'https://hooks.example.com/secret-path', 'json', [], true, 2.5, $logger);
         $alert   = new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'slow');
 
-        self::assertFalse($channel->send($alert, new RouteData()));
+        self::assertFalse($channel->sendRouteMetrics($alert, RouteMetricsSnapshot::fromContext(new RouteData())));
         self::assertSame(2.5, $client->options['timeout']);
         self::assertSame(2.5, $client->options['max_duration']);
         self::assertSame(0, $client->options['max_redirects']);
@@ -91,7 +92,7 @@ final class WebhookNotificationChannelTimeoutTest extends TestCase
         };
 
         $channel = new WebhookNotificationChannel($client, 'https://hooks.example.com', 'json', [], true, 0.0);
-        $channel->send(new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'slow'), new RouteData());
+        $channel->sendRouteMetrics(new PerformanceAlert(PerformanceAlert::TYPE_REQUEST_TIME, PerformanceAlert::SEVERITY_WARNING, 'slow'), RouteMetricsSnapshot::fromContext(new RouteData()));
 
         self::assertSame(0.1, $client->options['timeout']);
     }

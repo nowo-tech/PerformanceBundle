@@ -2,7 +2,6 @@
 
 > 📑 **Documentation index**: [README](../README.md#documentation). Default values documented here match `Configuration.php` (source of truth).
 
-
 ## Table of contents
 
 - [Default Configuration](#default-configuration)
@@ -82,8 +81,7 @@ nowo_performance:
         layout_template: null              # null = nowo_ui_kit.layouts.admin
         templates: {}                      # per-page overrides: index, statistics, access_statistics, access_records, diagnose
     dashboard:
-        # enabled / path / prefix / layout_template / css_framework / template: deprecated since 3.15 → web_ui / nowo_ui_kit
-        roles: ['ROLE_ADMIN']              # Deprecated BC alias → security.access_roles
+        # enabled / path / prefix / layout_template / css_framework / template / roles: removed in 4.0 → web_ui / nowo_ui_kit / security
         enable_record_management: false
         enable_review_system: false
         date_formats: { datetime: 'Y-m-d H:i:s', date: 'Y-m-d H:i' }
@@ -364,7 +362,7 @@ view-model fields: [TEMPLATES.md](TEMPLATES.md).
 | --- | --- | --- | --- |
 | `web_ui.enabled` | `true` | `dashboard.enabled` | `false`: the pages answer 404 (routes stay importable). |
 | `web_ui.path_prefix` | `'/performance'` | `dashboard.prefix` + `dashboard.path` | URL prefix of every dashboard route (`routes.yaml` uses `%nowo_performance.web_ui.path_prefix%`). |
-| `web_ui.layout_template` | `null` | `dashboard.layout_template` | Layout the scaffolds extend. `null` = `nowo_ui_kit.layouts.admin` (set your host layout or bridge **there**, once for every bundle). A layout that does not define the UiKit canonical blocks (`nowo_ui_content`, …), e.g. a 3.14-style `base.html.twig`, is wrapped in the deprecated bridge `Performance/_legacy_layout.html.twig` (blocks `title`, `stylesheets`, `body`/`nowo_performance_content`, `javascripts`). The former default `@NowoPerformanceBundle/Performance/layout.html.twig` means `null`. |
+| `web_ui.layout_template` | `null` | `dashboard.layout_template` | Layout the scaffolds extend. `null` = `nowo_ui_kit.layouts.admin` (set your host layout or bridge **there**, once for every bundle). A layout that does not define the UiKit canonical blocks (`nowo_ui_content`, …), e.g. a 3.14-style `base.html.twig`, fails with a `LogicException` when a page renders (the 3.15 bridge `Performance/_legacy_layout.html.twig` was removed in 4.0). The former default `@NowoPerformanceBundle/Performance/layout.html.twig` means `null`. |
 | `web_ui.templates.<page>` | `{}` | — | Per-page template (`index`, `statistics`, `access_statistics`, `access_records`, `diagnose`): a thin template that `{% extends '@!NowoPerformanceBundle/Performance/<page>.html.twig' %}` and overrides a data block. Unknown page ids fail the container build. |
 
 ```yaml
@@ -392,37 +390,17 @@ area-nav registry as `nowo_ui_area_nav('performance')` (DashboardMenu can mount 
 **Default:** See below
 
 Dashboard behaviour (record management, review system, date formats, auto refresh, profiler rankings). The UI keys
-`enabled`, `path`, `prefix`, `layout_template`, `css_framework` and `template` are **deprecated since 3.15** (they trigger
-a deprecation and are mapped to `web_ui.*` / ignored in favour of `nowo_ui_kit`; removed in 4.0):
+`enabled`, `path`, `prefix`, `layout_template`, `css_framework`, `template` (deprecated since 3.15) and `roles`
+(documented as deprecated) were **removed in 4.0**: a leftover key fails the container build with an
+`InvalidConfigurationException` that names its replacement ([UPGRADING](UPGRADING.md#configuration-keys)):
 
-| Deprecated key | Use instead |
+| Removed key | Use instead |
 | --- | --- |
 | `dashboard.enabled` | `web_ui.enabled` |
-| `dashboard.prefix` + `dashboard.path` | `web_ui.path_prefix` (the two values are concatenated) |
+| `dashboard.prefix` + `dashboard.path` | `web_ui.path_prefix` (the two values concatenated) |
 | `dashboard.layout_template` | `web_ui.layout_template` (null = UiKit layout) |
-| `dashboard.css_framework`, `dashboard.template` | `nowo_ui_kit.css_framework` (copied there when `nowo_ui_kit` has none) |
-
-#### `dashboard.roles`
-
-**Type:** `array`  
-**Default:** `['ROLE_ADMIN']`  
-**Status:** Deprecated — prefer [`security.access_roles`](#security).
-
-Kept for backward compatibility. When `security.access_roles` is not set explicitly, `dashboard.roles` is mapped into `security.access_roles`. An empty list **denies**; with the dashboard enabled it fails container compilation unless `security.access_checker` or `security.allow_unauthenticated` is set.
-
-```yaml
-nowo_performance:
-    dashboard:
-        roles: ['ROLE_ADMIN']  # BC — prefer security.access_roles
-```
-
-Migrate to:
-
-```yaml
-nowo_performance:
-    security:
-        access_roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
-```
+| `dashboard.css_framework`, `dashboard.template` | `nowo_ui_kit.css_framework` |
+| `dashboard.roles` | [`security.access_roles`](#security) |
 
 #### `dashboard.enable_record_management`
 
@@ -533,11 +511,11 @@ This differs from the **access-record filters** (path, referer and user on the a
 
 ### `security`
 
-Canonical dashboard access control (REQ-UI-002). Prefer these keys over deprecated `dashboard.roles`.
+Dashboard access control (REQ-UI-002). Replaces `dashboard.roles` (removed in 4.0).
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `access_roles` | `[ROLE_ADMIN]` | Any matching role grants dashboard access (OR logic). An empty list **denies** (never "everyone"); with `dashboard.enabled: true` it fails container compilation unless `access_checker` or `allow_unauthenticated` is set. |
+| `access_roles` | `[ROLE_ADMIN]` | Any matching role grants dashboard access (OR logic). An empty list **denies** (never "everyone"); with `web_ui.enabled: true` it fails container compilation unless `access_checker` or `allow_unauthenticated` is set. |
 | `access_checker` | `null` | Optional service id implementing `PerformanceAccessCheckerInterface`. |
 | `allow_unauthenticated` | `false` | When `true`, skips the SecurityBundle requirement (demo/dev only). |
 
@@ -557,7 +535,7 @@ nowo_performance:
         access_checker: App\Security\MyPerformanceAccessChecker
 ```
 
-When `dashboard.enabled` is `true` and `allow_unauthenticated` is `false`, `symfony/security-bundle` is required or container compilation fails with a `LogicException`.
+When `web_ui.enabled` is `true` and `allow_unauthenticated` is `false`, `symfony/security-bundle` is required or container compilation fails with a `LogicException`.
 
 **BC:** `dashboard.roles` remains supported. If `security.access_roles` is not set, `dashboard.roles` is copied into `access_roles`. The parameter `%nowo_performance.dashboard.roles%` is kept in sync with the effective `access_roles`.
 
@@ -595,9 +573,8 @@ nowo_performance:
 
 ### `query_tracking_threshold`
 
-**Type:** `integer`  
-**Default:** `0`  
-**Deprecated:** ignored. It never had any effect: every query is always counted and timed. Setting it triggers a deprecation notice; remove it from your configuration. It will be removed in the next major version.
+**Removed in 4.0** (deprecated since 3.6.0). It never had any effect: every query is always counted and timed. A
+leftover key fails the container build; delete it.
 
 ### `thresholds`
 
@@ -655,8 +632,8 @@ nowo_performance:
 
 ## FormKit profile (`performance`)
 
-Every dashboard form type (filters, statistics environment, clear data, delete record, delete by filter, purge, review,
-and the deprecated chart filters of the `nowo_performance.Charts` component) is a FormKit Type:
+Every dashboard form type (filters, statistics environment, clear data, delete record, delete by filter, purge and
+review) is a FormKit Type:
 `#[FormKitConfig('performance')]` + `FormOptionsTrait` (REQ-TWIG-005 rule 11). The bundle prepends
 `nowo_form_kit.profiles.performance` (translation domain `NowoPerformanceBundle`, `auto_help` / `auto_placeholder` off,
 `defaults.attr.class: nowo-ui-input`, no framework utility classes) and `nowo_form_kit.css_framework: bootstrap` when
@@ -726,13 +703,7 @@ nowo_performance:
         access_roles: ['ROLE_ADMIN', 'ROLE_PERFORMANCE_VIEWER']
 ```
 
-**Deprecated BC** — still works; prefer `security.access_roles`:
-
-```yaml
-nowo_performance:
-    dashboard:
-        roles: ['ROLE_ADMIN']
-```
+`dashboard.roles` was removed in 4.0: a leftover key fails the container build.
 
 For local demos only:
 
@@ -742,11 +713,11 @@ nowo_performance:
         allow_unauthenticated: true  # Not for production
 ```
 
-An empty role list does **not** open the dashboard: `access_roles: []` (or the deprecated `dashboard.roles: []`) denies
-everyone, and with `dashboard.enabled: true` the container refuses to compile unless `security.access_checker` or
+An empty role list does **not** open the dashboard: `access_roles: []` denies
+everyone, and with `web_ui.enabled: true` the container refuses to compile unless `security.access_checker` or
 `security.allow_unauthenticated` is set. Use `allow_unauthenticated: true` (above) for an open local dashboard.
 
-The dashboard also requires form CSRF protection: with `dashboard.enabled: true` the container refuses to compile
+The dashboard also requires form CSRF protection: with `web_ui.enabled: true` the container refuses to compile
 without `security.csrf.token_manager` and `form.type_extension.csrf`, or with `framework.form.csrf_protection: false`.
 
 ### Security Considerations
@@ -760,10 +731,9 @@ without `security.csrf.token_manager` and `form.type_extension.csrf`, or with `f
 ```yaml
 # config/packages/prod/nowo_performance.yaml
 nowo_performance:
-    dashboard:
+    web_ui:
         enabled: true
-        path: '/admin/performance'
-        prefix: '/admin'
+        path_prefix: '/admin/performance'
     security:
         access_roles: ['ROLE_ADMIN']
 ```

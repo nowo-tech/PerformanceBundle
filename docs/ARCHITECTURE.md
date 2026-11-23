@@ -17,20 +17,20 @@ Host entities are never referenced (the user is stored as strings).
 
 | Element | Kind | Notes |
 |---------|------|-------|
-| `Notification\RouteMetricsNotificationChannelInterface` (3.17.0) | SPI | Receives a `RouteMetricsSnapshot`; preferred |
-| `Notification\NotificationChannelInterface` | SPI | Entity form of `send()` (`RouteData` or `AfterMetricsRecordedEvent`), replaced in 4.0 |
+| `Notification\RouteMetricsNotificationChannelInterface` (3.17.0) | SPI | Receives a `RouteMetricsSnapshot`; the only channel port since 4.0 (`NotificationChannelInterface` and its entity form of `send()` were removed) |
 | `Security\PerformanceAccessCheckerInterface` | SPI | Dashboard access |
+| `Service\RouteDataWriterInterface` (4.0) | Port | Delete / review a route row by id through the bundle's private manager; replaces the deprecated repository writes |
 | `MessageBus\MessageBusInterface` | SPI | Async recording |
 | `Model\RouteMetricsSnapshot` (3.17.0) | VO | Framework-free copy of a route row plus the metrics just recorded |
-| `Before/AfterMetricsRecordedEvent`, `Before/AfterRecordReviewedEvent`, `Before/AfterRecordDeletedEvent`, `Before/AfterRecordsClearedEvent` | Events | Every event that carries a route also has `getRouteDataId()`, `getRouteName()`, `getEnv()` and `getRouteMetrics()` since 3.17.0; `getRouteData()` is deprecated and removed in 4.0 |
+| `Before/AfterMetricsRecordedEvent`, `Before/AfterRecordReviewedEvent`, `Before/AfterRecordDeletedEvent`, `Before/AfterRecordsClearedEvent` | Events | Every event that carries a route also has `getRouteDataId()`, `getRouteName()`, `getEnv()` and `getRouteMetrics()` since 3.17.0; `getRouteData()` was removed in 4.0 |
 
 The events extend `Symfony\Contracts\EventDispatcher\Event` (an allowed contracts package). See [EVENTS](EVENTS.md) and
 [NOTIFICATIONS](NOTIFICATIONS.md).
 
 ## Standard Symfony and DDD hosts
 
-- **Standard Symfony host:** install, keep `connection: default`, read the dashboard. Listeners and channels may keep
-  using the entity accessors until 4.0.
+- **Standard Symfony host:** install, keep `connection: default`, read the dashboard. Listeners and channels read ids
+  and `RouteMetricsSnapshot` (the entity accessors were removed in 4.0).
 - **DDD / hexagonal host:** see [USAGE — Using it from a DDD / hexagonal application](USAGE.md#using-it-from-a-ddd--hexagonal-application).
   In short: give the bundle its own entity manager (`connection: performance`), read ids and `RouteMetricsSnapshot`
   in listeners, implement `RouteMetricsNotificationChannelInterface` to forward alerts to your own bus, and never
@@ -40,11 +40,11 @@ The events extend `Symfony\Contracts\EventDispatcher\Event` (an allowed contract
 
 | Rule | Status |
 |------|--------|
-| 1 Interfaces + VOs | SPIs above; `RouteMetricsSnapshot`; `PerformanceMetricsService` has no interface yet |
+| 1 Interfaces + VOs | ✅ SPIs above (the channel port names no entity since 4.0); `RouteMetricsSnapshot`; `PerformanceMetricsService` has no interface yet |
 | 2 No forced base class / trait | Bundle-owned entities, no host relation |
-| 3 No framework types in ports / events / VOs | Snapshot and id accessors on every route event; snapshot channel SPI |
-| 4 Events carry IDs | Yes (3.17.0); entity accessors deprecated |
+| 3 No framework types in ports / events / VOs | ✅ Snapshot and id accessors on every route event; snapshot-only channel SPI; `RouteDataWithAggregates::getAccessRecords()` returns a list (4.0) |
+| 4 Events carry IDs | ✅ Yes (3.17.0); entity accessors removed in 4.0 |
 | 5 SPI | Notification channels, access checker, message bus, `Before*` events can veto |
-| 6 No host EM flush | Recording: private manager (3.16.0). Admin / `rebuild-aggregates`: ⚠️ flush the `connection` manager; opt-in: a dedicated manager; 4.0 moves them to the private manager |
+| 6 No host EM flush | Recording: private manager (3.16.0). Admin / `rebuild-aggregates`: flush the `connection` manager in their own admin / CLI requests (opt-in: a dedicated manager) — accepted exception (owner decision, 2026-11-23): the bundle's own writes, started from its own admin screen and console command, never called by the host inside its unit of work, so no pending host change can be committed or lost. The dashboard delete and review write through `Service\RouteDataWriterInterface` (private manager, 4.0). ⚠️ `Repository\RouteDataRepository::deleteById()` and `markAsReviewed()` (deprecated since 4.0, removed in a future major) still `flush()` the manager mapping `RouteData` (the host default manager with `connection: default`) when host code calls them — accepted exception (owner decision, 2026-11-23): host-callable since 3.x, removing the flush silently would break hosts; replacement `RouteDataWriterInterface`. Events, channels and recording never flush the host manager |
 | 7 Events after commit | `After*` events after the write |
 | 8 Config through provider ports | Bundle config only |

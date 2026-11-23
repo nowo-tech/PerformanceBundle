@@ -61,7 +61,8 @@ final class RouteMetricsSnapshotTest extends TestCase
         self::assertSame(12, $snapshot->totalQueries);
         self::assertSame(2048, $snapshot->memoryUsage);
         self::assertEquals(RouteMetricsSnapshot::fromRecordedEvent($event), RouteMetricsSnapshot::fromContext($event));
-        self::assertEquals(RouteMetricsSnapshot::fromRouteData($event->getRouteData()), RouteMetricsSnapshot::fromContext($event->getRouteData()));
+        self::assertEquals(RouteMetricsSnapshot::fromRouteData($this->route()), RouteMetricsSnapshot::fromContext($this->route()));
+        self::assertNull(RouteMetricsSnapshot::fromRouteData($this->route())->isNew);
     }
 
     public function testReviewAndDeleteEventsCarryIdsAndSnapshot(): void
@@ -74,7 +75,7 @@ final class RouteMetricsSnapshotTest extends TestCase
         ];
 
         foreach ($events as $event) {
-            self::assertSame($route, $event->getRouteData(), $event::class . ': the deprecated accessor is unchanged');
+            self::assertFalse(method_exists($event, 'getRouteData'), $event::class . ': the entity accessor was removed in 4.0');
             self::assertSame(7, $event->getRouteDataId());
             self::assertSame('app_home', $event->getRouteName());
             self::assertSame('prod', $event->getEnv());

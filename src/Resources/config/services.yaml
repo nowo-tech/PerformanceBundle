@@ -24,6 +24,11 @@ services:
             - method: setMessageBus
               arguments: ['@Nowo\PerformanceBundle\MessageBus\MessengerBusAdapter']
 
+    # Dashboard writes by id through a private entity manager (4.0; replaces RouteDataRepository::deleteById() /
+    # markAsReviewed(), deprecated since 4.0)
+    Nowo\PerformanceBundle\Service\RouteDataWriter: ~
+    Nowo\PerformanceBundle\Service\RouteDataWriterInterface: '@Nowo\PerformanceBundle\Service\RouteDataWriter'
+
     # Lock-conflict answer of the dashboard writes (409 + Retry-After, CONFLICT_001 / CONFLICT_002; REQ-RUNTIME-003)
     Nowo\PerformanceBundle\Concurrency\WriteConflictMapper: ~
 
@@ -43,14 +48,13 @@ services:
 
     Nowo\PerformanceBundle\Twig\ArrayExtension: ~
 
-    # Deprecated Twig globals nowo_performance_layout_template / nowo_performance_css_framework (no bundle page reads
-    # them since 3.15, REQ-UI-003); kept for host templates until 4.0.
+    # Twig globals nowo_performance_layout_template / nowo_performance_css_framework (no bundle page reads them since
+    # 3.15, REQ-UI-003); kept for host templates. Since 4.0 nowo_performance_css_framework is always bootstrap5 (the
+    # dashboard.css_framework key was removed); read nowo_ui_kit.css_framework instead.
     Nowo\PerformanceBundle\Twig\PerformanceLayoutExtension:
         arguments:
             $layoutTemplate: '%nowo_performance.dashboard.layout_template%'
             $cssFramework: '%nowo_performance.dashboard.css_framework%'
-
-    # Twig UX components: see services_twig_component.yaml (loaded only when symfony/ux-twig-component is installed).
 
     # Table Status Checker
     Nowo\PerformanceBundle\Service\TableStatusChecker:

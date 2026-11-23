@@ -19,17 +19,17 @@ final class AfterRecordReviewedEventTest extends TestCase
 
         $event = new AfterRecordReviewedEvent($routeData);
 
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
     }
 
-    public function testGetRouteDataReturnsSameInstance(): void
+    public function testRouteMetricsAreEqualOnMultipleCalls(): void
     {
         $routeData = new RouteData();
         $routeData->setName('test_route');
         $event = new AfterRecordReviewedEvent($routeData);
 
-        $this->assertSame($event->getRouteData(), $event->getRouteData());
-        $this->assertSame($routeData, $event->getRouteData());
+        $this->assertEquals($event->getRouteMetrics(), $event->getRouteMetrics());
+        $this->assertSame($routeData->getId(), $event->getRouteDataId());
     }
 
     public function testExtendsSymfonyEvent(): void
@@ -40,33 +40,33 @@ final class AfterRecordReviewedEventTest extends TestCase
         $this->assertInstanceOf(Event::class, $event);
     }
 
-    public function testGetRouteDataReturnsCorrectRoute(): void
+    public function testRouteAccessorsReturnsCorrectRoute(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_users')->setEnv('prod');
         $event = new AfterRecordReviewedEvent($routeData);
 
-        $this->assertSame('api_users', $event->getRouteData()->getName());
-        $this->assertSame('prod', $event->getRouteData()->getEnv());
+        $this->assertSame('api_users', $event->getRouteName());
+        $this->assertSame('prod', $event->getEnv());
     }
 
-    public function testGetRouteDataWithStageEnv(): void
+    public function testRouteAccessorsWithStageEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_dashboard')->setEnv('stage');
         $event = new AfterRecordReviewedEvent($routeData);
 
-        $this->assertSame('api_dashboard', $event->getRouteData()->getName());
-        $this->assertSame('stage', $event->getRouteData()->getEnv());
+        $this->assertSame('api_dashboard', $event->getRouteName());
+        $this->assertSame('stage', $event->getEnv());
     }
 
-    public function testGetRouteDataWithTestEnv(): void
+    public function testRouteAccessorsWithTestEnv(): void
     {
         $routeData = new RouteData();
         $routeData->setName('api_health')->setEnv('test');
         $event = new AfterRecordReviewedEvent($routeData);
 
-        $this->assertSame('api_health', $event->getRouteData()->getName());
-        $this->assertSame('test', $event->getRouteData()->getEnv());
+        $this->assertSame('api_health', $event->getRouteName());
+        $this->assertSame('test', $event->getEnv());
     }
 }
