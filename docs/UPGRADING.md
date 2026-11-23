@@ -258,8 +258,10 @@ Keep the tag `nowo_performance.notification_channel` on the service. What change
   `$route->routeDataId` (a DQL / DBAL `UPDATE`); nothing the channel does is flushed by the bundle.
 
 **A channel still written for the removed interface fails the container build** (it would otherwise be dropped
-silently and its alerts would stop): a tagged service, and also a class registered by resource autodiscovery
-(`App\: resource: ../src/`) that still implements `NotificationChannelInterface`. The `LogicException` names the
+silently and its alerts would stop): a tagged service, a class registered by resource autodiscovery
+(`App\: resource: ../src/`), a class tagged only by `#[AutoconfigureTag('nowo_performance.notification_channel')]`, an
+explicit `services.yaml` override of an autodiscovered class, or a decorator of a channel, when it still implements
+`NotificationChannelInterface`. The `LogicException` names the
 service and points here. Decorating a built-in channel is unchanged: decorate the service id and implement
 `RouteMetricsNotificationChannelInterface`.
 
@@ -346,8 +348,11 @@ canonical blocks (or extend `@NowoUiKit/layout/admin.html.twig`, or a one-file b
   (admin / CLI) request, as in 3.x; metrics recording keeps its private manager. Give the bundle its own manager
   (`connection: performance`) to keep these writes out of your unit of work. 4.0 does not move them: they are
   an accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23), because they are the bundle's own
-  admin-screen and console-command writes, never called inside your unit of work. Any path your code calls never
-  flushes your manager.
+  admin-screen and console-command writes, never called inside your unit of work. That exception does **not** cover
+  `RouteDataRepository::deleteById()` and `markAsReviewed()` called from your own code: both are public and
+  autowirable and `flush()` the manager that maps `RouteData` (your default manager with `connection: default`), so
+  they commit whatever your unit of work holds. Rule 6 is ⚠️ for them; their behaviour is unchanged in 4.0. Events,
+  notification channels and metrics recording never flush your manager.
 - `NotificationService::sendAlert()`, `RouteMetricsSnapshot::fromRouteData()` / `fromRecordedEvent()` /
   `fromContext()`, `RouteDataWithAggregates::getRouteData()` and the event constructors keep their signatures.
 - The Twig globals `nowo_performance_layout_template` and `nowo_performance_css_framework` stay (no bundle page reads

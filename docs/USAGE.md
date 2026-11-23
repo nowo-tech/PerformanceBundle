@@ -547,9 +547,13 @@ Known limitations:
   **Accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23):** these are the bundle's own writes,
   started from its own admin screen or its own console command, never called by the host in the middle of its unit of
   work, so there are no pending host changes to commit or lose. Covered: only the writes the bundle's admin UI
-  (dashboard actions) and its console command (`nowo:performance:rebuild-aggregates`) start. Not covered: every path
-  your own code calls (services, events, notification channels, metrics recording) still never flushes your entity
-  manager.
+  (dashboard actions) and its console command (`nowo:performance:rebuild-aggregates`) start. Not covered: the
+  public, autowirable `Repository\RouteDataRepository::deleteById()` and `markAsReviewed()` (which the dashboard uses
+  for delete and review) call `flush()` on the manager that maps `RouteData` — your default manager with
+  `connection: default`. Called from your own code they commit every change your unit of work holds; rule 6 of
+  REQ-ARCH-001 is ⚠️ for these two methods (unchanged in 4.0, decision pending). Call them only where nothing of yours
+  is pending, or give the bundle its own manager. The other paths your code calls (events, notification channels,
+  metrics recording) never flush your manager.
 - The events carry ids and a `RouteMetricsSnapshot`, and notification channels receive only the snapshot: the entity
   accessors (`getRouteData()` on the events, the entity form of the channel `send()`) were removed in 4.0.
 - No unique index on `routes_data (env, name)`: two concurrent first hits of a route can create two rows (the writer

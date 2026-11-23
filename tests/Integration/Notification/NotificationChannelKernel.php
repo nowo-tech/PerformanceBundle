@@ -6,6 +6,9 @@ namespace Nowo\PerformanceBundle\Tests\Integration\Notification;
 
 use Nowo\PerformanceBundle\Tests\Fixtures\Notification\NotAChannel;
 use Nowo\PerformanceBundle\Tests\Fixtures\Notification\RecordingNotificationChannel;
+use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Attribute\LegacyAttributeTaggedChannel;
+use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Decorator\LegacyChannelDecorator;
+use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Override\LegacyOverriddenChannel;
 use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Tagged\LegacyTaggedChannel;
 use Nowo\PerformanceBundle\Tests\Integration\TestKernel;
 use Symfony\Component\Config\FileLocator;
@@ -13,6 +16,7 @@ use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * TestKernel with notifications enabled and one host notification channel set-up per scenario (4.0 channel port,
@@ -22,6 +26,9 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
  * - `autodiscovered`: resource autodiscovery of a class still implementing the removed NotificationChannelInterface;
  * - `tagged`: the same kind of class registered explicitly and tagged nowo_performance.notification_channel;
  * - `not_a_channel`: a tagged class implementing no channel port;
+ * - `autoconfigure_tag`: a legacy class tagged only by #[AutoconfigureTag], registered explicitly with autoconfigure;
+ * - `resource_override`: resource autodiscovery plus an explicit override of the legacy class (to pass an argument);
+ * - `legacy_decorator`: a legacy class decorating the built-in Slack channel;
  * - `unrelated`: resource autodiscovery of a class implementing an unrelated missing interface (must still compile).
  */
 final class NotificationChannelKernel extends TestKernel
@@ -63,10 +70,30 @@ final class NotificationChannelKernel extends TestKernel
                     ->addTag(self::TAG),
                 'not_a_channel' => $container->setDefinition(NotAChannel::class, new Definition(NotAChannel::class))
                     ->addTag(self::TAG),
-                'autodiscovered' => self::discover($container, $prototype, 'Nowo\\PerformanceBundle\\Tests\\Fixtures\\RemovedChannel\\Autodiscovered\\', $fixtures . '/RemovedChannel/Autodiscovered/*'),
-                'unrelated'      => self::discover($container, $prototype, 'Nowo\\PerformanceBundle\\Tests\\Fixtures\\RemovedChannel\\Unrelated\\', $fixtures . '/RemovedChannel/Unrelated/*'),
+                'autodiscovered'    => self::discover($container, $prototype, 'Nowo\\PerformanceBundle\\Tests\\Fixtures\\RemovedChannel\\Autodiscovered\\', $fixtures . '/RemovedChannel/Autodiscovered/*'),
+                'autoconfigure_tag' => $container->setDefinition(LegacyAttributeTaggedChannel::class, new Definition(LegacyAttributeTaggedChannel::class))
+                    ->setAutoconfigured(true)
+                    ->setPublic(true),
+                'resource_override' => self::override($container, $prototype, $fixtures),
+                'legacy_decorator'  => $container->setDefinition('app.slack_decorator', new Definition(LegacyChannelDecorator::class))
+                    ->setDecoratedService('nowo_performance.notification.channel.slack')
+                    ->setArgument('$inner', new Reference('.inner')),
+                'unrelated' => self::discover($container, $prototype, 'Nowo\\PerformanceBundle\\Tests\\Fixtures\\RemovedChannel\\Unrelated\\', $fixtures . '/RemovedChannel/Unrelated/*'),
             };
         });
+    }
+
+    /**
+     * `App\: resource: ../src/` followed by an explicit re-declaration of one class to pass an argument.
+     */
+    private static function override(ContainerBuilder $container, Definition $prototype, string $fixtures): Definition
+    {
+        self::discover($container, $prototype, 'Nowo\\PerformanceBundle\\Tests\\Fixtures\\RemovedChannel\\Override\\', $fixtures . '/RemovedChannel/Override/*');
+
+        return $container->setDefinition(LegacyOverriddenChannel::class, new Definition(LegacyOverriddenChannel::class))
+            ->setAutowired(true)
+            ->setAutoconfigured(true)
+            ->setArgument('$webhook', 'https://hooks.example.com/x');
     }
 
     /**

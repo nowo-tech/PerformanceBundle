@@ -10,6 +10,9 @@ use Nowo\PerformanceBundle\Notification\Channel\EmailNotificationChannel;
 use Nowo\PerformanceBundle\Notification\Channel\WebhookNotificationChannel;
 use Nowo\PerformanceBundle\Tests\Fixtures\Notification\NotAChannel;
 use Nowo\PerformanceBundle\Tests\Fixtures\Notification\RecordingNotificationChannel;
+use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Attribute\LegacyAttributeTaggedChannel;
+use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Decorator\LegacyChannelDecorator;
+use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Override\LegacyOverriddenChannel;
 use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Tagged\LegacyTaggedChannel;
 use Nowo\PerformanceBundle\Tests\Fixtures\RemovedChannel\Unrelated\UnrelatedBrokenService;
 use PHPUnit\Framework\TestCase;
@@ -101,6 +104,46 @@ final class RemovedNotificationChannelPassTest extends TestCase
         (new RemovedNotificationChannelPass())->process($container);
 
         self::assertCount(5, $container->findTaggedServiceIds(RemovedNotificationChannelPass::CHANNEL_TAG));
+    }
+
+    public function testAutoconfiguredServiceStillImplementingTheRemovedInterfaceFailsTheBuild(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.attribute_channel', new Definition(LegacyAttributeTaggedChannel::class))->setAutoconfigured(true);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage(sprintf('The service "app.attribute_channel" (class "%s") cannot be loaded: ', LegacyAttributeTaggedChannel::class));
+
+        (new RemovedNotificationChannelPass())->process($container);
+    }
+
+    public function testDecoratorOfAChannelStillImplementingTheRemovedInterfaceFailsTheBuild(): void
+    {
+        $container = $this->containerWith(['bundle.slack' => WebhookNotificationChannel::class]);
+        $container->setDefinition('app.decorator', new Definition(LegacyChannelDecorator::class))->setDecoratedService('bundle.slack');
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('The service "app.decorator" (decorator of the notification channel "bundle.slack")');
+
+        (new RemovedNotificationChannelPass())->process($container);
+    }
+
+    public function testOtherServicesAreNotLoaded(): void
+    {
+        $container = new ContainerBuilder();
+        // Not autoconfigured, not a channel decorator: never loaded (it would fail).
+        $container->setDefinition('app.plain', new Definition(LegacyOverriddenChannel::class));
+        $container->setDefinition('app.decorates_other', new Definition(LegacyChannelDecorator::class))->setDecoratedService('app.other');
+        $container->setDefinition('app.synthetic', (new Definition(LegacyOverriddenChannel::class))->setSynthetic(true)->setAutoconfigured(true));
+        $container->setDefinition('app.no_class', (new Definition())->setAutoconfigured(true));
+        // Autoconfigured with an unrelated loading problem, or a class that does not exist: left to Symfony.
+        $container->setDefinition('app.unrelated', new Definition(UnrelatedBrokenService::class))->setAutoconfigured(true);
+        $container->setDefinition('app.missing', new Definition('App\\Missing\\Service'))->setAutoconfigured(true);
+        $container->setDefinition('app.ok', new Definition(RecordingNotificationChannel::class))->setAutoconfigured(true);
+
+        (new RemovedNotificationChannelPass())->process($container);
+
+        self::assertTrue($container->hasDefinition('app.plain'));
     }
 
     /**

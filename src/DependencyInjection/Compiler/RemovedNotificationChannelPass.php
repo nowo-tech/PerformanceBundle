@@ -11,9 +11,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 use Throwable;
 
+use function array_keys;
+use function array_map;
 use function class_exists;
+use function in_array;
 use function interface_exists;
 use function is_string;
+use function is_subclass_of;
 use function sprintf;
 use function str_contains;
 
@@ -30,7 +34,13 @@ use function str_contains;
  *   Symfony quotes it, matches: an unrelated missing class keeps its lazy error;
  * - a service tagged `nowo_performance.notification_channel` whose class cannot be loaded because it still implements
  *   the removed interface, or that does not implement {@see RouteMetricsNotificationChannelInterface} (it could never be
- *   called: the notification service only calls sendRouteMetrics()).
+ *   called: the notification service only calls sendRouteMetrics());
+ * - an autoconfigured service whose class cannot be loaded because it still implements the removed interface. Such a
+ *   class is never autoconfigured, so `#[AutoconfigureTag('nowo_performance.notification_channel')]` or an
+ *   `_instanceof` rule never tags it; this also covers an explicit `services.yaml` override (to pass arguments) of a
+ *   class first registered by `App\: resource: ../src/`, whose loading error the override discards;
+ * - a decorator of a notification channel whose class still implements the removed interface (Symfony would only
+ *   report a generic reflection error).
  *
  * Registered twice before optimization: at priority 1000 (loading errors, before any other pass looks at the
  * definitions) and at priority 0 (after the `_instanceof` / autoconfiguration tags are applied). Each message names the
@@ -63,39 +73,62 @@ final class RemovedNotificationChannelPass implements CompilerPassInterface
             }
         }
 
-        foreach (array_keys($container->findTaggedServiceIds(self::CHANNEL_TAG)) as $id) {
-            $this->assertChannel($container, (string) $id, $container->getDefinition($id)->getClass() ?? (string) $id);
+        $channels = array_map(strval(...), array_keys($container->findTaggedServiceIds(self::CHANNEL_TAG)));
+        foreach ($channels as $id) {
+            $class = $container->getDefinition($id)->getClass() ?? $id;
+            if ($this->load($container, $class, sprintf('The notification channel "%s"', $id)) !== true) {
+                continue;
+            }
+            $class = (string) $container->getParameterBag()->resolveValue($class);
+            if (!is_subclass_of($class, RouteMetricsNotificationChannelInterface::class)) {
+                throw new LogicException(sprintf('The service "%s" (class "%s") is tagged "%s" but does not implement "%s", the only notification channel port since 4.0. %s', $id, $class, self::CHANNEL_TAG, RouteMetricsNotificationChannelInterface::class, self::HINT));
+            }
+        }
+
+        // A class that cannot be loaded is never autoconfigured, so #[AutoconfigureTag] / _instanceof never tag it: an
+        // autoconfigured service (also an explicit override of an autodiscovered class) or a decorator of a channel is
+        // loaded here, so a channel still written for the removed port fails instead of vanishing.
+        foreach ($container->getDefinitions() as $id => $definition) {
+            $id = (string) $id;
+            if (in_array($id, $channels, true) || $definition->isSynthetic() || !is_string($definition->getClass())) {
+                continue;
+            }
+            $decorated = $definition->getDecoratedService()[0] ?? null;
+            if ($definition->isAutoconfigured()) {
+                $this->load($container, $definition->getClass(), sprintf('The service "%s"', $id));
+            } elseif (is_string($decorated) && in_array($decorated, $channels, true)) {
+                $this->load($container, $definition->getClass(), sprintf('The service "%s" (decorator of the notification channel "%s")', $id, $decorated));
+            }
         }
     }
 
     /**
-     * Loads the class of a tagged channel: a class still implementing the removed interface throws "… not found"; a
-     * loadable class must implement the channel port. A class that does not exist is left to Symfony's own checks.
+     * Loads $class: a class still implementing the removed interface throws "… not found", which becomes the build
+     * error. Returns whether the class exists, or null when it cannot be resolved or fails to load for another reason
+     * (left to Symfony's own checks).
+     *
+     * @throws LogicException when loading fails on the removed interface
      */
-    private function assertChannel(ContainerBuilder $container, string $id, string $class): void
+    private function load(ContainerBuilder $container, string $class, string $subject): ?bool
     {
         try {
             $class = $container->getParameterBag()->resolveValue($class);
         } catch (ParameterNotFoundException) {
-            return; // reported by the pass that resolves parameters
+            return null; // reported by the pass that resolves parameters
         }
 
         if (!is_string($class) || $class === '') {
-            return;
+            return null;
         }
 
         try {
-            $exists = class_exists($class) || interface_exists($class);
+            return class_exists($class) || interface_exists($class);
         } catch (Throwable $e) {
             if (str_contains($e->getMessage(), '"' . self::REMOVED_CHANNEL_PORT . '"')) {
-                throw new LogicException(sprintf('The notification channel "%s" (class "%s") cannot be loaded: %s %s', $id, $class, $e->getMessage(), self::HINT), 0, $e);
+                throw new LogicException(sprintf('%s (class "%s") cannot be loaded: %s %s', $subject, $class, $e->getMessage(), self::HINT), 0, $e);
             }
 
-            return; // an unrelated loading problem is reported by Symfony
-        }
-
-        if ($exists && !is_subclass_of($class, RouteMetricsNotificationChannelInterface::class)) {
-            throw new LogicException(sprintf('The service "%s" (class "%s") is tagged "%s" but does not implement "%s", the only notification channel port since 4.0. %s', $id, $class, self::CHANNEL_TAG, RouteMetricsNotificationChannelInterface::class, self::HINT));
+            return null; // an unrelated loading problem is reported by Symfony
         }
     }
 }

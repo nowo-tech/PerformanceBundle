@@ -124,6 +124,32 @@ final class RemovedNotificationChannelKernelTest extends TestCase
         self::assertStringContainsString('does not implement "Nowo\PerformanceBundle\Notification\RouteMetricsNotificationChannelInterface"', $e->getMessage());
     }
 
+    public function testChannelTaggedOnlyByAttributeOnTheRemovedInterfaceFailsTheBuild(): void
+    {
+        $e = $this->bootFailure('autoconfigure_tag');
+
+        self::assertStringContainsString('LegacyAttributeTaggedChannel', $e->getMessage());
+        self::assertStringContainsString('"Nowo\PerformanceBundle\Notification\NotificationChannelInterface"', $e->getMessage());
+        self::assertStringContainsString('UPGRADING.md "To 4.0.0"', $e->getMessage());
+    }
+
+    public function testExplicitOverrideOfAnAutodiscoveredLegacyChannelFailsTheBuild(): void
+    {
+        $e = $this->bootFailure('resource_override');
+
+        self::assertStringContainsString('LegacyOverriddenChannel', $e->getMessage());
+        self::assertStringContainsString('"Nowo\PerformanceBundle\Notification\NotificationChannelInterface"', $e->getMessage());
+        self::assertStringContainsString('UPGRADING.md "To 4.0.0"', $e->getMessage());
+    }
+
+    public function testLegacyDecoratorOfABuiltInChannelFailsWithTheHint(): void
+    {
+        $e = $this->bootFailure('legacy_decorator');
+
+        self::assertStringContainsString('The service "app.slack_decorator" (decorator of the notification channel "nowo_performance.notification.channel.slack")', $e->getMessage());
+        self::assertStringContainsString('UPGRADING.md "To 4.0.0"', $e->getMessage());
+    }
+
     public function testUnrelatedMissingInterfaceStillCompiles(): void
     {
         $container = $this->boot('unrelated')->getContainer();
