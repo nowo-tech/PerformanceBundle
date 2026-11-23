@@ -44,6 +44,6 @@ The events extend `Symfony\Contracts\EventDispatcher\Event` (an allowed contract
 | 3 No framework types in ports / events / VOs | ✅ Snapshot and id accessors on every route event; snapshot-only channel SPI; `RouteDataWithAggregates::getAccessRecords()` returns a list (4.0) |
 | 4 Events carry IDs | ✅ Yes (3.17.0); entity accessors removed in 4.0 |
 | 5 SPI | Notification channels, access checker, message bus, `Before*` events can veto |
-| 6 No host EM flush | Recording: private manager (3.16.0). Admin / `rebuild-aggregates`: ⚠️ flush the `connection` manager in their own admin / CLI requests; opt-in: a dedicated manager. Unchanged in 4.0 (not announced in 3.x) |
+| 6 No host EM flush | ✅ Recording: private manager (3.16.0). Admin / `rebuild-aggregates`: flush the `connection` manager in their own admin / CLI requests (opt-in: a dedicated manager) — accepted exception (owner decision, 2026-11-23): the bundle's own writes, started from its own admin screen and console command, never called by the host inside its unit of work, so no pending host change can be committed or lost. Only those admin-UI and command writes are covered; any path the host calls from its own code never flushes the host manager |
 | 7 Events after commit | `After*` events after the write |
 | 8 Config through provider ports | Bundle config only |

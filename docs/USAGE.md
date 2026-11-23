@@ -544,8 +544,12 @@ Known limitations:
   entity manager named by `connection`, in their own (admin / CLI) requests (clear and purge run DQL deletes;
   `set-route-metrics` records through the private manager). With the default `connection: default` that is your
   default manager; give the bundle its own manager (example above) to keep these writes out of your unit of work.
-  4.0 leaves these writes as they are (no 3.x release announced a change); rule 6 of REQ-ARCH-001 stays ⚠️ for this
-  path.
+  **Accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23):** these are the bundle's own writes,
+  started from its own admin screen or its own console command, never called by the host in the middle of its unit of
+  work, so there are no pending host changes to commit or lose. Covered: only the writes the bundle's admin UI
+  (dashboard actions) and its console command (`nowo:performance:rebuild-aggregates`) start. Not covered: every path
+  your own code calls (services, events, notification channels, metrics recording) still never flushes your entity
+  manager.
 - The events carry ids and a `RouteMetricsSnapshot`, and notification channels receive only the snapshot: the entity
   accessors (`getRouteData()` on the events, the entity form of the channel `send()`) were removed in 4.0.
 - No unique index on `routes_data (env, name)`: two concurrent first hits of a route can create two rows (the writer

@@ -344,8 +344,10 @@ canonical blocks (or extend `@NowoUiKit/layout/admin.html.twig`, or a one-file b
 - **Dashboard and CLI writes.** The dashboard actions (review, delete, the per-route access-record switch) and
   `nowo:performance:rebuild-aggregates` still flush the entity manager named by `connection`, inside their own
   (admin / CLI) request, as in 3.x; metrics recording keeps its private manager. Give the bundle its own manager
-  (`connection: performance`) to keep these writes out of your unit of work. 4.0 does not move them (no 3.x notice
-  announced such a change).
+  (`connection: performance`) to keep these writes out of your unit of work. 4.0 does not move them: they are
+  an accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23), because they are the bundle's own
+  admin-screen and console-command writes, never called inside your unit of work. Any path your code calls never
+  flushes your manager.
 - `NotificationService::sendAlert()`, `RouteMetricsSnapshot::fromRouteData()` / `fromRecordedEvent()` /
   `fromContext()`, `RouteDataWithAggregates::getRouteData()` and the event constructors keep their signatures.
 - The Twig globals `nowo_performance_layout_template` and `nowo_performance_css_framework` stay (no bundle page reads

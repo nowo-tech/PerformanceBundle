@@ -112,6 +112,7 @@ feature. Migration: [UPGRADING "To 4.0.0"](UPGRADING.md#to-400).
 - **BREAKING:** `Model\RouteDataWithAggregates::getAccessRecords()` returns `list<RouteDataRecord>` instead of a Doctrine `Collection` (announced in 3.19.0) and no longer triggers a deprecation; `getAccessRecordList()` stays and returns the same list.
 - `NotificationService` hands every enabled channel one `RouteMetricsSnapshot` of the alert context (`sendAlert()` keeps its signature); `PerformanceAlertSubscriber` reads the route name from the event's id accessors.
 - Docs: USAGE "Known limitations" and ARCHITECTURE no longer say that 4.0 moves the dashboard and `rebuild-aggregates` writes to the private manager: they keep flushing the `connection` manager in their own admin / CLI requests, unchanged.
+- Docs: the dashboard actions' and `rebuild-aggregates` writes (the bundle's own admin screen and console command flushing the `connection` manager) are documented as an accepted exception to REQ-ARCH-001 rule 6 (owner decision, 2026-11-23); host-called paths still never flush the host manager. REQ-ARCH-001 is fully closed by 4.0. No code change.
 - CI: the `3.x` maintenance branch runs the CI workflow.
 - Demo: runs in UiKit's demo platform shell (`nowo-tech/ui-kit-bundle` ^2.60); the demo's own header is gone and the pages use the shell page headers and section cards. The product delete asks in the UiKit confirm dialog instead of a native `confirm()`. Demo only, no bundle change.
 
