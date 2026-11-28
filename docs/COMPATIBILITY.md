@@ -39,7 +39,7 @@ This document explains the Doctrine and DBAL versions supported by the bundle, t
 
 The bundle is compatible with the following versions:
 
-- **PHP**: `>=8.2, <8.6`
+- **PHP**: `>=8.2, < 8.7`
 - **Symfony**: `^7.0 || ^8.0`
 - **Doctrine ORM**: `^3.7`
 - **Doctrine DBAL**: `^4.0` (since 3.18.0; DBAL 3 never loaded the query-tracking middleware, see [UPGRADING.md](UPGRADING.md#dbal-4-required))

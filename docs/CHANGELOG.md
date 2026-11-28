@@ -96,6 +96,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- PHP 8.6 and Symfony 8.2 support in CI (both stable, no allowed failures): `composer.json` allows PHP below 8.7 (was below 8.6) and a forward-compatibility workflow runs the suite on PHP 8.6 and on Symfony 8.2.
+
 ## [4.0.0] - 2026-11-23
 
 4.0.0 removes the 3.x deprecations (REQ-ARCH-001 rules 1 and 3) and nothing else: same PHP and Symfony ranges, no new
