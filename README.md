@@ -138,7 +138,7 @@ For detailed installation steps (including sync-schema and migrations), see [Ins
 
 ## Requirements
 
-- PHP >= 8.2, < 8.6
+- PHP >= 8.2, < 8.7
 - Symfony 7.4 or 8.x
 - Doctrine ORM ^2.13 || ^3.0
 - Doctrine Bundle ^2.8 || ^3.0 (3.0 required for Symfony 8)
